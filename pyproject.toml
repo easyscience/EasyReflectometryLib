@@ -34,7 +34,7 @@ dependencies = [
     "refnx>=0.1.15",
     "refl1d>=0.8.14",
     "orsopy>=0.0.4",
-    "pint==0.23", # Only to ensure that unit is reported as dimensionless rather than empty string
+    "pint", 
     "xhtml2pdf>=0.2.16"
 ]
 

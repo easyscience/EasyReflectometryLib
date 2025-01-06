@@ -4,7 +4,7 @@ from typing import Union
 import numpy as np
 from easyscience import global_object
 from easyscience.Constraints import FunctionalConstraint
-from easyscience.Objects.new_variable import Parameter
+from easyscience.Objects.variable import Parameter
 
 from easyreflectometry.special.calculations import area_per_molecule_to_scattering_length_density
 from easyreflectometry.special.calculations import neutron_scattering_length
