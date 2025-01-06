@@ -18,7 +18,7 @@ DEFAULTS = {
         'value': 10.0,
         'unit': 'angstrom',
         'min': 0.0,
-        'max': np.Inf,
+        'max': np.inf,
         'fixed': True,
     },
     'roughness': {
@@ -27,7 +27,7 @@ DEFAULTS = {
         'value': 3.3,
         'unit': 'angstrom',
         'min': 0.0,
-        'max': np.Inf,
+        'max': np.inf,
         'fixed': True,
     },
 }
