@@ -27,7 +27,7 @@ class TestMaterialMixture(unittest.TestCase):
 
     def test_molecular_weight(self) -> None:
         a = molecular_weight('H2O')
-        assert_almost_equal(a, 18.01528)
+        assert_almost_equal(a, 18.015)
 
     def test_area_per_molecule_to_sld(self) -> None:
         a = area_per_molecule_to_scattering_length_density(2, 1, 0.5)

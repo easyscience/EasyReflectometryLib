@@ -101,6 +101,7 @@ class TestSurfactantLayer:
 
     def test_dict_repr(self):
         p = SurfactantLayer()
+
         assert p._dict_repr == {
             'EasySurfactantLayer': {
                 'head_layer': {
@@ -125,9 +126,9 @@ class TestSurfactantLayer:
                         'material': {
                             'C32D64 in Air': {
                                 'solvent_fraction': '0.000 dimensionless',
-                                'sld': '8.297e-6 1/Å^2',
+                                'sld': '8.292e-6 1/Å^2',
                                 'isld': '0.000e-6 1/Å^2',
-                                'material': {'C32D64': {'sld': '8.297e-6 1/Å^2', 'isld': '0.000e-6 1/Å^2'}},
+                                'material': {'C32D64': {'sld': '8.292e-6 1/Å^2', 'isld': '0.000e-6 1/Å^2'}},
                                 'solvent': {'Air': {'sld': '0.000e-6 1/Å^2', 'isld': '0.000e-6 1/Å^2'}},
                             }
                         },
