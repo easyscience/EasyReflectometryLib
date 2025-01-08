@@ -22,7 +22,7 @@ DEFAULTS = {
         'value': 2.33,
         'unit': 'gram / centimeter ** 3',
         'min': 0,
-        'max': np.Inf,
+        'max': np.inf,
         'fixed': True,
     },
     'molecular_weight': {
@@ -30,8 +30,8 @@ DEFAULTS = {
         'url': 'https://en.wikipedia.org/wiki/Molecular_mass',
         'value': 28.02,
         'unit': 'g / mole',
-        'min': -np.Inf,
-        'max': np.Inf,
+        'min': -np.inf,
+        'max': np.inf,
         'fixed': True,
     },
 }
