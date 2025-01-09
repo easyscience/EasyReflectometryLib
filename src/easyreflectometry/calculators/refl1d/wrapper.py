@@ -67,7 +67,7 @@ class Refl1dWrapper(WrapperBase):
         :param key: The given value keys
         """
         if key in ['magnetism_rhoM', 'magnetism_thetaM']:
-            return getattr(self.storage['layer'][name].magnetism, key.split('_')[-1])
+            return getattr(self.storage['layer'][name].magnetism, key.split('_')[-1]).value #TODO: check if we want to return the raw value or the full Parameter  # noqa: E501
         return super().get_layer_value(name, key)
 
     def create_model(self, name: str):
