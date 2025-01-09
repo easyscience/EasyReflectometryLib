@@ -3,8 +3,9 @@ __author__ = 'github.com/arm61'
 from typing import Tuple
 
 import numpy as np
-from refl1d import model
+# from refl1d import model
 from refl1d import names
+from refl1d.sample.layers import Repeat
 
 from easyreflectometry.model import PercentageFwhm
 
@@ -34,7 +35,7 @@ class Refl1dWrapper(WrapperBase):
             magnetism = names.Magnetism(rhoM=0.0, thetaM=0.0)
         else:
             magnetism = None
-        self.storage['layer'][name] = model.Slab(name=str(name), magnetism=magnetism)
+        self.storage['layer'][name] = names.Slab(name=str(name), magnetism=magnetism)
 
     def create_item(self, name: str):
         """
@@ -42,8 +43,8 @@ class Refl1dWrapper(WrapperBase):
 
         :param name: The name of the item
         """
-        self.storage['item'][name] = model.Repeat(
-            model.Stack(model.Slab(names.SLD(), thickness=0, interface=0)), name=str(name)
+        self.storage['item'][name] = Repeat(
+            names.Stack(names.Slab(names.SLD(), thickness=0, interface=0)), name=str(name)
         )
         del self.storage['item'][name].stack[0]
 
@@ -267,8 +268,8 @@ def _get_polarized_probe(
     return names.PolarizedQProbe(xs=four_probes, name='polarized')
 
 
-def _build_sample(storage: dict, model_name: str) -> model.Stack:
-    sample = model.Stack()
+def _build_sample(storage: dict, model_name: str) -> names.Stack:
+    sample = names.Stack()
     # -1 to reverse the order
     for i in storage['model'][model_name]['items'][::-1]:
         if i.repeat.value == 1:
@@ -276,9 +277,9 @@ def _build_sample(storage: dict, model_name: str) -> model.Stack:
             for j in range(len(i.stack))[::-1]:
                 sample |= i.stack[j]
         else:
-            stack = model.Stack()
+            stack = names.Stack()
             # -1 to reverse the order
             for j in range(len(i.stack))[::-1]:
                 stack |= i.stack[j]
-            sample |= model.Repeat(stack, repeat=i.repeat.value)
+            sample |= Repeat(stack, repeat=i.repeat.value)
     return sample
