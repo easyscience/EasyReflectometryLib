@@ -3,7 +3,7 @@ from typing import Union
 
 from easyscience import global_object
 from easyscience.Constraints import FunctionalConstraint
-from easyscience.Objects.new_variable import Parameter
+from easyscience.Objects.variable import Parameter
 
 from easyreflectometry.special.calculations import weighted_average
 from easyreflectometry.utils import get_as_parameter

@@ -4,7 +4,7 @@ from typing import Optional
 
 from easyscience import global_object
 from easyscience.Constraints import ObjConstraint
-from easyscience.Objects.new_variable import Parameter
+from easyscience.Objects.variable import Parameter
 
 from ..collections.layer_collection import LayerCollection
 from ..elements.layers.layer_area_per_molecule import LayerAreaPerMolecule

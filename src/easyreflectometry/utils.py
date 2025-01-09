@@ -5,7 +5,7 @@ from typing import Union
 
 import yaml
 from easyscience import global_object
-from easyscience.Objects.new_variable import Parameter
+from easyscience.Objects.variable import Parameter
 
 
 def get_as_parameter(

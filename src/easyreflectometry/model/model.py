@@ -9,7 +9,7 @@ from typing import Union
 
 import numpy as np
 from easyscience import global_object
-from easyscience.Objects.new_variable import Parameter
+from easyscience.Objects.variable import Parameter
 from easyscience.Objects.ObjectClasses import BaseObj
 
 from easyreflectometry.sample import BaseAssembly

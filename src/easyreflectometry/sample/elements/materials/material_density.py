@@ -4,7 +4,7 @@ from typing import Union
 import numpy as np
 from easyscience import global_object
 from easyscience.Constraints import FunctionalConstraint
-from easyscience.Objects.new_variable import Parameter
+from easyscience.Objects.variable import Parameter
 
 from easyreflectometry.special.calculations import density_to_sld
 from easyreflectometry.special.calculations import molecular_weight
