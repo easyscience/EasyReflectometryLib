@@ -3,7 +3,6 @@ __author__ = 'github.com/arm61'
 from typing import Tuple
 
 import numpy as np
-# from refl1d import model
 from refl1d import names
 from refl1d.sample.layers import Repeat
 
