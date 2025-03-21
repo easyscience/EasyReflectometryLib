@@ -1,5 +1,5 @@
 
-.. automodule:: easyreflectometry.sample.sample
+.. automodule:: easyreflectometry.sample
     :members:
     :undoc-members:
     :show-inheritance:
