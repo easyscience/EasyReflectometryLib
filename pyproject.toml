@@ -58,11 +58,11 @@ dev = [
 ]
 
 docs = [
-    "myst_parser==4.0.1",
-    "nbsphinx==0.9.7",
-    "sphinx_autodoc_typehints==3.0.1",
-    "sphinx_book_theme==1.1.4",
-    "sphinx-copybutton==0.5.2",
+    "myst_parser",
+    "nbsphinx",
+    "sphinx_autodoc_typehints",
+    "sphinx_book_theme",
+    "sphinx-copybutton",
     "toml==0.10.2",
 ]
 
