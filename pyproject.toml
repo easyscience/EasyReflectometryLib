@@ -60,6 +60,7 @@ dev = [
 docs = [
     "myst_parser==4.0.1",
     "nbsphinx==0.9.7",
+    "sphinx==7.2.6",  #  downgraded for compatibility with autodoc-typehints
     "sphinx_autodoc_typehints==3.0.1",
     "sphinx_book_theme==1.1.4",
     "sphinx-copybutton==0.5.2",
