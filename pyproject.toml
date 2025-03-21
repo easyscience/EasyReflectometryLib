@@ -60,6 +60,7 @@ dev = [
 docs = [
     "myst_parser",
     "nbsphinx",
+    "sphinx<=8.1.3",
     "sphinx_autodoc_typehints",
     "sphinx_book_theme",
     "sphinx-copybutton",
