@@ -9,8 +9,8 @@ from typing import Union
 
 import numpy as np
 from easyscience import global_object
+from easyscience.Objects.new_variable import Parameter
 from easyscience.Objects.ObjectClasses import BaseObj
-from easyscience.Objects.variable import Parameter
 
 from easyreflectometry.sample import BaseAssembly
 from easyreflectometry.sample import Sample
@@ -26,7 +26,7 @@ DEFAULTS = {
         'url': 'https://github.com/reflectivity/edu_outreach/blob/master/refl_maths/paper.tex',
         'value': 1.0,
         'min': 0,
-        'max': np.inf,
+        'max': np.Inf,
         'fixed': True,
     },
     'background': {
@@ -34,7 +34,7 @@ DEFAULTS = {
         'url': 'https://github.com/reflectivity/edu_outreach/blob/master/refl_maths/paper.tex',
         'value': 1e-8,
         'min': 0.0,
-        'max': np.inf,
+        'max': np.Inf,
         'fixed': True,
     },
     'resolution': {

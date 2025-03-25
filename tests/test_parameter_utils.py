@@ -10,7 +10,7 @@ PARAMETER_DETAILS = {
         'url': 'https://veryrealwebsite.com',
         'value': 1.0,
         'min': 0,
-        'max': np.inf,
+        'max': np.Inf,
         'fixed': True,
     },
     'test_parameter_10': {
@@ -36,7 +36,7 @@ def test_get_as_parameter():
     assert_equal(str(test_parameter.unit), 'dimensionless')
     assert_equal(test_parameter.value, 1.0)
     assert_equal(test_parameter.min, 0.0)
-    assert_equal(test_parameter.max, np.inf)
+    assert_equal(test_parameter.max, np.Inf)
     assert_equal(test_parameter.fixed, True)
     assert_equal(test_parameter.description, 'Test parameter')
 
@@ -96,7 +96,7 @@ def test_dict_remains_unchanged():
             'url': 'https://veryrealwebsite.com',
             'value': 1.0,
             'min': 0,
-            'max': np.inf,
+            'max': np.Inf,
             'fixed': True,
         }
     }

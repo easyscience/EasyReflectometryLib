@@ -16,7 +16,7 @@ class TestMaterialDensity(unittest.TestCase):
         assert str(p.density.unit) == 'kg/L'
         assert p.density.value == 2.33
         assert p.density.min == 0
-        assert p.density.max == np.inf
+        assert p.density.max == np.Inf
         assert p.density.fixed is True
 
     def test_default_constraint(self):

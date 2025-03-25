@@ -2,7 +2,7 @@ from unittest.mock import MagicMock
 
 import pytest
 from easyscience import global_object
-from easyscience.Objects.variable import Parameter
+from easyscience.Objects.new_variable import Parameter
 
 import easyreflectometry.sample.elements.materials.material_mixture
 import easyreflectometry.sample.elements.materials.material_solvated

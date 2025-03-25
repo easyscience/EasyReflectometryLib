@@ -21,14 +21,14 @@ class TestMaterial:
         assert p.sld.display_name == 'sld'
         assert str(p.sld.unit) == '1/Å^2'
         assert p.sld.value == 4.186
-        assert p.sld.min == -np.inf
-        assert p.sld.max == np.inf
+        assert p.sld.min == -np.Inf
+        assert p.sld.max == np.Inf
         assert p.sld.fixed is True
         assert p.isld.display_name == 'isld'
         assert str(p.isld.unit) == '1/Å^2'
         assert p.isld.value == 0.0
-        assert p.isld.min == -np.inf
-        assert p.isld.max == np.inf
+        assert p.isld.min == -np.Inf
+        assert p.isld.max == np.Inf
         assert p.isld.fixed is True
 
     def test_shuffled_arguments(self):
@@ -38,14 +38,14 @@ class TestMaterial:
         assert p.sld.display_name == 'sld'
         assert str(p.sld.unit) == '1/Å^2'
         assert p.sld.value == 6.908
-        assert p.sld.min == -np.inf
-        assert p.sld.max == np.inf
+        assert p.sld.min == -np.Inf
+        assert p.sld.max == np.Inf
         assert p.sld.fixed is True
         assert p.isld.display_name == 'isld'
         assert str(p.isld.unit) == '1/Å^2'
         assert p.isld.value == -0.278
-        assert p.isld.min == -np.inf
-        assert p.isld.max == np.inf
+        assert p.isld.min == -np.Inf
+        assert p.isld.max == np.Inf
         assert p.isld.fixed is True
 
     def test_only_sld_key(self):
@@ -53,8 +53,8 @@ class TestMaterial:
         assert p.sld.display_name == 'sld'
         assert str(p.sld.unit) == '1/Å^2'
         assert p.sld.value == 10
-        assert p.sld.min == -np.inf
-        assert p.sld.max == np.inf
+        assert p.sld.min == -np.Inf
+        assert p.sld.max == np.Inf
         assert p.sld.fixed is True
 
     def test_only_sld_key_parameter(self):
@@ -69,8 +69,8 @@ class TestMaterial:
         assert p.isld.display_name == 'isld'
         assert str(p.isld.unit) == '1/Å^2'
         assert p.isld.value == 10
-        assert p.isld.min == -np.inf
-        assert p.isld.max == np.inf
+        assert p.isld.min == -np.Inf
+        assert p.isld.max == np.Inf
         assert p.isld.fixed is True
 
     def test_only_isld_key_parameter(self):

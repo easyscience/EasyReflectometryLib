@@ -37,13 +37,13 @@ class TestModel(unittest.TestCase):
         assert_equal(str(p.scale.unit), 'dimensionless')
         assert_equal(p.scale.value, 1.0)
         assert_equal(p.scale.min, 0.0)
-        assert_equal(p.scale.max, np.inf)
+        assert_equal(p.scale.max, np.Inf)
         assert_equal(p.scale.fixed, True)
         assert_equal(p.background.display_name, 'background')
         assert_equal(str(p.background.unit), 'dimensionless')
         assert_equal(p.background.value, 1.0e-8)
         assert_equal(p.background.min, 0.0)
-        assert_equal(p.background.max, np.inf)
+        assert_equal(p.background.max, np.Inf)
         assert_equal(p.background.fixed, True)
         assert p._resolution_function.smearing([1]) == 5.0
         assert p._resolution_function.smearing([100]) == 5.0
@@ -73,13 +73,13 @@ class TestModel(unittest.TestCase):
         assert_equal(str(mod.scale.unit), 'dimensionless')
         assert_equal(mod.scale.value, 2.0)
         assert_equal(mod.scale.min, 0.0)
-        assert_equal(mod.scale.max, np.inf)
+        assert_equal(mod.scale.max, np.Inf)
         assert_equal(mod.scale.fixed, True)
         assert_equal(mod.background.display_name, 'background')
         assert_equal(str(mod.background.unit), 'dimensionless')
         assert_equal(mod.background.value, 1.0e-5)
         assert_equal(mod.background.min, 0.0)
-        assert_equal(mod.background.max, np.inf)
+        assert_equal(mod.background.max, np.Inf)
         assert_equal(mod.background.fixed, True)
         assert mod._resolution_function.smearing([1]) == 2.0
         assert mod._resolution_function.smearing([100]) == 2.0

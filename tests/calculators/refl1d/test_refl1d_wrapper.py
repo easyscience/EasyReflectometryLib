@@ -425,8 +425,8 @@ def test_get_polarized_probe_polarization():
     assert len(probe.xs[3].calc_Qo) == len(q)
 
 
-@patch('easyreflectometry.calculators.refl1d.wrapper.names.Stack')
-@patch('easyreflectometry.calculators.refl1d.wrapper.Repeat')
+@patch('easyreflectometry.calculators.refl1d.wrapper.model.Stack')
+@patch('easyreflectometry.calculators.refl1d.wrapper.model.Repeat')
 def test_build_sample(mock_repeat, mock_stack):
     # When
     mock_item_1 = MagicMock()
