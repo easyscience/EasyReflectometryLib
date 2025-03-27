@@ -1,4 +1,6 @@
-.. automodule:: easyreflectometry.experiment.model
+Model
+=====
+.. automodule:: easyreflectometry.model.Model
     :members:
     :undoc-members:
     :show-inheritance:

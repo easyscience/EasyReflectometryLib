@@ -40,10 +40,10 @@ And we are working to add more, in particular `bornagain`_ and `GenX`_.
 .. _`GenX`: https://aglavic.github.io/genx/doc/
 
 .. toctree:: 
-   :maxdepth: 1
+   :maxdepth: 2
 
-   tutorials/basic
-   tutorials/simulation
-   tutorials/fitting
-   tutorials/advancedfitting
-   tutorials/extra
+   basic/basic
+   simulation/simulation
+   fitting/fitting
+   advancedfitting/advancedfitting
+   extra/extra
