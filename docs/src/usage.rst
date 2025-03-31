@@ -1,6 +1,6 @@
-====================
-**Getting started**
-====================
+===============
+Getting started
+===============
 
 To use :py:mod:`easyreflectometry` in a project::
 
