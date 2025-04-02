@@ -1,5 +1,9 @@
 Creating a model
+<<<<<<< HEAD
 ================
+=======
+=====
+>>>>>>> b1ca245ea99629ea738a82d3a22b7481aa5fc67f
 
 The main component of an experiment in :py:mod:`easyreflectometry` is the :py:class:`Model`. 
 This is a description of the :py:class:`Sample` and the environment in which the experiment is performed. 

@@ -5,7 +5,7 @@ from typing import Union
 
 import numpy as np
 from easyscience import global_object
-from easyscience.Objects.new_variable import Parameter
+from easyscience.Objects.variable import Parameter
 
 from easyreflectometry.utils import get_as_parameter
 
@@ -17,8 +17,8 @@ DEFAULTS = {
         'url': 'https://www.ncnr.nist.gov/resources/activation/',
         'value': 4.186,
         'unit': '1 / angstrom^2',
-        'min': -np.Inf,
-        'max': np.Inf,
+        'min': -np.inf,
+        'max': np.inf,
         'fixed': True,
     },
     'isld': {
@@ -26,8 +26,8 @@ DEFAULTS = {
         'url': 'https://www.ncnr.nist.gov/resources/activation/',
         'value': 0.0,
         'unit': '1 / angstrom^2',
-        'min': -np.Inf,
-        'max': np.Inf,
+        'min': -np.inf,
+        'max': np.inf,
         'fixed': True,
     },
 }

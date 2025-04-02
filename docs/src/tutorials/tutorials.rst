@@ -1,6 +1,12 @@
+<<<<<<< HEAD
 ==========
 How to use
 ==========
+=======
+================
+**How to use**
+================
+>>>>>>> b1ca245ea99629ea738a82d3a22b7481aa5fc67f
 
 Dictionary
 ==========
@@ -42,8 +48,16 @@ And we are working to add more, in particular `bornagain`_ and `GenX`_.
 .. toctree:: 
    :maxdepth: 2
 
+<<<<<<< HEAD
    basic/basic
    simulation/simulation
    fitting/fitting
    advancedfitting/advancedfitting
    extra/extra
+=======
+   tutorials/basic
+   tutorials/simulation
+   tutorials/fitting
+   tutorials/advancedfitting
+   tutorials/extra
+>>>>>>> b1ca245ea99629ea738a82d3a22b7481aa5fc67f

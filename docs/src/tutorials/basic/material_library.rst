@@ -1,5 +1,9 @@
 Defining materials
+<<<<<<< HEAD
 ==================
+=======
+=========
+>>>>>>> b1ca245ea99629ea738a82d3a22b7481aa5fc67f
 
 In order to support a wide range of applications (and to build complex `assemblies`_) there are a few different types of material that can be utilised in :py:mod:`easyreflectometry`. 
 These can include constraints or enable the user to define the material based on chemical or physical properties. 

@@ -4,7 +4,7 @@ from typing import Union
 import numpy as np
 from easyscience import global_object
 from easyscience.Constraints import FunctionalConstraint
-from easyscience.Objects.new_variable import Parameter
+from easyscience.Objects.variable import Parameter
 
 from easyreflectometry.special.calculations import area_per_molecule_to_scattering_length_density
 from easyreflectometry.special.calculations import neutron_scattering_length
@@ -31,8 +31,8 @@ DEFAULTS = {
         'url': 'https://www.ncnr.nist.gov/resources/activation/',
         'value': 4.186,
         'unit': 'angstrom',
-        'min': -np.Inf,
-        'max': np.Inf,
+        'min': -np.inf,
+        'max': np.inf,
         'fixed': True,
     },
     'isl': {
@@ -40,8 +40,8 @@ DEFAULTS = {
         'url': 'https://www.ncnr.nist.gov/resources/activation/',
         'value': 0.0,
         'unit': 'angstrom',
-        'min': -np.Inf,
-        'max': np.Inf,
+        'min': -np.inf,
+        'max': np.inf,
         'fixed': True,
     },
 }

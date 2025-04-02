@@ -1,6 +1,12 @@
+<<<<<<< HEAD
 ===============
 Getting started
 ===============
+=======
+=====
+Getting started
+=====
+>>>>>>> b1ca245ea99629ea738a82d3a22b7481aa5fc67f
 
 To use :py:mod:`easyreflectometry` in a project::
 

@@ -1,5 +1,9 @@
 Creating multilayers and surfactant layers
+<<<<<<< HEAD
 ===========================================
+=======
+==========
+>>>>>>> b1ca245ea99629ea738a82d3a22b7481aa5fc67f
 
 :py:mod:`easyreflectometry` is designed to be used with a broad range of different assemblies.  
 Assemblies are collective layers behaving as a single object, for example, a multilayer or a surfactant layer.
