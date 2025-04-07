@@ -15,6 +15,7 @@ from .base_collection import BaseCollection
 
 # Needs to be a function, elements are added to the global_object.map
 def DEFAULT_ELEMENTS(interface):
+    """:meta private:"""
     return (
         Multilayer(interface=interface),
         Multilayer(interface=interface),

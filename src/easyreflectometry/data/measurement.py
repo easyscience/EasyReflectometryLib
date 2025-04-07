@@ -11,17 +11,6 @@ from orsopy.fileio import orso
 from easyreflectometry.data import DataSet1D
 
 
-def load_as_dataset(fname: Union[TextIO, str]) -> DataSet1D:
-    """Load data from an ORSO .ort file as a DataSet1D."""
-    data_group = load(fname)
-    return DataSet1D(
-        x=data_group['coords']['Qz_0'].values,
-        y=data_group['data']['R_0'].values,
-        ye=data_group['data']['R_0'].variances,
-        xe=data_group['coords']['Qz_0'].variances,
-    )
-
-
 def load(fname: Union[TextIO, str]) -> sc.DataGroup:
     """Load data from an ORSO .ort file.
 
@@ -31,6 +20,17 @@ def load(fname: Union[TextIO, str]) -> sc.DataGroup:
         return _load_orso(fname)
     except (IndexError, ValueError):
         return _load_txt(fname)
+
+
+def load_as_dataset(fname: Union[TextIO, str]) -> DataSet1D:
+    """Load data from an ORSO .ort file as a DataSet1D."""
+    data_group = load(fname)
+    return DataSet1D(
+        x=data_group['coords']['Qz_0'].values,
+        y=data_group['data']['R_0'].values,
+        ye=data_group['data']['R_0'].variances,
+        xe=data_group['coords']['Qz_0'].variances,
+    )
 
 
 def _load_orso(fname: Union[TextIO, str]) -> sc.DataGroup:

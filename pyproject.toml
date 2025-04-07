@@ -58,13 +58,13 @@ dev = [
 ]
 
 docs = [
-    "myst_parser==4.0.1",
-    "nbsphinx==0.9.7",
-    "sphinx",
+    "myst_parser",
+    "nbsphinx",
+    "sphinx==8.1.3",
     "sphinx_autodoc_typehints",
-    "sphinx-book-theme==1.1.4",
-    "sphinx-copybutton==0.5.2",
-    "toml==0.10.2",
+    "sphinx_book_theme",
+    "sphinx-copybutton",
+    "toml"
 ]
 
 [project.urls]
