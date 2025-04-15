@@ -1,6 +1,6 @@
-=====
+===============
 Getting started
-=====
+===============
 
 To use :py:mod:`easyreflectometry` in a project::
 
@@ -39,4 +39,4 @@ To use :py:mod:`easyreflectometry` in a project::
 
 Details of specific usage of :py:mod:`easyreflectometry` can be found in the `tutorials`_.
 
-.. _`tutorials`: ./tutorials/tutorials.html
+.. _`tutorials`: ./tutorials/tutorials.rst

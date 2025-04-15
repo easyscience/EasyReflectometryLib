@@ -34,15 +34,17 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: 3.11
+        python-version: 3.10.12
     - name: Install Pandoc, repo and dependencies
       run: |
         sudo apt install pandoc
+        pip install sphinx==8.1.3
         pip install . '.[dev,docs]'
     - name: Build and Commit
       uses: sphinx-notes/pages@master
       with:
-        install_requirements: true
+        install_requirements: false
+        sphinx_version: 8.1.3
         documentation_path: docs/src
     - name: Push changes
       uses: ad-m/github-push-action@master

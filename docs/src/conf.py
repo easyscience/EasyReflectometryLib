@@ -25,8 +25,7 @@ from pathlib import Path
 
 import easyreflectometry
 
-# sys.path.insert(0, os.path.abspath('../src'))
-sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
+sys.path.insert(0, os.path.abspath('../src'))
 
 main_root = Path(__file__).parents[2]
 sys.path.append(str(main_root))
