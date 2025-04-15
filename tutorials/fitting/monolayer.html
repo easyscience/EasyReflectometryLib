@@ -426,7 +426,7 @@ document.write(`
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-easyreflectometry: 1.3.1
+easyreflectometry: 1.3.1.post1
 refnx: 0.1.52
 </pre></div></div>
 </div>
@@ -472,7 +472,7 @@ representation of the slab model for a phosphoplipid monolayer is shown below.</
 </center><center><p>A slab model description for a phospholipid monolayer, showing the head and tail layers.</p>
 </center><p>The slab model for a phospholipid monolayer involves describing the system as consisting of two components, that for the hydrophilic head group layer and that for the hydrophobic tail group layer. Each of these layers have some thickness that can be estimated by considering the size of the head and tail groups. The scattering length density (ρ) for the layers is then defined based on the layer thickness (d), the scattering length for the lipid head or tail molecule (b), the surface number
 density of the monolayer (defined by the area per molecule, APM) and the presence of solvent in the head or tail molecules (ϕ solvation), where the solvent has a known scattering length density (ρ solvent),</p>
-<center><p><img alt="3a62efb81cd34fb1b52736e7dc0cdaf1" src="../../_images/eq_monolayer.svg" /></p>
+<center><p><img alt="4c5c621b18c141fc98a8317ca5ab62a6" src="../../_images/eq_monolayer.svg" /></p>
 </center><!-- Using https://editor.codecogs.com/ --><p>This approach has two benefits:</p>
 <ol class="arabic simple">
 <li><p>By constraining the area per molecule of the head and tail groups to be the same, the analysis can ensure that the number density of the two components is equal (i.e. for every head group there is a tail group), as would be expected given the chemical bonding.</p></li>
@@ -711,8 +711,8 @@ EasySurfactantLayer:
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 EasyModel:
-  scale: 0.14052644753863197
-  background: 8.86814517267836e-07
+  scale: 0.14052645858307902
+  background: 8.868136118173434e-07
   resolution: 5 %
   color: black
   sample:
@@ -731,12 +731,12 @@ EasyModel:
           EasyLayerAreaPerMolecule:
             material:
               C10H18NO8P in D2O:
-                solvent_fraction: 0.622 dimensionless
+                solvent_fraction: 0.581 dimensionless
                 sld: 4.305e-6 1/Å^2
                 isld: 0.000e-6 1/Å^2
                 material:
                   C10H18NO8P:
-                    sld: 0.924e-6 1/Å^2
+                    sld: 1.458e-6 1/Å^2
                     isld: 0.000e-6 1/Å^2
                 solvent:
                   D2O:
@@ -745,7 +745,7 @@ EasyModel:
             thickness: 12.900 Å
             roughness: 3.000 Å
           molecular_formula: C10H18NO8P
-          area_per_molecule: 50.41 Å^2
+          area_per_molecule: 31.94 Å^2
         tail_layer:
           EasyLayerAreaPerMolecule:
             material:
@@ -764,7 +764,7 @@ EasyModel:
             thickness: 17.600 Å
             roughness: 3.000 Å
           molecular_formula: C34D70
-          area_per_molecule: 50.41 Å^2
+          area_per_molecule: 31.94 Å^2
         area per molecule constrained: true
         conformal roughness: true
     - EasyMultilayer:
