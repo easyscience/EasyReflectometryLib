@@ -5,16 +5,12 @@
    :hidden:
    :caption: Contents:
    
-   installation
-   usage
-   sample/sample
-   calculators
-   model/model
-   tutorials/tutorials
-   dictionary
-   contributing
-   authors
-   api/api
+   installation.rst
+   usage.rst
+   tutorials/tutorials.rst
+   contributing.rst
+   authors.rst
+   api/api.rst
 
 
 Indices and tables

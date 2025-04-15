@@ -1,0 +1,836 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Resolution functions &#8212; EasyReflectometry  documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../_static/styles/sphinx-book-theme.css?v=eba8b062" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css?v=2aa19091" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../../_static/documentation_options.js?v=c73c0f3e"></script>
+    <script src="../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'tutorials/simulation/resolution_functions';</script>
+    <link rel="canonical" href="https://docs.easyreflectometry.org/tutorials/simulation/resolution_functions.html" />
+    <link rel="icon" href="../../_static/favicon.ico"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Fitting" href="../fitting/fitting.html" />
+    <link rel="prev" title="Magnetism" href="magnetism.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../../_static/logo.png" class="logo__image only-light" alt="EasyReflectometry  documentation - Home"/>
+    <script>document.write(`<img src="../../_static/logo.png" class="logo__image only-dark" alt="EasyReflectometry  documentation - Home"/>`);</script>
+  
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage.html">Getting started</a></li>
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="../tutorials.html">How to use</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l2 has-children"><a class="reference internal" href="../basic/basic.html">Basic</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../basic/model.html">Creating a model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../basic/material_library.html">Defining materials</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../basic/layer_library.html">Defining Layers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../basic/assemblies_library.html">Creating multilayers and surfactant layers</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 current active has-children"><a class="reference internal" href="simulation.html">Simulation</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="magnetism.html">Magnetism</a></li>
+<li class="toctree-l3 current active"><a class="current reference internal" href="#">Resolution functions</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../fitting/fitting.html">Fitting</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../fitting/simple_fitting.html">Fitting a simple slab model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../fitting/repeating.html">A multilayer fitting model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../fitting/monolayer.html">Investigation of a surfactant monolayer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../fitting/material_solvated.html">Using the MaterialSolvated</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../advancedfitting/advancedfitting.html">Advanced Fitting</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../advancedfitting/multi_contrast.html">Analysis of multiple isotopic contrasts</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../extra/extra.html">Extra</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="simple">
+</ul>
+</details></li>
+</ul>
+</details></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../authors.html">Credits</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../api/api.html">API</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../api/model.html"><code class="docutils literal notranslate"><span class="pre">Model</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/sample.html"><code class="docutils literal notranslate"><span class="pre">Sample</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/assemblies/multilayer.html"><code class="docutils literal notranslate"><span class="pre">Multilayer</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/assemblies/repeating_multilayer.html"><code class="docutils literal notranslate"><span class="pre">RepeatingMultilayer</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/assemblies/surfactant_layer.html"><code class="docutils literal notranslate"><span class="pre">SurfactantLayer</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/assemblies/gradient_layer.html"><code class="docutils literal notranslate"><span class="pre">GradientLayer</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/elements/layer.html"><code class="docutils literal notranslate"><span class="pre">Layer</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/elements/layer_area_per_molecule.html"><code class="docutils literal notranslate"><span class="pre">LayerAreaPerMolecule</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/elements/material.html"><code class="docutils literal notranslate"><span class="pre">Material</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/elements/material_density.html"><code class="docutils literal notranslate"><span class="pre">MaterialDensity</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/elements/material_mixture.html"><code class="docutils literal notranslate"><span class="pre">MaterialMixture</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/elements/material_solvated.html"><code class="docutils literal notranslate"><span class="pre">MaterialSolvated</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/data.html"><code class="docutils literal notranslate"><span class="pre">load()</span></code></a></li>
+
+</ul>
+</details></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+
+
+<div class="dropdown dropdown-download-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Download this page">
+    <i class="fas fa-download"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="../../_sources/tutorials/simulation/resolution_functions.ipynb" target="_blank"
+   class="btn btn-sm btn-download-source-button dropdown-item"
+   title="Download source file"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file"></i>
+  </span>
+<span class="btn__text-container">.ipynb</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li>
+<button onclick="window.print()"
+  class="btn btn-sm btn-download-pdf-button dropdown-item"
+  title="Print to PDF"
+  data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file-pdf"></i>
+  </span>
+<span class="btn__text-container">.pdf</span>
+</button>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm pst-navbar-icon search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+<button class="sidebar-toggle secondary-toggle btn btn-sm" title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="fa-solid fa-list"></span>
+</button>
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1>Resolution functions</h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+            <div>
+                <h2> Contents </h2>
+            </div>
+            <nav aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Setup">Setup</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Reading-in-measured-data">Reading in measured data</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Building-our-model">Building our model</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Set-the-calculation-engine">Set the calculation engine</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id1">Resolution functions</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Simulations">Simulations</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Afterthoughts">Afterthoughts</a></li>
+</ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="Resolution-functions">
+<h1>Resolution functions<a class="headerlink" href="#Resolution-functions" title="Link to this heading">#</a></h1>
+<p>The purpose of the resolution function is to enable the <code class="docutils literal notranslate"><span class="pre">easyreflectometry</span></code> model to quantify the experimental uncertainties in wavelength and incident angle. When determining reflectivity the resolution function defines the smearing to apply. For a given Q-point such smearing is applied by determining an average of the neighboring Q-point weigthed by a normal distribution, which has a Q-point dependent Full Width at the Half Maximum (FWHM) that again is defined by the resolution function.</p>
+<p>Often we rely on a resolution function that has a simple functional dependecy of the Q-point. By this is understood that the applied smearing in an Q point-has a FWHM that is given as a percentage of the value of the Q-point.</p>
+<p>Alternatively the FWHM value might be determined and declared directly for each measured Q-point. When this is the case the provided Q-points and the corresponding FWHM values can be used to declare a linear spline function and thereby enable a determination of the reflectivity at an arbitrary point within the provided range of discrete Q-points.</p>
+<section id="Setup">
+<h2>Setup<a class="headerlink" href="#Setup" title="Link to this heading">#</a></h2>
+<p>First configure matplotlib to place figures in notebook and import needed modules. Note that the plot function needs installation of <code class="docutils literal notranslate"><span class="pre">plopp</span></code> seperately or installation of <code class="docutils literal notranslate"><span class="pre">easyreflectometry[dev]</span></code></p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%</span><span class="k">matplotlib</span> inline
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">scipp</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sc</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">refnx</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pooch</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">easyreflectometry</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">easyreflectometry.calculators</span><span class="w"> </span><span class="kn">import</span> <span class="n">CalculatorFactory</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">easyreflectometry.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">load</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">easyreflectometry.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">Model</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">easyreflectometry.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">LinearSpline</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">easyreflectometry.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">PercentageFwhm</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">easyreflectometry.sample</span><span class="w"> </span><span class="kn">import</span> <span class="n">Layer</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">easyreflectometry.sample</span><span class="w"> </span><span class="kn">import</span> <span class="n">Material</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">easyreflectometry.sample</span><span class="w"> </span><span class="kn">import</span> <span class="n">Multilayer</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">easyreflectometry.sample</span><span class="w"> </span><span class="kn">import</span> <span class="n">Sample</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">easyreflectometry.plot</span><span class="w"> </span><span class="kn">import</span> <span class="n">plot</span>
+</pre></div>
+</div>
+</div>
+<p>For reference we fetch the version of the software packages we are using.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;numpy: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">__version__</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;scipp: </span><span class="si">{</span><span class="n">sc</span><span class="o">.</span><span class="n">__version__</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;easyreflectometry: </span><span class="si">{</span><span class="n">easyreflectometry</span><span class="o">.</span><span class="n">__version__</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;refnx: </span><span class="si">{</span><span class="n">refnx</span><span class="o">.</span><span class="n">__version__</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+numpy: 2.2.4
+scipp: 25.2.0
+easyreflectometry: 1.3.1
+refnx: 0.1.52
+</pre></div></div>
+</div>
+</section>
+<section id="Reading-in-measured-data">
+<h2>Reading in measured data<a class="headerlink" href="#Reading-in-measured-data" title="Link to this heading">#</a></h2>
+<p>The data that we will investigate in this tutorial was generated with <code class="docutils literal notranslate"><span class="pre">Refnx</span></code> and are stored in <code class="docutils literal notranslate"><span class="pre">.ort</span></code> <a class="reference external" href="https://github.com/reflectivity/file_format/blob/master/specification.md">format file</a> files. In this tutorial we are investigation how we can include resolution effects when simulating and reproducing data measured in an experiment. For an <code class="docutils literal notranslate"><span class="pre">.ort</span></code> file the resoultion data for reflectivity is stored in the fourth column.</p>
+<p>IMPORTANT when using <code class="docutils literal notranslate"><span class="pre">easyreflectometry</span></code> functionality for loading an <code class="docutils literal notranslate"><span class="pre">.ort</span></code> file we store the resolution data as a variance (squared value). As a consequence one needs to take the squareroot of the loaded data to recover the raw values (fourth column). We use <code class="docutils literal notranslate"><span class="pre">pooch</span></code> to fetch the file from the repository.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">file_path_0</span> <span class="o">=</span> <span class="n">pooch</span><span class="o">.</span><span class="n">retrieve</span><span class="p">(</span>
+    <span class="c1"># URL to one of Pooch&#39;s test files</span>
+    <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://raw.githubusercontent.com/EasyScience/EasyReflectometryLib/master/docs/src/tutorials/simulation/mod_pointwise_two_layer_sample_dq-0.0.ort&quot;</span><span class="p">,</span>
+    <span class="n">known_hash</span><span class="o">=</span><span class="s2">&quot;f8a3e7007b83f0de4e2c761134e7d1c55027f0099528bd56f746b50349369f50&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">file_path_1</span> <span class="o">=</span> <span class="n">pooch</span><span class="o">.</span><span class="n">retrieve</span><span class="p">(</span>
+    <span class="c1"># URL to one of Pooch&#39;s test files</span>
+    <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://raw.githubusercontent.com/EasyScience/EasyReflectometryLib/master/docs/src/tutorials/simulation/mod_pointwise_two_layer_sample_dq-1.0.ort&quot;</span><span class="p">,</span>
+    <span class="n">known_hash</span><span class="o">=</span><span class="s2">&quot;9d81a512cbe45f923806ad307e476b27535614b2e08a2bf0f4559ab608a34f7a&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">file_path_10</span> <span class="o">=</span> <span class="n">pooch</span><span class="o">.</span><span class="n">retrieve</span><span class="p">(</span>
+    <span class="c1"># URL to one of Pooch&#39;s test files</span>
+    <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://raw.githubusercontent.com/EasyScience/EasyReflectometryLib/master/docs/src/tutorials/simulation/mod_pointwise_two_layer_sample_dq-10.0.ort&quot;</span><span class="p">,</span>
+    <span class="n">known_hash</span><span class="o">=</span><span class="s2">&quot;991395c0b6a91bf60c12d234c645143dcac1cab929944fc4e452020d44b787ad&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">dict_reference</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="n">dict_reference</span><span class="p">[</span><span class="s1">&#39;0&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">load</span><span class="p">(</span><span class="n">file_path_0</span><span class="p">)</span>
+<span class="n">dict_reference</span><span class="p">[</span><span class="s1">&#39;1&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">load</span><span class="p">(</span><span class="n">file_path_1</span><span class="p">)</span>
+<span class="n">dict_reference</span><span class="p">[</span><span class="s1">&#39;10&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">load</span><span class="p">(</span><span class="n">file_path_10</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+Downloading data from &#39;https://raw.githubusercontent.com/EasyScience/EasyReflectometryLib/master/docs/src/tutorials/simulation/mod_pointwise_two_layer_sample_dq-0.0.ort&#39; to file &#39;/home/runner/.cache/pooch/eda19477936f7466b7ca0d2bffcf57b3-mod_pointwise_two_layer_sample_dq-0.0.ort&#39;.
+Downloading data from &#39;https://raw.githubusercontent.com/EasyScience/EasyReflectometryLib/master/docs/src/tutorials/simulation/mod_pointwise_two_layer_sample_dq-1.0.ort&#39; to file &#39;/home/runner/.cache/pooch/a48fd429876293079b21296383a4ea59-mod_pointwise_two_layer_sample_dq-1.0.ort&#39;.
+Downloading data from &#39;https://raw.githubusercontent.com/EasyScience/EasyReflectometryLib/master/docs/src/tutorials/simulation/mod_pointwise_two_layer_sample_dq-10.0.ort&#39; to file &#39;/home/runner/.cache/pooch/0a59c6d8fa604dd62bf18f0fa46404d3-mod_pointwise_two_layer_sample_dq-10.0.ort&#39;.
+</pre></div></div>
+</div>
+<p>As an example we can plot the reference data without any resolution effects.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot</span><span class="p">(</span><span class="n">dict_reference</span><span class="p">[</span><span class="s1">&#39;0&#39;</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/tutorials_simulation_resolution_functions_8_0.png" src="../../_images/tutorials_simulation_resolution_functions_8_0.png" />
+</div>
+</div>
+</section>
+<section id="Building-our-model">
+<h2>Building our model<a class="headerlink" href="#Building-our-model" title="Link to this heading">#</a></h2>
+<p>The system that was used to produce the data shown above is based on a silicon subphase with two layers upon it. These two layers are charachterized by having a scattering length density (SLD) of respectively 4 and 8. Both layers have a rougness of 2 but their thicknesses are 100 and 150 angstrom respectively. We show the model that will be used graphically below.</p>
+<center><p><img alt="A slab model description of the two_layers system." class="no-scaled-link" src="../../_images/two_layers.png" style="width: 300px;" /></p>
+</center><center><p>A slab model description of the two layer.</p>
+</center><p>To construct such a layer structure, first we create each of the materials, the associated layers, and the sub and super phases.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">sld_4</span> <span class="o">=</span> <span class="n">Material</span><span class="p">(</span><span class="n">sld</span><span class="o">=</span><span class="mf">4.0</span><span class="p">,</span> <span class="n">isld</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Sld 4&#39;</span><span class="p">)</span>
+<span class="n">sld_8</span> <span class="o">=</span> <span class="n">Material</span><span class="p">(</span><span class="n">sld</span><span class="o">=</span><span class="mf">8.0</span><span class="p">,</span> <span class="n">isld</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Sld 8&#39;</span><span class="p">)</span>
+<span class="n">vacuum</span> <span class="o">=</span> <span class="n">Material</span><span class="p">(</span><span class="n">sld</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">isld</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Vacuum&#39;</span><span class="p">)</span>
+<span class="n">si</span> <span class="o">=</span> <span class="n">Material</span><span class="p">(</span><span class="n">sld</span><span class="o">=</span><span class="mf">2.047</span><span class="p">,</span> <span class="n">isld</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Si&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">sld_4_layer</span> <span class="o">=</span> <span class="n">Layer</span><span class="p">(</span><span class="n">material</span><span class="o">=</span><span class="n">sld_4</span><span class="p">,</span> <span class="n">thickness</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">roughness</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;SLD 4 Layer&#39;</span><span class="p">)</span>
+<span class="n">sld_8_layer</span> <span class="o">=</span> <span class="n">Layer</span><span class="p">(</span><span class="n">material</span><span class="o">=</span><span class="n">sld_8</span><span class="p">,</span> <span class="n">thickness</span><span class="o">=</span><span class="mi">150</span><span class="p">,</span> <span class="n">roughness</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;SLD 8 Layer&#39;</span><span class="p">)</span>
+<span class="n">superphase</span> <span class="o">=</span> <span class="n">Layer</span><span class="p">(</span><span class="n">material</span><span class="o">=</span><span class="n">vacuum</span><span class="p">,</span> <span class="n">thickness</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">roughness</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Vacuum Superphase&#39;</span><span class="p">)</span>
+<span class="n">subphase</span> <span class="o">=</span> <span class="n">Layer</span><span class="p">(</span><span class="n">material</span><span class="o">=</span><span class="n">si</span><span class="p">,</span> <span class="n">thickness</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">roughness</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Si Subphase&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>Then, to produce the two layered structure, we use the <code class="docutils literal notranslate"><span class="pre">Multilayer</span></code> <a class="reference internal" href="../basic/assemblies_library.html#multilayer"><span class="std std-ref">assembly type</span></a>.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">two_layers</span> <span class="o">=</span> <span class="n">Multilayer</span><span class="p">([</span><span class="n">sld_4_layer</span><span class="p">,</span> <span class="n">sld_8_layer</span><span class="p">],</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;SLD 4/8 Layer&#39;</span><span class="p">)</span>
+<span class="n">two_layers</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+SLD 4/8 Layer:
+  SLD 4 Layer/SLD 8 Layer:
+  - SLD 4 Layer:
+      material:
+        Sld 4:
+          sld: 4.000e-6 1/Å^2
+          isld: 0.000e-6 1/Å^2
+      thickness: 100.000 Å
+      roughness: 2.000 Å
+  - SLD 8 Layer:
+      material:
+        Sld 8:
+          sld: 8.000e-6 1/Å^2
+          isld: 0.000e-6 1/Å^2
+      thickness: 150.000 Å
+      roughness: 2.000 Å
+</pre></div></div>
+</div>
+<p>From this, we can construct our structure and combine this with a scaling and background.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">sample</span> <span class="o">=</span> <span class="n">Sample</span><span class="p">(</span><span class="n">Multilayer</span><span class="p">(</span><span class="n">superphase</span><span class="p">),</span> <span class="n">two_layers</span><span class="p">,</span> <span class="n">Multilayer</span><span class="p">(</span><span class="n">subphase</span><span class="p">),</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Two Layer Sample&#39;</span><span class="p">)</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span>
+    <span class="n">sample</span><span class="o">=</span><span class="n">sample</span><span class="p">,</span>
+    <span class="n">scale</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="n">background</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+    <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Two Layer Model&#39;</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Set-the-calculation-engine">
+<h2>Set the calculation engine<a class="headerlink" href="#Set-the-calculation-engine" title="Link to this heading">#</a></h2>
+<p>We will use the default <a class="reference external" href="https://refnx.readthedocs.io/">Refnx</a> calculator for our analysis.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">interface</span> <span class="o">=</span> <span class="n">CalculatorFactory</span><span class="p">()</span>
+<span class="n">model</span><span class="o">.</span><span class="n">interface</span> <span class="o">=</span> <span class="n">interface</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">interface</span><span class="o">.</span><span class="n">current_interface</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+refnx
+</pre></div></div>
+</div>
+</section>
+<section id="id1">
+<h2>Resolution functions<a class="headerlink" href="#id1" title="Link to this heading">#</a></h2>
+<p>We now define the different resoultion functions.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">resolution_function_dict</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="n">resolution_function_dict</span><span class="p">[</span><span class="s1">&#39;0&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">LinearSpline</span><span class="p">(</span>
+    <span class="n">q_data_points</span><span class="o">=</span><span class="n">dict_reference</span><span class="p">[</span><span class="s1">&#39;0&#39;</span><span class="p">][</span><span class="s1">&#39;coords&#39;</span><span class="p">][</span><span class="s1">&#39;Qz_0&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
+    <span class="n">fwhm_values</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">dict_reference</span><span class="p">[</span><span class="s1">&#39;0&#39;</span><span class="p">][</span><span class="s1">&#39;coords&#39;</span><span class="p">][</span><span class="s1">&#39;Qz_0&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">variances</span><span class="p">),</span>
+<span class="p">)</span>
+
+<span class="n">resolution_function_dict</span><span class="p">[</span><span class="s1">&#39;1&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">LinearSpline</span><span class="p">(</span>
+    <span class="n">q_data_points</span><span class="o">=</span><span class="n">dict_reference</span><span class="p">[</span><span class="s1">&#39;1&#39;</span><span class="p">][</span><span class="s1">&#39;coords&#39;</span><span class="p">][</span><span class="s1">&#39;Qz_0&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
+    <span class="n">fwhm_values</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">dict_reference</span><span class="p">[</span><span class="s1">&#39;1&#39;</span><span class="p">][</span><span class="s1">&#39;coords&#39;</span><span class="p">][</span><span class="s1">&#39;Qz_0&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">variances</span><span class="p">),</span>
+<span class="p">)</span>
+
+<span class="n">resolution_function_dict</span><span class="p">[</span><span class="s1">&#39;10&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">LinearSpline</span><span class="p">(</span>
+    <span class="n">q_data_points</span><span class="o">=</span><span class="n">dict_reference</span><span class="p">[</span><span class="s1">&#39;10&#39;</span><span class="p">][</span><span class="s1">&#39;coords&#39;</span><span class="p">][</span><span class="s1">&#39;Qz_0&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
+    <span class="n">fwhm_values</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">dict_reference</span><span class="p">[</span><span class="s1">&#39;10&#39;</span><span class="p">][</span><span class="s1">&#39;coords&#39;</span><span class="p">][</span><span class="s1">&#39;Qz_0&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">variances</span><span class="p">),</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Simulations">
+<h2>Simulations<a class="headerlink" href="#Simulations" title="Link to this heading">#</a></h2>
+<div class="line-block">
+<div class="line">The next step is to visualise how the resolution functions affect the model.</div>
+<div class="line">Furthermore, we compare the here determined reflectivities (Resolution) and the ones that were determined in <code class="docutils literal notranslate"><span class="pre">Refnx</span></code> (Reference).</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">resolution_function_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+    <span class="n">reference_coords</span> <span class="o">=</span> <span class="n">dict_reference</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="s1">&#39;coords&#39;</span><span class="p">][</span><span class="s1">&#39;Qz_0&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+    <span class="n">reference_data</span> <span class="o">=</span> <span class="n">dict_reference</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="s1">&#39;data&#39;</span><span class="p">][</span><span class="s1">&#39;R_0&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+    <span class="n">model_coords</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span>
+        <span class="n">start</span><span class="o">=</span><span class="nb">min</span><span class="p">(</span><span class="n">reference_coords</span><span class="p">),</span>
+        <span class="n">stop</span><span class="o">=</span><span class="nb">max</span><span class="p">(</span><span class="n">reference_coords</span><span class="p">),</span>
+        <span class="n">num</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">resolution_function</span> <span class="o">=</span> <span class="n">resolution_function_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+    <span class="n">model_data</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">interface</span><span class="p">()</span><span class="o">.</span><span class="n">reflectity_profile</span><span class="p">(</span>
+        <span class="n">model_coords</span><span class="p">,</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">unique_name</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">model_coords</span><span class="p">,</span> <span class="n">model_data</span><span class="p">,</span> <span class="s1">&#39;k-&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;Resolution: </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s1">%&#39;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">reference_coords</span><span class="p">,</span> <span class="n">reference_data</span><span class="p">,</span> <span class="s1">&#39;rx&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;Reference&#39;</span><span class="p">)</span>
+    <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">([</span><span class="o">-</span><span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.45</span><span class="p">])</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">([</span><span class="mf">1e-10</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">])</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">yscale</span><span class="p">(</span><span class="s1">&#39;log&#39;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/tutorials_simulation_resolution_functions_21_0.png" src="../../_images/tutorials_simulation_resolution_functions_21_0.png" />
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/tutorials_simulation_resolution_functions_21_1.png" src="../../_images/tutorials_simulation_resolution_functions_21_1.png" />
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/tutorials_simulation_resolution_functions_21_2.png" src="../../_images/tutorials_simulation_resolution_functions_21_2.png" />
+</div>
+</div>
+<p>From the plots it is apparent that an increasing resolution flattens the reflectivity profile.</p>
+</section>
+<section id="Afterthoughts">
+<h2>Afterthoughts<a class="headerlink" href="#Afterthoughts" title="Link to this heading">#</a></h2>
+<p>As a last task we will compare the reflectivity determined using a percentage resolution function and a point-wise function. We should recall that the “experimental” data was generated using <code class="docutils literal notranslate"><span class="pre">Refnx</span></code>. By comparing the reflectivities determined using a resolution function with a FWHM of 1.0% and the point-wise FHWN constructed from data in a <code class="docutils literal notranslate"><span class="pre">.ort</span></code> file it is apparent that this reference data also was constructed using a resolution function of 1.0%.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">key</span> <span class="o">=</span> <span class="s1">&#39;1&#39;</span>
+<span class="n">reference_coords</span> <span class="o">=</span> <span class="n">dict_reference</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="s1">&#39;coords&#39;</span><span class="p">][</span><span class="s1">&#39;Qz_0&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+<span class="n">reference_data</span> <span class="o">=</span> <span class="n">dict_reference</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="s1">&#39;data&#39;</span><span class="p">][</span><span class="s1">&#39;R_0&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+<span class="n">model_coords</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span>
+    <span class="n">start</span><span class="o">=</span><span class="nb">min</span><span class="p">(</span><span class="n">reference_coords</span><span class="p">),</span>
+    <span class="n">stop</span><span class="o">=</span><span class="nb">max</span><span class="p">(</span><span class="n">reference_coords</span><span class="p">),</span>
+    <span class="n">num</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">model</span><span class="o">.</span><span class="n">resolution_function</span> <span class="o">=</span> <span class="n">resolution_function_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+<span class="n">model_data</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">interface</span><span class="p">()</span><span class="o">.</span><span class="n">reflectity_profile</span><span class="p">(</span>
+    <span class="n">model_coords</span><span class="p">,</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">unique_name</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">model_coords</span><span class="p">,</span> <span class="n">model_data</span><span class="p">,</span> <span class="s1">&#39;k-&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;Variable&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+
+<span class="n">model</span><span class="o">.</span><span class="n">resolution_function</span> <span class="o">=</span> <span class="n">PercentageFwhm</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>
+<span class="n">model_data</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">interface</span><span class="p">()</span><span class="o">.</span><span class="n">reflectity_profile</span><span class="p">(</span>
+    <span class="n">model_coords</span><span class="p">,</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">unique_name</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">model_coords</span><span class="p">,</span> <span class="n">model_data</span><span class="p">,</span> <span class="s1">&#39;r-&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;Percentage&#39;</span><span class="p">)</span>
+
+<span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">([</span><span class="o">-</span><span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.45</span><span class="p">])</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">([</span><span class="mf">1e-10</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">])</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">yscale</span><span class="p">(</span><span class="s1">&#39;log&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/tutorials_simulation_resolution_functions_24_0.png" src="../../_images/tutorials_simulation_resolution_functions_24_0.png" />
+</div>
+</div>
+</section>
+</section>
+
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="magnetism.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Magnetism</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="../fitting/fitting.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Fitting</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> Contents
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Setup">Setup</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Reading-in-measured-data">Reading in measured data</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Building-our-model">Building our model</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Set-the-calculation-engine">Set the calculation engine</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id1">Resolution functions</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Simulations">Simulations</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Afterthoughts">Afterthoughts</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By EasyReflectometry
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2025, EasyReflectometry.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>
