@@ -18,7 +18,6 @@ from easyreflectometry.calculators import CalculatorFactory
 from easyreflectometry.data import DataSet1D
 from easyreflectometry.data import load_as_dataset
 from easyreflectometry.fitting import MultiFitter
-from easyreflectometry.model import LinearSpline
 from easyreflectometry.model import Model
 from easyreflectometry.model import ModelCollection
 from easyreflectometry.model import PercentageFwhm

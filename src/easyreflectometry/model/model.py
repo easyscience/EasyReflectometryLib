@@ -19,7 +19,6 @@ from easyreflectometry.utils import yaml_dump
 
 from .resolution_functions import PercentageFwhm
 from .resolution_functions import ResolutionFunction
-from .resolution_functions import Pointwise
 
 DEFAULTS = {
     'scale': {

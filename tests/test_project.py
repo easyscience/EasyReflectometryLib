@@ -12,7 +12,6 @@ from numpy.testing import assert_allclose
 import easyreflectometry
 from easyreflectometry.data import DataSet1D
 from easyreflectometry.fitting import MultiFitter
-from easyreflectometry.model import LinearSpline
 from easyreflectometry.model import Model
 from easyreflectometry.model import ModelCollection
 from easyreflectometry.model import PercentageFwhm
