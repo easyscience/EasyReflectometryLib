@@ -12,10 +12,10 @@ from numpy.testing import assert_allclose
 import easyreflectometry
 from easyreflectometry.data import DataSet1D
 from easyreflectometry.fitting import MultiFitter
+from easyreflectometry.model import LinearSpline
 from easyreflectometry.model import Model
 from easyreflectometry.model import ModelCollection
 from easyreflectometry.model import PercentageFwhm
-from easyreflectometry.model import Pointwise
 from easyreflectometry.project import Project
 from easyreflectometry.sample import Material
 from easyreflectometry.sample import MaterialCollection
@@ -561,7 +561,7 @@ class TestProject:
         assert isinstance(project.experiments[5], DataSet1D)
         assert project.experiments[5].name == 'Experiment for Model 5'
         assert project.experiments[5].model == model_5
-        assert isinstance(project.models[5].resolution_function, Pointwise)
+        assert isinstance(project.models[5].resolution_function, LinearSpline)
         assert isinstance(project.models[4].resolution_function, PercentageFwhm)
 
     def test_experimental_data_at_index(self):
