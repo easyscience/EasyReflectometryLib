@@ -6,6 +6,7 @@ from easyreflectometry.model.resolution_functions import DEFAULT_RESOLUTION_FWHM
 from easyreflectometry.model.resolution_functions import LinearSpline
 from easyreflectometry.model.resolution_functions import PercentageFwhm
 from easyreflectometry.model.resolution_functions import ResolutionFunction
+from easyreflectometry.model.resolution_functions import Pointwise
 
 
 class TestPercentageFwhm(unittest.TestCase):
@@ -75,3 +76,37 @@ class TestLinearSpline(unittest.TestCase):
 
         # Expect
         assert all(resolution_function.smearing([0, 2.5]) == expected_resolution_function.smearing([0, 2.5]))
+
+class TestPointwise(unittest.TestCase):
+
+    data_points = []
+    data_points.append([0.1, 0.2, 0.3, 0.4, 0.5]) # Qz
+    data_points.append([1.1, 2.2, 3.3, 4.4, 5.5]) # R
+    data_points.append([0.01, 0.02, 0.01, 0.05, 0.08]) # sR
+    data_points.append([0.03, 0.04, 0.05, 0.06, 0.07]) # sQz
+    def test_constructor(self):
+
+        # When
+        resolution_function = Pointwise(q_data_points=self.data_points)
+
+        # Then Expect
+        assert np.allclose(np.array(resolution_function.smearing()), np.array([1.1, 2.2, 3.3, 4.4, 5.18516692]))
+
+
+    def test_as_dict(self):
+        # When
+        resolution_function = Pointwise(q_data_points=self.data_points)
+
+        # Then Expect
+        resolution_function.as_dict() == {'smearing': 'Pointwise', 'q_data_points': [0, 10]}
+
+    def test_dict_round_trip(self):
+        # When
+        expected_resolution_function = Pointwise(q_data_points=self.data_points)
+        res_dict = expected_resolution_function.as_dict()
+
+        # Then
+        resolution_function = ResolutionFunction.from_dict(res_dict)
+
+        # Expect
+        assert all(resolution_function.smearing() == expected_resolution_function.smearing())
