@@ -37,6 +37,14 @@ class TestData(unittest.TestCase):
         assert_almost_equal(er_data['data']['R_0'].variances, np.square(n_data[:, 2]))
         assert_almost_equal(er_data['coords']['Qz_0'].variances, np.square(n_data[:, 3]))
 
+    def test_load_with_txt_commas(self):
+        fpath = os.path.join(PATH_STATIC, 'ref_concat_1.txt')
+        er_data = load(fpath)
+        x, y, e = np.loadtxt(fpath, delimiter=',', comments='#', unpack=True)
+        assert_almost_equal(er_data['data']['R_0'].values, y)
+        assert_almost_equal(er_data['coords']['Qz_0'].values, x)
+        assert_almost_equal(er_data['data']['R_0'].variances, np.square(e))
+
     def test_orso1(self):
         fpath = os.path.join(PATH_STATIC, 'test_example1.ort')
         er_data = _load_orso(fpath)
