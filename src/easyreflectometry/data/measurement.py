@@ -74,13 +74,29 @@ def _load_txt(fname: Union[TextIO, str]) -> sc.DataGroup:
 
     :param fname: The path for the file to be read.
     """
-    f_data = np.loadtxt(fname)
-    data = {'R_0': sc.array(dims=['Qz_0'], values=f_data[:, 1], variances=np.square(f_data[:, 2]))}
+    # fname can have either a space or a comma as delimiter
+    # Find out the delimiter first
+    delimiter = None
+    with open(fname, 'r') as f:
+        # find first non-comment and non-empty line
+        for line in f:
+            if line.strip() and not line.startswith('#'):
+                break
+        first_line = line
+    if ',' in first_line:
+        delimiter = ','
+
+    try:
+        x, y, e, xe = np.loadtxt(fname, delimiter=delimiter, comments='#', unpack=True)
+    except ValueError:
+        x, y, e = np.loadtxt(fname, delimiter=delimiter, comments='#', unpack=True)
+        xe = np.zeros_like(x)
+    data = {'R_0': sc.array(dims=['Qz_0'], values=y, variances=np.square(e))}
     coords = {
         data['R_0'].dims[0]: sc.array(
             dims=['Qz_0'],
-            values=f_data[:, 0],
-            variances=np.square(f_data[:, 3]),
+            values=x,
+            variances=np.square(xe),
             unit=sc.Unit('1/angstrom'),
         )
     }
