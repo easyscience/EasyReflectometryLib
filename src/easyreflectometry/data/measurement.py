@@ -75,7 +75,7 @@ def _load_txt(fname: Union[TextIO, str]) -> sc.DataGroup:
     :param fname: The path for the file to be read.
     """
     # fname can have either a space or a comma as delimiter
-    # Find out the delimiter first
+    # Determine the delimiter used in the file
     delimiter = None
     with open(fname, 'r') as f:
         # find first non-comment and non-empty line
@@ -87,10 +87,29 @@ def _load_txt(fname: Union[TextIO, str]) -> sc.DataGroup:
         delimiter = ','
 
     try:
-        x, y, e, xe = np.loadtxt(fname, delimiter=delimiter, comments='#', unpack=True)
-    except ValueError:
-        x, y, e = np.loadtxt(fname, delimiter=delimiter, comments='#', unpack=True)
-        xe = np.zeros_like(x)
+        # First load only the data to check column count
+        data = np.loadtxt(fname, delimiter=delimiter, comments='#')
+        if data.ndim == 1:
+            # Handle single row case
+            num_columns = len(data)
+        else:
+            num_columns = data.shape[1]
+
+        # Verify minimum column requirement
+        if num_columns < 3:
+            raise ValueError(f"File must contain at least 3 columns (found {num_columns})")
+
+        # Now unpack the data based on column count
+        if num_columns >= 4:
+            x, y, e, xe = np.loadtxt(fname, delimiter=delimiter, comments='#', unpack=True)
+        else:  # 3 columns
+            x, y, e = np.loadtxt(fname, delimiter=delimiter, comments='#', unpack=True)
+            xe = np.zeros_like(x)
+
+    except (ValueError, IOError) as error:
+        # Re-raise with more descriptive message
+        raise ValueError(f"Failed to load data from {fname}: {str(error)}") from error
+
     data = {'R_0': sc.array(dims=['Qz_0'], values=y, variances=np.square(e))}
     coords = {
         data['R_0'].dims[0]: sc.array(
