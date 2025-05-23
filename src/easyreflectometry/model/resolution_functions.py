@@ -11,6 +11,7 @@ from abc import abstractmethod
 from typing import List
 from typing import Optional
 from typing import Union
+import scipp as sc
 
 import numpy as np
 
@@ -65,16 +66,21 @@ class LinearSpline(ResolutionFunction):
 
 # add pointwise smearing funtion
 class Pointwise(ResolutionFunction):
-    def __init__(self, q_data_points: np.array):
+    def __init__(self, q_data_points: sc.DataGroup):
         self.q_data_points = q_data_points
+        self.q = None
 
     def smearing(self, q: Union[np.array, float] = 0.0) -> np.array:
 
-        Qz= self.q_data_points[0]
-        R= self.q_data_points[1]
-        sR= self.q_data_points[2]
-        sQz= self.q_data_points[3]
-        smeared = self.apply_smooth_smearing(Qz, R, sR, sQz)
+        Qz = self.q_data_points[0]
+        R = self.q_data_points[1]
+        sQz = self.q_data_points[2]
+        self.q = q
+        sQzs = np.sqrt(sQz)
+        if not isinstance(q, np.ndarray):
+            q = np.ndarray(q)
+
+        smeared = self.apply_smooth_smearing(Qz, R, sQzs)
         return smeared
 
     def as_dict(
@@ -82,30 +88,42 @@ class Pointwise(ResolutionFunction):
     ) -> dict[str, str]:  # skip is kept for consistency of the as_dict signature
         return {'smearing': 'Pointwise', 'q_data_points': list(self.q_data_points)}
 
-    def gaussian_kernel(self, x, sigma):
-        """Simple Gaussian kernel function"""
-        return np.exp(-x**2/(2*sigma**2))
+    def gaussian_smearing(self, qt, Qz, R, sQz):
+        weights = np.exp(-0.5 * ((qt - Qz) / sQz) ** 2)
+        if np.sum(weights) == 0 or not np.isfinite(np.sum(weights)):
+            return R
+        weights /= (sQz * np.sqrt(2 * np.pi))
+        return np.sum(R * weights) / np.sum(weights)
 
-    def apply_smooth_smearing(self, Qz, R, sR, sQz, n_sigma=3):
+
+    def apply_smooth_smearing(self, Qz, R, sQzs):
         """
         Apply smooth resolution smearing using convolution with Gaussian kernel.
         """
-        R_smeared = np.zeros_like(R)
+        if self.q is None:
+            R_smeared = np.zeros_like(Qz)
+        else:
+            R_smeared = np.zeros_like(self.q)
         if not isinstance(Qz, np.ndarray):
             Qz = np.array(Qz)
         if not isinstance(R, np.ndarray):
             R = np.array(R)
-        for i, (q, r, sr, sq) in enumerate(zip(Qz, R, sR, sQz)):
-            weights = self.gaussian_kernel(Qz - q, sq)
-            mask = np.abs(Qz - q) <= n_sigma * sq
-            weights[~mask] = 0
+        R_smeared = np.zeros_like(self.q)
 
-            if np.sum(weights) > 0:
-                weights = weights / np.sum(weights)
+        for i, qt in enumerate(self.q):
+            R_smeared[i] = self.gaussian_smearing(qt, Qz, R, sQzs)
 
-            R_smeared[i] = np.sum(R * weights)
-            # Potentially add the pointwise error from sR
-            # This can also be used as error bands
-            # R_smeared[i] += np.random.normal(0, sr * weights[i])
+        # TEST LOCALLY
+        # import matplotlib.pyplot as plt
+        # plt.figure(figsize=(10, 6))
+        # plt.plot(Qz, R, label='Original R', marker='o', linestyle='none')
+        # plt.plot(self.q, R_smeared, label='Smeared R', linestyle='-')
+        # plt.yscale('log')
+        # plt.xlabel('Qz (1/angstrom)')
+        # plt.ylabel('R')
+        # plt.legend()
+        # plt.title('Original and Smeared R vs Qz (log scale)')
+        # plt.grid(True)
+        # plt.show()
 
         return R_smeared
