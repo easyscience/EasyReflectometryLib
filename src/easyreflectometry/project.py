@@ -254,7 +254,7 @@ class Project:
             # reflectivity_error = self._experiments[index].ye
             # q_error = self._experiments[index].xe
             # resolution_function = Pointwise(
-            #     q_data_points=[q, reflectivity, reflectivity_error, q_error])
+            #     q_data_points=[q, reflectivity, q_error])
             resolution_function = LinearSpline(
                 q_data_points=self._experiments[index].y,
                 fwhm_values=np.sqrt(self._experiments[index].ye),

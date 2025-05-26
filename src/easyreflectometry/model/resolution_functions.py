@@ -11,7 +11,6 @@ from abc import abstractmethod
 from typing import List
 from typing import Optional
 from typing import Union
-import scipp as sc
 
 import numpy as np
 
@@ -66,19 +65,21 @@ class LinearSpline(ResolutionFunction):
 
 # add pointwise smearing funtion
 class Pointwise(ResolutionFunction):
-    def __init__(self, q_data_points: sc.DataGroup):
+    def __init__(self, q_data_points: list[np.ndarray]):
         self.q_data_points = q_data_points
         self.q = None
 
-    def smearing(self, q: Union[np.array, float] = 0.0) -> np.array:
+    def smearing(self, q: Union[np.ndarray, float] = None) -> np.ndarray:
 
         Qz = self.q_data_points[0]
         R = self.q_data_points[1]
         sQz = self.q_data_points[2]
+        if q is None:
+            q = self.q_data_points[0]
         self.q = q
         sQzs = np.sqrt(sQz)
-        if not isinstance(q, np.ndarray):
-            q = np.ndarray(q)
+        if isinstance(Qz, float):
+            Qz = np.array(Qz)
 
         smeared = self.apply_smooth_smearing(Qz, R, sQzs)
         return smeared

@@ -82,7 +82,6 @@ class TestPointwise(unittest.TestCase):
     data_points = []
     data_points.append([0.1, 0.2, 0.3, 0.4, 0.5]) # Qz
     data_points.append([1.1, 2.2, 3.3, 4.4, 5.5]) # R
-    data_points.append([0.01, 0.02, 0.01, 0.05, 0.08]) # sR
     data_points.append([0.03, 0.04, 0.05, 0.06, 0.07]) # sQz
     def test_constructor(self):
 
@@ -90,8 +89,7 @@ class TestPointwise(unittest.TestCase):
         resolution_function = Pointwise(q_data_points=self.data_points)
 
         # Then Expect
-        assert np.allclose(np.array(resolution_function.smearing()), np.array([1.1, 2.2, 3.3, 4.4, 5.18516692]))
-
+        assert np.allclose(np.array(resolution_function.smearing()), np.array([2.51664683, 2.84038734, 3.2460762 , 3.6796519 , 4.07869271]))
 
     def test_as_dict(self):
         # When
