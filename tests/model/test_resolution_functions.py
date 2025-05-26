@@ -89,7 +89,8 @@ class TestPointwise(unittest.TestCase):
         resolution_function = Pointwise(q_data_points=self.data_points)
 
         # Then Expect
-        assert np.allclose(np.array(resolution_function.smearing()), np.array([2.51664683, 2.84038734, 3.2460762 , 3.6796519 , 4.07869271]))
+        assert np.allclose(np.array(resolution_function.smearing()),
+                           np.array([2.51664683, 2.84038734, 3.2460762 , 3.6796519 , 4.07869271]))
 
     def test_as_dict(self):
         # When
