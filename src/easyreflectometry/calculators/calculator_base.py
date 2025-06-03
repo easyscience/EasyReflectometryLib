@@ -1,22 +1,22 @@
 from __future__ import annotations
 
 from abc import ABCMeta
+from typing import TYPE_CHECKING
 from typing import Callable
 
 import numpy as np
 from easyscience.Objects.core import ComponentSerializer
 from easyscience.Objects.Inferface import ItemContainer
 
-from easyreflectometry.model import Model
-from easyreflectometry.sample import BaseAssembly
-from easyreflectometry.sample import Layer
-from easyreflectometry.sample import Material
-from easyreflectometry.sample import MaterialMixture
-from easyreflectometry.sample import Multilayer
-
 from .wrapper_base import WrapperBase
 
-
+if TYPE_CHECKING:
+    from easyreflectometry.model import Model
+    from easyreflectometry.sample import BaseAssembly
+    from easyreflectometry.sample import Layer
+    from easyreflectometry.sample import Material
+    from easyreflectometry.sample import MaterialMixture
+    from easyreflectometry.sample import Multilayer
 class CalculatorBase(ComponentSerializer, metaclass=ABCMeta):
     """
     This class is a template and defines all properties that a calculator should have.

@@ -206,6 +206,12 @@ class Model(BaseObj):
             this_dict['interface'] = self.interface().name
         return this_dict
 
+    def as_orso(self) -> dict:
+        """Convert the model to a dictionary suitable for ORSO."""
+        this_dict = self.as_dict()
+
+        return this_dict
+
     @classmethod
     def from_dict(cls, passed_dict: dict) -> Model:
         """

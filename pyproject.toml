@@ -104,7 +104,6 @@ quote-style = "single"
 "*test_*.py" = ["S101"]
 
 [tool.ruff.lint]
-ignore-init-module-imports = true
 select = [
     # flake8 settings from existing CI setup
     "E9", "F63", "F7", "F82",

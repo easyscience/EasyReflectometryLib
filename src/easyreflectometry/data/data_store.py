@@ -1,6 +1,7 @@
 __author__ = 'github.com/wardsimon'
 
 from collections.abc import Sequence
+from typing import TYPE_CHECKING
 from typing import Optional
 from typing import TypeVar
 from typing import Union
@@ -9,7 +10,8 @@ import numpy as np
 from easyscience.Objects.core import ComponentSerializer
 from easyscience.Utils.io.dict import DictSerializer
 
-from easyreflectometry.model import Model
+if TYPE_CHECKING:
+    from easyreflectometry.model import Model
 
 T = TypeVar('T')
 
@@ -76,7 +78,7 @@ class DataSet1D(ComponentSerializer):
         y: Optional[Union[np.ndarray, list]] = None,
         ye: Optional[Union[np.ndarray, list]] = None,
         xe: Optional[Union[np.ndarray, list]] = None,
-        model: Optional[Model] = None,
+        model: Optional['Model'] = None, # delay type checking until runtime (quotes)
         x_label: str = 'x',
         y_label: str = 'y',
     ):
@@ -117,11 +119,11 @@ class DataSet1D(ComponentSerializer):
         self._color = None
 
     @property
-    def model(self) -> Model:
+    def model(self) -> 'Model': # delay type checking until runtime (quotes)
         return self._model
 
     @model.setter
-    def model(self, new_model: Model) -> None:
+    def model(self, new_model: 'Model') -> None:
         self._model = new_model
         self._model.background = np.min(self.y)
 
