@@ -5,8 +5,6 @@ from typing import Union
 
 import numpy as np
 import scipp as sc
-from orsopy.fileio import Header
-from orsopy.fileio import orso
 
 from easyreflectometry.data import DataSet1D
 from easyreflectometry.orso_utils import load_data_from_orso_file
