@@ -1,7 +1,5 @@
 from importlib import metadata
 
-from .orso_utils import LoadOrso
-from .orso_utils import load_data_from_orso_file
 from .project import Project
 
 try:
@@ -12,6 +10,4 @@ except metadata.PackageNotFoundError:
 __all__ = [
     Project,
     __version__,
-    LoadOrso,
-    load_data_from_orso_file,
 ]

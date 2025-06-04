@@ -116,11 +116,16 @@ def load_orso_data(orso_str: str) -> DataSet1D:
             )
         attrs[f'R_{name}'] = {'orso_header': sc.scalar(Header.asdict(o.info))}
     data_group = sc.DataGroup(data=data, coords=coords, attrs=attrs)
-    dataset = DataSet1D(
-        x=data_group['coords']['Qz_0'].values,
-        y=data_group['data']['R_0'].values,
-        ye=data_group['data']['R_0'].variances,
-        xe=data_group['coords']['Qz_0'].variances,
-    )
-    return dataset
+    return data_group
+    # if 'Qz_spin_up' in data_group['coords']:
+    #     component = 'spin_up'
+    # else:
+    #     component = '0'
+    # dataset = DataSet1D(
+    #     x=data_group['coords'][f'Qz_{component}'].values,
+    #     y=data_group['data'][f'R_{component}'].values,
+    #     ye=data_group['data'][f'R_{component}'].variances,
+    #     xe=data_group['coords'][f'Qz_{component}'].variances,
+    # )
+    # return dataset
 

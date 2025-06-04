@@ -242,7 +242,7 @@ class Project:
 
     def load_orso_file(self, path: Union[Path, str]) -> None:
         """Load an ORSO file and optionally create a model and a data from it."""
-        from easyreflectometry import LoadOrso
+        from easyreflectometry.orso_utils import LoadOrso
 
         model, data = LoadOrso(path)
         if model is not None:
