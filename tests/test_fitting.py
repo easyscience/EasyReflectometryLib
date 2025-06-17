@@ -60,3 +60,5 @@ def test_fitting(minimizer):
     analysed = fitter.fit(data)
     assert 'R_0_model' in analysed.keys()
     assert 'SLD_0' in analysed.keys()
+    assert 'success' in analysed.keys()
+    assert analysed['success']
