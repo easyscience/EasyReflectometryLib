@@ -54,6 +54,8 @@ class MultiFitter:
             new_data['coords'][f'z_{id}'] = sc.array(
                 dims=[f'z_{id}'], values=sld_profile[0], unit=(1 / new_data['coords'][f'Qz_{id}'].unit).unit
             )
+            new_data['reduced_chi'] = float(result[i].reduced_chi)
+            new_data['success'] = result[i].success
         return new_data
 
     def fit_single_data_set_1d(self, data: DataSet1D) -> FitResults:
