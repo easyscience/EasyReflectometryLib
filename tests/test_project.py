@@ -12,10 +12,10 @@ from numpy.testing import assert_allclose
 import easyreflectometry
 from easyreflectometry.data import DataSet1D
 from easyreflectometry.fitting import MultiFitter
-from easyreflectometry.model import Pointwise
 from easyreflectometry.model import Model
 from easyreflectometry.model import ModelCollection
 from easyreflectometry.model import PercentageFwhm
+from easyreflectometry.model import Pointwise
 from easyreflectometry.project import Project
 from easyreflectometry.sample import Material
 from easyreflectometry.sample import MaterialCollection
