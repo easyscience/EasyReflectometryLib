@@ -18,10 +18,10 @@ from easyreflectometry.calculators import CalculatorFactory
 from easyreflectometry.data import DataSet1D
 from easyreflectometry.data import load_as_dataset
 from easyreflectometry.fitting import MultiFitter
-from easyreflectometry.model import LinearSpline
 from easyreflectometry.model import Model
 from easyreflectometry.model import ModelCollection
 from easyreflectometry.model import PercentageFwhm
+from easyreflectometry.model import Pointwise
 from easyreflectometry.sample import Layer
 from easyreflectometry.sample import Material
 from easyreflectometry.sample import MaterialCollection
@@ -249,16 +249,15 @@ class Project:
 
         # Set the resolution function if variance data is present
         if sum(self._experiments[index].ye) != 0:
-            # q = self._experiments[index].x
-            # reflectivity = self._experiments[index].y
-            # reflectivity_error = self._experiments[index].ye
-            # q_error = self._experiments[index].xe
-            # resolution_function = Pointwise(
-            #     q_data_points=[q, reflectivity, q_error])
-            resolution_function = LinearSpline(
-                q_data_points=self._experiments[index].y,
-                fwhm_values=np.sqrt(self._experiments[index].ye),
-            )
+            q = self._experiments[index].x
+            reflectivity = self._experiments[index].y
+            q_error = self._experiments[index].xe
+            resolution_function = Pointwise(
+                q_data_points=[q, reflectivity, q_error])
+            # resolution_function = LinearSpline(
+            #     q_data_points=self._experiments[index].y,
+            #     fwhm_values=np.sqrt(self._experiments[index].ye),
+            # )
             self._models[index].resolution_function = resolution_function
 
     def sld_data_for_model_at_index(self, index: int = 0) -> DataSet1D:

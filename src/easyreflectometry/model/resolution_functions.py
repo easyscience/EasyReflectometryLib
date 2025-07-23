@@ -31,7 +31,7 @@ class ResolutionFunction:
         if data['smearing'] == 'LinearSpline':
             return LinearSpline(data['q_data_points'], data['fwhm_values'])
         if data['smearing'] == 'Pointwise':
-            return Pointwise(data['q_data_points'])
+            return Pointwise([data['q_data_points'], data['R_data_points'], data['sQz_data_points']])
         raise ValueError('Unknown resolution function type')
 
 
@@ -87,12 +87,15 @@ class Pointwise(ResolutionFunction):
     def as_dict(
         self, skip: Optional[List[str]] = None
     ) -> dict[str, str]:  # skip is kept for consistency of the as_dict signature
-        return {'smearing': 'Pointwise', 'q_data_points': list(self.q_data_points)}
+        return {'smearing': 'Pointwise',
+                'q_data_points': list(self.q_data_points[0]),
+                'R_data_points': list(self.q_data_points[1]),
+                'sQz_data_points': list(self.q_data_points[2])}
 
     def gaussian_smearing(self, qt, Qz, R, sQz):
         weights = np.exp(-0.5 * ((qt - Qz) / sQz) ** 2)
         if np.sum(weights) == 0 or not np.isfinite(np.sum(weights)):
-            return R
+            return np.sum(R)
         weights /= (sQz * np.sqrt(2 * np.pi))
         return np.sum(R * weights) / np.sum(weights)
 
@@ -105,6 +108,7 @@ class Pointwise(ResolutionFunction):
             R_smeared = np.zeros_like(Qz)
         else:
             R_smeared = np.zeros_like(self.q)
+
         if not isinstance(Qz, np.ndarray):
             Qz = np.array(Qz)
         if not isinstance(R, np.ndarray):
@@ -113,18 +117,5 @@ class Pointwise(ResolutionFunction):
 
         for i, qt in enumerate(self.q):
             R_smeared[i] = self.gaussian_smearing(qt, Qz, R, sQzs)
-
-        # TEST LOCALLY
-        # import matplotlib.pyplot as plt
-        # plt.figure(figsize=(10, 6))
-        # plt.plot(Qz, R, label='Original R', marker='o', linestyle='none')
-        # plt.plot(self.q, R_smeared, label='Smeared R', linestyle='-')
-        # plt.yscale('log')
-        # plt.xlabel('Qz (1/angstrom)')
-        # plt.ylabel('R')
-        # plt.legend()
-        # plt.title('Original and Smeared R vs Qz (log scale)')
-        # plt.grid(True)
-        # plt.show()
 
         return R_smeared

@@ -97,7 +97,7 @@ class TestPointwise(unittest.TestCase):
         resolution_function = Pointwise(q_data_points=self.data_points)
 
         # Then Expect
-        resolution_function.as_dict() == {'smearing': 'Pointwise', 'q_data_points': [0, 10]}
+        assert resolution_function.as_dict(), {'smearing': 'Pointwise', 'q_data_points': [0, 10]}
 
     def test_dict_round_trip(self):
         # When
