@@ -36,6 +36,7 @@ dependencies = [
     "refl1d[webview]==1.0.0a12",
     "orsopy==1.2.1",
     "xhtml2pdf==0.2.17",
+    "bumps==1.0.0b7",
 ]
 
 [project.optional-dependencies]

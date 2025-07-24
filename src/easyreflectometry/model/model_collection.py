@@ -4,6 +4,7 @@ from typing import List
 from typing import Optional
 from typing import Tuple
 
+from easyreflectometry.model.resolution_functions import PercentageFwhm
 from easyreflectometry.sample.collections.base_collection import BaseCollection
 
 from .model import Model
@@ -41,7 +42,14 @@ class ModelCollection(BaseCollection):
         :param model: Model to add.
         """
         if model is None:
-            model = Model(name='EasyModel added', interface=self.interface)
+            model = Model(
+            sample=None,
+            scale=1,
+            background=0,
+            resolution_function=PercentageFwhm,
+            interface=self.interface,
+            name='New EasyModel',
+            )
         self.append(model)
 
     def duplicate_model(self, index: int):
