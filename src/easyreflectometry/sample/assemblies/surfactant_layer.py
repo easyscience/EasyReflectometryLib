@@ -180,7 +180,7 @@ class SurfactantLayer(BaseAssembly):
         rough = ObjConstraint(solvent_roughness, '', self.tail_layer.roughness)
         self.tail_layer.roughness.user_constraints['solvent_roughness'] = rough
 
-    def constain_multiple_contrast(
+    def constrain_multiple_contrast(
         self,
         another_contrast: SurfactantLayer,
         head_layer_thickness: bool = True,
