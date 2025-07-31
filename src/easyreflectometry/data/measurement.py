@@ -1,5 +1,6 @@
 __author__ = 'github.com/arm61'
 
+import os
 from typing import TextIO
 from typing import Union
 
@@ -25,11 +26,16 @@ def load(fname: Union[TextIO, str]) -> sc.DataGroup:
 def load_as_dataset(fname: Union[TextIO, str]) -> DataSet1D:
     """Load data from an ORSO .ort file as a DataSet1D."""
     data_group = load(fname)
+    basename = os.path.splitext(os.path.basename(fname))[0]
+    data_name = 'R_' + basename
+    coords_name = 'Qz_' + basename
+    coords_name = list(data_group['coords'].keys())[0] if coords_name not in data_group['coords'] else coords_name
+    data_name = list(data_group['data'].keys())[0] if data_name not in data_group['data'] else data_name
     return DataSet1D(
-        x=data_group['coords']['Qz_0'].values,
-        y=data_group['data']['R_0'].values,
-        ye=data_group['data']['R_0'].variances,
-        xe=data_group['coords']['Qz_0'].variances,
+        x=data_group['coords'][coords_name].values,
+        y=data_group['data'][data_name].values,
+        ye=data_group['data'][data_name].variances,
+        xe=data_group['coords'][coords_name].variances,
     )
 
 
@@ -86,6 +92,8 @@ def _load_txt(fname: Union[TextIO, str]) -> sc.DataGroup:
     if ',' in first_line:
         delimiter = ','
 
+    basename = os.path.splitext(os.path.basename(fname))[0]
+
     try:
         # First load only the data to check column count
         data = np.loadtxt(fname, delimiter=delimiter, comments='#')
@@ -110,13 +118,44 @@ def _load_txt(fname: Union[TextIO, str]) -> sc.DataGroup:
         # Re-raise with more descriptive message
         raise ValueError(f"Failed to load data from {fname}: {str(error)}") from error
 
-    data = {'R_0': sc.array(dims=['Qz_0'], values=y, variances=np.square(e))}
+    data_name = 'R_' + basename
+    coords_name = 'Qz_' + basename
+    data = {data_name: sc.array(dims=[coords_name], values=y, variances=np.square(e))}
     coords = {
-        data['R_0'].dims[0]: sc.array(
-            dims=['Qz_0'],
+        data[data_name].dims[0]: sc.array(
+            dims=[coords_name],
             values=x,
             variances=np.square(xe),
             unit=sc.Unit('1/angstrom'),
         )
     }
     return sc.DataGroup(data=data, coords=coords)
+
+def merge_datagroups(*data_groups: sc.DataGroup) -> sc.DataGroup:
+    """Merge multiple DataGroups into a single DataGroup."""
+    merged_data = {}
+    merged_coords = {}
+    merged_attrs = {}
+
+    for group in data_groups:
+        for key, value in group['data'].items():
+            if key not in merged_data:
+                merged_data[key] = value
+            else:
+                merged_data[key] = sc.concatenate([merged_data[key], value])
+
+        for key, value in group['coords'].items():
+            if key not in merged_coords:
+                merged_coords[key] = value
+            else:
+                merged_coords[key] = sc.concatenate([merged_coords[key], value])
+
+        if 'attrs' not in group:
+            continue
+        for key, value in group['attrs'].items():
+            if key not in merged_attrs:
+                merged_attrs[key] = value
+            else:
+                merged_attrs[key] = {**merged_attrs[key], **value}
+
+    return sc.DataGroup(data=merged_data, coords=merged_coords, attrs=merged_attrs)
