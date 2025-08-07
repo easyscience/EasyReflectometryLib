@@ -30,7 +30,7 @@ from easyreflectometry.sample import SurfactantLayer
 class TestModel(unittest.TestCase):
     def test_default(self):
         p = Model()
-        assert_equal(p.name, 'EasyModel')
+        assert_equal(p.name, 'Model')
         assert_equal(p.interface, None)
         assert_equal(p.sample.name, 'EasySample')
         assert_equal(p.scale.display_name, 'scale')
@@ -389,7 +389,7 @@ class TestModel(unittest.TestCase):
 
         assert (
             model.__repr__()
-            == 'EasyModel:\n  scale: 1.0\n  background: 1.0e-08\n  resolution: 5.0 %\n  color: black\n  sample:\n    EasySample:\n    - EasyMultilayer:\n        EasyLayerCollection:\n        - EasyLayer:\n            material:\n              EasyMaterial:\n                sld: 4.186e-6 1/Å^2\n                isld: 0.000e-6 1/Å^2\n            thickness: 10.000 Å\n            roughness: 3.300 Å\n    - EasyMultilayer:\n        EasyLayerCollection:\n        - EasyLayer:\n            material:\n              EasyMaterial:\n                sld: 4.186e-6 1/Å^2\n                isld: 0.000e-6 1/Å^2\n            thickness: 10.000 Å\n            roughness: 3.300 Å\n'  # noqa: E501
+            == "Model:\n  scale: 1.0\n  background: 1.0e-08\n  resolution: 5.0 %\n  color: '#0173B2'\n  sample:\n    EasySample:\n    - EasyMultilayer:\n        EasyLayerCollection:\n        - EasyLayer:\n            material:\n              EasyMaterial:\n                sld: 4.186e-6 1/Å^2\n                isld: 0.000e-6 1/Å^2\n            thickness: 10.000 Å\n            roughness: 3.300 Å\n    - EasyMultilayer:\n        EasyLayerCollection:\n        - EasyLayer:\n            material:\n              EasyMaterial:\n                sld: 4.186e-6 1/Å^2\n                isld: 0.000e-6 1/Å^2\n            thickness: 10.000 Å\n            roughness: 3.300 Å\n"  # noqa: E501
         )
 
     def test_repr_resolution_function(self):
@@ -398,7 +398,7 @@ class TestModel(unittest.TestCase):
         model.resolution_function = resolution_function
         assert (
             model.__repr__()
-            == 'EasyModel:\n  scale: 1.0\n  background: 1.0e-08\n  resolution: function of Q\n  color: black\n  sample:\n    EasySample:\n    - EasyMultilayer:\n        EasyLayerCollection:\n        - EasyLayer:\n            material:\n              EasyMaterial:\n                sld: 4.186e-6 1/Å^2\n                isld: 0.000e-6 1/Å^2\n            thickness: 10.000 Å\n            roughness: 3.300 Å\n    - EasyMultilayer:\n        EasyLayerCollection:\n        - EasyLayer:\n            material:\n              EasyMaterial:\n                sld: 4.186e-6 1/Å^2\n                isld: 0.000e-6 1/Å^2\n            thickness: 10.000 Å\n            roughness: 3.300 Å\n'  # noqa: E501
+            == "Model:\n  scale: 1.0\n  background: 1.0e-08\n  resolution: function of Q\n  color: '#0173B2'\n  sample:\n    EasySample:\n    - EasyMultilayer:\n        EasyLayerCollection:\n        - EasyLayer:\n            material:\n              EasyMaterial:\n                sld: 4.186e-6 1/Å^2\n                isld: 0.000e-6 1/Å^2\n            thickness: 10.000 Å\n            roughness: 3.300 Å\n    - EasyMultilayer:\n        EasyLayerCollection:\n        - EasyLayer:\n            material:\n              EasyMaterial:\n                sld: 4.186e-6 1/Å^2\n                isld: 0.000e-6 1/Å^2\n            thickness: 10.000 Å\n            roughness: 3.300 Å\n"  # noqa: E501
         )
 
 

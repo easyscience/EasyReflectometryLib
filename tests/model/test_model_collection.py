@@ -10,14 +10,14 @@ class TestModelCollection:
         collection = ModelCollection()
 
         # Expect
-        assert collection.name == 'EasyModels'
+        assert collection.name == 'Models'
         assert collection.interface is None
         assert len(collection) == 1
-        assert collection[0].name == 'EasyModel'
+        assert collection[0].name == 'Model'
 
     def test_dont_populate(self):
         p = ModelCollection(populate_if_none=False)
-        assert p.name == 'EasyModels'
+        assert p.name == 'Models'
         assert p.interface is None
         assert len(p) == 0
 
@@ -31,7 +31,7 @@ class TestModelCollection:
         collection = ModelCollection(model_1, model_2, model_3)
 
         # Expect
-        assert collection.name == 'EasyModels'
+        assert collection.name == 'Models'
         assert collection.interface is None
         assert len(collection) == 3
         assert collection[0].name == 'Model1'

@@ -5,7 +5,7 @@ from typing import Optional
 from typing import Tuple
 
 from easyreflectometry.sample.collections.base_collection import BaseCollection
-
+from easyreflectometry.model.model import COLORS
 from .model import Model
 
 
@@ -18,7 +18,7 @@ class ModelCollection(BaseCollection):
     def __init__(
         self,
         *models: Tuple[Model],
-        name: str = 'EasyModels',
+        name: str = 'Models',
         interface=None,
         unique_name: Optional[str] = None,
         populate_if_none: bool = True,
@@ -41,7 +41,8 @@ class ModelCollection(BaseCollection):
         :param model: Model to add.
         """
         if model is None:
-            model = Model(name='EasyModel added', interface=self.interface)
+            color = COLORS[len(self) % len(COLORS)]
+            model = Model(name='Model', interface=self.interface, color=color)
         self.append(model)
 
     def duplicate_model(self, index: int):

@@ -129,7 +129,7 @@ class TestSummary:
         html = summary._experiments_section()
 
         # Expect
-        assert 'Experiment for Model 0' in html
+        assert 'Experiment 0' in html
         assert 'No. of data points' in html
         assert '408' in html
         assert 'Resolution function' in html

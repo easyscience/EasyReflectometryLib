@@ -240,9 +240,20 @@ class Project:
             self._materials.add_material(Material(name='D2O', sld=6.36, isld=0.0))
         return [material.name for material in self._materials].index('D2O')
 
+    def load_new_experiment(self, path: Union[Path, str]) -> None:
+        new_experiment = load_as_dataset(str(path))
+        new_index = len(self._experiments)
+        new_experiment.name = f'Experiment {new_index}'
+        model_index = 0
+        if new_index < len(self.models):
+            model_index = new_index
+        new_experiment.model = self.models[model_index]
+        self._experiments[new_index] = new_experiment
+        # self._current_model_index = new_index
+
     def load_experiment_for_model_at_index(self, path: Union[Path, str], index: Optional[int] = 0) -> None:
         self._experiments[index] = load_as_dataset(str(path))
-        self._experiments[index].name = f'Experiment for Model {index}'
+        self._experiments[index].name = f'Experiment {index}'
         self._experiments[index].model = self.models[index]
 
         self._with_experiments = True
