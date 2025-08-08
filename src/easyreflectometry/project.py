@@ -56,6 +56,7 @@ class Project:
         self._current_assembly_index = 0
         self._current_layer_index = 0
         self._fitter_model_index = None
+        self._current_experiment_index = 0
 
         # Project flags
         self._created = False
@@ -154,6 +155,19 @@ class Project:
             raise ValueError(f'Index {value} out of range')
         if self._current_layer_index != value:
             self._current_layer_index = value
+
+    @property
+    def current_experiment_index(self) -> Optional[int]:
+        return self._current_experiment_index
+
+    @current_experiment_index.setter
+    def current_experiment_index(self, value: int) -> None:
+        if value < 0 or value >= len(self._experiments):
+            raise ValueError(f'Index {value} out of range')
+        if self._current_experiment_index != value:
+            self._current_experiment_index = value
+            # Resetting the model index to 0 when changing the experiment
+            #self.current_model_index = 0
 
     @property
     def created(self) -> bool:
