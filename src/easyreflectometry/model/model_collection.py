@@ -4,8 +4,9 @@ from typing import List
 from typing import Optional
 from typing import Tuple
 
-from easyreflectometry.sample.collections.base_collection import BaseCollection
 from easyreflectometry.model.model import COLORS
+from easyreflectometry.sample.collections.base_collection import BaseCollection
+
 from .model import Model
 
 
