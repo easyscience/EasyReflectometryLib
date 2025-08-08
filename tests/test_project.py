@@ -634,3 +634,39 @@ class TestProject:
         # Expect
         assert len(parameters) == 14
         assert isinstance(parameters[0], Parameter)
+
+    def test_current_experiment_index_getter_and_setter(self):
+        project = Project()
+        # Default value should be 0
+        assert project.current_experiment_index == 0
+
+        # Add two experiments to allow setting index 1
+        project._experiments[0] = DataSet1D(name="exp0", x=[], y=[], ye=[], xe=[], model=None)
+        project._experiments[1] = DataSet1D(name="exp1", x=[], y=[], ye=[], xe=[], model=None)
+
+        # Set to 1 (valid)
+        project.current_experiment_index = 1
+        assert project.current_experiment_index == 1
+
+        # Set to 0 (valid)
+        project.current_experiment_index = 0
+        assert project.current_experiment_index == 0
+
+    def test_current_experiment_index_setter_out_of_range(self):
+        project = Project()
+        # Add one experiment
+        project._experiments[0] = DataSet1D(name="exp0", x=[], y=[], ye=[], xe=[], model=None)
+
+        # Negative index should raise
+        try:
+            project.current_experiment_index = -1
+            assert False, "Expected ValueError for negative index"
+        except ValueError:
+            pass
+
+        # Index >= len(_experiments) should raise
+        try:
+            project.current_experiment_index = 1
+            assert False, "Expected ValueError for out-of-range index"
+        except ValueError:
+            pass
