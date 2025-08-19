@@ -80,6 +80,12 @@ class Project:
         return parameters
 
     @property
+    def enabled_parameters(self) -> List[Parameter]:
+        parameters = self.parameters
+        # Only include enabled parameters
+        return [param for param in parameters if param.enabled]
+
+    @property
     def q_min(self):
         if self._q_min is None:
             return Q_MIN
