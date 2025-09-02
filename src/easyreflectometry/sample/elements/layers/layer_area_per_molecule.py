@@ -136,8 +136,20 @@ class LayerAreaPerMolecule(Layer):
             default_dict=DEFAULTS['isl'],
             unique_name_prefix=f'{unique_name}_Isl',
         )
+        # Constrain the real part of the sld value for the molecule
+        # dependency_expression = area_per_molecule_to_scattering_length_density(
+        #     scattering_length=_scattering_length_real,
+        #     area_per_molecule=_area_per_molecule,
+        #     thickness=thickness,
+        # )
+        dependency_expression = "scattering_length / (thickness * area_per_molecule) * 1e6"
+        dependency_map = {
+            'scattering_length': _scattering_length_real,
+            'thickness': thickness,
+            'area_per_molecule': _area_per_molecule,
+        }
+        molecule_material.sld.make_dependent_on(dependency_expression=dependency_expression, dependency_map=dependency_map)
 
-        # # Constrain the real part of the sld value for the molecule
         # constraint_sld_real = FunctionalConstraint(
         #     dependent_obj=molecule_material.sld,
         #     func=area_per_molecule_to_scattering_length_density,
@@ -148,6 +160,19 @@ class LayerAreaPerMolecule(Layer):
         # _scattering_length_real.user_constraints['area_per_molecule'] = constraint_sld_real
 
         # Constrain the imaginary part of the sld value for the molecule
+        # dependency_expression = area_per_molecule_to_scattering_length_density(
+        #     scattering_length=_scattering_length_imag,
+        #     area_per_molecule=_area_per_molecule,
+        #     thickness=thickness,
+        # )
+        dependency_expression = "scattering_length / (thickness * area_per_molecule) * 1e6"
+        dependency_map = {
+            'scattering_length': _scattering_length_imag,
+            'thickness': thickness,
+            'area_per_molecule': _area_per_molecule,
+        }
+        molecule_material.isld.make_dependent_on(dependency_expression=dependency_expression, dependency_map=dependency_map)
+
         # constraint_sld_imag = FunctionalConstraint(
         #     dependent_obj=molecule_material.isld,
         #     func=area_per_molecule_to_scattering_length_density,

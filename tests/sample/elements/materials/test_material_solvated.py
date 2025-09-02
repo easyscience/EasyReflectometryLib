@@ -19,13 +19,13 @@ class TestMaterialSolvated:
         self.mock_solvent_fraction.value = 0.1
         self.mock_interface = MagicMock()
         self.mock_Parameter = MagicMock()
-        self.mock_FunctionalConstraint = MagicMock()
+        # self.mock_FunctionalConstraint = MagicMock()
         monkeypatch.setattr(easyreflectometry.sample.elements.materials.material_mixture, 'Parameter', self.mock_Parameter)
-        monkeypatch.setattr(
-            easyreflectometry.sample.elements.materials.material_mixture,
-            'FunctionalConstraint',
-            self.mock_FunctionalConstraint,
-        )
+        # monkeypatch.setattr(
+        #     easyreflectometry.sample.elements.materials.material_mixture,
+        #     'FunctionalConstraint',
+        #     self.mock_FunctionalConstraint,
+        # )
         return MaterialSolvated(
             material=self.material,
             solvent=self.solvent,

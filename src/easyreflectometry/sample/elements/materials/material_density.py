@@ -106,6 +106,20 @@ class MaterialDensity(Material):
             unique_name_prefix=f'{unique_name}_Isld',
         )
 
+        dependency_expression = "0.602214076e6 * density * scattering_length / molecular_weight"
+        dependency_map = {
+            'density': density,
+            'scattering_length': scattering_length_real,
+            'molecular_weight': mw,
+        }
+        sld.make_dependent_on(dependency_expression=dependency_expression, dependency_map=dependency_map)
+        dependency_map = {
+            'density': density,
+            'scattering_length': scattering_length_imag,
+            'molecular_weight': mw,
+        }
+        isld.make_dependent_on(dependency_expression=dependency_expression, dependency_map=dependency_map)
+
         # constraint = FunctionalConstraint(sld, density_to_sld, [scattering_length_real, mw, density])
         # scattering_length_real.user_constraints['sld'] = constraint
         # mw.user_constraints['sld'] = constraint

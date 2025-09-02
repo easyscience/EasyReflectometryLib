@@ -133,7 +133,7 @@ class SurfactantLayer(BaseAssembly):
     @property
     def constrain_area_per_molecule(self) -> bool:
         """Get the area per molecule constraint status."""
-        return None
+        return self.tail_layer._area_per_molecule.enabled
         # return self.tail_layer._area_per_molecule.user_constraints['area_per_molecule'].enabled
 
     @constrain_area_per_molecule.setter
@@ -143,6 +143,7 @@ class SurfactantLayer(BaseAssembly):
 
         :param status: Boolean description the wanted of the constraint.
         """
+        self.tail_layer._area_per_molecule.make_dependent_on(dependency_expression='a', dependency_map={'a': self.head_layer._area_per_molecule})
         return
         # self.tail_layer._area_per_molecule.user_constraints['area_per_molecule'].enabled = status
         # if status:
@@ -152,8 +153,8 @@ class SurfactantLayer(BaseAssembly):
     @property
     def conformal_roughness(self) -> bool:
         """Get the roughness constraint status."""
-        return False
-        #return self.tail_layer.roughness.user_constraints['roughness_1'].enabled
+        # return False
+        return not self.tail_layer.roughness.independent
 
     @conformal_roughness.setter
     def conformal_roughness(self, status: bool):
@@ -174,8 +175,7 @@ class SurfactantLayer(BaseAssembly):
         if not self.conformal_roughness:
             raise ValueError('Roughness must be conformal to use this function.')
         solvent_roughness.value = self.tail_layer.roughness.value
-        # rough = ObjConstraint(solvent_roughness, '', self.tail_layer.roughness)
-        # self.tail_layer.roughness.user_constraints['solvent_roughness'] = rough
+        self.tail_layer.roughness.make_dependent_on(dependency_expression='a', dependency_map={'a': solvent_roughness})
 
     def constrain_multiple_contrast(
         self,
