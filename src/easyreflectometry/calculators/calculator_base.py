@@ -4,8 +4,8 @@ from abc import ABCMeta
 from typing import Callable
 
 import numpy as np
-from easyscience.Objects.core import ComponentSerializer
-from easyscience.Objects.Inferface import ItemContainer
+from easyscience.io import SerializerComponent
+from easyscience.fitting.calculators.interface_factory import ItemContainer
 
 from easyreflectometry.model import Model
 from easyreflectometry.sample import BaseAssembly
@@ -17,7 +17,7 @@ from easyreflectometry.sample import Multilayer
 from .wrapper_base import WrapperBase
 
 
-class CalculatorBase(ComponentSerializer, metaclass=ABCMeta):
+class CalculatorBase(SerializerComponent, metaclass=ABCMeta):
     """
     This class is a template and defines all properties that a calculator should have.
     """

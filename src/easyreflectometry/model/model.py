@@ -9,8 +9,8 @@ from typing import Union
 
 import numpy as np
 from easyscience import global_object
-from easyscience.Objects.ObjectClasses import BaseObj
-from easyscience.Objects.variable import Parameter
+from easyscience import ObjBase as BaseObj
+from easyscience.variable import Parameter
 
 from easyreflectometry.sample import BaseAssembly
 from easyreflectometry.sample import Sample

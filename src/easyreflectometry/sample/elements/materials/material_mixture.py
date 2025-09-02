@@ -2,8 +2,8 @@ from typing import Optional
 from typing import Union
 
 from easyscience import global_object
-from easyscience.Constraints import FunctionalConstraint
-from easyscience.Objects.variable import Parameter
+#from easyscience.Constraints import FunctionalConstraint
+from easyscience.variable import Parameter
 
 from easyreflectometry.special.calculations import weighted_average
 from easyreflectometry.utils import get_as_parameter
@@ -114,26 +114,27 @@ class MaterialMixture(BaseCore):
         return self._isld.value
 
     def _materials_constraints(self):
-        self._sld.enabled = True
-        self._isld.enabled = True
-        constraint = FunctionalConstraint(
-            dependent_obj=self._sld,
-            func=weighted_average,
-            independent_objs=[self._material_a.sld, self._material_b.sld, self._fraction],
-        )
-        self._material_a.sld.user_constraints['sld'] = constraint
-        self._material_b.sld.user_constraints['sld'] = constraint
-        self._fraction.user_constraints['sld'] = constraint
-        constraint()
-        iconstraint = FunctionalConstraint(
-            dependent_obj=self._isld,
-            func=weighted_average,
-            independent_objs=[self._material_a.isld, self._material_b.isld, self._fraction],
-        )
-        self._material_a.isld.user_constraints['isld'] = iconstraint
-        self._material_b.isld.user_constraints['isld'] = iconstraint
-        self._fraction.user_constraints['isld'] = iconstraint
-        iconstraint()
+        return
+        # self._sld.enabled = True
+        # self._isld.enabled = True
+        # constraint = FunctionalConstraint(
+        #     dependent_obj=self._sld,
+        #     func=weighted_average,
+        #     independent_objs=[self._material_a.sld, self._material_b.sld, self._fraction],
+        # )
+        # self._material_a.sld.user_constraints['sld'] = constraint
+        # self._material_b.sld.user_constraints['sld'] = constraint
+        # self._fraction.user_constraints['sld'] = constraint
+        # constraint()
+        # iconstraint = FunctionalConstraint(
+        #     dependent_obj=self._isld,
+        #     func=weighted_average,
+        #     independent_objs=[self._material_a.isld, self._material_b.isld, self._fraction],
+        # )
+        # self._material_a.isld.user_constraints['isld'] = iconstraint
+        # self._material_b.isld.user_constraints['isld'] = iconstraint
+        # self._fraction.user_constraints['isld'] = iconstraint
+        # iconstraint()
 
     @property
     def fraction(self) -> float:

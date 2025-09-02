@@ -60,4 +60,4 @@ class TestMaterialDensity(unittest.TestCase):
 
         q = MaterialDensity.from_dict(p_dict)
 
-        assert sorted(p.as_data_dict()) == sorted(q.as_data_dict())
+        assert sorted(p.as_dict()) == sorted(q.as_dict())

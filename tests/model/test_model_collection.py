@@ -90,7 +90,7 @@ class TestModelCollection:
 
         # Expect
         # We have to skip the resolution_function and interface
-        assert sorted(p.as_data_dict(skip=['resolution_function', 'interface'])) == sorted(
-            q.as_data_dict(skip=['resolution_function', 'interface'])
+        assert sorted(p.as_dict(skip=['resolution_function', 'interface'])) == sorted(
+            q.as_dict(skip=['resolution_function', 'interface'])
         )
         assert p[0]._resolution_function.smearing(5.5) == q[0]._resolution_function.smearing(5.5)

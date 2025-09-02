@@ -420,8 +420,8 @@ def test_dict_round_trip(interface):
     model_from_dict = Model.from_dict(src_dict)
 
     # Expect
-    assert sorted(model.as_data_dict(skip=['resolution_function', 'interface'])) == sorted(
-        model_from_dict.as_data_dict(skip=['resolution_function', 'interface'])
+    assert sorted(model.as_dict(skip=['resolution_function', 'interface'])) == sorted(
+        model_from_dict.as_dict(skip=['resolution_function', 'interface'])
     )
     assert model._resolution_function.smearing(5.5) == model_from_dict._resolution_function.smearing(5.5)
     if interface is not None:

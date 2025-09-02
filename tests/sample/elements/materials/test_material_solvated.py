@@ -2,7 +2,7 @@ from unittest.mock import MagicMock
 
 import pytest
 from easyscience import global_object
-from easyscience.Objects.variable import Parameter
+from easyscience.variable import Parameter
 
 import easyreflectometry.sample.elements.materials.material_mixture
 import easyreflectometry.sample.elements.materials.material_solvated
@@ -125,7 +125,7 @@ class TestMaterialSolvated:
 
         q = MaterialSolvated.from_dict(p_dict)
 
-        assert sorted(p.as_data_dict()) == sorted(q.as_data_dict())
+        assert sorted(p.as_dict()) == sorted(q.as_dict())
 
     def test_update_name(self, material_solvated: MaterialSolvated) -> None:
         # When

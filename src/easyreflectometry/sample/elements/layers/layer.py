@@ -4,7 +4,7 @@ from typing import Union
 
 import numpy as np
 from easyscience import global_object
-from easyscience.Objects.variable import Parameter
+from easyscience.variable import Parameter
 
 from easyreflectometry.utils import get_as_parameter
 

@@ -1,8 +1,6 @@
 from typing import Any
 from typing import Optional
 
-from easyscience.Constraints import ObjConstraint
-
 from ..base_core import BaseCore
 from ..collections.layer_collection import LayerCollection
 from ..elements.layers.layer import Layer
@@ -88,14 +86,9 @@ class BaseAssembly(BaseCore):
         """
         Setup thickness constraint, front layer is the deciding layer
         """
+        independent_param = self.front_layer.thickness
         for i in range(1, len(self.layers)):
-            layer_constraint = ObjConstraint(
-                dependent_obj=self.layers[i].thickness,
-                operator='',
-                independent_obj=self.front_layer.thickness,
-            )
-            self.front_layer.thickness.user_constraints[f'thickness_{i}'] = layer_constraint
-            self.front_layer.thickness.user_constraints[f'thickness_{i}'].enabled = False
+            self.layers[i].thickness.make_dependent_on(dependency_expression='a', dependency_map={'a': independent_param})
         self._thickness_constraints_setup = True
 
     def _enable_thickness_constraints(self):
@@ -104,17 +97,12 @@ class BaseAssembly(BaseCore):
         """
         if self._thickness_constraints_setup:
             # Make sure that the thickness constraint is enabled
-            for i in range(1, len(self.layers)):
-                self.front_layer.thickness.user_constraints[f'thickness_{i}'].enabled = True
+            self._setup_thickness_constraints()
             # Make sure that the thickness parameter is enabled
             for i in range(len(self.layers)):
                 self.layers[i].thickness.enabled = True
-            # Make sure that the thickness constraint is applied
-            for i in range(1, len(self.layers)):
-                self.front_layer.thickness.user_constraints[f'thickness_{i}']()
-
         else:
-            raise Exception('Roughness constraints not setup')
+            raise Exception('Thickness constraints not setup')
 
     def _disable_thickness_constraints(self):
         """
@@ -122,38 +110,31 @@ class BaseAssembly(BaseCore):
         """
         if self._thickness_constraints_setup:
             for i in range(1, len(self.layers)):
-                self.front_layer.thickness.user_constraints[f'thickness_{i}'].enabled = False
+                self.layers[i].thickness.make_independent()
         else:
-            raise Exception('Roughness constraints not setup')
+            raise Exception('Thickness constraints not setup')
 
     def _setup_roughness_constraints(self) -> None:
         """
         Setup roughness constraint, front layer is the deciding layer
         """
+        independent_parameter = self.front_layer.roughness
         for i in range(1, len(self.layers)):
-            layer_constraint = ObjConstraint(
-                dependent_obj=self.layers[i].roughness,
-                operator='',
-                independent_obj=self.front_layer.roughness,
-            )
-            self.front_layer.roughness.user_constraints[f'roughness_{i}'] = layer_constraint
-            self.front_layer.roughness.user_constraints[f'roughness_{i}'].enabled = False
+            self.layers[i].roughness.make_dependent_on(dependency_expression='a', dependency_map={'a': independent_parameter})
         self._roughness_constraints_setup = True
 
     def _enable_roughness_constraints(self):
         """
         Enable the roughness constraint.
         """
+        independent_parameter = self.front_layer.roughness
         if self._roughness_constraints_setup:
             # Make sure that the roughness constraint is enabled
             for i in range(1, len(self.layers)):
-                self.front_layer.roughness.user_constraints[f'roughness_{i}'].enabled = True
+                self.layers[i].roughness.make_dependent_on(dependency_expression='a', dependency_map={'a': independent_parameter})
             # Make sure that the roughness parameter is enabled
             for i in range(len(self.layers)):
                 self.layers[i].roughness.enabled = True
-            # Make sure that the roughness constraint is applied
-            for i in range(1, len(self.layers)):
-                self.front_layer.roughness.user_constraints[f'roughness_{i}']()
         else:
             raise Exception('Roughness constraints not setup')
 
@@ -163,6 +144,6 @@ class BaseAssembly(BaseCore):
         """
         if self._roughness_constraints_setup:
             for i in range(1, len(self.layers)):
-                self.front_layer.roughness.user_constraints[f'roughness_{i}'].enabled = False
+                self.layers[i].roughness.make_independent()
         else:
             raise Exception('Roughness constraints not setup')

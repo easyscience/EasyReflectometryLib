@@ -11,7 +11,7 @@ import numpy as np
 from easyscience import global_object
 from easyscience.fitting import AvailableMinimizers
 from easyscience.fitting.fitter import DEFAULT_MINIMIZER
-from easyscience.Objects.variable import Parameter
+from easyscience.variable import Parameter
 from scipp import DataGroup
 
 from easyreflectometry.calculators import CalculatorFactory

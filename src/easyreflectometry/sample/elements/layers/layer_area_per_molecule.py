@@ -3,8 +3,8 @@ from typing import Union
 
 import numpy as np
 from easyscience import global_object
-from easyscience.Constraints import FunctionalConstraint
-from easyscience.Objects.variable import Parameter
+#from easyscience.Constraints import FunctionalConstraint
+from easyscience.variable import Parameter
 
 from easyreflectometry.special.calculations import area_per_molecule_to_scattering_length_density
 from easyreflectometry.special.calculations import neutron_scattering_length
@@ -137,25 +137,25 @@ class LayerAreaPerMolecule(Layer):
             unique_name_prefix=f'{unique_name}_Isl',
         )
 
-        # Constrain the real part of the sld value for the molecule
-        constraint_sld_real = FunctionalConstraint(
-            dependent_obj=molecule_material.sld,
-            func=area_per_molecule_to_scattering_length_density,
-            independent_objs=[_scattering_length_real, thickness, _area_per_molecule],
-        )
-        thickness.user_constraints['area_per_molecule'] = constraint_sld_real
-        _area_per_molecule.user_constraints['area_per_molecule'] = constraint_sld_real
-        _scattering_length_real.user_constraints['area_per_molecule'] = constraint_sld_real
+        # # Constrain the real part of the sld value for the molecule
+        # constraint_sld_real = FunctionalConstraint(
+        #     dependent_obj=molecule_material.sld,
+        #     func=area_per_molecule_to_scattering_length_density,
+        #     independent_objs=[_scattering_length_real, thickness, _area_per_molecule],
+        # )
+        # thickness.user_constraints['area_per_molecule'] = constraint_sld_real
+        # _area_per_molecule.user_constraints['area_per_molecule'] = constraint_sld_real
+        # _scattering_length_real.user_constraints['area_per_molecule'] = constraint_sld_real
 
         # Constrain the imaginary part of the sld value for the molecule
-        constraint_sld_imag = FunctionalConstraint(
-            dependent_obj=molecule_material.isld,
-            func=area_per_molecule_to_scattering_length_density,
-            independent_objs=[_scattering_length_imag, thickness, _area_per_molecule],
-        )
-        thickness.user_constraints['iarea_per_molecule'] = constraint_sld_imag
-        _area_per_molecule.user_constraints['iarea_per_molecule'] = constraint_sld_imag
-        _scattering_length_imag.user_constraints['iarea_per_molecule'] = constraint_sld_imag
+        # constraint_sld_imag = FunctionalConstraint(
+        #     dependent_obj=molecule_material.isld,
+        #     func=area_per_molecule_to_scattering_length_density,
+        #     independent_objs=[_scattering_length_imag, thickness, _area_per_molecule],
+        # )
+        # thickness.user_constraints['iarea_per_molecule'] = constraint_sld_imag
+        # _area_per_molecule.user_constraints['iarea_per_molecule'] = constraint_sld_imag
+        # _scattering_length_imag.user_constraints['iarea_per_molecule'] = constraint_sld_imag
 
         solvated_molecule_material = MaterialSolvated(
             material=molecule_material,

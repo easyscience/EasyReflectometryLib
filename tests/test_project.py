@@ -6,7 +6,7 @@ from unittest.mock import MagicMock
 import numpy as np
 from easyscience import global_object
 from easyscience.fitting import AvailableMinimizers
-from easyscience.Objects.variable import Parameter
+from easyscience.variable import Parameter
 from numpy.testing import assert_allclose
 
 import easyreflectometry
