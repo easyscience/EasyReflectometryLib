@@ -103,10 +103,7 @@ class SurfactantLayer(BaseAssembly):
 
         self.interface = interface
         self.head_layer._area_per_molecule.enabled = True
-        independent_param = self.tail_layer._area_per_molecule
-        self.head_layer._area_per_molecule.make_dependent_on(dependency_expression='a', dependency_map={'a': independent_param})
 
-        self._setup_roughness_constraints()
         if conformal_roughness:
             self._enable_roughness_constraints()
 
@@ -133,8 +130,8 @@ class SurfactantLayer(BaseAssembly):
     @property
     def constrain_area_per_molecule(self) -> bool:
         """Get the area per molecule constraint status."""
-        return None
-        # return self.tail_layer._area_per_molecule.user_constraints['area_per_molecule'].enabled
+        constrained = not self.head_layer._area_per_molecule.independent
+        return constrained
 
     @constrain_area_per_molecule.setter
     def constrain_area_per_molecule(self, status: bool):
@@ -143,17 +140,17 @@ class SurfactantLayer(BaseAssembly):
 
         :param status: Boolean description the wanted of the constraint.
         """
+        if status:
+            independent_param = self.tail_layer._area_per_molecule
+            self.head_layer._area_per_molecule.make_dependent_on(dependency_expression='a', dependency_map={'a': independent_param})
+        else:
+            self.head_layer._area_per_molecule.make_independent()
         return
-        # self.tail_layer._area_per_molecule.user_constraints['area_per_molecule'].enabled = status
-        # if status:
-        #     # Apply the constraint by running it
-        #     self.tail_layer._area_per_molecule.user_constraints['area_per_molecule']()
 
     @property
     def conformal_roughness(self) -> bool:
         """Get the roughness constraint status."""
-        return False
-        #return self.tail_layer.roughness.user_constraints['roughness_1'].enabled
+        return self.tail_layer.roughness.independent
 
     @conformal_roughness.setter
     def conformal_roughness(self, status: bool):
@@ -174,8 +171,8 @@ class SurfactantLayer(BaseAssembly):
         if not self.conformal_roughness:
             raise ValueError('Roughness must be conformal to use this function.')
         solvent_roughness.value = self.tail_layer.roughness.value
-        # rough = ObjConstraint(solvent_roughness, '', self.tail_layer.roughness)
-        # self.tail_layer.roughness.user_constraints['solvent_roughness'] = rough
+        solvent_roughness.make_dependent_on(dependency_expression='a', dependency_map={'a': self.tail_layer.roughness})
+
 
     def constrain_multiple_contrast(
         self,
@@ -191,59 +188,41 @@ class SurfactantLayer(BaseAssembly):
 
         :param another_contrast: The surfactant layer to constrain
         """
-        return
-        # if head_layer_thickness:
-        #     head_layer_thickness_constraint = ObjConstraint(
-        #         dependent_obj=self.head_layer.thickness,
-        #         operator='',
-        #         independent_obj=another_contrast.head_layer.thickness,
-        #     )
-        #     another_contrast.head_layer.thickness.user_constraints[f'{another_contrast.name}'] = (
-        #         head_layer_thickness_constraint
-        #     )
-        # if tail_layer_thickness:
-        #     tail_layer_thickness_constraint = ObjConstraint(
-        #         dependent_obj=self.tail_layer.thickness, operator='', independent_obj=another_contrast.tail_layer.thickness
-        #     )
-        #     another_contrast.tail_layer.thickness.user_constraints[f'{another_contrast.name}'] = (
-        #         tail_layer_thickness_constraint
-        #     )
-        # if head_layer_area_per_molecule:
-        #     head_layer_area_per_molecule_constraint = ObjConstraint(
-        #         dependent_obj=self.head_layer._area_per_molecule,
-        #         operator='',
-        #         independent_obj=another_contrast.head_layer._area_per_molecule,
-        #     )
-        #     another_contrast.head_layer._area_per_molecule.user_constraints[f'{another_contrast.name}'] = (
-        #         head_layer_area_per_molecule_constraint
-        #     )
-        # if tail_layer_area_per_molecule:
-        #     tail_layer_area_per_molecule_constraint = ObjConstraint(
-        #         dependent_obj=self.tail_layer._area_per_molecule,
-        #         operator='',
-        #         independent_obj=another_contrast.tail_layer._area_per_molecule,
-        #     )
-        #     another_contrast.tail_layer._area_per_molecule.user_constraints[f'{another_contrast.name}'] = (
-        #         tail_layer_area_per_molecule_constraint
-        #     )
-        # if head_layer_fraction:
-        #     head_layer_fraction_constraint = ObjConstraint(
-        #         dependent_obj=self.head_layer.material._fraction,
-        #         operator='',
-        #         independent_obj=another_contrast.head_layer.material._fraction,
-        #     )
-        #     another_contrast.head_layer.material._fraction.user_constraints[f'{another_contrast.name}'] = (
-        #         head_layer_fraction_constraint
-        #     )
-        # if tail_layer_fraction:
-        #     tail_layer_fraction_constraint = ObjConstraint(
-        #         dependent_obj=self.tail_layer.material._fraction,
-        #         operator='',
-        #         independent_obj=another_contrast.tail_layer.material._fraction,
-        #     )
-        #     another_contrast.tail_layer.material._fraction.user_constraints[f'{another_contrast.name}'] = (
-        #         tail_layer_fraction_constraint
-        #     )
+        if head_layer_thickness:
+            self.head_layer.thickness.make_dependent_on(
+                dependency_expression='a',
+                dependency_map={'a': another_contrast.head_layer.thickness},
+            )
+
+        if tail_layer_thickness:
+            self.tail_layer.thickness.make_dependent_on(
+                dependency_expression='a',
+                dependency_map={'a': another_contrast.tail_layer.thickness},
+            )
+
+        if head_layer_area_per_molecule:
+            self.head_layer._area_per_molecule.make_dependent_on(
+                dependency_expression='a',
+                dependency_map={'a': another_contrast.head_layer._area_per_molecule},
+            )
+
+        if tail_layer_area_per_molecule:
+            self.tail_layer._area_per_molecule.make_dependent_on(
+                dependency_expression='a',
+                dependency_map={'a': another_contrast.tail_layer._area_per_molecule},
+            )
+
+        if head_layer_fraction:
+            self.head_layer.material._fraction.make_dependent_on(
+                dependency_expression='a',
+                dependency_map={'a': another_contrast.head_layer.material._fraction},
+            )
+
+        if tail_layer_fraction:
+            self.tail_layer.material._fraction.make_dependent_on(
+                dependency_expression='a',
+                dependency_map={'a': another_contrast.tail_layer.material._fraction},
+            )
 
     @property
     def _dict_repr(self) -> dict:

@@ -3,7 +3,6 @@ from typing import Union
 
 import numpy as np
 from easyscience import global_object
-#from easyscience.Constraints import FunctionalConstraint
 from easyscience.variable import Parameter
 
 from easyreflectometry.special.calculations import density_to_sld
@@ -106,14 +105,12 @@ class MaterialDensity(Material):
             unique_name_prefix=f'{unique_name}_Isld',
         )
 
-        # constraint = FunctionalConstraint(sld, density_to_sld, [scattering_length_real, mw, density])
-        # scattering_length_real.user_constraints['sld'] = constraint
-        # mw.user_constraints['sld'] = constraint
-        # density.user_constraints['sld'] = constraint
-        # iconstraint = FunctionalConstraint(isld, density_to_sld, [scattering_length_imag, mw, density])
-        # scattering_length_imag.user_constraints['isld'] = iconstraint
-        # mw.user_constraints['isld'] = iconstraint
-        # density.user_constraints['isld'] = iconstraint
+        dependency_expression = "1e-23*(0.602214076e6 * d * sl) / mw"
+        dependency_map = {'d': density, 'sl': scattering_length_real, 'mw': mw}
+        sld.make_dependent_on(dependency_expression=dependency_expression, dependency_map=dependency_map)
+
+        dependency_map = {'d': density, 'sl': scattering_length_imag, 'mw': mw}
+        isld.make_dependent_on(dependency_expression=dependency_expression, dependency_map=dependency_map)
 
         super().__init__(sld, isld, name=name, interface=interface)
 

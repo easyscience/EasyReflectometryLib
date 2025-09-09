@@ -128,22 +128,12 @@ class BaseAssembly(BaseCore):
         Enable the roughness constraint.
         """
         independent_parameter = self.front_layer.roughness
-        if self._roughness_constraints_setup:
-            # Make sure that the roughness constraint is enabled
-            for i in range(1, len(self.layers)):
-                self.layers[i].roughness.make_dependent_on(dependency_expression='a', dependency_map={'a': independent_parameter})
-            # Make sure that the roughness parameter is enabled
-            for i in range(len(self.layers)):
-                self.layers[i].roughness.enabled = True
-        else:
-            raise Exception('Roughness constraints not setup')
+        for i in range(1, len(self.layers)):
+            self.layers[i].roughness.make_dependent_on(dependency_expression='a', dependency_map={'a': independent_parameter})
 
     def _disable_roughness_constraints(self):
         """
         Disable the roughness constraint.
         """
-        if self._roughness_constraints_setup:
-            for i in range(1, len(self.layers)):
-                self.layers[i].roughness.make_independent()
-        else:
-            raise Exception('Roughness constraints not setup')
+        for i in range(1, len(self.layers)):
+            self.layers[i].roughness.make_independent()

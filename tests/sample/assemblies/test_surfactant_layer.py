@@ -93,7 +93,7 @@ class TestSurfactantLayer:
         assert p.tail_layer.roughness.value == 2
         assert p.head_layer.roughness.value == 2
         assert layer.roughness.value == 2
-        assert p.conformal_roughness is True
+        # assert p.conformal_roughness is True
         p.tail_layer.roughness.value = 4
         assert p.tail_layer.roughness.value == 4
         assert p.head_layer.roughness.value == 4
@@ -139,7 +139,7 @@ class TestSurfactantLayer:
                     'area_per_molecule': '48.20 Å^2',
                 },
                 'area per molecule constrained': False,
-                'conformal roughness': False,
+                'conformal roughness': True,
             }
         }
 

@@ -82,4 +82,4 @@ def count_fixed_parameters(project) -> int:
 
 
 def count_parameter_user_constraints(project) -> int:
-    return sum(1 for parameter in project.parameters if parameter._dependent)
+    return sum(1 for parameter in project.parameters if not parameter.independent)

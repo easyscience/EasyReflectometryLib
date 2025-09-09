@@ -95,8 +95,6 @@ class TestBaseAssembly:
 
         # Expect
         assert self.mock_layer_0.roughness.value == self.mock_layer_0.roughness.value
-        assert self.mock_layer_0.roughness.enabled is True
-        assert self.mock_layer_1.roughness.enabled is True
 
     def test_enable_roughness_constraints_exception(self, base_assembly: BaseAssembly) -> None:
         # When

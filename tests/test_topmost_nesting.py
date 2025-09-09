@@ -49,6 +49,10 @@ def test_copy():
     )
     assert model.unique_name != model_copy.unique_name
     assert model.name == model_copy.name
-    assert model.as_dict(skip=['interface', 'unique_name', 'resolution_function']) == model_copy.as_dict(
-        skip=['interface', 'unique_name', 'resolution_function']
-    )
+    m1 = model.as_dict(skip=['interface', 'unique_name', 'resolution_function'])
+    m2 = model_copy.as_dict(skip=['interface', 'unique_name', 'resolution_function'])
+    assert m1 == m2
+    # assert sorted(m1) == sorted(m2)
+    # assert model.as_dict(skip=['interface', 'unique_name', 'resolution_function']) == model_copy.as_dict(
+    #     skip=['interface', 'unique_name', 'resolution_function']
+    # )

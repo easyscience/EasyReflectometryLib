@@ -2,7 +2,6 @@ from typing import Optional
 from typing import Union
 
 from easyscience import global_object
-#from easyscience.Constraints import FunctionalConstraint
 from easyscience.variable import Parameter
 
 from easyreflectometry.special.calculations import weighted_average
@@ -114,27 +113,14 @@ class MaterialMixture(BaseCore):
         return self._isld.value
 
     def _materials_constraints(self):
-        return
-        # self._sld.enabled = True
-        # self._isld.enabled = True
-        # constraint = FunctionalConstraint(
-        #     dependent_obj=self._sld,
-        #     func=weighted_average,
-        #     independent_objs=[self._material_a.sld, self._material_b.sld, self._fraction],
-        # )
-        # self._material_a.sld.user_constraints['sld'] = constraint
-        # self._material_b.sld.user_constraints['sld'] = constraint
-        # self._fraction.user_constraints['sld'] = constraint
-        # constraint()
-        # iconstraint = FunctionalConstraint(
-        #     dependent_obj=self._isld,
-        #     func=weighted_average,
-        #     independent_objs=[self._material_a.isld, self._material_b.isld, self._fraction],
-        # )
-        # self._material_a.isld.user_constraints['isld'] = iconstraint
-        # self._material_b.isld.user_constraints['isld'] = iconstraint
-        # self._fraction.user_constraints['isld'] = iconstraint
-        # iconstraint()
+        self._sld.enabled = True
+        self._isld.enabled = True
+        dependency_expression = "a * (1 - p) + b * p"
+        dependency_map = {'a': self._material_a.sld, 'b': self._material_b.sld, 'p': self._fraction}
+        self._sld.make_dependent_on(dependency_expression=dependency_expression, dependency_map=dependency_map)
+
+        dependency_map = {'a': self._material_a.isld, 'b': self._material_b.isld, 'p': self._fraction}
+        self._isld.make_dependent_on(dependency_expression=dependency_expression, dependency_map=dependency_map)
 
     @property
     def fraction(self) -> float:
