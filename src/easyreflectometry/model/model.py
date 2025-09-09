@@ -8,8 +8,8 @@ from typing import Optional
 from typing import Union
 
 import numpy as np
-from easyscience import global_object
 from easyscience import ObjBase as BaseObj
+from easyscience import global_object
 from easyscience.variable import Parameter
 
 from easyreflectometry.sample import BaseAssembly

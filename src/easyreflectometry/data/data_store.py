@@ -8,8 +8,8 @@ from typing import Union
 import numpy as np
 from easyscience.io import SerializerComponent
 from easyscience.io import SerializerDict
-#from easyscience.utils.io.dict import DictSerializer
 
+#from easyscience.utils.io.dict import DictSerializer
 from easyreflectometry.model import Model
 
 T = TypeVar('T')

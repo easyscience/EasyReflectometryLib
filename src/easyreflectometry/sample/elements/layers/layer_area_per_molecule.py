@@ -5,7 +5,6 @@ import numpy as np
 from easyscience import global_object
 from easyscience.variable import Parameter
 
-from easyreflectometry.special.calculations import area_per_molecule_to_scattering_length_density
 from easyreflectometry.special.calculations import neutron_scattering_length
 from easyreflectometry.utils import get_as_parameter
 
