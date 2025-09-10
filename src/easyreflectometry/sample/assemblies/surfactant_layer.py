@@ -102,6 +102,7 @@ class SurfactantLayer(BaseAssembly):
         )
 
         self.interface = interface
+        self.conformal = False
         self.head_layer._area_per_molecule.enabled = True
 
         if conformal_roughness:
@@ -151,7 +152,7 @@ class SurfactantLayer(BaseAssembly):
     @property
     def conformal_roughness(self) -> bool:
         """Get the roughness constraint status."""
-        return self.tail_layer.roughness.independent
+        return self.conformal
 
     @conformal_roughness.setter
     def conformal_roughness(self, status: bool):
@@ -161,8 +162,10 @@ class SurfactantLayer(BaseAssembly):
         """
         if status:
             self._enable_roughness_constraints()
+            self.conformal = True
         else:
             self._disable_roughness_constraints()
+            self.conformal = False
 
     def constrain_solvent_roughness(self, solvent_roughness: Parameter):
         """Add the constraint to the solvent roughness.
