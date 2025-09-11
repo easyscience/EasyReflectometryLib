@@ -1,7 +1,6 @@
 from easyreflectometry import Project
 from easyreflectometry.utils import count_fixed_parameters
 from easyreflectometry.utils import count_free_parameters
-from easyreflectometry.utils import count_parameter_user_constraints
 
 
 def test_count_free_parameters():

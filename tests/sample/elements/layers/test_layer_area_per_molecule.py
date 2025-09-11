@@ -93,7 +93,7 @@ class TestLayerAreaPerMolecule(unittest.TestCase):
         assert p.molecular_formula == 'C8O10H12P'
         assert p.area_per_molecule == 50
         print(p.material)
-        assert_almost_equal(p.material.sld,  0.31494833333333333)
+        assert_almost_equal(p.material.sld, 0.31494833333333333)
         assert p.thickness.value == 12
         assert p.roughness.value == 2
         assert p.solvent.sld.value == -0.561

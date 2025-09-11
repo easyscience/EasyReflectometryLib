@@ -29,7 +29,7 @@ class TestMaterialDensity(unittest.TestCase):
     def test_from_pars(self):
         p = MaterialDensity('Co', 8.9, 'Cobalt')
         assert p.density.value == 8.9
-        assert_almost_equal(p.sld.value,2.264541463379026)
+        assert_almost_equal(p.sld.value, 2.264541463379026)
         assert p.chemical_structure == 'Co'
 
     def test_chemical_structure_change(self):

@@ -8,7 +8,6 @@ from unittest.mock import MagicMock
 import pytest
 from easyscience import global_object
 
-import easyreflectometry.sample.assemblies.base_assembly
 from easyreflectometry.sample.assemblies.base_assembly import BaseAssembly
 
 
@@ -42,7 +41,6 @@ class TestBaseAssembly:
         # When
         # self.mock_layer_0.thickness = MagicMock()
         # self.mock_layer_1.thickness = MagicMock()
-
 
         # Then
         base_assembly._setup_thickness_constraints()
