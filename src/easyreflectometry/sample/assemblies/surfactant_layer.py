@@ -143,8 +143,9 @@ class SurfactantLayer(BaseAssembly):
         """
         if status:
             independent_param = self.tail_layer._area_per_molecule
-            self.head_layer._area_per_molecule.make_dependent_on(dependency_expression='a',
-                                                                dependency_map={'a': independent_param})
+            self.head_layer._area_per_molecule.make_dependent_on(
+                dependency_expression='a', dependency_map={'a': independent_param}
+            )
         else:
             self.head_layer._area_per_molecule.make_independent()
         return
@@ -176,7 +177,6 @@ class SurfactantLayer(BaseAssembly):
             raise ValueError('Roughness must be conformal to use this function.')
         solvent_roughness.value = self.tail_layer.roughness.value
         solvent_roughness.make_dependent_on(dependency_expression='a', dependency_map={'a': self.tail_layer.roughness})
-
 
     def constrain_multiple_contrast(
         self,

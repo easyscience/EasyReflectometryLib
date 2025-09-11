@@ -173,7 +173,7 @@ class Project:
         if self._current_experiment_index != value:
             self._current_experiment_index = value
             # Resetting the model index to 0 when changing the experiment
-            #self.current_model_index = 0
+            # self.current_model_index = 0
 
     @property
     def created(self) -> bool:
@@ -283,8 +283,7 @@ class Project:
             q = self._experiments[index].x
             reflectivity = self._experiments[index].y
             q_error = self._experiments[index].xe
-            resolution_function = Pointwise(
-                q_data_points=[q, reflectivity, q_error])
+            resolution_function = Pointwise(q_data_points=[q, reflectivity, q_error])
             # resolution_function = LinearSpline(
             #     q_data_points=self._experiments[index].y,
             #     fwhm_values=np.sqrt(self._experiments[index].ye),

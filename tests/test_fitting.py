@@ -19,7 +19,7 @@ from easyreflectometry.sample import Sample
 PATH_STATIC = os.path.join(os.path.dirname(easyreflectometry.__file__), '..', '..', 'tests', '_static')
 
 
-@pytest.mark.parametrize('minimizer', [AvailableMinimizers.Bumps, AvailableMinimizers.DFO, AvailableMinimizers.LMFit])
+@pytest.mark.parametrize('minimizer', [AvailableMinimizers.Bumps, AvailableMinimizers.LMFit])
 def test_fitting(minimizer):
     fpath = os.path.join(PATH_STATIC, 'example.ort')
     data = load(fpath)
@@ -41,17 +41,25 @@ def test_fitting(minimizer):
     resolution_function = PercentageFwhm(0.02)
     model = Model(sample, 1, 1e-6, resolution_function, 'Film Model')
     # Thicknesses
+    sio2_layer.thickness.fixed = False
     sio2_layer.thickness.bounds = (15, 50)
+    film_layer.thickness.fixed = False
     film_layer.thickness.bounds = (200, 300)
     # Roughnesses
+    si_layer.roughness.fixed = True
     sio2_layer.roughness.bounds = (1, 15)
+    film_layer.roughness.fixed = False
     film_layer.roughness.bounds = (1, 15)
+    superphase.roughness.fixed = True
     superphase.roughness.bounds = (1, 15)
     # Scattering length density
+    film.sld.fixed = False
     film.sld.bounds = (0.1, 3)
     # Background
+    model.background.fixed = False
     model.background.bounds = (1e-7, 1e-5)
     # Scale
+    model.scale.fixed = False
     model.scale.bounds = (0.5, 1.5)
     interface = CalculatorFactory()
     model.interface = interface

@@ -140,7 +140,7 @@ class LayerAreaPerMolecule(Layer):
         #     area_per_molecule=_area_per_molecule,
         #     thickness=thickness,
         # )
-        dependency_expression = "scattering_length / (thickness * area_per_molecule) * 1e6"
+        dependency_expression = 'scattering_length / (thickness * area_per_molecule) * 1e6'
         dependency_map = {
             'scattering_length': _scattering_length_real,
             'thickness': thickness,
@@ -149,7 +149,7 @@ class LayerAreaPerMolecule(Layer):
         molecule_material.sld.make_dependent_on(dependency_expression=dependency_expression, dependency_map=dependency_map)
 
         # # Constrain the real part of the sld value for the molecule
-        dependency_expression = "a / (b*p) * 1e6"
+        dependency_expression = 'a / (b*p) * 1e6'
         dependency_map = {'a': _scattering_length_real, 'b': thickness, 'p': _area_per_molecule}
         molecule_material.sld.make_dependent_on(dependency_expression=dependency_expression, dependency_map=dependency_map)
 
@@ -265,7 +265,7 @@ class LayerAreaPerMolecule(Layer):
         """Dictionary representation of the `area_per_molecule` object. Produces a simple dictionary"""
         dict_repr = super()._dict_repr
         dict_repr['molecular_formula'] = self._molecular_formula
-        dict_repr['area_per_molecule'] = f'{self.area_per_molecule:.2f} ' f'{self._area_per_molecule.unit}'
+        dict_repr['area_per_molecule'] = f'{self.area_per_molecule:.2f} {self._area_per_molecule.unit}'
         return dict_repr
 
     def as_dict(self, skip: Optional[list[str]] = None) -> dict[str, str]:

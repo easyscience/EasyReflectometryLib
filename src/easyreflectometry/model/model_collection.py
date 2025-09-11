@@ -79,6 +79,6 @@ class ModelCollection(BaseCollection):
             collection.add_model(Model.from_dict(model_data))
 
         if len(collection) != len(this_dict['data']):
-            raise ValueError(f"Expected {len(collection)} models, got {len(this_dict['data'])}")
+            raise ValueError(f'Expected {len(collection)} models, got {len(this_dict["data"])}')
 
         return collection

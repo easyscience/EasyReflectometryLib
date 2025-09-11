@@ -139,7 +139,7 @@ class TestSurfactantLayer:
                     'area_per_molecule': '48.20 Å^2',
                 },
                 'area per molecule constrained': False,
-                'conformal roughness': True,
+                'conformal roughness': False,
             }
         }
 

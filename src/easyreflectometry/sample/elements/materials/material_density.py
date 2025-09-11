@@ -105,7 +105,7 @@ class MaterialDensity(Material):
             unique_name_prefix=f'{unique_name}_Isld',
         )
 
-        dependency_expression = "1e-23*(0.602214076e6 * d * sl) / mw"
+        dependency_expression = '1e-23*(0.602214076e6 * d * sl) / mw'
         dependency_map = {'d': density, 'sl': scattering_length_real, 'mw': mw}
         sld.make_dependent_on(dependency_expression=dependency_expression, dependency_map=dependency_map)
 

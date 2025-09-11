@@ -42,7 +42,8 @@ DEFAULTS = {
     },
 }
 
-COLORS =["#0173B2", "#DE8F05", "#029E73", "#D55E00", "#CC78BC", "#CA9161", "#FBAFE4", "#949494", "#ECE133", "#56B4E9"]
+COLORS = ['#0173B2', '#DE8F05', '#029E73', '#D55E00', '#CC78BC', '#CA9161', '#FBAFE4', '#949494', '#ECE133', '#56B4E9']
+
 
 class Model(BaseObj):
     """Model is the class that represents the experiment.
