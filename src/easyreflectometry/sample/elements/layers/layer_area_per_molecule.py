@@ -135,11 +135,6 @@ class LayerAreaPerMolecule(Layer):
             unique_name_prefix=f'{unique_name}_Isl',
         )
         # Constrain the real part of the sld value for the molecule
-        # dependency_expression = area_per_molecule_to_scattering_length_density(
-        #     scattering_length=_scattering_length_real,
-        #     area_per_molecule=_area_per_molecule,
-        #     thickness=thickness,
-        # )
         dependency_expression = 'scattering_length / (thickness * area_per_molecule) * 1e6'
         dependency_map = {
             'scattering_length': _scattering_length_real,
