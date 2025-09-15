@@ -131,6 +131,7 @@ def _load_txt(fname: Union[TextIO, str]) -> sc.DataGroup:
     }
     return sc.DataGroup(data=data, coords=coords)
 
+
 def merge_datagroups(*data_groups: sc.DataGroup) -> sc.DataGroup:
     """Merge multiple DataGroups into a single DataGroup."""
     merged_data = {}

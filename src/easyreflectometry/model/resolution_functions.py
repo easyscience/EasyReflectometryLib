@@ -63,6 +63,7 @@ class LinearSpline(ResolutionFunction):
     ) -> dict[str, str]:  # skip is kept for consistency of the as_dict signature
         return {'smearing': 'LinearSpline', 'q_data_points': list(self.q_data_points), 'fwhm_values': list(self.fwhm_values)}
 
+
 # add pointwise smearing funtion
 class Pointwise(ResolutionFunction):
     def __init__(self, q_data_points: list[np.ndarray]):
