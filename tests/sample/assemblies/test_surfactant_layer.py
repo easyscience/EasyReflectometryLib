@@ -81,7 +81,7 @@ class TestSurfactantLayer:
         assert p.tail_layer.roughness.value == 4
         assert p.head_layer.roughness.value == 4
 
-    def test_constain_solvent_roughness(self):
+    def test_constrain_solvent_roughness(self):
         p = SurfactantLayer()
         layer = Layer()
         p.tail_layer.roughness.value = 2

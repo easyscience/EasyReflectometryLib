@@ -32,18 +32,22 @@ class TestData(unittest.TestCase):
         fpath = os.path.join(PATH_STATIC, 'test_example1.txt')
         er_data = load(fpath)
         n_data = np.loadtxt(fpath)
-        assert_almost_equal(er_data['data']['R_0'].values, n_data[:, 1])
-        assert_almost_equal(er_data['coords']['Qz_0'].values, n_data[:, 0])
-        assert_almost_equal(er_data['data']['R_0'].variances, np.square(n_data[:, 2]))
-        assert_almost_equal(er_data['coords']['Qz_0'].variances, np.square(n_data[:, 3]))
+        data_name = 'R_test_example1'
+        coords_name = 'Qz_test_example1'
+        assert_almost_equal(er_data['data'][data_name].values, n_data[:, 1])
+        assert_almost_equal(er_data['coords'][coords_name].values, n_data[:, 0])
+        assert_almost_equal(er_data['data'][data_name].variances, np.square(n_data[:, 2]))
+        assert_almost_equal(er_data['coords'][coords_name].variances, np.square(n_data[:, 3]))
 
     def test_load_with_txt_commas(self):
         fpath = os.path.join(PATH_STATIC, 'ref_concat_1.txt')
         er_data = load(fpath)
         x, y, e = np.loadtxt(fpath, delimiter=',', comments='#', unpack=True)
-        assert_almost_equal(er_data['data']['R_0'].values, y)
-        assert_almost_equal(er_data['coords']['Qz_0'].values, x)
-        assert_almost_equal(er_data['data']['R_0'].variances, np.square(e))
+        data_name = 'R_ref_concat_1'
+        coords_name = 'Qz_ref_concat_1'
+        assert_almost_equal(er_data['data'][data_name].values, y)
+        assert_almost_equal(er_data['coords'][coords_name].values, x)
+        assert_almost_equal(er_data['data'][data_name].variances, np.square(e))
 
     def test_orso1(self):
         fpath = os.path.join(PATH_STATIC, 'test_example1.ort')
@@ -93,7 +97,9 @@ class TestData(unittest.TestCase):
         fpath = os.path.join(PATH_STATIC, 'test_example1.txt')
         er_data = _load_txt(fpath)
         n_data = np.loadtxt(fpath)
-        assert_almost_equal(er_data['data']['R_0'].values, n_data[:, 1])
-        assert_almost_equal(er_data['coords']['Qz_0'].values, n_data[:, 0])
-        assert_almost_equal(er_data['data']['R_0'].variances, np.square(n_data[:, 2]))
-        assert_almost_equal(er_data['coords']['Qz_0'].variances, np.square(n_data[:, 3]))
+        data_name = 'R_test_example1'
+        coords_name = 'Qz_test_example1'
+        assert_almost_equal(er_data['data'][data_name].values, n_data[:, 1])
+        assert_almost_equal(er_data['coords'][coords_name].values, n_data[:, 0])
+        assert_almost_equal(er_data['data'][data_name].variances, np.square(n_data[:, 2]))
+        assert_almost_equal(er_data['coords'][coords_name].variances, np.square(n_data[:, 3]))

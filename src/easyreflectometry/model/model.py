@@ -42,6 +42,7 @@ DEFAULTS = {
     },
 }
 
+COLORS =["#0173B2", "#DE8F05", "#029E73", "#D55E00", "#CC78BC", "#CA9161", "#FBAFE4", "#949494", "#ECE133", "#56B4E9"]
 
 class Model(BaseObj):
     """Model is the class that represents the experiment.
@@ -60,8 +61,8 @@ class Model(BaseObj):
         scale: Union[Parameter, Number, None] = None,
         background: Union[Parameter, Number, None] = None,
         resolution_function: Union[ResolutionFunction, None] = None,
-        name: str = 'EasyModel',
-        color: str = 'black',
+        name: str = 'Model',
+        color: str = COLORS[0],
         unique_name: Optional[str] = None,
         interface=None,
     ):
@@ -70,7 +71,7 @@ class Model(BaseObj):
         :param sample: The sample being modelled.
         :param scale: Scaling factor of profile.
         :param background: Linear background magnitude.
-        :param name: Name of the model, defaults to 'EasyModel'.
+        :param name: Name of the model, defaults to 'Model'.
         :param resolution_function: Resolution function, defaults to PercentageFwhm.
         :param interface: Calculator interface, defaults to `None`.
 
