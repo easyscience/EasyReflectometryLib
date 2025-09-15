@@ -427,6 +427,6 @@ def test_dict_round_trip(interface):
     if interface is not None:
         assert model.interface().name == model_from_dict.interface().name
         assert_almost_equal(
-            model.interface().reflectity_profile([0.3], model.unique_name),
-            model_from_dict.interface().reflectity_profile([0.3], model_from_dict.unique_name),
+            model.interface().reflectivity_profile([0.3], model.unique_name),
+            model_from_dict.interface().reflectivity_profile([0.3], model_from_dict.unique_name),
         )

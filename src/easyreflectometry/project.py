@@ -1,6 +1,7 @@
 import datetime
 import json
 import os
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Dict
 from typing import List
@@ -311,12 +312,57 @@ class Project:
         if q_range is None:
             q_range = np.linspace(self.q_min, self.q_max, self.q_resolution)
         self.models[index].interface = self._calculator
-        reflectivity = self.models[index].interface().reflectity_profile(q_range, self._models[index].unique_name)
+        reflectivity = self.models[index].interface().reflectivity_profile(q_range, self._models[index].unique_name)
         return DataSet1D(
             name=f'Reflectivity for Model {index}',
             x=q_range,
             y=reflectivity,
         )
+
+    def model_data_for_models(self, q_range: Optional[np.array] = None) -> Dict[int, DataSet1D]:
+        """
+        Calculate reflectivity for all models using multithreading.
+
+        Parameters
+        ----------
+        q_range : Optional[np.array], optional
+            Q range for reflectivity calculation. If None, uses project q_min, q_max, q_resolution.
+
+        Returns
+        -------
+        Dict[int, DataSet1D]
+            Dictionary with model indices as keys and corresponding DataSet1D objects as values.
+        """
+        if q_range is None:
+            q_range = np.linspace(self.q_min, self.q_max, self.q_resolution)
+
+        # Set interface for all models
+        for model in self.models:
+            model.interface = self._calculator
+
+        results = {}
+
+        # Function to calculate reflectivity for a single model
+        def calculate_for_model(idx):
+            model = self.models[idx]
+            reflectivity = model.interface().reflectivity_profile(q_range, model.unique_name)
+            return idx, DataSet1D(
+                name=f'Reflectivity for Model {idx}',
+                x=q_range,
+                y=reflectivity,
+            )
+
+        # Use ThreadPoolExecutor for parallel execution
+        with ThreadPoolExecutor() as executor:
+            # Submit all tasks and collect futures
+            futures = [executor.submit(calculate_for_model, i) for i in range(len(self.models))]
+
+            # Collect results as they complete
+            for future in futures:
+                idx, dataset = future.result()
+                results[idx] = dataset
+
+        return results
 
     def experimental_data_for_model_at_index(self, index: int = 0) -> DataSet1D:
         if index in self._experiments.keys():

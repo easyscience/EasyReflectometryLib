@@ -32,6 +32,6 @@ class CalculatorFactory(InterfaceFactoryTemplate):
         #"""
 
         def __fit_func(*args, **kwargs):
-            return self().reflectity_profile(*args, **kwargs)
+            return self().reflectivity_profile(*args, **kwargs)
 
         return __fit_func

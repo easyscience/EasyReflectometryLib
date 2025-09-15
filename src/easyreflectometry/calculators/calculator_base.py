@@ -158,7 +158,7 @@ class CalculatorBase(SerializerComponent, metaclass=ABCMeta):
         """
         self._wrapper.remove_item(item_id, model_id)
 
-    def reflectity_profile(self, x_array: np.ndarray, model_id: str) -> np.ndarray:
+    def reflectivity_profile(self, x_array: np.ndarray, model_id: str) -> np.ndarray:
         """Determines the reflectivity profile for the given range and model.
 
         :param x_array: points to be calculated at

@@ -27,7 +27,7 @@ class TestRefl1d(unittest.TestCase):
         assert_equal(p._model_link['background'], 'bkg')
         assert_equal(p.name, 'refl1d')
 
-    def test_reflectity_profile(self):
+    def test_reflectivity_profile(self):
         p = Refl1d()
         p._wrapper.create_material('Material1')
         p._wrapper.update_material('Material1', rho=0.000, irho=0.000)
@@ -63,7 +63,7 @@ class TestRefl1d(unittest.TestCase):
             1.2687053e-07,
             1.0188127e-07,
         ]
-        assert_almost_equal(p.reflectity_profile(q, 'MyModel'), expected)
+        assert_almost_equal(p.reflectivity_profile(q, 'MyModel'), expected)
 
     def test_calculate2(self):
         p = Refl1d()
@@ -107,7 +107,7 @@ class TestRefl1d(unittest.TestCase):
             3.5132221e-07,
             2.5347996e-07,
         ]
-        assert_almost_equal(p.reflectity_profile(q, 'MyModel'), expected)
+        assert_almost_equal(p.reflectivity_profile(q, 'MyModel'), expected)
 
     def test_calculate_magnetic(self):
         p = Refl1d()
@@ -151,7 +151,7 @@ class TestRefl1d(unittest.TestCase):
             1.30026616e-07,
             1.05139655e-07,
         ]
-        assert_almost_equal(p.reflectity_profile(q, 'MyModel'), expected)
+        assert_almost_equal(p.reflectivity_profile(q, 'MyModel'), expected)
 
     def test_sld_profile(self):
         p = Refl1d()

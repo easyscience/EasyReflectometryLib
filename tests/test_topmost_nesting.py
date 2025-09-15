@@ -44,8 +44,8 @@ def test_copy():
     assert model._resolution_function.smearing(5.5) == model_copy._resolution_function.smearing(5.5)
     assert model.interface().name == model_copy.interface().name
     assert_almost_equal(
-        model.interface().reflectity_profile([0.3], model.unique_name),
-        model_copy.interface().reflectity_profile([0.3], model_copy.unique_name),
+        model.interface().reflectivity_profile([0.3], model.unique_name),
+        model_copy.interface().reflectivity_profile([0.3], model_copy.unique_name),
     )
     assert model.unique_name != model_copy.unique_name
     assert model.name == model_copy.name
