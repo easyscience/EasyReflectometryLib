@@ -1,5 +1,6 @@
 import datetime
 import json
+import multiprocessing
 import os
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -38,7 +39,86 @@ Q_RESOLUTION = 500
 DEFAULT_MINIZER = AvailableMinimizers.LMFit_leastsq
 
 
+# Multiprocessing worker must be a top-level function for Windows compatibility
+def _calculate_for_model_mpi(args):
+    """Worker function for multiprocessing - must be pickleable."""
+    try:
+        idx, model_dict, q_range, calculator_name = args
+
+        # Recreate the model from serialized data
+        from easyreflectometry.model import Model  # noqa: I001
+        from easyreflectometry.calculators import CalculatorFactory
+        from easyreflectometry.data import DataSet1D
+
+        # Reconstruct model and set calculator
+        model = Model.from_dict(model_dict)
+        calculator = CalculatorFactory()
+        calculator.switch(calculator_name)
+        model.interface = calculator
+
+        # Calculate reflectivity
+        reflectivity = model.interface().reflectivity_profile(q_range, model.unique_name)
+
+        return idx, DataSet1D(
+            name=f'Reflectivity for Model {idx}',
+            x=q_range,
+            y=reflectivity,
+        )
+    except Exception as e:
+        # Return error info for debugging
+        return idx, f"Error: {str(e)}"
+
 class Project:
+
+    def model_data_for_models_mpi(self, q_range: Optional[np.array] = None) -> Dict[int, DataSet1D]:
+        """
+        Calculate reflectivity for all models using multiprocessing (CPU-bound parallelism).
+
+        Parameters
+        ----------
+        q_range : Optional[np.array], optional
+            Q range for reflectivity calculation. If None, uses project q_min, q_max, q_resolution.
+
+        Returns
+        -------
+        Dict[int, DataSet1D]
+            Dictionary with model indices as keys and corresponding DataSet1D objects as values.
+        """
+        if q_range is None:
+            q_range = np.linspace(self.q_min, self.q_max, self.q_resolution)
+
+        # Set interface for all models
+        for model in self.models:
+            model.interface = self._calculator
+
+        # Prepare serializable arguments (no live objects, just data)
+        args = []
+        for i in range(len(self.models)):
+            model_dict = self.models[i].as_dict(skip=['interface'])
+            args.append((i, model_dict, q_range, self._calculator.current_interface_name))
+
+        if len(args) > 1:
+            try:
+                # Set spawn method for Windows compatibility
+                ctx = multiprocessing.get_context('spawn')
+                with ctx.Pool() as pool:
+                    results = pool.map(_calculate_for_model_mpi, args)
+            except Exception as e:
+                # Fallback to sequential processing if multiprocessing fails
+                print(f"Multiprocessing failed ({e}), falling back to sequential processing")
+                results = [_calculate_for_model_mpi(arg) for arg in args]
+        else:
+            results = [_calculate_for_model_mpi(arg) for arg in args]
+
+        # Check for errors and convert to dict
+        final_results = {}
+        for result in results:
+            if isinstance(result[1], str) and result[1].startswith("Error:"):
+                raise RuntimeError(f"Model {result[0]}: {result[1]}")
+            final_results[result[0]] = result[1]
+
+        return final_results
+
     def __init__(self):
         self._info = self._default_info()
         self._path_project_parent = Path(os.path.expanduser('~'))
