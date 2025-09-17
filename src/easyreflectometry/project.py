@@ -45,10 +45,13 @@ def _calculate_for_model_mpi(args):
     try:
         idx, model_dict, q_range, calculator_name = args
 
-        # Recreate the model from serialized data
+        # Import required modules
         from easyreflectometry.model import Model  # noqa: I001
         from easyreflectometry.calculators import CalculatorFactory
         from easyreflectometry.data import DataSet1D
+
+        # Instead of clearing the global registry (expensive!), we'll use process isolation
+        # Each worker process starts with a clean registry anyway due to multiprocessing spawn
 
         # Reconstruct model and set calculator
         model = Model.from_dict(model_dict)
@@ -56,8 +59,14 @@ def _calculate_for_model_mpi(args):
         calculator.switch(calculator_name)
         model.interface = calculator
 
-        # Calculate reflectivity
+        # Calculate reflectivity using the original unique_name
         reflectivity = model.interface().reflectivity_profile(q_range, model.unique_name)
+
+        return idx, DataSet1D(
+            name=f'Reflectivity for Model {idx}',
+            x=q_range,
+            y=reflectivity,
+        )
 
         return idx, DataSet1D(
             name=f'Reflectivity for Model {idx}',
@@ -66,7 +75,8 @@ def _calculate_for_model_mpi(args):
         )
     except Exception as e:
         # Return error info for debugging
-        return idx, f"Error: {str(e)}"
+        import traceback
+        return idx, f"Error: {str(e)}\nTraceback: {traceback.format_exc()}"
 
 class Project:
 
@@ -84,6 +94,9 @@ class Project:
         Dict[int, DataSet1D]
             Dictionary with model indices as keys and corresponding DataSet1D objects as values.
         """
+        cpu_count = multiprocessing.cpu_count()
+        print(f"Using {cpu_count} CPU cores")
+
         if q_range is None:
             q_range = np.linspace(self.q_min, self.q_max, self.q_resolution)
 
@@ -101,7 +114,7 @@ class Project:
             try:
                 # Set spawn method for Windows compatibility
                 ctx = multiprocessing.get_context('spawn')
-                with ctx.Pool() as pool:
+                with ctx.Pool() as pool:  # Use all available CPU cores
                     results = pool.map(_calculate_for_model_mpi, args)
             except Exception as e:
                 # Fallback to sequential processing if multiprocessing fails

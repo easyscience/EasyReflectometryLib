@@ -226,8 +226,13 @@ class TestProject:
         project = Project()
         project.default_model()
         # Add a second model
-        project._models.append(Model())
-        project.models[1].interface = project._calculator
+        #project._models.append(Model())
+        #project.models[1].interface = project._calculator
+
+        # add 9 more models to test multiprocessing
+        for _ in range(9):
+            project._models.append(Model())
+            project.models[-1].interface = project._calculator
 
         # Then
         q_range = np.array([0.01, 0.05, 0.1, 0.5])
@@ -235,9 +240,9 @@ class TestProject:
 
         # Expect
         # Check that we have data for both models
-        assert len(model_data_dict) == 2
+        assert len(model_data_dict) == 10
         assert 0 in model_data_dict
-        assert 1 in model_data_dict
+        assert 9 in model_data_dict
 
         # Check that model 0 data is correct
         model_0_data = model_data_dict[0]
@@ -248,13 +253,13 @@ class TestProject:
             model_0_data.y,
         )
 
-        # Check that model 1 data exists
-        model_1_data = model_data_dict[1]
-        assert len(model_1_data.y) == 4
-        assert model_1_data.name == 'Reflectivity for Model 1'
+        # check that model 9 data exists
+        model_9_data = model_data_dict[9]
+        assert len(model_9_data.y) == 4
+        assert model_9_data.name == 'Reflectivity for Model 9'
         assert_allclose(
             np.array([1.0e-08, 1.0e-08, 1.0e-08, 1.0e-08]),
-            model_1_data.y,
+            model_9_data.y,
         )
 
     def test_minimizer(self):
