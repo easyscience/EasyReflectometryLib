@@ -29,32 +29,32 @@ classifiers = [
 requires-python = ">=3.11,<3.13"
 
 dependencies = [
-    "easyscience @ git+https://github.com/easyscience/corelib.git@develop",
-    "scipp==25.2.0",
-    "refnx==0.1.52",
+    "easyscience",
+    "scipp",
+    "refnx",
     "refl1d[webview]==1.0.0a12",
-    "orsopy==1.2.1",
-    "xhtml2pdf==0.2.17",
+    "orsopy",
+    "xhtml2pdf",
     "bumps",
 ]
 
 [project.optional-dependencies]
 dev = [
-    "build==1.2.2.post1",
-    "codecov==2.1.13",
-    "coverage==7.7.0",
-    "coveralls==4.0.1",
-    "flake8==7.1.2",
-    "ipykernel==6.29.5",
-    "jupyter==1.1.1",
-    "jupyterlab==4.3.6",
-    "plopp==25.3.0",
-    "pooch==1.8.2",
-    "pytest==8.3.5",
-    "pytest-cov==6.0.0",
-    "ruff==0.11.0",
-    "toml==0.10.2",
-    "yapf==0.43.0",
+    "build",
+    "codecov",
+    "coverage",
+    "coveralls",
+    "flake8",
+    "ipykernel",
+    "jupyter",
+    "jupyterlab",
+    "plopp",
+    "pooch",
+    "pytest",
+    "pytest-cov",
+    "ruff",
+    "toml",
+    "yapf",
 ]
 
 docs = [
