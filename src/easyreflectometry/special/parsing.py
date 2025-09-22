@@ -29,10 +29,7 @@ def _fuse(mol1: dict, mol2: dict, w: int = 1) -> dict:
     :param w: Weight for dicts
     :return: Fused dictionaries
     """
-    return {
-        atom: (mol1.get(atom, 0) + mol2.get(atom, 0)) * w
-        for atom in set(mol1) | set(mol2)
-    }
+    return {atom: (mol1.get(atom, 0) + mol2.get(atom, 0)) * w for atom in set(mol1) | set(mol2)}
 
 
 def _parse(formula: str) -> Tuple[dict, int]:
@@ -51,7 +48,7 @@ def _parse(formula: str) -> Tuple[dict, int]:
 
         if token in CLOSERS:
             # Check for an index for this part
-            m = re.match('\\d+', formula[i + 1:])
+            m = re.match('\\d+', formula[i + 1 :])
             if m:
                 weight = int(m.group(0))
                 i += len(m.group(0))
@@ -62,7 +59,7 @@ def _parse(formula: str) -> Tuple[dict, int]:
             return _fuse(molecule_dict, submol, weight), i
 
         if token in OPENERS:
-            submol, letter = _parse(formula[i + 1:])
+            submol, letter = _parse(formula[i + 1 :])
             molecule_dict = _fuse(molecule_dict, submol)
             # skip the already read submol
             i += letter + 1

@@ -42,9 +42,7 @@ class Refl1dWrapper(WrapperBase):
 
         :param name: The name of the item
         """
-        self.storage['item'][name] = Repeat(
-            names.Stack(names.Slab(names.SLD(), thickness=0, interface=0)), name=str(name)
-        )
+        self.storage['item'][name] = Repeat(names.Stack(names.Slab(names.SLD(), thickness=0, interface=0)), name=str(name))
         del self.storage['item'][name].stack[0]
 
     def update_layer(self, name: str, **kwargs):
@@ -66,7 +64,9 @@ class Refl1dWrapper(WrapperBase):
         :param key: The given value keys
         """
         if key in ['magnetism_rhoM', 'magnetism_thetaM']:
-            return getattr(self.storage['layer'][name].magnetism, key.split('_')[-1]).value #TODO: check if we want to return the raw value or the full Parameter  # noqa: E501
+            return getattr(
+                self.storage['layer'][name].magnetism, key.split('_')[-1]
+            ).value  # TODO: check if we want to return the raw value or the full Parameter  # noqa: E501
         return super().get_layer_value(name, key)
 
     def create_model(self, name: str):

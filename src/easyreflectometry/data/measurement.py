@@ -105,7 +105,7 @@ def _load_txt(fname: Union[TextIO, str]) -> sc.DataGroup:
 
         # Verify minimum column requirement
         if num_columns < 3:
-            raise ValueError(f"File must contain at least 3 columns (found {num_columns})")
+            raise ValueError(f'File must contain at least 3 columns (found {num_columns})')
 
         # Now unpack the data based on column count
         if num_columns >= 4:
@@ -116,7 +116,7 @@ def _load_txt(fname: Union[TextIO, str]) -> sc.DataGroup:
 
     except (ValueError, IOError) as error:
         # Re-raise with more descriptive message
-        raise ValueError(f"Failed to load data from {fname}: {str(error)}") from error
+        raise ValueError(f'Failed to load data from {fname}: {str(error)}') from error
 
     data_name = 'R_' + basename
     coords_name = 'Qz_' + basename
@@ -130,6 +130,7 @@ def _load_txt(fname: Union[TextIO, str]) -> sc.DataGroup:
         )
     }
     return sc.DataGroup(data=data, coords=coords)
+
 
 def merge_datagroups(*data_groups: sc.DataGroup) -> sc.DataGroup:
     """Merge multiple DataGroups into a single DataGroup."""

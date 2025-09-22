@@ -8,9 +8,9 @@ from typing import Optional
 from typing import Union
 
 import numpy as np
+from easyscience import ObjBase as BaseObj
 from easyscience import global_object
-from easyscience.Objects.ObjectClasses import BaseObj
-from easyscience.Objects.variable import Parameter
+from easyscience.variable import Parameter
 
 from easyreflectometry.sample import BaseAssembly
 from easyreflectometry.sample import Sample
@@ -42,7 +42,8 @@ DEFAULTS = {
     },
 }
 
-COLORS =["#0173B2", "#DE8F05", "#029E73", "#D55E00", "#CC78BC", "#CA9161", "#FBAFE4", "#949494", "#ECE133", "#56B4E9"]
+COLORS = ['#0173B2', '#DE8F05', '#029E73', '#D55E00', '#CC78BC', '#CA9161', '#FBAFE4', '#949494', '#ECE133', '#56B4E9']
+
 
 class Model(BaseObj):
     """Model is the class that represents the experiment.

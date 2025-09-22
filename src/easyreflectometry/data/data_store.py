@@ -6,15 +6,16 @@ from typing import TypeVar
 from typing import Union
 
 import numpy as np
-from easyscience.Objects.core import ComponentSerializer
-from easyscience.Utils.io.dict import DictSerializer
+from easyscience.io import SerializerComponent
+from easyscience.io import SerializerDict
 
+# from easyscience.utils.io.dict import DictSerializer
 from easyreflectometry.model import Model
 
 T = TypeVar('T')
 
 
-class ProjectData(ComponentSerializer):
+class ProjectData(SerializerComponent):
     def __init__(self, name='DataStore', exp_data=None, sim_data=None):
         self.name = name
         if exp_data is None:
@@ -25,7 +26,7 @@ class ProjectData(ComponentSerializer):
         self.sim_data = sim_data
 
 
-class DataStore(Sequence, ComponentSerializer):
+class DataStore(Sequence, SerializerComponent):
     def __init__(self, *args, name='DataStore'):
         self.name = name
         self.items = list(args)
@@ -55,7 +56,7 @@ class DataStore(Sequence, ComponentSerializer):
         items = d['items']
         del d['items']
         obj = cls.from_dict(d)
-        decoder = DictSerializer()
+        decoder = SerializerDict()
         obj.items = [decoder.decode(item) for item in items]
         return obj
 
@@ -68,7 +69,7 @@ class DataStore(Sequence, ComponentSerializer):
         return [self[idx] for idx in range(len(self)) if self[idx].is_simulation]
 
 
-class DataSet1D(ComponentSerializer):
+class DataSet1D(SerializerComponent):
     def __init__(
         self,
         name: str = 'Series',

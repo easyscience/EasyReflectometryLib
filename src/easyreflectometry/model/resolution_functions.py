@@ -63,6 +63,7 @@ class LinearSpline(ResolutionFunction):
     ) -> dict[str, str]:  # skip is kept for consistency of the as_dict signature
         return {'smearing': 'LinearSpline', 'q_data_points': list(self.q_data_points), 'fwhm_values': list(self.fwhm_values)}
 
+
 # add pointwise smearing funtion
 class Pointwise(ResolutionFunction):
     def __init__(self, q_data_points: list[np.ndarray]):
@@ -70,7 +71,6 @@ class Pointwise(ResolutionFunction):
         self.q = None
 
     def smearing(self, q: Union[np.ndarray, float] = None) -> np.ndarray:
-
         Qz = self.q_data_points[0]
         R = self.q_data_points[1]
         sQz = self.q_data_points[2]
@@ -87,18 +87,19 @@ class Pointwise(ResolutionFunction):
     def as_dict(
         self, skip: Optional[List[str]] = None
     ) -> dict[str, str]:  # skip is kept for consistency of the as_dict signature
-        return {'smearing': 'Pointwise',
-                'q_data_points': list(self.q_data_points[0]),
-                'R_data_points': list(self.q_data_points[1]),
-                'sQz_data_points': list(self.q_data_points[2])}
+        return {
+            'smearing': 'Pointwise',
+            'q_data_points': list(self.q_data_points[0]),
+            'R_data_points': list(self.q_data_points[1]),
+            'sQz_data_points': list(self.q_data_points[2]),
+        }
 
     def gaussian_smearing(self, qt, Qz, R, sQz):
         weights = np.exp(-0.5 * ((qt - Qz) / sQz) ** 2)
         if np.sum(weights) == 0 or not np.isfinite(np.sum(weights)):
             return np.sum(R)
-        weights /= (sQz * np.sqrt(2 * np.pi))
+        weights /= sQz * np.sqrt(2 * np.pi)
         return np.sum(R * weights) / np.sum(weights)
-
 
     def apply_smooth_smearing(self, Qz, R, sQzs):
         """
