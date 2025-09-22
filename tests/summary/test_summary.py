@@ -177,6 +177,7 @@ class TestSummary:
         # Expect
         assert os.path.exists(file_path)
 
+    @pytest.mark.skip(reason="Matplotlib issue with headless CI environments")
     def test_save_fit_experiment_plot(self, project: Project, tmp_path) -> None:
         # When
         summary = Summary(project)
