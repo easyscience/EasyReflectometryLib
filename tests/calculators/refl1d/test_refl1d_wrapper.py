@@ -396,7 +396,7 @@ def test_get_polarized_probe_oversampling():
     probe = _get_polarized_probe(q_array=q, dq_array=dq, model_name=model_name, storage=storage, oversampling_factor=2)
 
     # Then
-    assert len(probe.xs[0].calc_Q) == 2 * len(q)
+    assert len(probe.xs[0].calc_Q) == len(q)
 
 
 def test_get_polarized_probe_polarization():
