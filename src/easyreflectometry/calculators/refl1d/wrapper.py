@@ -245,8 +245,8 @@ def _get_probe(
     if magnetism:
         probe.theta_offset = names.Parameter.default(0, name='theta_offset')
 
-    # if oversampling_factor > 1:
-    #     probe.calc_Q = _get_oversampling_q(q_array, dq_array, oversampling_factor)
+    if oversampling_factor > 1:
+        probe.calc_Qo = _get_oversampling_q(q_array, dq_array, oversampling_factor)
     return probe
 
 
