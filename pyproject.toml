@@ -32,7 +32,7 @@ dependencies = [
     "easyscience",
     "scipp",
     "refnx",
-    "refl1d[webview]==1.0.0a12",
+    "refl1d==1.0.0rc1",
     "orsopy",
     "xhtml2pdf",
     "bumps",

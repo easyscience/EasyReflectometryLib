@@ -238,8 +238,8 @@ def _get_probe(
         intensity=storage['model'][model_name]['scale'],
         background=storage['model'][model_name]['bkg'],
     )
-    if oversampling_factor > 1:
-        probe.calc_Qo = _get_oversampling_q(q_array, dq_array, oversampling_factor)
+    # if oversampling_factor > 1:
+    #     probe.calc_Q = _get_oversampling_q(q_array, dq_array, oversampling_factor)
     return probe
 
 

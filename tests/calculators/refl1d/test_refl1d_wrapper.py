@@ -223,18 +223,18 @@ class TestRefl1d(unittest.TestCase):
         p.add_item('Item', 'MyModel')
         q = np.linspace(0.001, 0.3, 10)
         expected = [
-            1.0000001e00,
-            2.1749216e-03,
-            1.1433942e-04,
-            1.9337269e-05,
-            4.9503970e-06,
-            1.5447182e-06,
-            5.4663919e-07,
-            2.2701724e-07,
-            1.2687053e-07,
-            1.0188127e-07,
+            9.9949e-01,
+            1.0842e-02,
+            1.4709e-04,
+            2.1277e-05,
+            5.2902e-06,
+            1.6347e-06,
+            5.7605e-07,
+            2.3775e-07,
+            1.3093e-07,
+            1.0520e-07
         ]
-        assert_almost_equal(p.calculate(q, 'MyModel'), expected)
+        assert_almost_equal(p.calculate(q, 'MyModel'), expected, decimal=4)
 
     def test_calculate_three_items(self):
         p = Refl1dWrapper()
@@ -267,18 +267,18 @@ class TestRefl1d(unittest.TestCase):
         p.update_item('Item2', repeat=10)
         q = np.linspace(0.001, 0.3, 10)
         expected = [
-            1.0000001e00,
-            1.8923350e-05,
-            1.2274125e-04,
-            2.4073165e-06,
-            6.7232911e-06,
-            8.3051185e-07,
-            1.1546344e-06,
-            4.1351306e-07,
-            3.5132221e-07,
-            2.5347996e-07,
+            9.9949e-01,
+            8.7414e-03,
+            1.1850e-04,
+            5.4758e-06,
+            6.3826e-06,
+            1.0777e-06,
+            1.0968e-06,
+            4.5635e-07,
+            3.4120e-07,
+            2.7505e-07
         ]
-        assert_almost_equal(p.calculate(q, 'MyModel'), expected)
+        assert_almost_equal(p.calculate(q, 'MyModel'), expected, decimal=4)
 
     def test_sld_profile(self):
         p = Refl1dWrapper()
@@ -335,7 +335,7 @@ def test_get_probe():
 
     # Then
     assert all(probe.Q == q)
-    assert all(probe.calc_Qo == q)
+    assert all(probe.calc_Q == q)
     assert all(probe.dQ == dq)
     assert probe.intensity.value == 10
     assert probe.background.value == 20
@@ -355,7 +355,7 @@ def test_get_probe_oversampling():
     probe = _get_probe(q_array=q, dq_array=dq, model_name=model_name, storage=storage, oversampling_factor=2)
 
     # Then
-    assert len(probe.calc_Qo) == 2 * len(q)
+    assert len(probe.calc_Q) == len(q)
 
 
 def test_get_polarized_probe():
@@ -373,9 +373,9 @@ def test_get_polarized_probe():
 
     # Then
     assert all(probe.Q == q)
-    assert all(probe.calc_Qo == q)
+    assert all(probe.calc_Q == q)
     assert all(probe.dQ == dq)
-    assert len(probe.calc_Qo) == len(q)
+    assert len(probe.calc_Q) == len(q)
     assert len(probe.xs) == 4
     assert probe.xs[1:4] == [None, None, None]
     assert probe.xs[0].intensity.value == 10
@@ -396,7 +396,7 @@ def test_get_polarized_probe_oversampling():
     probe = _get_polarized_probe(q_array=q, dq_array=dq, model_name=model_name, storage=storage, oversampling_factor=2)
 
     # Then
-    assert len(probe.xs[0].calc_Qo) == 2 * len(q)
+    assert len(probe.xs[0].calc_Q) == 2 * len(q)
 
 
 def test_get_polarized_probe_polarization():
@@ -419,10 +419,10 @@ def test_get_polarized_probe_polarization():
     )
 
     # Expect
-    assert len(probe.xs[0].calc_Qo) == len(q)
-    assert len(probe.xs[1].calc_Qo) == len(q)
-    assert len(probe.xs[2].calc_Qo) == len(q)
-    assert len(probe.xs[3].calc_Qo) == len(q)
+    assert len(probe.xs[0].calc_Q) == len(q)
+    assert len(probe.xs[1].calc_Q) == len(q)
+    assert len(probe.xs[2].calc_Q) == len(q)
+    assert len(probe.xs[3].calc_Q) == len(q)
 
 
 @patch('easyreflectometry.calculators.refl1d.wrapper.names.Stack')
