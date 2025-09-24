@@ -167,4 +167,4 @@ class TestMultilayer(unittest.TestCase):
         global_object.map._clear()
 
         q = Multilayer.from_dict(p_dict)
-        assert sorted(p.as_data_dict()) == sorted(q.as_data_dict())
+        assert sorted(p.as_dict()) == sorted(q.as_dict())

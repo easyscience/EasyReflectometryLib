@@ -21,41 +21,40 @@ classifiers = [
     "Topic :: Scientific/Engineering",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Development Status :: 3 - Alpha"
 ]
 
-requires-python = ">=3.10,<3.13"
+requires-python = ">=3.11,<3.13"
 
 dependencies = [
-    "easyscience==1.3.0",
-    "scipp==25.2.0",
-    "refnx==0.1.52",
-    "refl1d[webview]==1.0.0a12",
-    "orsopy==1.2.1",
-    "xhtml2pdf==0.2.17",
-    "bumps==1.0.0b7",
+    "easyscience",
+    "scipp",
+    "refnx",
+    "refl1d>=1.0.0rc0",
+    "orsopy",
+    "xhtml2pdf",
+    "bumps",
 ]
 
 [project.optional-dependencies]
 dev = [
-    "build==1.2.2.post1",
-    "codecov==2.1.13",
-    "coverage==7.7.0",
-    "coveralls==4.0.1",
-    "flake8==7.1.2",
-    "ipykernel==6.29.5",
-    "jupyter==1.1.1",
-    "jupyterlab==4.3.6",
-    "plopp==25.3.0",
-    "pooch==1.8.2",
-    "pytest==8.3.5",
-    "pytest-cov==6.0.0",
-    "ruff==0.11.0",
-    "toml==0.10.2",
-    "yapf==0.43.0",
+    "build",
+    "codecov",
+    "coverage",
+    "coveralls",
+    "flake8",
+    "ipykernel",
+    "jupyter",
+    "jupyterlab",
+    "plopp",
+    "pooch",
+    "pytest",
+    "pytest-cov",
+    "ruff",
+    "toml",
+    "yapf",
 ]
 
 docs = [
@@ -134,10 +133,9 @@ force-single-line = true
 legacy_tox_ini = """
 [tox]
 isolated_build = True
-envlist = py{3.10,3.11,3.12}
+envlist = py{3.11,3.12}
 [gh-actions]
 python =
-        3.10: py310
         3.11: py311
         3.12: py312
 [gh-actions:env]

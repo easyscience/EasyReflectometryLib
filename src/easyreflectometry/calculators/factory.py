@@ -1,7 +1,7 @@
 __author__ = 'github.com/wardsimon'
 from typing import Callable
 
-from easyscience.Objects.Inferface import InterfaceFactoryTemplate
+from easyscience.fitting.calculators.interface_factory import InterfaceFactoryTemplate
 
 from easyreflectometry.calculators import CalculatorBase
 

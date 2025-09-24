@@ -5,7 +5,7 @@ from typing import Union
 
 import yaml
 from easyscience import global_object
-from easyscience.Objects.variable import Parameter
+from easyscience.variable import Parameter
 
 
 def get_as_parameter(
@@ -82,4 +82,4 @@ def count_fixed_parameters(project) -> int:
 
 
 def count_parameter_user_constraints(project) -> int:
-    return sum(len(parameter.user_constraints.keys()) for parameter in project.parameters if not parameter.free)
+    return sum(1 for parameter in project.parameters if not parameter.independent)

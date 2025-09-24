@@ -11,17 +11,17 @@ import numpy as np
 from easyscience import global_object
 from easyscience.fitting import AvailableMinimizers
 from easyscience.fitting.fitter import DEFAULT_MINIMIZER
-from easyscience.Objects.variable import Parameter
+from easyscience.variable import Parameter
 from scipp import DataGroup
 
 from easyreflectometry.calculators import CalculatorFactory
 from easyreflectometry.data import DataSet1D
 from easyreflectometry.data import load_as_dataset
 from easyreflectometry.fitting import MultiFitter
-from easyreflectometry.model import LinearSpline
 from easyreflectometry.model import Model
 from easyreflectometry.model import ModelCollection
 from easyreflectometry.model import PercentageFwhm
+from easyreflectometry.model import Pointwise
 from easyreflectometry.sample import Layer
 from easyreflectometry.sample import Material
 from easyreflectometry.sample import MaterialCollection
@@ -56,6 +56,7 @@ class Project:
         self._current_assembly_index = 0
         self._current_layer_index = 0
         self._fitter_model_index = None
+        self._current_experiment_index = 0
 
         # Project flags
         self._created = False
@@ -77,6 +78,12 @@ class Project:
             if isinstance(vertice_obj, Parameter) and vertice_str in unique_names_in_project:
                 parameters.append(vertice_obj)
         return parameters
+
+    @property
+    def enabled_parameters(self) -> List[Parameter]:
+        parameters = self.parameters
+        # Only include enabled parameters
+        return [param for param in parameters if param.enabled]
 
     @property
     def q_min(self):
@@ -154,6 +161,19 @@ class Project:
             raise ValueError(f'Index {value} out of range')
         if self._current_layer_index != value:
             self._current_layer_index = value
+
+    @property
+    def current_experiment_index(self) -> Optional[int]:
+        return self._current_experiment_index
+
+    @current_experiment_index.setter
+    def current_experiment_index(self, value: int) -> None:
+        if value < 0 or value >= len(self._experiments):
+            raise ValueError(f'Index {value} out of range')
+        if self._current_experiment_index != value:
+            self._current_experiment_index = value
+            # Resetting the model index to 0 when changing the experiment
+            # self.current_model_index = 0
 
     @property
     def created(self) -> bool:
@@ -240,19 +260,34 @@ class Project:
             self._materials.add_material(Material(name='D2O', sld=6.36, isld=0.0))
         return [material.name for material in self._materials].index('D2O')
 
+    def load_new_experiment(self, path: Union[Path, str]) -> None:
+        new_experiment = load_as_dataset(str(path))
+        new_index = len(self._experiments)
+        new_experiment.name = f'Experiment {new_index}'
+        model_index = 0
+        if new_index < len(self.models):
+            model_index = new_index
+        new_experiment.model = self.models[model_index]
+        self._experiments[new_index] = new_experiment
+        # self._current_model_index = new_index
+
     def load_experiment_for_model_at_index(self, path: Union[Path, str], index: Optional[int] = 0) -> None:
         self._experiments[index] = load_as_dataset(str(path))
-        self._experiments[index].name = f'Experiment for Model {index}'
+        self._experiments[index].name = f'Experiment {index}'
         self._experiments[index].model = self.models[index]
 
         self._with_experiments = True
 
         # Set the resolution function if variance data is present
         if sum(self._experiments[index].ye) != 0:
-            resolution_function = LinearSpline(
-                q_data_points=self._experiments[index].y,
-                fwhm_values=np.sqrt(self._experiments[index].ye),
-            )
+            q = self._experiments[index].x
+            reflectivity = self._experiments[index].y
+            q_error = self._experiments[index].xe
+            resolution_function = Pointwise(q_data_points=[q, reflectivity, q_error])
+            # resolution_function = LinearSpline(
+            #     q_data_points=self._experiments[index].y,
+            #     fwhm_values=np.sqrt(self._experiments[index].ye),
+            # )
             self._models[index].resolution_function = resolution_function
 
     def sld_data_for_model_at_index(self, index: int = 0) -> DataSet1D:
