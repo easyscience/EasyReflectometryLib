@@ -142,7 +142,7 @@ python =
 PLATFORM =
     ubuntu-latest: linux
     macos-latest: macos
-    windows-latest: windows
+    windows-latest: 2022
 [testenv]
 passenv =
     CI
