@@ -41,10 +41,14 @@ jobs:
         sudo apt install libcairo2-dev
         pip install sphinx==8.1.3
         pip install . '.[dev,docs]'
+
+    - name: Install Jupyter kernel
+      run: |
+        python -m ipykernel install --user --name=python3
+
     - name: Build and Commit
       uses: sphinx-notes/pages@v3
       with:
-        install_requirements: false
         sphinx_version: 8.1.3
         documentation_path: docs/src
     - name: Push changes
