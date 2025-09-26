@@ -23,6 +23,9 @@ jobs:
   # This workflow contains a single job called "build"
   build_documentation:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
 
     # Grant GITHUB_TOKEN the permissions required to make a Pages deployment
     permissions:
