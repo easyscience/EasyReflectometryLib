@@ -185,12 +185,12 @@ class Refl1dWrapper(WrapperBase):
             if ALL_POLARIZATIONS:
                 raise NotImplementedError('Polarized reflectivity not yet implemented')
                 # returns q, reflectivity
-                # _, reflectivity_pp = polarized_reflectivity[0]
-                # _, reflectivity_pm = polarized_reflectivity[1]
-                # _, reflectivity_mp = polarized_reflectivity[2]
-                # _, reflectivity_mm = polarized_reflectivity[3]
+                # _, reflectivity_mm = polarized_reflectivity[0]
+                # _, reflectivity_mp = polarized_reflectivity[1]
+                # _, reflectivity_pm = polarized_reflectivity[2]
+                # _, reflectivity_pp = polarized_reflectivity[3]
             else:
-                # Only pick the pp reflectivity
+                # Only pick the mm reflectivity (first component)
                 # returns q, reflectivity
                 _, reflectivity = polarized_reflectivity[0]
 
@@ -260,7 +260,8 @@ def _get_polarized_probe(
 ) -> names.PolarizedNeutronQProbe:
     four_probes = []
     for i in range(4):
-        if i == 0 or all_polarizations:
+        if all_polarizations:
+            # Create probe for all polarizations: mm, mp, pm, pp
             probe = _get_probe(
                 q_array=q_array,
                 dq_array=dq_array,
@@ -270,7 +271,16 @@ def _get_polarized_probe(
                 magnetism=True,  # Enable magnetism for polarized probes
             )
         else:
-            probe = None
+            # When all_polarizations=False, create all probes but only compute what's needed
+            # This ensures the PolarizedNeutronProbe is properly initialized
+            probe = _get_probe(
+                q_array=q_array,
+                dq_array=dq_array,
+                model_name=model_name,
+                storage=storage,
+                oversampling_factor=oversampling_factor,
+                magnetism=True,  # Enable magnetism for polarized probes
+            )
         four_probes.append(probe)
 
     # Create polarized probe and work around initialization bug
