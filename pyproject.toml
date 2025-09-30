@@ -29,7 +29,7 @@ classifiers = [
 requires-python = ">=3.11,<3.13"
 
 dependencies = [
-    "easyscience @ git+https://github.com/easyscience/corelib.git@new_clear",
+    "easyscience @ git+https://github.com/easyscience/corelib.git@dict_size_changed_bug",
     "scipp",
     "refnx",
     "refl1d>=1.0.0rc0",
