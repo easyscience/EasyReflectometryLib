@@ -34,7 +34,7 @@ dependencies = [
     "refnx",
     "refl1d>=1.0.0rc0",
     "orsopy",
-    "pycairo<1.16 ; platform_system=='Linux'",
+    "svglib<1.6 ; platform_system=='Linux'",
     "xhtml2pdf",
     "bumps",
 ]
