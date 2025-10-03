@@ -60,7 +60,6 @@ dev = [
 
 docs = [
     "myst_parser",
-    "pycairo",
     "nbsphinx",
     "sphinx<=8.1.3",
     "sphinx_autodoc_typehints",
