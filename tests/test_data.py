@@ -129,7 +129,8 @@ class TestData(unittest.TestCase):
                 if f"Removed {zero_variance_count} data point(s)" in msg:
                     zero_variance_warning = msg
                     break
-            self.assertIsNotNone(zero_variance_warning, f"Expected warning about removed points not found in: {warning_messages}")
+            self.assertIsNotNone(zero_variance_warning, 
+                                 f"Expected warning about removed points not found in: {warning_messages}")
             
         # Verify the correct number of points were filtered
         self.assertEqual(len(dataset.x), expected_filtered_count)
