@@ -1,6 +1,7 @@
 __author__ = 'github.com/arm61'
 
 import warnings
+
 import numpy as np
 import scipp as sc
 from easyscience.fitting import AvailableMinimizers

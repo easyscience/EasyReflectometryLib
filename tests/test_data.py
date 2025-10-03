@@ -13,7 +13,6 @@ import easyreflectometry
 from easyreflectometry.data.measurement import _load_orso
 from easyreflectometry.data.measurement import _load_txt
 from easyreflectometry.data.measurement import load
-from easyreflectometry.data.measurement import load_as_dataset
 
 PATH_STATIC = os.path.join(os.path.dirname(easyreflectometry.__file__), '..', '..', 'tests', '_static')
 

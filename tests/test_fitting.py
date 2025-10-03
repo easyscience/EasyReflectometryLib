@@ -75,7 +75,9 @@ def test_fitting(minimizer):
 def test_fitting_with_zero_variance():
     """Test that zero variance points are properly detected and masked during fitting when present in the data."""
     import warnings
+
     import numpy as np
+
     from easyreflectometry.data.measurement import load
 
     # Load data that contains zero variance points
@@ -155,6 +157,7 @@ def test_fitting_with_zero_variance():
 def test_fitting_with_manual_zero_variance():
     """Test the fit method with manually created zero variance points."""
     import warnings
+
     import numpy as np
     import scipp as sc
 
