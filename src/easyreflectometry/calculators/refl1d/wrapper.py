@@ -190,7 +190,7 @@ class Refl1dWrapper(WrapperBase):
                 # _, reflectivity_mp = polarized_reflectivity[2]
                 # _, reflectivity_mm = polarized_reflectivity[3]
             else:
-                # Only pick the pp reflectivity (first component)
+                # Only pick the pp reflectivity
                 # returns q, reflectivity
                 _, reflectivity = polarized_reflectivity[0]
 
@@ -261,7 +261,6 @@ def _get_polarized_probe(
     four_probes = []
     for i in range(4):
         if i == 0 or all_polarizations:
-            # Create probe for all polarizations: mm, mp, pm, pp
             probe = _get_probe(
                 q_array=q_array,
                 dq_array=dq_array,
