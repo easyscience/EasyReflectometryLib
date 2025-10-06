@@ -63,15 +63,12 @@ class MultiFitter:
                     f"Masked {num_zero_variance} data point(s) in reflectivity {i} due to zero variance during fitting.",
                     UserWarning
                 )
-                # Keep only points with non-zero variances
-                valid_mask = ~zero_variance_mask
-                x_vals_masked = x_vals[valid_mask]
-                y_vals_masked = y_vals[valid_mask]
-                variances_masked = variances[valid_mask]
-            else:
-                x_vals_masked = x_vals
-                y_vals_masked = y_vals
-                variances_masked = variances
+
+            # Keep only points with non-zero variances
+            valid_mask = ~zero_variance_mask
+            x_vals_masked = x_vals[valid_mask]
+            y_vals_masked = y_vals[valid_mask]
+            variances_masked = variances[valid_mask]
 
             x.append(x_vals_masked)
             y.append(y_vals_masked)
