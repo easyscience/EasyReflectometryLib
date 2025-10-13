@@ -5,7 +5,6 @@ Tests for Sample class.
 __author__ = 'github.com/arm61'
 __version__ = '0.0.1'
 
-from unittest.mock import MagicMock
 
 import pytest
 from easyscience import global_object
