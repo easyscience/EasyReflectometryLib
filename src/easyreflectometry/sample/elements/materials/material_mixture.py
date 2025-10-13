@@ -113,8 +113,6 @@ class MaterialMixture(BaseCore):
         return self._isld.value
 
     def _materials_constraints(self):
-        self._sld.enabled = True
-        self._isld.enabled = True
         dependency_expression = 'a * (1 - p) + b * p'
         dependency_map = {'a': self._material_a.sld, 'b': self._material_b.sld, 'p': self._fraction}
         self._sld.make_dependent_on(dependency_expression=dependency_expression, dependency_map=dependency_map)

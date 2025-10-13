@@ -56,8 +56,6 @@ class TestBaseAssembly:
 
         # Expect
         assert self.mock_layer_0.thickness.value == self.mock_layer_0.thickness.value
-        assert self.mock_layer_0.thickness.enabled is True
-        assert self.mock_layer_1.thickness.enabled is True
 
     def test_enable_thickness_constraints_exception(self, base_assembly: BaseAssembly) -> None:
         # When
