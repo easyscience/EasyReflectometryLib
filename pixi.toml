@@ -18,7 +18,7 @@ bumps = "*"
 refnx = "*"
 refl1d = ">=1.0.0rc0"
 orsopy = "*"
-xhtml2pdf = "*"
+# xhtml2pdf = "*"
 
 [feature.dev.pypi-dependencies]
 # Development dependencies from PyPI
