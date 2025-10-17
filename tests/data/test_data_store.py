@@ -1,10 +1,13 @@
-import pytest
-import numpy as np
 from unittest.mock import Mock
-from numpy.testing import assert_almost_equal, assert_array_equal
 
-from easyreflectometry.data.data_store import DataSet1D, DataStore, ProjectData
-from easyreflectometry.model import Model
+import numpy as np
+import pytest
+from numpy.testing import assert_almost_equal
+from numpy.testing import assert_array_equal
+
+from easyreflectometry.data.data_store import DataSet1D
+from easyreflectometry.data.data_store import DataStore
+from easyreflectometry.data.data_store import ProjectData
 
 
 class TestDataSet1D:
@@ -66,7 +69,7 @@ class TestDataSet1D:
         y_data = [1, 2, 0.5, 3]
 
         # When
-        data = DataSet1D(x=x_data, y=y_data, model=mock_model)
+        _ = DataSet1D(x=x_data, y=y_data, model=mock_model)
 
         # Then
         assert mock_model.background == np.min(y_data)

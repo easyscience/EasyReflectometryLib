@@ -6,17 +6,22 @@ Tests for all functions in measurement.py and data_store.py modules.
 __author__ = 'tests'
 
 import os
-import pytest
 import tempfile
-import numpy as np
 from unittest.mock import Mock
-from numpy.testing import assert_almost_equal, assert_array_equal
+
+import numpy as np
+import pytest
+from numpy.testing import assert_array_equal
 
 import easyreflectometry
-from easyreflectometry.data.measurement import (
-    load, load_as_dataset, _load_orso, _load_txt, merge_datagroups
-)
-from easyreflectometry.data.data_store import DataSet1D, DataStore, ProjectData
+from easyreflectometry.data.data_store import DataSet1D
+from easyreflectometry.data.data_store import DataStore
+from easyreflectometry.data.data_store import ProjectData
+from easyreflectometry.data.measurement import _load_orso
+from easyreflectometry.data.measurement import _load_txt
+from easyreflectometry.data.measurement import load
+from easyreflectometry.data.measurement import load_as_dataset
+from easyreflectometry.data.measurement import merge_datagroups
 
 PATH_STATIC = os.path.join(os.path.dirname(easyreflectometry.__file__), '..', '..', 'tests', '_static')
 

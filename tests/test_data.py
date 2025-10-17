@@ -3,20 +3,20 @@ __version__ = '0.0.1'
 
 import os
 import unittest
-import pytest
 
 import numpy as np
+import pytest
 from numpy.testing import assert_almost_equal
 from orsopy.fileio import Header
 from orsopy.fileio import load_orso
 
 import easyreflectometry
+from easyreflectometry.data import DataSet1D
 from easyreflectometry.data.measurement import _load_orso
 from easyreflectometry.data.measurement import _load_txt
 from easyreflectometry.data.measurement import load
 from easyreflectometry.data.measurement import load_as_dataset
 from easyreflectometry.data.measurement import merge_datagroups
-from easyreflectometry.data import DataSet1D
 
 PATH_STATIC = os.path.join(os.path.dirname(easyreflectometry.__file__), '..', '..', 'tests', '_static')
 
@@ -309,7 +309,7 @@ class TestData(unittest.TestCase):
 
     def test_load_as_dataset_basename_extraction(self):
         fpath = os.path.join(PATH_STATIC, 'test_example1.txt')
-        dataset = load_as_dataset(fpath)
+        _ = load_as_dataset(fpath)
 
         # Verify that basename is correctly extracted and used
         data_group = load(fpath)
