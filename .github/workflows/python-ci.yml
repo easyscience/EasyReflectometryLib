@@ -54,6 +54,8 @@ jobs:
         pytest --cov=src/easyreflectometry tests --cov-branch --cov-report=xml:coverage-unit.xml
 
     - name: Upload coverage reports to Codecov
+      # only on ubuntu to avoid multiple uploads
+      if: runner.os == 'Linux'
       uses: codecov/codecov-action@v5
       with:
         name: unit-tests-job
