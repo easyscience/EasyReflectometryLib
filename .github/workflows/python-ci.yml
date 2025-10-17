@@ -62,7 +62,7 @@ jobs:
         fail_ci_if_error: true
         verbose: true
         token: ${{ secrets.CODECOV_TOKEN }}
-        slug: EasyScience/easyreflectometry
+        slug: EasyScience/EasyReflectometryLib
 
 
   Package_Testing:
