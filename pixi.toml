@@ -8,6 +8,7 @@ platforms = ["win-64", "linux-64", "osx-64", "osx-arm64"]
 
 [dependencies]
 python = ">=3.11,<3.13"
+# Only Python from conda, everything else from PyPI
 
 [pypi-dependencies]
 # All core dependencies from PyPI
