@@ -13,6 +13,36 @@ To get more information about the application visit [`easyreflectometry.org`](ht
 
 # Installation
 
+## For Users
+
 ```sh
 python -m pip install easyreflectometry
+```
+
+## For Developers (Pixi - Recommended)
+
+This project now supports [Pixi](https://pixi.sh/) for reproducible development environments:
+
+1. Install Pixi: https://pixi.sh/latest/
+2. Clone this repository
+3. Set up the development environment:
+
+```sh
+pixi install
+pixi run dev-setup
+```
+
+4. Run tests:
+```sh
+pixi run test
+```
+
+See [PIXI_USAGE.md](PIXI_USAGE.md) for detailed Pixi usage instructions.
+
+## For Developers (Traditional pip)
+
+```sh
+git clone https://github.com/easyScience/EasyReflectometryLib.git
+cd EasyReflectometryLib
+pip install -e '.[dev]'
 ```

@@ -1,5 +1,5 @@
 # This workflow will for a variety of Python versions 
-# - install the code base
+# - install the code base using pixi
 # - lint the code base
 # - test the code base
 # - upload the test coverage to codecov
@@ -8,7 +8,7 @@
 # - build the package
 # - check the package
 #
-name: CI using pip
+name: CI using pixi
 
 on: [push, pull_request]
 
@@ -17,11 +17,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: chartboost/ruff-action@v1
+
+      - name: Setup pixi
+        uses: prefix-dev/setup-pixi@v0.9.0
+        with:
+          run-install: false
+          cache: false
+          post-cleanup: false
+
+      - name: Run ruff check
+        run: pixi run lint
+
       - name: Suggestion to fix issues
         if: ${{ failure() }}
         run: |
-            echo "::notice::In project root run 'python.exe -m ruff . --fix' and commit changes to fix issues."
+            echo "::notice::In project root run 'pixi run lint-fix' and commit changes to fix issues."
             exit 1
 
   Code_Testing:
@@ -32,26 +42,26 @@ jobs:
         os: [ubuntu-latest, macos-latest, windows-latest]
 
     runs-on: ${{ matrix.os }}
-    if: "!contains(github.event.head_commit.message, '[ci skip]')"
+    if: ${{ !contains(github.event.head_commit.message, '[ci skip]') }}
 
     steps:
     - uses: actions/checkout@v4
 
-    - uses: actions/setup-python@v5
+    - name: Setup pixi
+      uses: prefix-dev/setup-pixi@v0.9.0
       with:
-        python-version: ${{ matrix.python-version }}
-
-    - name: Upgrade pip
-      run: |
-        python -m pip install --upgrade pip
+        run-install: false
+        cache: false
+        post-cleanup: false
 
     - name: Install dependencies
-      run: pip install -e '.[dev]'
+      run: pixi install
+
+    - name: Install package in development mode
+      run: pixi run install-dev
 
     - name: Test with pytest and coverage
-      run: |
-        pip install pytest pytest-cov
-        pytest --cov=src/easyreflectometry tests --cov-branch --cov-report=xml:coverage-unit.xml
+      run: pixi run test-cov
 
     - name: Upload coverage reports to Codecov
       # only on ubuntu to avoid multiple uploads
@@ -70,21 +80,25 @@ jobs:
   Package_Testing:
 
     runs-on: ubuntu-latest
-    if: "!contains(github.event.head_commit.message, '[ci skip]')"
+    if: ${{ !contains(github.event.head_commit.message, '[ci skip]') }}
 
     steps:
     - uses: actions/checkout@v4
 
-    - uses: actions/setup-python@v5
+    - name: Setup pixi
+      uses: prefix-dev/setup-pixi@v0.9.0
       with:
-        python-version: 3.11
+        run-install: false
+        cache: false
+        post-cleanup: false
 
     - name: Install dependencies and build
       run: |
-        pip install -e '.[dev]'
-        python -m build
+        pixi install
+        pixi run install-dev
+        pixi run build
 
     - name: Check Build
       run: |
         cd ./dist
-        pytest ../
+        pixi run test
