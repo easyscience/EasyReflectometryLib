@@ -19,8 +19,13 @@ refl1d = ">=1.0.0rc0"
 orsopy = "*"
 xhtml2pdf = "*"
 
-[feature.dev.dependencies]
-# Development dependencies available on conda-forge
+[feature.dev.pypi-dependencies]
+# Development dependencies from PyPI
+build = "*"
+codecov = "*"
+coveralls = "*"
+plopp = "*"
+pooch = "*"
 coverage = "*"
 flake8 = "*"
 ipykernel = "*"
@@ -32,19 +37,11 @@ ruff = "*"
 toml = "*"
 yapf = "*"
 
-[feature.dev.pypi-dependencies]
-# Development dependencies from PyPI
-build = "*"
-codecov = "*"
-coveralls = "*"
-plopp = "*"
-pooch = "*"
-
 [feature.linux.pypi-dependencies]
 # Linux-specific dependencies
 svglib = "<1.6"
 
-[feature.docs.dependencies]
+[feature.docs.pypi-dependencies]
 # Documentation dependencies
 myst-parser = "*"
 nbsphinx = "*"
