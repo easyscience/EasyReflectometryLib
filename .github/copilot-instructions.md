@@ -78,13 +78,25 @@ tox
 
 ### Docstring Style
 - Include docstrings for all public modules, classes, and functions
+- Use **Sphinx/reStructuredText style** docstrings (`:param`, `:type`, `:return`, `:rtype`)
 - Use clear, concise descriptions
 - Document parameters, return values, and exceptions
+- Example format:
+  ```python
+  """
+  Brief description of the function.
+
+  :param param_name: description of parameter
+  :type param_name: type
+  :return: description of return value
+  :rtype: return_type
+  """
+  ```
 
 ### Documentation Build
 - Documentation is built using Sphinx (version 8.1.3)
 - Source files are in the `docs/` directory
-- Use MyST parser for Markdown support
+- Use myst_parser (MyST parser) for Markdown support
 - Include code examples in documentation where appropriate
 
 ## Dependencies
@@ -131,7 +143,8 @@ tox
 
 ```
 src/easyreflectometry/     # Main package source code
-├── calculators/           # Calculator implementations (refnx, refl1d, bornagain)
+├── calculators/           # Calculator implementations (refnx, refl1d)
+│   └── bornagain/         # BornAgain calculator (not yet functional)
 ├── model/                 # Reflectometry models
 ├── sample/                # Sample structures and materials
 ├── special/               # Special calculations and parsing
