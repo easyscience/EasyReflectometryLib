@@ -7,7 +7,7 @@ channels = ["conda-forge"]
 platforms = ["win-64", "linux-64", "osx-64", "osx-arm64"]
 
 [dependencies]
-python = ">=3.11,<3.13"
+python = ">=3.11,<3.14"
 # Only Python from conda, everything else from PyPI
 
 [pypi-dependencies]
