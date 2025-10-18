@@ -103,7 +103,6 @@ class SurfactantLayer(BaseAssembly):
 
         self.interface = interface
         self.conformal = False
-        self.head_layer._area_per_molecule.enabled = True
 
         if conformal_roughness:
             self._enable_roughness_constraints()

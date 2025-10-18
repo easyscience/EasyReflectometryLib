@@ -1,0 +1,96 @@
+[project]
+name = "easyreflectometry"
+version = "0.1.0"
+description = "A reflectometry python package built on the EasyScience framework."
+authors = ["EasyScience contributors"]
+channels = ["conda-forge"]
+platforms = ["win-64", "linux-64", "osx-64", "osx-arm64"]
+
+[dependencies]
+python = ">=3.11,<3.14"
+# Only Python from conda, everything else from PyPI
+
+[pypi-dependencies]
+# All core dependencies from PyPI
+easyscience = "*"
+scipp = "*"
+bumps = "*"
+refnx = "*"
+refl1d = ">=1.0.0rc0"
+orsopy = "*"
+# xhtml2pdf = "*"
+
+[feature.dev.pypi-dependencies]
+# Development dependencies from PyPI
+build = "*"
+codecov = "*"
+coveralls = "*"
+plopp = "*"
+pooch = "*"
+coverage = "*"
+flake8 = "*"
+ipykernel = "*"
+jupyter = "*"
+jupyterlab = "*"
+pytest = "*"
+pytest-cov = "*"
+ruff = "*"
+toml = "*"
+yapf = "*"
+
+[feature.linux.pypi-dependencies]
+# Linux-specific dependencies
+svglib = "<1.6"
+
+[feature.docs.pypi-dependencies]
+# Documentation dependencies
+myst-parser = "*"
+nbsphinx = "*"
+sphinx = "==8.1.3"
+sphinx-autodoc-typehints = "*"
+sphinx-book-theme = "*"
+sphinx-copybutton = "*"
+toml = "*"
+
+[environments]
+default = ["dev"]
+docs = ["docs"]
+linux = ["dev", "linux"]
+prod = []
+
+[tasks]
+# Installation tasks
+install = "pip install -e ."
+install-dev = "pip install -e '.[dev]'"
+
+# Testing tasks
+test = "pytest"
+test-cov = "pytest --cov=src/easyreflectometry tests --cov-branch --cov-report=xml:coverage-unit.xml"
+test-full = "pytest --cov=src/easyreflectometry tests --cov-branch --cov-report=xml --cov-report=html"
+
+# Linting tasks
+lint = "ruff check ."
+lint-fix = "ruff check . --fix"
+format = "ruff format ."
+format-check = "ruff format . --check"
+
+# Documentation tasks
+docs-build = { cmd = "make html", cwd = "docs" }
+docs-clean = { cmd = "make clean", cwd = "docs" }
+docs-serve = "python -m http.server 8000 --directory docs/_build/html"
+
+# Build tasks
+build = "python -m build"
+build-wheel = "python -m build --wheel"
+build-sdist = "python -m build --sdist"
+
+# Clean tasks
+clean = "python -c 'import shutil; import os; [shutil.rmtree(p, ignore_errors=True) for p in [\"build\", \"dist\", \".eggs\", \"htmlcov\", \".pytest_cache\", \".coverage\"]]'"
+clean-pyc = "python -c 'import os; import glob; [os.remove(f) for f in glob.glob(\"**/*.pyc\", recursive=True) + glob.glob(\"**/*.pyo\", recursive=True)]'"
+
+# Coverage tasks
+coverage = { cmd = "coverage run --source src/easyreflectometry -m pytest && coverage report -m && coverage html", depends-on = ["test-cov"] }
+
+# Combined development tasks
+dev-setup = { depends-on = ["install-dev"] }
+ci-test = { depends-on = ["lint-fix", "test-cov"] }
