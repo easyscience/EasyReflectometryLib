@@ -1,8 +1,8 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from easyscience import global_object
-# from xhtml2pdf import pisa
 
+# from xhtml2pdf import pisa
 from easyreflectometry import Project
 from easyreflectometry.utils import count_fixed_parameters
 from easyreflectometry.utils import count_free_parameters
@@ -48,7 +48,8 @@ class Summary:
             f.write(html)
 
     def save_pdf_summary(self, filename: str) -> None:
-        html = self.compile_html_summary(figures=True)
+        pass
+        #html = self.compile_html_summary(figures=True)
 
         # with open(filename, 'w+b') as result_file:
         #     pisa_status = pisa.CreatePDF(
