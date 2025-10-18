@@ -29,12 +29,12 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies and build
       run: |
-        pip install -e '.[dev]'
+        python -m pip install -e '.[dev]'
         python -m build
     - name: Test with pytest
       run: |
         cd ./dist
-        pytest ../
+        python -m pytest ../
     - uses: actions/upload-artifact@v4
       with:
         name: EasyReflectometrys - Python ${{ matrix.python-version }}

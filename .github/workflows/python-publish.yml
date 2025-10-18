@@ -36,9 +36,8 @@ jobs:
 
     - name: Install dependencies and build
       run: |
-        pixi install
-        pixi run install-dev
-        pixi run build
+        python -m pip install -e '.[dev]'
+        python -m build
 
     - name: Publish distribution 📦 to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1

@@ -55,13 +55,12 @@ jobs:
         post-cleanup: false
 
     - name: Install dependencies
-      run: pixi install
-
-    - name: Install package in development mode
-      run: pixi run install-dev
+      run: python -m pip install -e '.[dev]'
 
     - name: Test with pytest and coverage
-      run: pixi run test-cov
+      run: |
+        python -m pip install tox tox-gh-actions coverage
+        python -m tox
 
     - name: Upload coverage reports to Codecov
       # only on ubuntu to avoid multiple uploads
@@ -94,11 +93,10 @@ jobs:
 
     - name: Install dependencies and build
       run: |
-        pixi install
-        pixi run install-dev
-        pixi run build
+        python -m pip install -e '.[dev]'
+        python -m build
 
     - name: Check Build
       run: |
         cd ./dist
-        pixi run test
+        python -m pytest ../
