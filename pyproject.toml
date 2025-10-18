@@ -29,6 +29,7 @@ classifiers = [
 requires-python = ">=3.11,<3.13"
 
 dependencies = [
+    #"easyscience @ git+https://github.com/easyscience/corelib.git@dict_size_changed_bug",
     "easyscience",
     "scipp",
     "refnx",
@@ -61,7 +62,7 @@ dev = [
 docs = [
     "myst_parser",
     "nbsphinx",
-    "sphinx==8.1.3",
+    "sphinx<=8.1.3",
     "sphinx_autodoc_typehints",
     "sphinx_book_theme",
     "sphinx-copybutton",
@@ -143,7 +144,7 @@ python =
 PLATFORM =
     ubuntu-latest: linux
     macos-latest: macos
-    windows-latest: windows
+    windows-latest: 2022
 [testenv]
 passenv =
     CI
