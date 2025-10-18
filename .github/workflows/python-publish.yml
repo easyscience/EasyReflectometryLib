@@ -33,7 +33,7 @@ jobs:
 
     - name: Install dependencies and build
       run: |
-        pip install -e '.[dev]'
+        python -m pip install -e '.[dev]'
         python -m build
 
     - name: Publish distribution 📦 to PyPI

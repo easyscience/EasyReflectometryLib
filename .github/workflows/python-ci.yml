@@ -48,12 +48,12 @@ jobs:
         python -m pip install --upgrade pip
 
     - name: Install dependencies
-      run: pip install -e '.[dev]'
+      run: python -m pip install -e '.[dev]'
 
     - name: Test with tox
       run: |
-        pip install tox tox-gh-actions coverage
-        tox
+        python -m pip install tox tox-gh-actions coverage
+        python -m tox
 
     - name: Upload coverage
       uses: codecov/codecov-action@v3
@@ -78,10 +78,10 @@ jobs:
 
     - name: Install dependencies and build
       run: |
-        pip install -e '.[dev]'
+        python -m pip install -e '.[dev]'
         python -m build
 
     - name: Check Build
       run: |
         cd ./dist
-        pytest ../
+        python -m pytest ../
