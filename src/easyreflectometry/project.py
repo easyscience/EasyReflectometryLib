@@ -80,12 +80,6 @@ class Project:
         return parameters
 
     @property
-    def enabled_parameters(self) -> List[Parameter]:
-        parameters = self.parameters
-        # Only include enabled parameters
-        return [param for param in parameters if param.enabled]
-
-    @property
     def q_min(self):
         if self._q_min is None:
             return Q_MIN
@@ -270,6 +264,16 @@ class Project:
         new_experiment.model = self.models[model_index]
         self._experiments[new_index] = new_experiment
         # self._current_model_index = new_index
+        self._with_experiments = True
+
+        # Set the resolution function if variance data is present
+        if sum(new_experiment.ye) != 0:
+            q = new_experiment.x
+            reflectivity = new_experiment.y
+            q_error = new_experiment.xe
+            # TODO: set resolution function based on value of control in GUI
+            resolution_function = Pointwise(q_data_points=[q, reflectivity, q_error])
+            self.models[model_index].resolution_function = resolution_function
 
     def load_experiment_for_model_at_index(self, path: Union[Path, str], index: Optional[int] = 0) -> None:
         self._experiments[index] = load_as_dataset(str(path))
