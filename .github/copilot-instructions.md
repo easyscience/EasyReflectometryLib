@@ -96,7 +96,7 @@ tox
 ### Documentation Build
 - Documentation is built using Sphinx (version 8.1.3)
 - Source files are in the `docs/` directory
-- Use myst_parser (MyST parser) for Markdown support
+- Use `myst_parser` (MyST parser) for Markdown support
 - Include code examples in documentation where appropriate
 
 ## Dependencies
