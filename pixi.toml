@@ -13,6 +13,7 @@ py312-dev = ["dev", "py312"]
 py313-dev = ["dev", "py313"]
 docs = ["docs"]
 
+
 # Unix/macOS
 [target.unix.activation.env]
 PYTHONPATH = "src${PYTHONPATH:+:${PYTHONPATH}}" # remove ":" if needed

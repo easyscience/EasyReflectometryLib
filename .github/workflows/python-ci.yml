@@ -93,4 +93,4 @@ jobs:
     - name: Check Build
       run: |
         cd ./dist
-        pixi run -e dev pytest ../
+        pytest ../
