@@ -7,10 +7,15 @@ channels = ["conda-forge"]
 platforms = ["win-64", "linux-64", "osx-64", "osx-arm64"]
 
 
-default = { features = ['py313', 'nodejs'] }
-py311-dev = { features = ['py311', 'nodejs'] }
-py312-dev = { features = ['py312', 'nodejs'] }
-py313-dev = { features = ['py313', 'nodejs'] }
+[environments]
+default = ["dev", "py313", "nodejs"]
+py311-dev = ["dev", "py311", "nodejs"]
+py312-dev = ["dev", "py312", "nodejs"]
+py313-dev = ["dev", "py313", "nodejs"]
+docs = ["docs"]
+
+[feature.nodejs.dependencies]
+nodejs = '*'
 
 # Unix/macOS
 [target.unix.activation.env]
@@ -86,7 +91,3 @@ nbsphinx = "*"
 sphinx-autodoc-typehints = "*"
 sphinx-book-theme = "*"
 sphinx-copybutton = "*"
-
-[environments]
-default = ["dev"]
-docs = ["docs"]
