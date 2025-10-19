@@ -6,16 +6,12 @@ authors = ["EasyScience contributors"]
 channels = ["conda-forge"]
 platforms = ["win-64", "linux-64", "osx-64", "osx-arm64"]
 
-
 [environments]
-default = ["dev", "py313", "nodejs"]
-py311-dev = ["dev", "py311", "nodejs"]
-py312-dev = ["dev", "py312", "nodejs"]
-py313-dev = ["dev", "py313", "nodejs"]
+default = ["dev", "py313"]
+py311-dev = ["dev", "py311"]
+py312-dev = ["dev", "py312"]
+py313-dev = ["dev", "py313"]
 docs = ["docs"]
-
-[feature.nodejs.dependencies]
-nodejs = '*'
 
 # Unix/macOS
 [target.unix.activation.env]
