@@ -6,11 +6,42 @@ authors = ["EasyScience contributors"]
 channels = ["conda-forge"]
 platforms = ["win-64", "linux-64", "osx-64", "osx-arm64"]
 
-[dependencies]
-python = ">=3.11,<3.14"
+
+default = { features = ['py313', 'nodejs'] }
+py311-dev = { features = ['py311', 'nodejs'] }
+py312-dev = { features = ['py312', 'nodejs'] }
+py313-dev = { features = ['py313', 'nodejs'] }
+
+# Unix/macOS
+[target.unix.activation.env]
+PYTHONPATH = "src${PYTHONPATH:+:${PYTHONPATH}}" # remove ":" if needed
+
+# Windows
+[target.win.activation.env]
+PYTHONPATH = "src;%PYTHONPATH%"
+
+# Features for specific Python versions
+
+# Each feature sets a specific Python version for the environment.
+
+[feature.py311.dependencies]
+python = '3.11.*'
+
+[feature.py312.dependencies]
+python = '3.12.*'
+
+[feature.py313.dependencies]
+python = '3.13.*'
+
+[dependencies] # == [feature.default.dependencies]
+pip = '*'        # Required to install from PyPI
+jupyterlab = '*' # JupyterLab for notebooks
+
 
 [pypi-dependencies]
-easyreflectometry = { path = ".", editable = true }
+easyreflectometry = { version = '*', editable = true }
+pixi-kernel = '*'                                               # Pixi Jupyter kernel
+uv = '*'                                                        # Python package manager
 easyscience = "*"
 scipp = "*"
 refnx = "*"
