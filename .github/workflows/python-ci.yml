@@ -43,7 +43,9 @@ jobs:
 
     - uses: prefix-dev/setup-pixi@v0.9.0
       with:
-        pixi-version: v0.34.0
+        run-install: false
+        cache: false
+        post-cleanup: false
 
     - name: Setup Python environment
       run: pixi install
@@ -78,7 +80,9 @@ jobs:
 
     - uses: prefix-dev/setup-pixi@v0.9.0
       with:
-        pixi-version: v0.34.0
+        run-install: false
+        cache: false
+        post-cleanup: false
 
     - name: Install dependencies and build
       run: |
