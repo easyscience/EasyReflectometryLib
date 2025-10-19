@@ -11,6 +11,13 @@ python = ">=3.11,<3.14"
 
 [pypi-dependencies]
 easyreflectometry = { path = ".", editable = true }
+easyscience = "*"
+scipp = "*"
+refnx = "*"
+refl1d = ">=1.0.0rc0"
+orsopy = "*"
+bumps = "*"
+xhtml2pdf = "*"
 
 [tasks]
 install-dev = "pip install -e '.[dev]'"
@@ -20,15 +27,11 @@ lint-fix = "ruff check . --fix"
 build = "python -m build"
 
 [feature.dev.dependencies]
-build = "*"
-codecov = "*"
 coverage = "*"
-coveralls = "*"
 flake8 = "*"
 ipykernel = "*"
 jupyter = "*"
 jupyterlab = "*"
-plopp = "*"
 pooch = "*"
 pytest = "*"
 pytest-cov = "*"
@@ -36,14 +39,22 @@ ruff = "*"
 toml = "*"
 yapf = "*"
 
+[feature.dev.pypi-dependencies]
+build = "*"
+codecov = "*"
+coveralls = "*"
+plopp = "*"
+
 [feature.docs.dependencies]
-myst_parser = "*"
-nbsphinx = "*"
-sphinx = "8.1.3"
-sphinx_autodoc_typehints = "*"
-sphinx_book_theme = "*"
-sphinx-copybutton = "*"
+sphinx = "==8.1.3"
 toml = "*"
+
+[feature.docs.pypi-dependencies]
+myst-parser = "*"
+nbsphinx = "*"
+sphinx-autodoc-typehints = "*"
+sphinx-book-theme = "*"
+sphinx-copybutton = "*"
 
 [environments]
 default = ["dev"]
