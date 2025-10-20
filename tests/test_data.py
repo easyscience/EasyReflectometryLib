@@ -12,7 +12,7 @@ from orsopy.fileio import load_orso
 
 import easyreflectometry
 from easyreflectometry.data import DataSet1D
-from easyreflectometry.data.measurement import _load_orso
+from easyreflectometry.data.measurement import load_data_from_orso_file
 from easyreflectometry.data.measurement import _load_txt
 from easyreflectometry.data.measurement import load
 from easyreflectometry.data.measurement import load_as_dataset
@@ -55,7 +55,7 @@ class TestData(unittest.TestCase):
 
     def test_orso1(self):
         fpath = os.path.join(PATH_STATIC, 'test_example1.ort')
-        er_data = _load_orso(fpath)
+        er_data = load_data_from_orso_file(fpath)
         o_data = load_orso(fpath)
         assert er_data['attrs']['R_spin_up']['orso_header'].value == Header.asdict(o_data[0].info)
         assert_almost_equal(er_data['data']['R_spin_up'].values, o_data[0].data[:, 1])
@@ -65,7 +65,7 @@ class TestData(unittest.TestCase):
 
     def test_orso2(self):
         fpath = os.path.join(PATH_STATIC, 'test_example2.ort')
-        er_data = _load_orso(fpath)
+        er_data = load_data_from_orso_file(fpath)
         o_data = load_orso(fpath)
         for i, o in enumerate(list(reversed(o_data))):
             assert er_data['attrs'][f'R_{o.info.data_set}']['orso_header'].value == Header.asdict(o.info)
@@ -76,7 +76,7 @@ class TestData(unittest.TestCase):
 
     def test_orso3(self):
         fpath = os.path.join(PATH_STATIC, 'test_example3.ort')
-        er_data = _load_orso(fpath)
+        er_data = load_data_from_orso_file(fpath)
         o_data = load_orso(fpath)
         for i, o in enumerate(o_data):
             assert er_data['attrs'][f'R_{o.info.data_set}']['orso_header'].value == Header.asdict(o.info)
@@ -87,7 +87,7 @@ class TestData(unittest.TestCase):
 
     def test_orso4(self):
         fpath = os.path.join(PATH_STATIC, 'test_example4.ort')
-        er_data = _load_orso(fpath)
+        er_data = load_data_from_orso_file(fpath)
         o_data = load_orso(fpath)
         for i, o in enumerate(o_data):
             print(list(er_data.keys()))
@@ -258,7 +258,7 @@ class TestData(unittest.TestCase):
 
     def test_load_orso_multiple_datasets(self):
         fpath = os.path.join(PATH_STATIC, 'test_example2.ort')
-        er_data = _load_orso(fpath)
+        er_data = load_data_from_orso_file(fpath)
 
         # Should handle multiple datasets
         assert len(er_data['data']) > 1
@@ -276,7 +276,7 @@ class TestData(unittest.TestCase):
 
     def test_load_orso_with_attrs(self):
         fpath = os.path.join(PATH_STATIC, 'test_example1.ort')
-        er_data = _load_orso(fpath)
+        er_data = load_data_from_orso_file(fpath)
 
         # Should have attrs with ORSO headers
         assert 'attrs' in er_data
@@ -286,7 +286,7 @@ class TestData(unittest.TestCase):
 
     def test_load_orso_with_units(self):
         fpath = os.path.join(PATH_STATIC, 'test_example1.ort')
-        er_data = _load_orso(fpath)
+        er_data = load_data_from_orso_file(fpath)
 
         # Coords should have units
         for coord_key in er_data['coords']:

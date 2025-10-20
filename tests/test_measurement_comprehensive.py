@@ -17,7 +17,7 @@ import easyreflectometry
 from easyreflectometry.data.data_store import DataSet1D
 from easyreflectometry.data.data_store import DataStore
 from easyreflectometry.data.data_store import ProjectData
-from easyreflectometry.data.measurement import _load_orso
+from easyreflectometry.orso_utils import load_data_from_orso_file
 from easyreflectometry.data.measurement import _load_txt
 from easyreflectometry.data.measurement import load
 from easyreflectometry.data.measurement import load_as_dataset
@@ -132,7 +132,7 @@ class TestMeasurementFunctions:
     def test_load_orso_with_multiple_datasets(self):
         """Test that _load_orso handles files with multiple datasets."""
         fpath = os.path.join(PATH_STATIC, 'test_example2.ort')
-        result = _load_orso(fpath)
+        result = load_data_from_orso_file(fpath)
         
         # Should have multiple data entries
         assert len(result['data']) > 1
@@ -141,7 +141,7 @@ class TestMeasurementFunctions:
     def test_load_orso_preserves_metadata(self):
         """Test that _load_orso preserves ORSO metadata in attrs."""
         fpath = os.path.join(PATH_STATIC, 'test_example1.ort')
-        result = _load_orso(fpath)
+        result = load_data_from_orso_file(fpath)
         
         assert 'attrs' in result
         # Should have orso_header in attrs
