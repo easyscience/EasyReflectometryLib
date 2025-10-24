@@ -1,7 +1,6 @@
 __author__ = 'github.com/wardsimon'
 
 from collections.abc import Sequence
-from typing import TYPE_CHECKING
 from typing import Optional
 from typing import TypeVar
 from typing import Union

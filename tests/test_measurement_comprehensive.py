@@ -17,11 +17,11 @@ import easyreflectometry
 from easyreflectometry.data.data_store import DataSet1D
 from easyreflectometry.data.data_store import DataStore
 from easyreflectometry.data.data_store import ProjectData
-from easyreflectometry.orso_utils import load_data_from_orso_file
 from easyreflectometry.data.measurement import _load_txt
 from easyreflectometry.data.measurement import load
 from easyreflectometry.data.measurement import load_as_dataset
 from easyreflectometry.data.measurement import merge_datagroups
+from easyreflectometry.orso_utils import load_data_from_orso_file
 
 PATH_STATIC = os.path.join(os.path.dirname(easyreflectometry.__file__), '..', '..', 'tests', '_static')
 
