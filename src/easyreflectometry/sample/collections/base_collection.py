@@ -2,7 +2,7 @@ from typing import List
 from typing import Optional
 
 from easyscience import global_object
-from easyscience.Objects.Groups import BaseCollection as EasyBaseCollection
+from easyscience.base_classes import CollectionBase as EasyBaseCollection
 
 from easyreflectometry.utils import yaml_dump
 

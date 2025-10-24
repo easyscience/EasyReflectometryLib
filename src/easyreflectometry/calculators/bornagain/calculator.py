@@ -1,6 +1,6 @@
 __author__ = 'github.com/arm61'
 
-from easyscience.Objects.Inferface import ItemContainer
+from easyscience.fitting.calculators.interface_factory import ItemContainer
 
 from easyreflectometry.model import Model
 from easyreflectometry.sample import Layer

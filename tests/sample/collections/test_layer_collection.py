@@ -87,7 +87,7 @@ class TestLayerCollection(unittest.TestCase):
         s = LayerCollection.from_dict(r_dict)
 
         # Expect
-        assert sorted(r.as_data_dict()) == sorted(s.as_data_dict())
+        assert sorted(r.as_dict()) == sorted(s.as_dict())
 
     def test_add_layer(self):
         # When

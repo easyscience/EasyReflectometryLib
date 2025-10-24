@@ -6,16 +6,16 @@ from unittest.mock import MagicMock
 import numpy as np
 from easyscience import global_object
 from easyscience.fitting import AvailableMinimizers
-from easyscience.Objects.variable import Parameter
+from easyscience.variable import Parameter
 from numpy.testing import assert_allclose
 
 import easyreflectometry
 from easyreflectometry.data import DataSet1D
 from easyreflectometry.fitting import MultiFitter
-from easyreflectometry.model import LinearSpline
 from easyreflectometry.model import Model
 from easyreflectometry.model import ModelCollection
 from easyreflectometry.model import PercentageFwhm
+from easyreflectometry.model import Pointwise
 from easyreflectometry.project import Project
 from easyreflectometry.sample import Material
 from easyreflectometry.sample import MaterialCollection
@@ -559,9 +559,9 @@ class TestProject:
         # Expect
         assert list(project.experiments.keys()) == [5]
         assert isinstance(project.experiments[5], DataSet1D)
-        assert project.experiments[5].name == 'Experiment for Model 5'
+        assert project.experiments[5].name == 'Experiment 5'
         assert project.experiments[5].model == model_5
-        assert isinstance(project.models[5].resolution_function, LinearSpline)
+        assert isinstance(project.models[5].resolution_function, Pointwise)
         assert isinstance(project.models[4].resolution_function, PercentageFwhm)
 
     def test_experimental_data_at_index(self):
@@ -575,7 +575,7 @@ class TestProject:
         data = project.experimental_data_for_model_at_index()
 
         # Expect
-        assert data.name == 'Experiment for Model 0'
+        assert data.name == 'Experiment 0'
         assert data.is_experiment
         assert isinstance(data, DataSet1D)
         assert len(data.x) == 408
@@ -634,3 +634,39 @@ class TestProject:
         # Expect
         assert len(parameters) == 14
         assert isinstance(parameters[0], Parameter)
+
+    def test_current_experiment_index_getter_and_setter(self):
+        project = Project()
+        # Default value should be 0
+        assert project.current_experiment_index == 0
+
+        # Add two experiments to allow setting index 1
+        project._experiments[0] = DataSet1D(name='exp0', x=[], y=[], ye=[], xe=[], model=None)
+        project._experiments[1] = DataSet1D(name='exp1', x=[], y=[], ye=[], xe=[], model=None)
+
+        # Set to 1 (valid)
+        project.current_experiment_index = 1
+        assert project.current_experiment_index == 1
+
+        # Set to 0 (valid)
+        project.current_experiment_index = 0
+        assert project.current_experiment_index == 0
+
+    def test_current_experiment_index_setter_out_of_range(self):
+        project = Project()
+        # Add one experiment
+        project._experiments[0] = DataSet1D(name='exp0', x=[], y=[], ye=[], xe=[], model=None)
+
+        # Negative index should raise
+        try:
+            project.current_experiment_index = -1
+            assert False, 'Expected ValueError for negative index'
+        except ValueError:
+            pass
+
+        # Index >= len(_experiments) should raise
+        try:
+            project.current_experiment_index = 1
+            assert False, 'Expected ValueError for out-of-range index'
+        except ValueError:
+            pass

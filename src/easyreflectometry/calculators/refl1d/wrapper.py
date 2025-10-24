@@ -42,9 +42,7 @@ class Refl1dWrapper(WrapperBase):
 
         :param name: The name of the item
         """
-        self.storage['item'][name] = Repeat(
-            names.Stack(names.Slab(names.SLD(), thickness=0, interface=0)), name=str(name)
-        )
+        self.storage['item'][name] = Repeat(names.Stack(names.Slab(names.SLD(), thickness=0, interface=0)), name=str(name))
         del self.storage['item'][name].stack[0]
 
     def update_layer(self, name: str, **kwargs):
@@ -66,7 +64,9 @@ class Refl1dWrapper(WrapperBase):
         :param key: The given value keys
         """
         if key in ['magnetism_rhoM', 'magnetism_thetaM']:
-            return getattr(self.storage['layer'][name].magnetism, key.split('_')[-1]).value #TODO: check if we want to return the raw value or the full Parameter  # noqa: E501
+            return getattr(
+                self.storage['layer'][name].magnetism, key.split('_')[-1]
+            ).value  # TODO: check if we want to return the raw value or the full Parameter  # noqa: E501
         return super().get_layer_value(name, key)
 
     def create_model(self, name: str):
@@ -231,6 +231,7 @@ def _get_probe(
     model_name: str,
     storage: dict,
     oversampling_factor: int = 1,
+    magnetism: bool = False,
 ) -> names.QProbe:
     probe = names.QProbe(
         Q=q_array,
@@ -238,6 +239,12 @@ def _get_probe(
         intensity=storage['model'][model_name]['scale'],
         background=storage['model'][model_name]['bkg'],
     )
+
+    # Add theta_offset attribute if magnetism is enabled
+    # This is required for PolarizedQProbe to work correctly
+    if magnetism:
+        probe.theta_offset = names.Parameter.default(0, name='theta_offset')
+
     if oversampling_factor > 1:
         probe.calc_Qo = _get_oversampling_q(q_array, dq_array, oversampling_factor)
     return probe
@@ -250,7 +257,7 @@ def _get_polarized_probe(
     storage: dict,
     oversampling_factor: int = 1,
     all_polarizations: bool = False,
-) -> names.PolarizedQProbe:
+) -> names.PolarizedNeutronQProbe:
     four_probes = []
     for i in range(4):
         if i == 0 or all_polarizations:
@@ -260,11 +267,17 @@ def _get_polarized_probe(
                 model_name=model_name,
                 storage=storage,
                 oversampling_factor=oversampling_factor,
+                magnetism=True,  # Enable magnetism for polarized probes
             )
         else:
             probe = None
         four_probes.append(probe)
-    return names.PolarizedQProbe(xs=four_probes, name='polarized')
+
+    # Create polarized probe and work around initialization bug
+    polarized_probe = names.PolarizedNeutronQProbe.__new__(names.PolarizedNeutronQProbe)
+    polarized_probe._union_cache_key = None  # Initialize missing attribute
+    polarized_probe.__init__(xs=four_probes, name='polarized')
+    return polarized_probe
 
 
 def _build_sample(storage: dict, model_name: str) -> names.Stack:

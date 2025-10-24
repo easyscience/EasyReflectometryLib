@@ -40,7 +40,7 @@ def test_copy():
     model_copy = copy(model)
 
     # Expect
-    assert sorted(model.as_data_dict()) == sorted(model_copy.as_data_dict())
+    assert sorted(model.as_dict()) == sorted(model_copy.as_dict())
     assert model._resolution_function.smearing(5.5) == model_copy._resolution_function.smearing(5.5)
     assert model.interface().name == model_copy.interface().name
     assert_almost_equal(
@@ -49,6 +49,6 @@ def test_copy():
     )
     assert model.unique_name != model_copy.unique_name
     assert model.name == model_copy.name
-    assert model.as_data_dict(skip=['interface', 'unique_name', 'resolution_function']) == model_copy.as_data_dict(
+    assert model.as_dict(skip=['interface', 'unique_name', 'resolution_function']) == model_copy.as_dict(
         skip=['interface', 'unique_name', 'resolution_function']
     )

@@ -29,11 +29,11 @@ class TestMaterialDensity(unittest.TestCase):
     def test_from_pars(self):
         p = MaterialDensity('Co', 8.9, 'Cobalt')
         assert p.density.value == 8.9
-        assert_almost_equal(p.sld.value,2.264541463379026)
+        assert_almost_equal(p.sld.value, 2.264541463379026)
         assert p.chemical_structure == 'Co'
 
     def test_chemical_structure_change(self):
-        p = MaterialDensity('Co', 8.9, 'Cobolt')
+        p = MaterialDensity('Co', 8.9, 'Cobalt')
         assert p.density.value == 8.9
         assert_almost_equal(p.sld.value, 2.264541463379026)
         assert_almost_equal(p.isld.value, 0.0)
@@ -48,7 +48,7 @@ class TestMaterialDensity(unittest.TestCase):
         p = MaterialDensity()
         print(p._dict_repr)
         assert p._dict_repr == {
-            'EasyMaterialDensity': {'sld': '2.074e-6 1/Å^2', 'isld': '0.000e-6 1/Å^2'},
+            'EasyMaterialDensity': {'sld': '2.074e-6 kmol/m^5', 'isld': '0.000e-6 kmol/m^5'},
             'chemical_structure': 'Si',
             'density': '2.33e+00 kg/L',
         }
@@ -60,4 +60,4 @@ class TestMaterialDensity(unittest.TestCase):
 
         q = MaterialDensity.from_dict(p_dict)
 
-        assert sorted(p.as_data_dict()) == sorted(q.as_data_dict())
+        assert sorted(p.as_dict()) == sorted(q.as_dict())

@@ -1,6 +1,6 @@
 from abc import abstractmethod
 
-from easyscience.Objects.ObjectClasses import BaseObj
+from easyscience import ObjBase as BaseObj
 
 from easyreflectometry.utils import yaml_dump
 

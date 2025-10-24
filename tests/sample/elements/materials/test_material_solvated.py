@@ -2,10 +2,7 @@ from unittest.mock import MagicMock
 
 import pytest
 from easyscience import global_object
-from easyscience.Objects.variable import Parameter
 
-import easyreflectometry.sample.elements.materials.material_mixture
-import easyreflectometry.sample.elements.materials.material_solvated
 from easyreflectometry.sample.elements.materials.material import Material
 from easyreflectometry.sample.elements.materials.material_solvated import MaterialSolvated
 
@@ -15,21 +12,15 @@ class TestMaterialSolvated:
     def material_solvated(self, monkeypatch) -> MaterialSolvated:
         self.material = Material(sld=1.0, isld=0, name='material')
         self.solvent = Material(sld=2.0, isld=0, name='solvent')
-        self.mock_solvent_fraction = MagicMock(spec=Parameter)
-        self.mock_solvent_fraction.value = 0.1
+        # self.mock_solvent_fraction = MagicMock(spec=Parameter)
+        # self.mock_solvent_fraction.value = 0.1
         self.mock_interface = MagicMock()
         self.mock_Parameter = MagicMock()
-        self.mock_FunctionalConstraint = MagicMock()
-        monkeypatch.setattr(easyreflectometry.sample.elements.materials.material_mixture, 'Parameter', self.mock_Parameter)
-        monkeypatch.setattr(
-            easyreflectometry.sample.elements.materials.material_mixture,
-            'FunctionalConstraint',
-            self.mock_FunctionalConstraint,
-        )
+        # monkeypatch.setattr(easyreflectometry.sample.elements.materials.material_mixture, 'Parameter', self.mock_Parameter)
         return MaterialSolvated(
             material=self.material,
             solvent=self.solvent,
-            solvent_fraction=self.mock_solvent_fraction,
+            solvent_fraction=0.1,
             name='name',
             interface=self.mock_interface,
         )
@@ -49,8 +40,7 @@ class TestMaterialSolvated:
 
     def test_set_material(self, material_solvated: MaterialSolvated) -> None:
         # When
-        new_material = MagicMock()
-        new_material.name = 'new_material'
+        new_material = Material(sld=1.0, isld=0, name='new_material')
 
         # Then
         material_solvated.material = new_material
@@ -65,8 +55,7 @@ class TestMaterialSolvated:
 
     def test_set_solvent(self, material_solvated: MaterialSolvated) -> None:
         # When
-        new_solvent = MagicMock()
-        new_solvent.name = 'new_solvent'
+        new_solvent = Material(sld=2.0, isld=0, name='new_solvent')
 
         # Then
         material_solvated.solvent = new_solvent
@@ -125,7 +114,7 @@ class TestMaterialSolvated:
 
         q = MaterialSolvated.from_dict(p_dict)
 
-        assert sorted(p.as_data_dict()) == sorted(q.as_data_dict())
+        assert sorted(p.as_dict()) == sorted(q.as_dict())
 
     def test_update_name(self, material_solvated: MaterialSolvated) -> None:
         # When

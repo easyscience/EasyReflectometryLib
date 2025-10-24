@@ -3,10 +3,8 @@ from typing import Union
 
 import numpy as np
 from easyscience import global_object
-from easyscience.Constraints import FunctionalConstraint
-from easyscience.Objects.variable import Parameter
+from easyscience.variable import Parameter
 
-from easyreflectometry.special.calculations import area_per_molecule_to_scattering_length_density
 from easyreflectometry.special.calculations import neutron_scattering_length
 from easyreflectometry.utils import get_as_parameter
 
@@ -136,26 +134,22 @@ class LayerAreaPerMolecule(Layer):
             default_dict=DEFAULTS['isl'],
             unique_name_prefix=f'{unique_name}_Isl',
         )
-
         # Constrain the real part of the sld value for the molecule
-        constraint_sld_real = FunctionalConstraint(
-            dependent_obj=molecule_material.sld,
-            func=area_per_molecule_to_scattering_length_density,
-            independent_objs=[_scattering_length_real, thickness, _area_per_molecule],
-        )
-        thickness.user_constraints['area_per_molecule'] = constraint_sld_real
-        _area_per_molecule.user_constraints['area_per_molecule'] = constraint_sld_real
-        _scattering_length_real.user_constraints['area_per_molecule'] = constraint_sld_real
+        dependency_expression = 'scattering_length / (thickness * area_per_molecule) * 1e6'
+        dependency_map = {
+            'scattering_length': _scattering_length_real,
+            'thickness': thickness,
+            'area_per_molecule': _area_per_molecule,
+        }
+        molecule_material.sld.make_dependent_on(dependency_expression=dependency_expression, dependency_map=dependency_map)
 
-        # Constrain the imaginary part of the sld value for the molecule
-        constraint_sld_imag = FunctionalConstraint(
-            dependent_obj=molecule_material.isld,
-            func=area_per_molecule_to_scattering_length_density,
-            independent_objs=[_scattering_length_imag, thickness, _area_per_molecule],
-        )
-        thickness.user_constraints['iarea_per_molecule'] = constraint_sld_imag
-        _area_per_molecule.user_constraints['iarea_per_molecule'] = constraint_sld_imag
-        _scattering_length_imag.user_constraints['iarea_per_molecule'] = constraint_sld_imag
+        # # Constrain the real part of the sld value for the molecule
+        dependency_expression = 'a / (b*p) * 1e6'
+        dependency_map = {'a': _scattering_length_real, 'b': thickness, 'p': _area_per_molecule}
+        molecule_material.sld.make_dependent_on(dependency_expression=dependency_expression, dependency_map=dependency_map)
+
+        dependency_map = {'a': _scattering_length_imag, 'b': thickness, 'p': _area_per_molecule}
+        molecule_material.isld.make_dependent_on(dependency_expression=dependency_expression, dependency_map=dependency_map)
 
         solvated_molecule_material = MaterialSolvated(
             material=molecule_material,
@@ -266,7 +260,7 @@ class LayerAreaPerMolecule(Layer):
         """Dictionary representation of the `area_per_molecule` object. Produces a simple dictionary"""
         dict_repr = super()._dict_repr
         dict_repr['molecular_formula'] = self._molecular_formula
-        dict_repr['area_per_molecule'] = f'{self.area_per_molecule:.2f} ' f'{self._area_per_molecule.unit}'
+        dict_repr['area_per_molecule'] = f'{self.area_per_molecule:.2f} {self._area_per_molecule.unit}'
         return dict_repr
 
     def as_dict(self, skip: Optional[list[str]] = None) -> dict[str, str]:

@@ -72,7 +72,7 @@ class TestMaterialCollection:
         q = MaterialCollection.from_dict(p_dict)
 
         # Expect
-        assert sorted(p.as_data_dict()) == sorted(q.as_data_dict())
+        assert sorted(p.as_dict()) == sorted(q.as_dict())
 
     def test_add_material(self):
         # When

@@ -1,5 +1,7 @@
 __author__ = 'github.com/arm61'
 
+import warnings
+
 import numpy as np
 import scipp as sc
 from easyscience.fitting import AvailableMinimizers
@@ -36,11 +38,42 @@ class MultiFitter:
 
         :param data: DataGroup to be fitted to and populated
         :param method: Optimisation method
+
+        :note: Points with zero variance in the data will be automatically masked
+               out during fitting. A warning will be issued if any such points
+               are found, indicating the number of points masked per reflectivity.
         """
         refl_nums = [k[3:] for k in data['coords'].keys() if 'Qz' == k[:2]]
-        x = [data['coords'][f'Qz_{i}'].values for i in refl_nums]
-        y = [data['data'][f'R_{i}'].values for i in refl_nums]
-        dy = [1 / np.sqrt(data['data'][f'R_{i}'].variances) for i in refl_nums]
+        x = []
+        y = []
+        dy = []
+
+        # Process each reflectivity dataset
+        for i in refl_nums:
+            x_vals = data['coords'][f'Qz_{i}'].values
+            y_vals = data['data'][f'R_{i}'].values
+            variances = data['data'][f'R_{i}'].variances
+
+            # Find points with non-zero variance
+            zero_variance_mask = (variances == 0.0)
+            num_zero_variance = np.sum(zero_variance_mask)
+
+            if num_zero_variance > 0:
+                warnings.warn(
+                    f"Masked {num_zero_variance} data point(s) in reflectivity {i} due to zero variance during fitting.",
+                    UserWarning
+                )
+
+            # Keep only points with non-zero variances
+            valid_mask = ~zero_variance_mask
+            x_vals_masked = x_vals[valid_mask]
+            y_vals_masked = y_vals[valid_mask]
+            variances_masked = variances[valid_mask]
+
+            x.append(x_vals_masked)
+            y.append(y_vals_masked)
+            dy.append(1 / np.sqrt(variances_masked))
+
         result = self.easy_science_multi_fitter.fit(x, y, weights=dy)
         new_data = data.copy()
         for i, _ in enumerate(result):
@@ -50,10 +83,13 @@ class MultiFitter:
             )
             sld_profile = self.easy_science_multi_fitter._fit_objects[i].interface.sld_profile(self._models[i].unique_name)
             new_data[f'SLD_{id}'] = sc.array(dims=[f'z_{id}'], values=sld_profile[1] * 1e-6, unit=sc.Unit('1/angstrom') ** 2)
-            new_data['attrs'][f'R_{id}_model'] = {'model': sc.scalar(self._models[i].as_dict())}
+            if 'attrs' in new_data:
+                new_data['attrs'][f'R_{id}_model'] = {'model': sc.scalar(self._models[i].as_dict())}
             new_data['coords'][f'z_{id}'] = sc.array(
                 dims=[f'z_{id}'], values=sld_profile[0], unit=(1 / new_data['coords'][f'Qz_{id}'].unit).unit
             )
+            new_data['reduced_chi'] = float(result[i].reduced_chi)
+            new_data['success'] = result[i].success
         return new_data
 
     def fit_single_data_set_1d(self, data: DataSet1D) -> FitResults:
