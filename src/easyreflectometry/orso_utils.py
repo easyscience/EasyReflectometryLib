@@ -56,8 +56,10 @@ def load_orso_model(orso_str: List[OrsoDataset]) -> Sample:
         ValueError: If ORSO layers could not be resolved
     """
     # Extract stack string and create ORSO sample model
-    stack_str = orso_str[0].info.data_source.sample.model.stack
-    orso_sample = model_language.SampleModel(stack=stack_str)
+    # stack_str = orso_str[0].info.data_source.sample.model.stack
+    # orso_sample = model_language.SampleModel(stack=stack_str)
+
+    orso_sample = orso_str[0].info.data_source.sample.model
 
     # Try to resolve layers using different methods
     try:
@@ -91,7 +93,7 @@ def load_orso_model(orso_str: List[OrsoDataset]) -> Sample:
 def _convert_orso_layer_to_erl(layer):
     """Helper function to convert an ORSO layer to an EasyReflectometry layer"""
     material = layer.material
-    m_name = material.formula if material.formula is not None else layer.name
+    m_name = material.formula if material.formula is not None else layer.original_name
 
     # Get SLD values
     m_sld, m_isld = _get_sld_values(material, m_name)
