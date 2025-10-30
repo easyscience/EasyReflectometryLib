@@ -5,7 +5,6 @@ from typing import Tuple
 import numpy as np
 import scipp as sc
 from orsopy.fileio import Header
-from orsopy.fileio import model_language
 from orsopy.fileio import orso
 from orsopy.fileio.base import ComplexValue
 from orsopy.fileio.orso import OrsoDataset

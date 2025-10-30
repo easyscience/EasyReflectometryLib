@@ -1,14 +1,13 @@
 import pytest  # type: ignore[import-not-found]
 
-matplotlib = pytest.importorskip('matplotlib')
-matplotlib.use('Agg')
-
 from easyreflectometry.plot import plot_sample_structure
 from easyreflectometry.sample import Layer
 from easyreflectometry.sample import Material
 from easyreflectometry.sample import Multilayer
 from easyreflectometry.sample import Sample
 
+matplotlib = pytest.importorskip('matplotlib')
+matplotlib.use('Agg')
 
 def test_plot_sample_structure_draws_layers():
     superphase = Layer(material=Material(sld=0.0, isld=0.0, name='Air'), thickness=0.0, roughness=3.0, name='Air')
