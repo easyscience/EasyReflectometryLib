@@ -254,6 +254,22 @@ class Project:
             self._materials.add_material(Material(name='D2O', sld=6.36, isld=0.0))
         return [material.name for material in self._materials].index('D2O')
 
+    def load_orso_file(self, path: Union[Path, str]) -> None:
+        """Load an ORSO file and optionally create a model and a data from it."""
+        from easyreflectometry.orso_utils import LoadOrso
+
+        model, data = LoadOrso(path)
+        if model is not None:
+            self.models = ModelCollection([model])
+        else:
+            self.default_model()
+        if data is not None:
+            self._experiments[0] = data
+            self._experiments[0].name = 'Experiment from ORSO'
+            self._experiments[0].model = self.models[0]
+            self._with_experiments = True
+
+        pass
     def load_new_experiment(self, path: Union[Path, str]) -> None:
         new_experiment = load_as_dataset(str(path))
         new_index = len(self._experiments)
