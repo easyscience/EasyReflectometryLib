@@ -268,8 +268,12 @@ class Project:
             self._experiments[0].name = 'Experiment from ORSO'
             self._experiments[0].model = self.models[0]
             self._with_experiments = True
-
         pass
+
+    def set_sample_from_orso(self, sample) -> None:
+        model = Model(sample=sample)
+        self.models = ModelCollection([model])
+
     def load_new_experiment(self, path: Union[Path, str]) -> None:
         new_experiment = load_as_dataset(str(path))
         new_index = len(self._experiments)
