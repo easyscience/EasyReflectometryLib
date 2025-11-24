@@ -38,42 +38,6 @@ def load_as_dataset(fname: Union[TextIO, str]) -> DataSet1D:
     )
 
 
-# def _load_orso(fname: Union[TextIO, str]) -> sc.DataGroup:
-#     """Load from an ORSO compatible file.
-
-#     :param fname: The path for the file to be read.
-#     """
-#     data = {}
-#     coords = {}
-#     attrs = {}
-#     f_data = orso.load_orso(fname)
-#     for i, o in enumerate(f_data):
-#         name = i
-#         if o.info.data_set is not None:
-#             name = o.info.data_set
-#         coords[f'Qz_{name}'] = sc.array(
-#             dims=[f'{o.info.columns[0].name}_{name}'],
-#             values=o.data[:, 0],
-#             variances=np.square(o.data[:, 3]),
-#             unit=sc.Unit(o.info.columns[0].unit),
-#         )
-#         try:
-#             data[f'R_{name}'] = sc.array(
-#                 dims=[f'{o.info.columns[0].name}_{name}'],
-#                 values=o.data[:, 1],
-#                 variances=np.square(o.data[:, 2]),
-#                 unit=sc.Unit(o.info.columns[1].unit),
-#             )
-#         except TypeError:
-#             data[f'R_{name}'] = sc.array(
-#                 dims=[f'{o.info.columns[0].name}_{name}'],
-#                 values=o.data[:, 1],
-#                 variances=np.square(o.data[:, 2]),
-#             )
-#         attrs[f'R_{name}'] = {'orso_header': sc.scalar(Header.asdict(o.info))}
-#     return sc.DataGroup(data=data, coords=coords, attrs=attrs)
-
-
 def _load_txt(fname: Union[TextIO, str]) -> sc.DataGroup:
     """Load data from a simple txt file.
 
