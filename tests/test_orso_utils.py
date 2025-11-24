@@ -46,7 +46,7 @@ def test_LoadOrso(orso_data):
 
 def test_load_data_from_orso_file():
     """Test loading data from ORSO file."""
-    data = load_data_from_orso_file("Ni_example.ort")
+    data = load_data_from_orso_file(os.path.join(PATH_STATIC, "Ni_example.ort"))
     assert data is not None
     # Check it's a sc.DataGroup
     import scipp as sc
