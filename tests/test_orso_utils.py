@@ -1,21 +1,24 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2025 DMSC
 
+import os
+
 import pytest
 from orsopy.fileio import orso
 
-from easyreflectometry.orso_utils import (
-    LoadOrso,
-    load_data_from_orso_file,
-    load_orso_data,
-    load_orso_model,
-)
+import easyreflectometry
+from easyreflectometry.orso_utils import LoadOrso
+from easyreflectometry.orso_utils import load_data_from_orso_file
+from easyreflectometry.orso_utils import load_orso_data
+from easyreflectometry.orso_utils import load_orso_model
+
+PATH_STATIC = os.path.join(os.path.dirname(easyreflectometry.__file__), '..', '..', 'tests', '_static')
 
 
 @pytest.fixture
 def orso_data():
     """Load the test ORSO data from Ni_example.ort."""
-    return orso.load_orso("Ni_example.ort")
+    return orso.load_orso(os.path.join(PATH_STATIC, "Ni_example.ort"))
 
 
 def test_load_orso_model(orso_data):
