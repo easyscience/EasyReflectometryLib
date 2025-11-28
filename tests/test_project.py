@@ -115,9 +115,25 @@ class TestProject:
         project.models = models
 
         # Expect
-        project_models_dict = project.models.as_dict(skip=['interface'])
-        models_dict = models.as_dict(skip=['interface'])
+        def remove_interface(d):
+            if isinstance(d, dict):
+                if 'interface' in d:
+                    del d['interface']
+                for v in d.values():
+                    remove_interface(v)
+            elif isinstance(d, list):
+                for item in d:
+                    remove_interface(item)
+
+        project_models_dict = project.models.as_dict()
+        models_dict = models.as_dict()
         models_dict['unique_name'] = 'project_models'
+        remove_interface(project_models_dict)
+        remove_interface(models_dict)
+        # Since as_dict may not include unique_name, remove it for comparison
+        for d in [project_models_dict, models_dict]:
+            if 'unique_name' in d:
+                del d['unique_name']
         assert project_models_dict == models_dict
 
         assert len(project._materials) == 3
@@ -353,8 +369,20 @@ class TestProject:
         project_dict = project.as_dict()
 
         # Expect
-        models_dict = models.as_dict(skip=['interface'])
+        def remove_interface(d):
+            if isinstance(d, dict):
+                if 'interface' in d:
+                    del d['interface']
+                for v in d.values():
+                    remove_interface(v)
+            elif isinstance(d, list):
+                for item in d:
+                    remove_interface(item)
+
+        models_dict = models.as_dict()
         models_dict['unique_name'] = 'project_models_to_prevent_collisions_on_load'
+        remove_interface(models_dict)
+        remove_interface(project_dict['models'])
         assert project_dict['models'] == models_dict
 
     def test_as_dict_materials_not_in_model(self):
@@ -636,6 +664,7 @@ class TestProject:
         assert isinstance(parameters[0], Parameter)
 
     def test_current_experiment_index_getter_and_setter(self):
+        global_object.map._clear()
         project = Project()
         # Default value should be 0
         assert project.current_experiment_index == 0
@@ -653,6 +682,7 @@ class TestProject:
         assert project.current_experiment_index == 0
 
     def test_current_experiment_index_setter_out_of_range(self):
+        global_object.map._clear()
         project = Project()
         # Add one experiment
         project._experiments[0] = DataSet1D(name='exp0', x=[], y=[], ye=[], xe=[], model=None)

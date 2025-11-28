@@ -4,9 +4,6 @@ from easyscience import global_object
 from xhtml2pdf import pisa
 
 from easyreflectometry import Project
-from easyreflectometry.utils import count_fixed_parameters
-from easyreflectometry.utils import count_free_parameters
-from easyreflectometry.utils import count_parameter_user_constraints
 
 from .html_templates import HTML_DATA_COLLECTION_TEMPLATE
 from .html_templates import HTML_FIGURES_TEMPLATE
@@ -114,10 +111,12 @@ class Summary:
         html_parameter = html_parameter.replace('parameter_error', 'Error')
         html_parameters.append(html_parameter)
 
-        for parameter in self._project.parameters:
-            path = global_object.map.find_path(
-                self._project._models[self._project.current_model_index].unique_name, parameter.unique_name
-            )
+        # Get parameters directly from the model instead of using project.parameters
+        model = self._project._models[self._project.current_model_index]
+        parameters = model.get_parameters()
+
+        for parameter in parameters:
+            path = global_object.map.find_path(model.unique_name, parameter.unique_name)
             if 0 < len(path):
                 name = f'{global_object.map.get_item_by_key(path[-2]).name} {global_object.map.get_item_by_key(path[-1]).name}'
             else:
@@ -165,12 +164,17 @@ class Summary:
 
     def _refinement_section(self) -> str:
         html_refinement = HTML_REFINEMENT_TEMPLATE
-        num_free_params = count_free_parameters(self._project)
-        num_fixed_params = count_fixed_parameters(self._project)
+
+        # Get parameters directly from the model
+        model = self._project._models[self._project.current_model_index]
+        parameters = model.get_parameters()
+
+        num_free_params = sum(1 for parameter in parameters if parameter.free)
+        num_fixed_params = sum(1 for parameter in parameters if not parameter.free)
         num_params = num_free_params + num_fixed_params
         #        goodness_of_fit = self._project.status.goodnessOfFit
         #        goodness_of_fit = goodness_of_fit.split(' → ')[-1]
-        num_constraints = count_parameter_user_constraints(self._project)
+        num_constraints = sum(1 for parameter in parameters if not parameter.independent)
 
         html_refinement = html_refinement.replace('calculation_engine', f'{self._project._calculator.current_interface_name}')
         html_refinement = html_refinement.replace('minimization_engine', f'{self._project.minimizer.name}')
