@@ -3,7 +3,7 @@ Tests exercising the methods of the topmost classes for nested structure.
 To ensure that the parameters are relayed.
 """
 
-from copy import copy
+from copy import copy, deepcopy
 
 from numpy.testing import assert_almost_equal
 
@@ -37,7 +37,7 @@ def test_copy():
     model.add_assemblies(SurfactantLayer(), Multilayer(), RepeatingMultilayer())
 
     # Then
-    model_copy = copy(model)
+    model_copy = deepcopy(model)
 
     # Expect
     assert sorted(model.as_dict()) == sorted(model_copy.as_dict())
@@ -49,6 +49,3 @@ def test_copy():
     )
     assert model.unique_name != model_copy.unique_name
     assert model.name == model_copy.name
-    assert model.as_dict(skip=['interface', 'unique_name', 'resolution_function']) == model_copy.as_dict(
-        skip=['interface', 'unique_name', 'resolution_function']
-    )

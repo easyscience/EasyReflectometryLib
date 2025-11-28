@@ -28,7 +28,6 @@ from easyreflectometry.sample import MaterialCollection
 from easyreflectometry.sample import Multilayer
 from easyreflectometry.sample import Sample
 from easyreflectometry.sample.collections.base_collection import BaseCollection
-from easyreflectometry.utils import collect_unique_names_from_dict
 
 Q_MIN = 0.001
 Q_MAX = 0.3
@@ -71,12 +70,11 @@ class Project:
 
     @property
     def parameters(self) -> List[Parameter]:
-        unique_names_in_project = collect_unique_names_from_dict(self.as_dict())
+        """Get all parameters from all models in the project."""
         parameters = []
-        for vertice_str in global_object.map.vertices():
-            vertice_obj = global_object.map.get_item_by_key(vertice_str)
-            if isinstance(vertice_obj, Parameter) and vertice_str in unique_names_in_project:
-                parameters.append(vertice_obj)
+        if self._models is not None:
+            for model in self._models:
+                parameters.extend(model.get_parameters())
         return parameters
 
     @property
@@ -349,20 +347,20 @@ class Project:
             raise IndexError(f'No experiment data for model at index {index}')
 
     def default_model(self):
-        self._replace_collection(MaterialCollection(), self._materials)
+        self._replace_collection(MaterialCollection(interface=self._calculator), self._materials)
 
         layers = [
-            Layer(material=self._materials[0], thickness=0.0, roughness=0.0, name='Vacuum Layer'),
-            Layer(material=self._materials[1], thickness=100.0, roughness=3.0, name='D2O Layer'),
-            Layer(material=self._materials[2], thickness=0.0, roughness=1.2, name='Si Layer'),
+            Layer(material=self._materials[0], thickness=0.0, roughness=0.0, name='Vacuum Layer', interface=self._calculator),
+            Layer(material=self._materials[1], thickness=100.0, roughness=3.0, name='D2O Layer', interface=self._calculator),
+            Layer(material=self._materials[2], thickness=0.0, roughness=1.2, name='Si Layer', interface=self._calculator),
         ]
         assemblies = [
-            Multilayer(layers[0], name='Superphase'),
-            Multilayer(layers[1], name='D2O'),
-            Multilayer(layers[2], name='Subphase'),
+            Multilayer(layers[0], name='Superphase', interface=self._calculator),
+            Multilayer(layers[1], name='D2O', interface=self._calculator),
+            Multilayer(layers[2], name='Subphase', interface=self._calculator),
         ]
-        sample = Sample(*assemblies)
-        model = Model(sample=sample)
+        sample = Sample(*assemblies, interface=self._calculator)
+        model = Model(sample=sample, interface=self._calculator)
         self.models = ModelCollection([model])
 
     def add_material(self, material: MaterialCollection) -> None:
@@ -424,8 +422,8 @@ class Project:
         project_dict['info'] = self._info
         project_dict['with_experiments'] = self._with_experiments
         if self._models is not None:
-            project_dict['models'] = self._models.as_dict(skip=['interface'])
-            project_dict['models']['unique_name'] = project_dict['models']['unique_name'] + '_to_prevent_collisions_on_load'
+            project_dict['models'] = self._models.as_dict()
+            project_dict['models']['unique_name'] = self._models.unique_name + '_to_prevent_collisions_on_load'
         if include_materials_not_in_model:
             self._as_dict_add_materials_not_in_model_dict(project_dict)
         if self._with_experiments:
