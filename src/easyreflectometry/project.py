@@ -272,6 +272,30 @@ class Project:
         model = Model(sample=sample)
         self.models = ModelCollection([model])
 
+    def add_sample_from_orso(self, sample) -> None:
+        """Add a new model with the given sample to the existing model collection.
+
+        :param sample: Sample to add as a new model.
+        """
+        model = Model(sample=sample)
+        model.interface = self._calculator
+        self.models.add_model(model)
+        # Extract materials from the new model and add to project materials
+        self._materials.extend(self._get_materials_from_model(model))
+        # Switch to the newly added model so its data is visible in the UI
+        self.current_model_index = len(self._models) - 1
+
+    def _get_materials_from_model(self, model: Model) -> 'MaterialCollection':
+        """Get all materials from a single model's sample."""
+        from easyreflectometry.sample import MaterialCollection
+
+        materials_in_model = MaterialCollection(populate_if_none=False)
+        for assembly in model.sample:
+            for layer in assembly.layers:
+                if layer.material not in materials_in_model:
+                    materials_in_model.append(layer.material)
+        return materials_in_model
+
     def load_new_experiment(self, path: Union[Path, str]) -> None:
         new_experiment = load_as_dataset(str(path))
         new_index = len(self._experiments)
