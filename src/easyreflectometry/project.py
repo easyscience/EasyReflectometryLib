@@ -278,8 +278,9 @@ class Project:
         :param sample: Sample to add as a new model.
         """
         model = Model(sample=sample)
-        model.interface = self._calculator
         self.models.add_model(model)
+        # Set interface after adding to collection
+        model.interface = self._calculator
         # Extract materials from the new model and add to project materials
         self._materials.extend(self._get_materials_from_model(model))
         # Switch to the newly added model so its data is visible in the UI

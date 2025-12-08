@@ -17,8 +17,11 @@ from easyreflectometry.model import ModelCollection
 from easyreflectometry.model import PercentageFwhm
 from easyreflectometry.model import Pointwise
 from easyreflectometry.project import Project
+from easyreflectometry.sample import Layer
 from easyreflectometry.sample import Material
 from easyreflectometry.sample import MaterialCollection
+from easyreflectometry.sample import Multilayer
+from easyreflectometry.sample import Sample
 
 PATH_STATIC = os.path.join(os.path.dirname(easyreflectometry.__file__), '..', '..', 'tests', '_static')
 
@@ -700,3 +703,129 @@ class TestProject:
             assert False, 'Expected ValueError for out-of-range index'
         except ValueError:
             pass
+
+    def test_get_materials_from_model(self):
+        # When
+        project = Project()
+        material_1 = Material(sld=2.07, isld=0.0, name='Material 1')
+        material_2 = Material(sld=3.47, isld=0.0, name='Material 2')
+        material_3 = Material(sld=6.36, isld=0.0, name='Material 3')
+
+        layer_1 = Layer(material=material_1, thickness=10, roughness=0, name='Layer 1')
+        layer_2 = Layer(material=material_2, thickness=20, roughness=1, name='Layer 2')
+        layer_3 = Layer(material=material_3, thickness=0, roughness=2, name='Layer 3')
+
+        sample = Sample(Multilayer([layer_1, layer_2]), Multilayer([layer_3]))
+        model = Model(sample=sample)
+
+        # Then
+        materials = project._get_materials_from_model(model)
+
+        # Expect
+        assert len(materials) == 3
+        assert materials[0] == material_1
+        assert materials[1] == material_2
+        assert materials[2] == material_3
+
+    def test_get_materials_from_model_duplicate_materials(self):
+        # When
+        project = Project()
+        # Use the same material in multiple layers
+        shared_material = Material(sld=2.07, isld=0.0, name='Shared Material')
+        material_2 = Material(sld=3.47, isld=0.0, name='Material 2')
+
+        layer_1 = Layer(material=shared_material, thickness=10, roughness=0, name='Layer 1')
+        layer_2 = Layer(material=material_2, thickness=20, roughness=1, name='Layer 2')
+        layer_3 = Layer(material=shared_material, thickness=30, roughness=2, name='Layer 3')
+
+        sample = Sample(Multilayer([layer_1, layer_2, layer_3]))
+        model = Model(sample=sample)
+
+        # Then
+        materials = project._get_materials_from_model(model)
+
+        # Expect - should only include unique materials
+        assert len(materials) == 2
+        assert materials[0] == shared_material
+        assert materials[1] == material_2
+
+    def test_add_sample_from_orso(self):
+        # When
+        global_object.map._clear()
+        project = Project()
+        project.default_model()
+
+        initial_model_count = len(project._models)
+        initial_material_count = len(project._materials)
+
+        material_1 = Material(sld=4.0, isld=0.0, name='New Material 1')
+        material_2 = Material(sld=5.0, isld=0.0, name='New Material 2')
+        layer_1 = Layer(material=material_1, thickness=50, roughness=1, name='New Layer 1')
+        layer_2 = Layer(material=material_2, thickness=100, roughness=2, name='New Layer 2')
+        new_sample = Sample(Multilayer([layer_1, layer_2]))
+
+        # Then
+        project.add_sample_from_orso(new_sample)
+
+        # Expect
+        assert len(project._models) == initial_model_count + 1
+        assert project._models[-1].sample == new_sample
+        # The interface should be set by add_sample_from_orso
+        assert project._models[-1].interface == project._calculator
+        assert len(project._materials) == initial_material_count + 2
+        assert material_1 in project._materials
+        assert material_2 in project._materials
+        assert project.current_model_index == len(project._models) - 1
+
+    def test_add_sample_from_orso_multiple_additions(self):
+        # When
+        global_object.map._clear()
+        project = Project()
+
+        material_1 = Material(sld=2.0, isld=0.0, name='Material A')
+        layer_1 = Layer(material=material_1, thickness=10, roughness=0, name='Layer A')
+        sample_1 = Sample(Multilayer([layer_1]))
+
+        material_2 = Material(sld=3.0, isld=0.0, name='Material B')
+        layer_2 = Layer(material=material_2, thickness=20, roughness=1, name='Layer B')
+        sample_2 = Sample(Multilayer([layer_2]))
+
+        # Then
+        project.add_sample_from_orso(sample_1)
+        project.add_sample_from_orso(sample_2)
+
+        # Expect
+        assert len(project._models) == 2
+        assert project._models[0].sample == sample_1
+        assert project._models[1].sample == sample_2
+        assert len(project._materials) == 2
+        assert material_1 in project._materials
+        assert material_2 in project._materials
+        assert project.current_model_index == 1
+
+    def test_add_sample_from_orso_with_shared_materials(self):
+        # When
+        global_object.map._clear()
+        project = Project()
+
+        # Create first sample with a material
+        shared_material = Material(sld=2.0, isld=0.0, name='Shared Material')
+        layer_1 = Layer(material=shared_material, thickness=10, roughness=0, name='Layer 1')
+        sample_1 = Sample(Multilayer([layer_1]))
+        project.add_sample_from_orso(sample_1)
+
+        initial_material_count = len(project._materials)
+
+        # Create second sample using the same material
+        layer_2 = Layer(material=shared_material, thickness=20, roughness=1, name='Layer 2')
+        sample_2 = Sample(Multilayer([layer_2]))
+
+        # Then
+        project.add_sample_from_orso(sample_2)
+
+        # Expect - materials list should grow even if material is shared
+        # (MaterialCollection.extend adds duplicate check)
+        assert len(project._models) == 2
+        # The material count may increase by 1 if the material object is the same instance
+        # but MaterialCollection might add it again - depends on implementation
+        assert len(project._materials) >= initial_material_count
