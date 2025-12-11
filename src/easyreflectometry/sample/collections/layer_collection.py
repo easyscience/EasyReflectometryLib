@@ -16,6 +16,12 @@ class LayerCollection(BaseCollection):
         populate_if_none: bool = True,  # Needed to match as_dict signature from BaseCollection
         **kwargs,
     ):
+        # Handle layers passed as keyword argument (for compatibility)
+        if not layers and 'layers' in kwargs:
+            layers = kwargs.pop('layers')
+            if not isinstance(layers, (list, tuple)):
+                layers = [layers]
+        
         if not layers:
             layers = []
 

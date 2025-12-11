@@ -396,8 +396,8 @@ class TestProject:
         # Then
         project_dict = project.as_dict(include_materials_not_in_model=True)
 
-        # Expect
-        assert project_dict['materials_not_in_model']['data'][0] == material.as_dict(skip=['interface'])
+        # Expect - unique_name is skipped for nested objects to avoid collisions during from_dict
+        assert project_dict['materials_not_in_model']['data'][0] == material.as_dict(skip=['interface', 'unique_name'])
 
     def test_as_dict_minimizer(self):
         # When

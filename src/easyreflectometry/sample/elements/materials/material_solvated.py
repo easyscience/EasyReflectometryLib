@@ -148,13 +148,7 @@ class MaterialSolvated(MaterialMixture):
         this_dict['material'] = self.material.as_dict(skip=skip)
         this_dict['solvent'] = self.solvent.as_dict(skip=skip)
         this_dict['solvent_fraction'] = self._fraction.as_dict(skip=skip)
-        # Property and protected varible from material_mixture
-        del this_dict['material_a']
-        del this_dict['_material_a']
-        # Property and protected varible from material_mixture
-        del this_dict['material_b']
-        del this_dict['_material_b']
-        # Property and protected varible from material_mixture
-        del this_dict['fraction']
-        del this_dict['_fraction']
+        # Remove material_mixture parent class properties (keys may or may not have underscore prefix)
+        for key in ['material_a', '_material_a', 'material_b', '_material_b', 'fraction', '_fraction']:
+            this_dict.pop(key, None)
         return this_dict

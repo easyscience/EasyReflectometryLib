@@ -273,7 +273,8 @@ class LayerAreaPerMolecule(Layer):
         this_dict['solvent_fraction'] = self.material._fraction.as_dict(skip=skip)
         this_dict['area_per_molecule'] = self._area_per_molecule.as_dict(skip=skip)
         this_dict['solvent'] = self.solvent.as_dict(skip=skip)
-        del this_dict['material']
-        del this_dict['_scattering_length_real']
-        del this_dict['_scattering_length_imag']
+        # Remove keys that may or may not have underscore prefix
+        for key in ['material', '_material', 'scattering_length_real', '_scattering_length_real',
+                    'scattering_length_imag', '_scattering_length_imag']:
+            this_dict.pop(key, None)
         return this_dict

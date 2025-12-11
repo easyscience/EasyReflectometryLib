@@ -187,7 +187,10 @@ class Project:
         self._replace_collection(models, self._models)
         # Use setter to update indicies for current model, assembly and layer
         self.current_model_index = 0
-        self._materials.extend(self._get_materials_in_models())
+        # Only add materials that aren't already in the collection
+        for material in self._get_materials_in_models():
+            if material not in self._materials:
+                self._materials.append(material)
         for model in self._models:
             model.interface = self._calculator
 

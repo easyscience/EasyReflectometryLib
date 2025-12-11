@@ -69,10 +69,11 @@ class Sample(BaseCollection):
         :param assembly: Assembly to add.
         """
         to_be_duplicated = self[index]
-        if isinstance(to_be_duplicated, Multilayer):
-            duplicate = Multilayer.from_dict(to_be_duplicated.as_dict(skip=['unique_name']))
-        elif isinstance(to_be_duplicated, RepeatingMultilayer):
+        # Check RepeatingMultilayer BEFORE Multilayer since RepeatingMultilayer inherits from Multilayer
+        if isinstance(to_be_duplicated, RepeatingMultilayer):
             duplicate = RepeatingMultilayer.from_dict(to_be_duplicated.as_dict(skip=['unique_name']))
+        elif isinstance(to_be_duplicated, Multilayer):
+            duplicate = Multilayer.from_dict(to_be_duplicated.as_dict(skip=['unique_name']))
         elif isinstance(to_be_duplicated, SurfactantLayer):
             duplicate = SurfactantLayer.from_dict(to_be_duplicated.as_dict(skip=['unique_name']))
         duplicate.name = duplicate.name + ' duplicate'

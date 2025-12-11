@@ -250,5 +250,7 @@ class SurfactantLayer(BaseAssembly):
         this_dict['head_layer'] = self.head_layer.as_dict(skip=skip)
         this_dict['constrain_area_per_molecule'] = self.constrain_area_per_molecule
         this_dict['conformal_roughness'] = self.conformal_roughness
-        del this_dict['layers']
+        # Remove key that may or may not have underscore prefix
+        for key in ['layers', '_layers']:
+            this_dict.pop(key, None)
         return this_dict

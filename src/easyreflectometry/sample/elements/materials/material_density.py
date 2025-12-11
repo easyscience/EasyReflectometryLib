@@ -152,11 +152,10 @@ class MaterialDensity(Material):
         :param skip: List of keys to skip, defaults to `None`.
         """
         this_dict = super().as_dict(skip=skip)
-        # From Material
-        del this_dict['sld']
-        del this_dict['isld']
-        # Determined in __init__
-        del this_dict['scattering_length_real']
-        del this_dict['scattering_length_imag']
-        del this_dict['molecular_weight']
+        # Remove keys that may or may not have underscore prefix
+        for key in ['sld', '_sld', 'isld', '_isld', 
+                    'scattering_length_real', '_scattering_length_real',
+                    'scattering_length_imag', '_scattering_length_imag',
+                    'molecular_weight', '_molecular_weight']:
+            this_dict.pop(key, None)
         return this_dict

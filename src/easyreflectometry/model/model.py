@@ -8,8 +8,8 @@ from typing import Optional
 from typing import Union
 
 import numpy as np
-from easyscience import ObjBase as BaseObj
 from easyscience import global_object
+from easyscience.base_classes import ModelBase
 from easyscience.variable import Parameter
 
 from easyreflectometry.sample import BaseAssembly
@@ -45,16 +45,15 @@ DEFAULTS = {
 COLORS = ['#0173B2', '#DE8F05', '#029E73', '#D55E00', '#CC78BC', '#CA9161', '#FBAFE4', '#949494', '#ECE133', '#56B4E9']
 
 
-class Model(BaseObj):
+class Model(ModelBase):
     """Model is the class that represents the experiment.
     It is used to store the information about the experiment and to perform the calculations.
     """
 
-    # Added in super().__init__
-    name: str
-    sample: Sample
-    scale: Parameter
-    background: Parameter
+    # Class attributes for type hints
+    _sample: Sample
+    _scale: Parameter
+    _background: Parameter
 
     def __init__(
         self,
@@ -90,16 +89,85 @@ class Model(BaseObj):
         self.color = color
 
         super().__init__(
-            name=name,
             unique_name=unique_name,
-            sample=sample,
-            scale=scale,
-            background=background,
+            display_name=name,
         )
-        self.resolution_function = resolution_function
 
+        # Store components and register with global object map
+        self._sample = sample
+        self._scale = scale
+        self._background = background
+        self._global_object.map.add_edge(self, sample)
+        self._global_object.map.add_edge(self, scale)
+        self._global_object.map.add_edge(self, background)
+        self._global_object.map.reset_type(sample, 'created_internal')
+        self._global_object.map.reset_type(scale, 'created_internal')
+        self._global_object.map.reset_type(background, 'created_internal')
+
+        self._resolution_function = resolution_function
+
+        # Interface handling (to be removed in PR3)
+        self._interface = None
         # Must be set after resolution function
         self.interface = interface
+
+    @property
+    def name(self) -> str:
+        """Get the name of the model (maps to display_name)."""
+        return self.display_name
+
+    @name.setter
+    def name(self, new_name: str) -> None:
+        """Set the name of the model."""
+        self.display_name = new_name
+
+    @property
+    def sample(self) -> Sample:
+        """Get the sample."""
+        return self._sample
+
+    @sample.setter
+    def sample(self, new_sample: Sample) -> None:
+        """Set the sample."""
+        old_sample = self._sample
+        self._sample = new_sample
+        self._global_object.map.prune_vertex_from_edge(self, old_sample)
+        self._global_object.map.add_edge(self, new_sample)
+        self._global_object.map.reset_type(new_sample, 'created_internal')
+
+    @property
+    def scale(self) -> Parameter:
+        """Get the scale parameter."""
+        return self._scale
+
+    @scale.setter
+    def scale(self, value: Union[Parameter, Number]) -> None:
+        """Set the scale value."""
+        if isinstance(value, Parameter):
+            old_scale = self._scale
+            self._scale = value
+            self._global_object.map.prune_vertex_from_edge(self, old_scale)
+            self._global_object.map.add_edge(self, value)
+            self._global_object.map.reset_type(value, 'created_internal')
+        else:
+            self._scale.value = value
+
+    @property
+    def background(self) -> Parameter:
+        """Get the background parameter."""
+        return self._background
+
+    @background.setter
+    def background(self, value: Union[Parameter, Number]) -> None:
+        """Set the background value."""
+        if isinstance(value, Parameter):
+            old_background = self._background
+            self._background = value
+            self._global_object.map.prune_vertex_from_edge(self, old_background)
+            self._global_object.map.add_edge(self, value)
+            self._global_object.map.reset_type(value, 'created_internal')
+        else:
+            self._background.value = value
 
     def add_assemblies(self, *assemblies: list[BaseAssembly]) -> None:
         """Add assemblies to the model sample.
@@ -160,11 +228,64 @@ class Model(BaseObj):
     @interface.setter
     def interface(self, new_interface) -> None:
         """Set the interface for the model."""
-        # From super class
         self._interface = new_interface
         if new_interface is not None:
             self.generate_bindings()
             self._interface().set_resolution_function(self._resolution_function)
+
+    def generate_bindings(self) -> None:
+        """Generate or re-generate bindings to an interface."""
+        if self.interface is None:
+            raise AttributeError('Interface error for generating bindings. `interface` has to be set.')
+        # Propagate interface to sample
+        self.sample.interface = self.interface
+        self.interface.generate_bindings(self)
+
+    def _get_linkable_attributes(self) -> list:
+        """Get all objects which can be linked against as a list.
+
+        :return: List of `Descriptor`/`Parameter` objects.
+        """
+        from easyscience.variable.descriptor_base import DescriptorBase
+
+        item_list = []
+        for attr in [self._scale, self._background, self._sample]:
+            if hasattr(attr, '_get_linkable_attributes'):
+                item_list.extend(attr._get_linkable_attributes())
+            elif isinstance(attr, DescriptorBase):
+                item_list.append(attr)
+        return item_list
+
+    def get_parameters(self) -> list:
+        """Get all parameter objects as a list.
+
+        :return: List of `Parameter` objects.
+        """
+        from easyscience.variable import Parameter
+
+        par_list = []
+        for attr in [self._scale, self._background, self._sample]:
+            if hasattr(attr, 'get_parameters'):
+                par_list.extend(attr.get_parameters())
+            elif isinstance(attr, Parameter):
+                par_list.append(attr)
+        return par_list
+
+    def get_fit_parameters(self) -> list:
+        """Get all objects which can be fitted (and are not fixed) as a list.
+
+        :return: List of `Parameter` objects which can be used in fitting.
+        """
+        from easyscience.variable import Parameter
+
+        fit_list = []
+        for attr in [self._scale, self._background, self._sample]:
+            if hasattr(attr, 'get_fit_parameters'):
+                fit_list.extend(attr.get_fit_parameters())
+            elif isinstance(attr, Parameter):
+                if attr.independent and not attr.fixed:
+                    fit_list.append(attr)
+        return fit_list
 
     # Representation
     @property
@@ -198,15 +319,51 @@ class Model(BaseObj):
         """
         if skip is None:
             skip = []
-        skip.extend(['sample', 'resolution_function', 'interface'])
-        this_dict = super().as_dict(skip=skip)
-        this_dict['sample'] = self.sample.as_dict(skip=skip)
-        this_dict['resolution_function'] = self.resolution_function.as_dict(skip=skip)
+        
+        # Always skip unique_name for nested Parameters to avoid collisions during from_dict
+        param_skip = list(skip) + ['unique_name'] if 'unique_name' not in skip else list(skip)
+        
+        this_dict = {
+            '@module': self.__class__.__module__,
+            '@class': self.__class__.__name__,
+            '@version': None,
+            'name': self.name,
+            'color': self.color,
+        }
+        
+        # Add unique_name if not default
+        if 'unique_name' not in skip and not self._default_unique_name:
+            this_dict['unique_name'] = self.unique_name
+        
+        # Add sample - use param_skip to avoid parameter unique_name collisions
+        this_dict['sample'] = self.sample.as_dict(skip=param_skip)
+        
+        # Add scale and background - use param_skip
+        if 'scale' not in skip:
+            this_dict['scale'] = self._scale.as_dict(skip=param_skip)
+        if 'background' not in skip:
+            this_dict['background'] = self._background.as_dict(skip=param_skip)
+        
+        # Add resolution function
+        this_dict['resolution_function'] = self.resolution_function.as_dict(skip=param_skip)
+        
+        # Add interface
         if self.interface is None:
             this_dict['interface'] = None
         else:
             this_dict['interface'] = self.interface().name
+        
         return this_dict
+
+    def to_dict(self, skip: Optional[list[str]] = None) -> dict:
+        """Convert to dictionary for serialization (alias for as_dict).
+        
+        This overrides NewBase.to_dict to use our custom serialization.
+        
+        :param skip: List of keys to skip, defaults to `None`.
+        :return: Dictionary representation of the model.
+        """
+        return self.as_dict(skip=skip)
 
     def as_orso(self) -> dict:
         """Convert the model to a dictionary suitable for ORSO."""
