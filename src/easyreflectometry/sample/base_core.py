@@ -16,15 +16,18 @@ from easyreflectometry.utils import yaml_dump
 class BaseCore(ModelBase):
     """Base class for all EasyReflectometry model objects.
     
-    This class bridges the new ModelBase API with the legacy 'name' and 'interface' patterns
+    This class bridges the new ModelBase API with the legacy 'name' patterns
     used throughout EasyReflectometry. The 'name' property maps to 'display_name' in the
     new architecture.
+    
+    Note: The 'interface' parameter is deprecated. Calculator binding is now handled
+    centrally by the Project class using calculator.set_model().
     """
 
     def __init__(
         self,
         name: str,
-        interface,
+        interface=None,  # Deprecated - kept for backward compatibility
         unique_name: Optional[str] = None,
         **kwargs,
     ):
@@ -40,9 +43,9 @@ class BaseCore(ModelBase):
                 self._global_object.map.add_edge(self, value)
                 self._global_object.map.reset_type(value, 'created_internal')
 
-        # Interface handling (to be removed in PR3)
-        self._interface = None
-        self.interface = interface
+        # Interface is deprecated but kept for backward compatibility
+        # It's now a no-op - calculator binding is handled by Project
+        self._interface = interface
 
     def __getattr__(self, name: str):
         """Forward attribute access to _kwargs for ObjBase compatibility."""
@@ -85,25 +88,35 @@ class BaseCore(ModelBase):
 
     @property
     def interface(self):
-        """Get the current interface of the object."""
+        """Get the current interface of the object.
+        
+        .. deprecated::
+            The interface property is deprecated. Calculator binding is now
+            handled centrally by the Project class.
+        """
         return self._interface
 
     @interface.setter
     def interface(self, new_interface) -> None:
-        """Set the interface and generate bindings if possible."""
+        """Set the interface (deprecated - now a no-op for sample objects).
+        
+        .. deprecated::
+            The interface property is deprecated. Calculator binding is now
+            handled centrally by the Project class using calculator.set_model().
+        """
         self._interface = new_interface
-        if new_interface is not None:
-            self.generate_bindings()
+        # No longer propagate or generate bindings - this is handled by calculator.set_model()
 
     def generate_bindings(self) -> None:
-        """Generate or re-generate bindings to an interface."""
-        if self.interface is None:
-            raise AttributeError('Interface error for generating bindings. `interface` has to be set.')
-        # Propagate interface to children
-        for key, value in self._kwargs.items():
-            if hasattr(value, 'interface'):
-                value.interface = self.interface
-        self.interface.generate_bindings(self)
+        """Generate or re-generate bindings to an interface.
+        
+        .. deprecated::
+            This method is deprecated. Calculator binding is now handled
+            centrally by the Project class using calculator.set_model().
+        """
+        # This is now a no-op for sample objects
+        # Calculator binding is handled by calculator.set_model() which calls _create_all_bindings()
+        pass
 
     def _add_component(self, key: str, component) -> None:
         """Dynamically add a component to the class."""

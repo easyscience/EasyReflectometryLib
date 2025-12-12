@@ -173,30 +173,15 @@ class CalculatorFactory(CalculatorFactoryBase):
     def generate_bindings(self, model, *args, ifun=None, **kwargs):
         """Generate bindings for a model using the current calculator.
 
+        This uses the calculator's set_model method which properly creates
+        all bindings in the correct order (materials -> layers -> assemblies -> model).
+
         :param model: The model to generate bindings for.
         """
         if self._current_calculator is None:
             return
 
-        class_links = self._current_calculator.create(model)
-        props = model._get_linkable_attributes()
-        props_names = [prop.name for prop in props]
-
-        for item in class_links:
-            for item_key in item.name_conversion.keys():
-                if item_key not in props_names:
-                    continue
-                idx = props_names.index(item_key)
-                prop = props[idx]
-
-                # Get value safely
-                if hasattr(prop, 'value_no_call_back'):
-                    prop_value = prop.value_no_call_back
-                else:
-                    prop_value = prop.value
-
-                prop._callback = item.make_prop(item_key)
-                prop._callback.fset(prop_value)
+        self._current_calculator.set_model(model)
 
     @property
     def fit_func(self) -> Callable:

@@ -13,6 +13,8 @@ from numpy.testing import assert_equal
 from numpy.testing import assert_raises
 
 from easyreflectometry.calculators import CalculatorFactory
+from easyreflectometry.model import Model
+from easyreflectometry.sample import Sample
 from easyreflectometry.sample.assemblies.repeating_multilayer import RepeatingMultilayer
 from easyreflectometry.sample.collections.layer_collection import LayerCollection
 from easyreflectometry.sample.elements.layers.layer import Layer
@@ -104,17 +106,24 @@ class TestRepeatingMultilayer(unittest.TestCase):
         assert_equal(o.layers[1].name, 'thickPotassium')
 
     def test_add_layer_with_interface_refnx(self):
+        # Create the sample structure
+        m = Material(6.908, -0.278, 'Boron')
+        k = Material(0.487, 0.000, 'Potassium')
+        p = Layer(m, 5.0, 2.0, 'thinBoron')
+        q = Layer(k, 50.0, 1.0, 'thickPotassium')
+        o = RepeatingMultilayer(p, 2.0, 'twoLayerItem')
+
+        # Create Model with interface and add the assembly
         interface = CalculatorFactory()
         interface.switch('refnx')
-        m = Material(6.908, -0.278, 'Boron', interface=interface)
-        k = Material(0.487, 0.000, 'Potassium', interface=interface)
-        p = Layer(m, 5.0, 2.0, 'thinBoron', interface=interface)
-        q = Layer(k, 50.0, 1.0, 'thickPotassium', interface=interface)
-        o = RepeatingMultilayer(p, 2.0, 'twoLayerItem', interface=interface)
-        assert_equal(len(o.interface()._wrapper.storage['item'][o.unique_name].components), 1)
+        sample = Sample(o, populate_if_none=False)
+        model = Model(sample=sample, interface=interface)
+
+        assert_equal(len(interface()._wrapper.storage['item'][o.unique_name].components), 1)
         o.add_layer(q)
-        assert_equal(len(o.interface()._wrapper.storage['item'][o.unique_name].components), 2)
-        assert_equal(o.interface()._wrapper.storage['item'][o.unique_name].components[1].thick.value, 50.0)
+        model.generate_bindings()
+        assert_equal(len(interface()._wrapper.storage['item'][o.unique_name].components), 2)
+        assert_equal(interface()._wrapper.storage['item'][o.unique_name].components[1].thick.value, 50.0)
 
     def test_duplicate_layer(self):
         m = Material(6.908, -0.278, 'Boron')
@@ -131,25 +140,33 @@ class TestRepeatingMultilayer(unittest.TestCase):
         assert_equal(o.layers[2].name, 'thickPotassium duplicate')
 
     def test_duplicate_layer_with_interface_refnx(self):
+        # Create the sample structure
+        m = Material(6.908, -0.278, 'Boron')
+        k = Material(0.487, 0.000, 'Potassium')
+        p = Layer(m, 5.0, 2.0, 'thinBoron')
+        q = Layer(k, 50.0, 1.0, 'thickPotassium')
+        o = RepeatingMultilayer(p, 2.0, 'twoLayerItem')
+
+        # Create Model with interface and add the assembly
         interface = CalculatorFactory()
         interface.switch('refnx')
-        m = Material(6.908, -0.278, 'Boron', interface=interface)
-        k = Material(0.487, 0.000, 'Potassium', interface=interface)
-        p = Layer(m, 5.0, 2.0, 'thinBoron', interface=interface)
-        q = Layer(k, 50.0, 1.0, 'thickPotassium', interface=interface)
-        o = RepeatingMultilayer(p, 2.0, 'twoLayerItem', interface=interface)
-        assert_equal(len(o.interface()._wrapper.storage['item'][o.unique_name].components), 1)
+        sample = Sample(o, populate_if_none=False)
+        model = Model(sample=sample, interface=interface)
+
+        assert_equal(len(interface()._wrapper.storage['item'][o.unique_name].components), 1)
         o.add_layer(q)
-        assert_equal(len(o.interface()._wrapper.storage['item'][o.unique_name].components), 2)
-        assert_equal(o.interface()._wrapper.storage['item'][o.unique_name].components[1].thick.value, 50.0)
+        model.generate_bindings()
+        assert_equal(len(interface()._wrapper.storage['item'][o.unique_name].components), 2)
+        assert_equal(interface()._wrapper.storage['item'][o.unique_name].components[1].thick.value, 50.0)
         o.duplicate_layer(1)
-        assert_equal(len(o.interface()._wrapper.storage['item'][o.unique_name].components), 3)
-        assert_equal(o.interface()._wrapper.storage['item'][o.unique_name].components[2].thick.value, 50.0)
+        model.generate_bindings()
+        assert_equal(len(interface()._wrapper.storage['item'][o.unique_name].components), 3)
+        assert_equal(interface()._wrapper.storage['item'][o.unique_name].components[2].thick.value, 50.0)
         assert_raises(
             AssertionError,
             assert_equal,
-            o.interface()._wrapper.storage['item'][o.unique_name].components[1].name,
-            o.interface()._wrapper.storage['item'][o.unique_name].components[2].name,
+            interface()._wrapper.storage['item'][o.unique_name].components[1].name,
+            interface()._wrapper.storage['item'][o.unique_name].components[2].name,
         )
 
     def test_remove_layer(self):
@@ -167,19 +184,27 @@ class TestRepeatingMultilayer(unittest.TestCase):
         assert_equal(o.layers[0].name, 'thinBoron')
 
     def test_remove_layer_with_interface_refnx(self):
+        # Create the sample structure
+        m = Material(6.908, -0.278, 'Boron')
+        k = Material(0.487, 0.000, 'Potassium')
+        p = Layer(m, 5.0, 2.0, 'thinBoron')
+        q = Layer(k, 50.0, 1.0, 'thickPotassium')
+        o = RepeatingMultilayer(p, repetitions=2.0, name='twoLayerItem')
+
+        # Create Model with interface and add the assembly
         interface = CalculatorFactory()
         interface.switch('refnx')
-        m = Material(6.908, -0.278, 'Boron', interface=interface)
-        k = Material(0.487, 0.000, 'Potassium', interface=interface)
-        p = Layer(m, 5.0, 2.0, 'thinBoron', interface=interface)
-        q = Layer(k, 50.0, 1.0, 'thickPotassium', interface=interface)
-        o = RepeatingMultilayer(p, repetitions=2.0, name='twoLayerItem', interface=interface)
-        assert_equal(len(o.interface()._wrapper.storage['item'][o.unique_name].components), 1)
+        sample = Sample(o, populate_if_none=False)
+        model = Model(sample=sample, interface=interface)
+
+        assert_equal(len(interface()._wrapper.storage['item'][o.unique_name].components), 1)
         o.add_layer(q)
-        assert_equal(len(o.interface()._wrapper.storage['item'][o.unique_name].components), 2)
+        model.generate_bindings()
+        assert_equal(len(interface()._wrapper.storage['item'][o.unique_name].components), 2)
         assert_equal(o.layers[1].name, 'thickPotassium')
         o.remove_layer(1)
-        assert_equal(len(o.interface()._wrapper.storage['item'][o.unique_name].components), 1)
+        model.generate_bindings()
+        assert_equal(len(interface()._wrapper.storage['item'][o.unique_name].components), 1)
         assert_equal(o.layers[0].name, 'thinBoron')
 
     def test_repr(self):

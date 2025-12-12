@@ -13,6 +13,9 @@ from numpy.testing import assert_almost_equal
 from numpy.testing import assert_equal
 
 from easyreflectometry.calculators.factory import CalculatorFactory
+from easyreflectometry.model import Model
+from easyreflectometry.sample import Sample
+from easyreflectometry.sample.assemblies.multilayer import Multilayer
 from easyreflectometry.sample.elements.layers.layer import DEFAULTS
 from easyreflectometry.sample.elements.layers.layer import Layer
 from easyreflectometry.sample.elements.materials.material import Material
@@ -100,15 +103,23 @@ class TestLayer(unittest.TestCase):
         assert_almost_equal(p.material.isld.value, 0.0)
 
     def test_assign_material_with_interface_refnx(self):
+        # Create sample structure
+        m = Material(6.908, -0.278, 'Boron')
+        p = Layer(m, 5.0, 2.0, 'thinBoron')
+        k = Material(2.074, 0.0, 'Silicon')
+        multilayer = Multilayer(p, populate_if_none=False)
+
+        # Create Model with interface
         interface = CalculatorFactory()
-        m = Material(6.908, -0.278, 'Boron', interface=interface)
-        p = Layer(m, 5.0, 2.0, 'thinBoron', interface=interface)
-        k = Material(2.074, 0.0, 'Silicon', interface=interface)
-        assert_almost_equal(p.interface()._wrapper.storage['layer'][p.unique_name].sld.real.value, 6.908)
-        assert_almost_equal(p.interface()._wrapper.storage['layer'][p.unique_name].sld.imag.value, -0.278)
+        sample = Sample(multilayer, populate_if_none=False)
+        model = Model(sample=sample, interface=interface)
+
+        assert_almost_equal(interface()._wrapper.storage['layer'][p.unique_name].sld.real.value, 6.908)
+        assert_almost_equal(interface()._wrapper.storage['layer'][p.unique_name].sld.imag.value, -0.278)
         p.assign_material(k)
-        assert_almost_equal(p.interface()._wrapper.storage['layer'][p.unique_name].sld.real.value, 2.074)
-        assert_almost_equal(p.interface()._wrapper.storage['layer'][p.unique_name].sld.imag.value, 0.0)
+        model.generate_bindings()
+        assert_almost_equal(interface()._wrapper.storage['layer'][p.unique_name].sld.real.value, 2.074)
+        assert_almost_equal(interface()._wrapper.storage['layer'][p.unique_name].sld.imag.value, 0.0)
 
     def test_dict_repr(self):
         p = Layer()
