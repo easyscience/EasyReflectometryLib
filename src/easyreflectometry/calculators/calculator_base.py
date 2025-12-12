@@ -10,7 +10,6 @@ holds a reference to the model.
 from __future__ import annotations
 
 from abc import ABCMeta
-from abc import abstractmethod
 from typing import TYPE_CHECKING
 from typing import Callable
 from typing import Optional
@@ -20,10 +19,8 @@ from easyscience.fitting.calculators.interface_factory import ItemContainer
 
 if TYPE_CHECKING:
     from easyreflectometry.model import Model
-    from easyreflectometry.sample import BaseAssembly
     from easyreflectometry.sample import Layer
     from easyreflectometry.sample import Material
-    from easyreflectometry.sample import MaterialMixture
     from easyreflectometry.sample import Multilayer
 
 from .wrapper_base import WrapperBase
@@ -93,7 +90,6 @@ class CalculatorBase(metaclass=ABCMeta):
 
         :param model: The model to associate with this calculator.
         """
-        from easyreflectometry.model import Model as ModelClass
 
         self._model = model
         self.reset_storage()
@@ -107,9 +103,6 @@ class CalculatorBase(metaclass=ABCMeta):
 
         :param model: The model to create bindings for.
         """
-        from easyreflectometry.model import Model as ModelClass
-        from easyreflectometry.sample import BaseAssembly
-        from easyreflectometry.sample import Layer
         from easyreflectometry.sample import Material
         from easyreflectometry.sample import MaterialMixture
 

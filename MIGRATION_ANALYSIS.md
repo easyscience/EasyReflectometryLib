@@ -172,14 +172,18 @@ CalculatorFactoryBase (corelib - new)
 | Fix test failures | ✅ Complete | Multiple files |
 | **Test Results** | **439 passed, 2 deferred** | |
 
-### PR2: Calculator Refactor (Planned)
+### PR2: Calculator Refactor (Complete)
 
-| Task | Status | Files to Modify |
-|------|--------|-----------------|
-| `CalculatorFactory`: `InterfaceFactoryTemplate` → `CalculatorFactoryBase` | Planned | `calculators/factory.py` |
-| Refactor calculator to stateful pattern | Planned | `calculators/*.py` |
-| Update calculator bindings generation | Planned | Multiple |
-| Move calculator ownership to `Project` | Planned | `project.py` |
+| Task | Status | Files Modified |
+|------|--------|----------------|
+| `CalculatorFactory`: `InterfaceFactoryTemplate` → `CalculatorFactoryBase` | ✅ Complete | `calculators/factory.py` |
+| Refactor `CalculatorBase` to stateful pattern | ✅ Complete | `calculators/calculator_base.py` |
+| Add optional `model` parameter to calculators | ✅ Complete | `calculators/refnx/calculator.py`, `calculators/refl1d/calculator.py` |
+| Add `set_model()` for stateful binding | ✅ Complete | `calculators/calculator_base.py` |
+| Add `_create_all_bindings()` for model hierarchy | ✅ Complete | `calculators/calculator_base.py` |
+| Add `calculate()` method using bound model | ✅ Complete | `calculators/calculator_base.py` |
+| Maintain backwards compatibility in factory | ✅ Complete | `calculators/factory.py` |
+| **Test Results** | **415 passed, 2 deferred (same as PR1)** | |
 
 ### PR3: Interface Removal (Planned)
 
@@ -216,6 +220,15 @@ CalculatorFactoryBase (corelib - new)
 | `src/easyreflectometry/sample/elements/layers/layer_area_per_molecule.py` | Safe dict key removal |
 | `src/easyreflectometry/sample/elements/materials/material_density.py` | Safe dict key removal |
 | `src/easyreflectometry/sample/elements/materials/material_solvated.py` | Safe dict key removal |
+
+### Calculator Files (Modified in PR2)
+
+| File | Changes Made |
+|------|--------------|
+| `src/easyreflectometry/calculators/calculator_base.py` | Complete rewrite: removed `SerializerComponent` inheritance, added stateful model binding, `set_model()`, `_create_all_bindings()`, `calculate()`, `reflectivity_profile()`, `fit_func` property |
+| `src/easyreflectometry/calculators/factory.py` | Inherits `CalculatorFactoryBase`, implements `available_calculators`, `create()`, maintains backwards compatibility with `__call__()`, `current_interface_name`, `generate_bindings()` |
+| `src/easyreflectometry/calculators/refnx/calculator.py` | Accept optional `model` parameter, initialize wrapper before `super().__init__()` |
+| `src/easyreflectometry/calculators/refl1d/calculator.py` | Accept optional `model` parameter, initialize wrapper before `super().__init__()` |
 
 ---
 

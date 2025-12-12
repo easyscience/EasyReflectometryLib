@@ -14,7 +14,6 @@ from typing import Optional
 from typing import Type
 
 from easyscience.fitting.calculators import CalculatorFactoryBase
-from easyscience.fitting.calculators import InterfaceFactoryTemplate
 
 from .calculator_base import CalculatorBase
 
