@@ -33,7 +33,7 @@ dependencies = [
     "easyscience",
     "scipp",
     "refnx",
-    "refl1d>=1.0.0rc0",
+    "refl1d>=1.0.0",
     "orsopy",
     "svglib<1.6 ; platform_system=='Linux'",
     "xhtml2pdf",
