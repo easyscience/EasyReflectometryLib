@@ -270,6 +270,7 @@ class LayerAreaPerMolecule(Layer):
         :param skip: List of keys to skip, defaults to `None`.
         """
         this_dict = super().as_dict(skip=skip)
+        this_dict['molecular_formula'] = self._molecular_formula
         this_dict['solvent_fraction'] = self.material._fraction.as_dict(skip=skip)
         this_dict['area_per_molecule'] = self._area_per_molecule.as_dict(skip=skip)
         this_dict['solvent'] = self.solvent.as_dict(skip=skip)

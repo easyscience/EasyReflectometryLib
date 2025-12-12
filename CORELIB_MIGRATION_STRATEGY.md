@@ -1,16 +1,14 @@
 # EasyReflectometryLib Migration to New Corelib Architecture
 
-## Known Issues to Fix Later
+## Known Issues (RESOLVED)
 
-### test_copy numerical accuracy (test_topmost_nesting.py)
-- **Issue**: After copying a Model with SurfactantLayer, the reflectivity profile produces slightly different values (54.90 vs 51.23)
-- **Cause**: Likely related to how calculator bindings or dependencies are restored during from_dict deserialization
-- **Status**: Deferred - to be investigated after PR1 is complete
-
-### test_dict_round_trip[interface1] numerical accuracy (test_model.py)
-- **Issue**: Same as above - after from_dict, reflectivity values differ
-- **Cause**: Same root cause - SurfactantLayer dependencies not properly restored
-- **Status**: Deferred - same fix needed as test_copy
+### test_copy & test_dict_round_trip numerical accuracy ✅ FIXED
+- **Symptoms**: After copying or deserializing a Model with SurfactantLayer, reflectivity values differed (54.90 vs 51.23)
+- **Root Cause**: Pre-existing serialization bug in `LayerAreaPerMolecule.as_dict()` - the `molecular_formula` attribute was not included in the serialization. When deserializing, the default formula was used instead of the actual formula, leading to incorrect scattering length and SLD calculations.
+- **Fix Applied**: Added `this_dict['molecular_formula'] = self._molecular_formula` to `LayerAreaPerMolecule.as_dict()`
+- **File**: `src/easyreflectometry/sample/elements/layers/layer_area_per_molecule.py`
+- **Note**: This was a **pre-existing bug**, not caused by the corelib migration.
+- **Status**: ✅ Fixed - All 441 tests now pass
 
 ---
 
@@ -45,7 +43,7 @@ This document outlines the migration strategy for updating EasyReflectometryLib 
 - `src/easyreflectometry/model/model.py` - `ObjBase` → `ModelBase`
 - All element classes (adjust constructors if needed)
 
-**Testing:** 439 passed, 2 known failures (numerical precision after deserialization)
+**Testing:** 441 passed (after serialization bug fix)
 
 ### PR2: Calculator Refactor ✅ COMPLETE
 **Scope:** Update calculator architecture to new pattern
@@ -77,8 +75,8 @@ This document outlines the migration strategy for updating EasyReflectometryLib 
   - Initialize wrapper before calling super().__init__()
 
 **Testing:** 
-- All 415 tests pass (excluding known failures from PR1)
-- Known failures: 2 tests with numerical precision issues (same as PR1)
+- All 441 tests pass
+- Bug fix: `LayerAreaPerMolecule.as_dict()` now includes `molecular_formula` (pre-existing bug)
 
 ### PR3: Interface Removal (Planned)
 **Scope:** Remove interface from all classes, update Project

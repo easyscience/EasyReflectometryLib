@@ -170,7 +170,7 @@ CalculatorFactoryBase (corelib - new)
 | Add `__getattr__`/`__setattr__` for kwargs | ✅ Complete | `sample/base_core.py` |
 | Custom `as_dict`/`to_dict`/`from_dict` | ✅ Complete | Multiple files |
 | Fix test failures | ✅ Complete | Multiple files |
-| **Test Results** | **439 passed, 2 deferred** | |
+| **Test Results** | **441 passed (after bug fix)** | |
 
 ### PR2: Calculator Refactor (Complete)
 
@@ -183,7 +183,8 @@ CalculatorFactoryBase (corelib - new)
 | Add `_create_all_bindings()` for model hierarchy | ✅ Complete | `calculators/calculator_base.py` |
 | Add `calculate()` method using bound model | ✅ Complete | `calculators/calculator_base.py` |
 | Maintain backwards compatibility in factory | ✅ Complete | `calculators/factory.py` |
-| **Test Results** | **415 passed, 2 deferred (same as PR1)** | |
+| Fix pre-existing serialization bug | ✅ Complete | `layer_area_per_molecule.py` |
+| **Test Results** | **441 passed** | |
 
 ### PR3: Interface Removal (Planned)
 
@@ -232,24 +233,34 @@ CalculatorFactoryBase (corelib - new)
 
 ---
 
-## 7. Known Issues (Deferred)
+## 7. Known Issues (Resolved)
 
-### Numerical Accuracy After Copy/Deserialize
+### Numerical Accuracy After Copy/Deserialize (FIXED)
 
 **Affected Tests:**
 - `tests/test_topmost_nesting.py::test_copy`
 - `tests/model/test_model.py::test_dict_round_trip[interface1]`
 
 **Symptoms:**
-- After copying or deserializing a Model with SurfactantLayer, reflectivity values differ
+- After copying or deserializing a Model with SurfactantLayer, reflectivity values differed
 - Original: 54.90, Copy: 51.23 (difference: 3.67)
 
-**Likely Cause:**
-- SurfactantLayer uses complex Parameter dependencies
-- Dependencies may not be properly restored during deserialization
-- Calculator bindings may differ between original and restored objects
+**Root Cause (Pre-existing Bug):**
+The `LayerAreaPerMolecule.as_dict()` method was missing the `molecular_formula` attribute in its serialization output. This caused:
+1. When deserializing, a new `LayerAreaPerMolecule` was created with the **default** molecular formula (`C10H18NO8P`) instead of the actual formula (e.g., `C32D64` for DPPC tail)
+2. The scattering length was recomputed from the wrong formula
+3. The SLD (which depends on scattering length via a Parameter dependency expression) was incorrect
+4. This resulted in different reflectivity calculations
 
-**Status:** Deferred to post-PR1 investigation
+**Fix Applied:**
+Added `molecular_formula` to the `as_dict()` output in `layer_area_per_molecule.py`:
+```python
+this_dict['molecular_formula'] = self._molecular_formula
+```
+
+**Note:** This was a **pre-existing bug** in EasyReflectometryLib, not caused by the corelib migration. It was discovered during PR2 testing because `test_copy` and `test_dict_round_trip` exercise the serialization path for SurfactantLayer.
+
+**Status:** ✅ Fixed
 
 ---
 
