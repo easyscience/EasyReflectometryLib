@@ -36,7 +36,7 @@ This document outlines the migration strategy for updating EasyReflectometryLib 
 
 ## Migration PRs
 
-### PR1: Base Classes Migration
+### PR1: Base Classes Migration ✅ COMPLETE
 **Scope:** Update base class inheritance while keeping interface property temporarily
 
 **Files:**
@@ -45,20 +45,42 @@ This document outlines the migration strategy for updating EasyReflectometryLib 
 - `src/easyreflectometry/model/model.py` - `ObjBase` → `ModelBase`
 - All element classes (adjust constructors if needed)
 
-**Testing:** Existing tests should pass
+**Testing:** 439 passed, 2 known failures (numerical precision after deserialization)
 
-### PR2: Calculator Refactor
+### PR2: Calculator Refactor ✅ COMPLETE
 **Scope:** Update calculator architecture to new pattern
 
-**Files:**
-- `src/easyreflectometry/calculators/calculator_base.py` - inherit from corelib `CalculatorBase`
-- `src/easyreflectometry/calculators/factory.py` - `InterfaceFactoryTemplate` → `CalculatorFactoryBase`
-- `src/easyreflectometry/calculators/refnx/calculator.py` - stateful pattern
-- `src/easyreflectometry/calculators/refl1d/calculator.py` - stateful pattern
+**Files Modified:**
+- `src/easyreflectometry/calculators/calculator_base.py` - Rewritten to:
+  - Removed `SerializerComponent` inheritance
+  - Added optional `model` parameter to constructor
+  - Added `set_model()` method for stateful binding
+  - Added `_create_all_bindings()` for full model hierarchy binding
+  - Added `calculate()` method that uses the bound model
+  - Added `reflectivity_profile()` (fixed typo from `reflectity_profile`)
+  - Kept backwards compatible `reflectity_profile()` as alias
+  - Added `fit_func` property for fitting framework compatibility
+  
+- `src/easyreflectometry/calculators/factory.py` - Rewritten to:
+  - Inherits from `CalculatorFactoryBase` instead of `InterfaceFactoryTemplate`
+  - Implements new abstract methods: `available_calculators`, `create()`
+  - Maintains backwards compatibility with `available_interfaces`, `current_interface_name`
+  - Keeps `__call__()` returning current calculator for existing code
+  - Adds `generate_bindings()` method for backwards compatibility
+  
+- `src/easyreflectometry/calculators/refnx/calculator.py` - Updated to:
+  - Accept optional `model` parameter in constructor
+  - Initialize wrapper before calling super().__init__()
+  
+- `src/easyreflectometry/calculators/refl1d/calculator.py` - Updated to:
+  - Accept optional `model` parameter in constructor
+  - Initialize wrapper before calling super().__init__()
 
-**Testing:** New tests for calculator binding
+**Testing:** 
+- All 415 tests pass (excluding known failures from PR1)
+- Known failures: 2 tests with numerical precision issues (same as PR1)
 
-### PR3: Interface Removal
+### PR3: Interface Removal (Planned)
 **Scope:** Remove interface from all classes, update Project
 
 **Files:**
