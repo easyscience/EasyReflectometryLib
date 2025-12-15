@@ -1,15 +1,18 @@
 """Additional tests for Model class new features from corelib migration."""
 
-import pytest
 import numpy as np
-from numpy.testing import assert_equal, assert_almost_equal
-
+import pytest
 from easyscience import global_object
 from easyscience.variable import Parameter
+from numpy.testing import assert_almost_equal
+from numpy.testing import assert_equal
 
-from easyreflectometry.model import Model, PercentageFwhm
-from easyreflectometry.sample import Layer, Material, Multilayer, Sample
 from easyreflectometry.calculators import CalculatorFactory
+from easyreflectometry.model import Model
+from easyreflectometry.sample import Layer
+from easyreflectometry.sample import Material
+from easyreflectometry.sample import Multilayer
+from easyreflectometry.sample import Sample
 
 
 @pytest.fixture

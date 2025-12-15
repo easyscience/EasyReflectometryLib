@@ -2,13 +2,14 @@
 
 import numpy as np
 import pytest
-
 from easyscience import global_object
-from easyscience.variable import Parameter
 
 from easyreflectometry.calculators.calculator_base import CalculatorBase
 from easyreflectometry.model import Model
-from easyreflectometry.sample import Layer, Material, Multilayer, Sample
+from easyreflectometry.sample import Layer
+from easyreflectometry.sample import Material
+from easyreflectometry.sample import Multilayer
+from easyreflectometry.sample import Sample
 
 
 @pytest.fixture
@@ -48,8 +49,8 @@ class TestCalculatorBaseInitialization:
         """Test that CalculatorBase has abstract methods that concrete classes must implement."""
         # CalculatorBase is not abstract in EasyReflectometry implementation
         # Just verify that concrete implementations exist
-        from easyreflectometry.calculators.refnx.calculator import Refnx
         from easyreflectometry.calculators.refl1d.calculator import Refl1d
+        from easyreflectometry.calculators.refnx.calculator import Refnx
         
         assert issubclass(Refnx, CalculatorBase)
         assert issubclass(Refl1d, CalculatorBase)

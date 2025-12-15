@@ -2,12 +2,14 @@
 
 import numpy as np
 import pytest
-
 from easyscience import global_object
 
 from easyreflectometry.calculators.factory import CalculatorFactory
 from easyreflectometry.model import Model
-from easyreflectometry.sample import Layer, Material, Multilayer, Sample
+from easyreflectometry.sample import Layer
+from easyreflectometry.sample import Material
+from easyreflectometry.sample import Multilayer
+from easyreflectometry.sample import Sample
 
 
 @pytest.fixture
@@ -211,7 +213,7 @@ class TestCalculatorFactoryResetStorage:
         # Verify storage has content after binding
         calc = factory()
         if hasattr(calc, '_wrapper') and hasattr(calc._wrapper, 'storage'):
-            initial_material_count = len(calc._wrapper.storage.get('material', {}))
+            len(calc._wrapper.storage.get('material', {}))
             
             # Reset storage
             factory.reset_storage()
