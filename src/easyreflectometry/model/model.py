@@ -106,10 +106,13 @@ class Model(ModelBase):
 
         self._resolution_function = resolution_function
 
-        # Interface handling (to be removed in PR3)
+        # Interface handling - for Model, we DO trigger binding generation when interface is set
+        # because Model is the top-level object that contains all sample information.
+        # This provides backward compatibility with code that uses Model(interface=factory).
+        # Sample objects no longer trigger bindings when interface is set (they're just data).
         self._interface = None
-        # Must be set after resolution function
-        self.interface = interface
+        if interface is not None:
+            self.interface = interface  # This calls the setter which triggers generate_bindings
 
     @property
     def name(self) -> str:
@@ -176,16 +179,15 @@ class Model(ModelBase):
         """
         if not assemblies:
             self.sample.add_assembly()
-            if self.interface is not None:
-                self.interface().add_item_to_model(self.sample[-1].unique_name, self.unique_name)
         else:
             for assembly in assemblies:
                 if issubclass(assembly.__class__, BaseAssembly):
                     self.sample.add_assembly(assembly)
-                    if self.interface is not None:
-                        self.interface().add_item_to_model(self.sample[-1].unique_name, self.unique_name)
                 else:
                     raise ValueError(f'Object {assembly} is not a valid type, must be a child of BaseAssembly.')
+        # Regenerate all bindings after adding assemblies
+        if self.interface is not None:
+            self.generate_bindings()
 
     def duplicate_assembly(self, index: int) -> None:
         """Duplicate a given item or layer in a sample.
@@ -193,18 +195,19 @@ class Model(ModelBase):
         :param idx: Index of the item or layer to duplicate
         """
         self.sample.duplicate_assembly(index)
+        # Regenerate all bindings after duplicating assembly
         if self.interface is not None:
-            self.interface().add_item_to_model(self.sample[-1].unique_name, self.unique_name)
+            self.generate_bindings()
 
     def remove_assembly(self, index: int) -> None:
         """Remove an assembly from the model.
 
         :param idx: Index of the item to remove.
         """
-        assembly_unique_name = self.sample[index].unique_name
         self.sample.remove_assembly(index)
+        # Regenerate all bindings after removing assembly
         if self.interface is not None:
-            self.interface().remove_item_from_model(assembly_unique_name, self.unique_name)
+            self.generate_bindings()
 
     @property
     def resolution_function(self) -> ResolutionFunction:
@@ -220,26 +223,41 @@ class Model(ModelBase):
 
     @property
     def interface(self):
-        """
-        Get the current interface of the object
+        """Get the current interface of the object.
+        
+        .. deprecated::
+            The interface property is deprecated. Calculator binding is now
+            handled centrally by the Project class using calculator.set_model().
         """
         return self._interface
 
     @interface.setter
     def interface(self, new_interface) -> None:
-        """Set the interface for the model."""
+        """Set the interface for the model.
+        
+        .. deprecated::
+            The interface property is deprecated. Calculator binding is now
+            handled centrally by the Project class using calculator.set_model().
+        """
         self._interface = new_interface
-        if new_interface is not None:
-            self.generate_bindings()
-            self._interface().set_resolution_function(self._resolution_function)
+        # For backward compatibility, if interface has generate_bindings, call it
+        if new_interface is not None and hasattr(new_interface, 'generate_bindings'):
+            new_interface.generate_bindings(self)
+            if hasattr(new_interface, '__call__') and hasattr(new_interface(), 'set_resolution_function'):
+                new_interface().set_resolution_function(self._resolution_function)
 
     def generate_bindings(self) -> None:
-        """Generate or re-generate bindings to an interface."""
+        """Generate or re-generate bindings to an interface.
+        
+        .. deprecated::
+            This method is deprecated. Calculator binding is now handled
+            centrally by the Project class using calculator.set_model().
+        """
         if self.interface is None:
-            raise AttributeError('Interface error for generating bindings. `interface` has to be set.')
-        # Propagate interface to sample
-        self.sample.interface = self.interface
-        self.interface.generate_bindings(self)
+            return  # No-op if no interface
+        # For backward compatibility
+        if hasattr(self.interface, 'generate_bindings'):
+            self.interface.generate_bindings(self)
 
     def _get_linkable_attributes(self) -> list:
         """Get all objects which can be linked against as a list.

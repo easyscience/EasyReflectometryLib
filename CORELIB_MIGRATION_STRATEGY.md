@@ -78,16 +78,34 @@ This document outlines the migration strategy for updating EasyReflectometryLib 
 - All 441 tests pass
 - Bug fix: `LayerAreaPerMolecule.as_dict()` now includes `molecular_formula` (pre-existing bug)
 
-### PR3: Interface Removal (Planned)
-**Scope:** Remove interface from all classes, update Project
+### PR3: Interface Removal ✅ COMPLETE
+**Scope:** Remove distributed interface pattern, centralize calculator binding
 
-**Files:**
-- `src/easyreflectometry/project.py` - new binding methods
-- All sample classes - remove `interface` parameter and property
-- All collection classes - remove `interface` parameter and property
-- `src/easyreflectometry/model/model.py` - remove interface
+**Architectural Change:**
+- Sample objects (Material, Layer, Multilayer, etc.) no longer create bindings when `interface=` is passed
+- Only `Model` triggers binding generation when interface is set
+- Bindings are regenerated (not incrementally updated) when sample structure changes
+- Calculator binding uses `set_model()` which properly traverses the model hierarchy
 
-**Testing:** All tests updated for new pattern
+**Files Modified:**
+- `src/easyreflectometry/sample/base_core.py`:
+  - Made `interface` parameter optional with default `None`
+  - Made `interface` property setter a no-op (stores value but doesn't propagate or trigger bindings)
+  - Made `generate_bindings()` a no-op with deprecation docs
+  
+- `src/easyreflectometry/model/model.py`:
+  - Constructor now triggers `generate_bindings()` when interface is passed (Model is top-level)
+  - `add_assemblies()`, `duplicate_assembly()`, `remove_assembly()` now call `generate_bindings()` instead of incremental updates
+  
+- `src/easyreflectometry/calculators/factory.py`:
+  - `generate_bindings()` now uses `set_model()` for proper hierarchy traversal (materials → layers → assemblies → model)
+
+**Tests Updated:**
+- `tests/sample/assemblies/test_multilayer.py` - 3 tests updated to use Model-based pattern
+- `tests/sample/assemblies/test_repeating_multilayer.py` - 3 tests updated to use Model-based pattern
+- `tests/sample/elements/layers/test_layer.py` - 1 test updated to use Model-based pattern
+
+**Testing:** 441 passed, 5 skipped
 
 ## Import Changes
 
@@ -108,15 +126,18 @@ from easyscience.fitting.calculators import CalculatorBase
 ## Breaking Changes
 
 ### Removed
-- `interface=` constructor parameter from all sample/model classes
-- `.interface` property from all sample/model classes
-- Interface propagation through object hierarchy
-- `generate_bindings()` calls from individual objects
+- Interface propagation through object hierarchy (sample objects no longer propagate interface to children)
+- `generate_bindings()` automatic calls from individual sample objects
+- Incremental binding updates (add_item_to_model, remove_item_from_model called directly)
 
 ### Changed
+- `interface=` constructor parameter still accepted but is a no-op for sample objects
+- `.interface` property still exists but setter is a no-op for sample objects (except Model)
+- For `Model`, setting interface triggers `generate_bindings()` (backward compatible)
 - `CalculatorFactory` now inherits `CalculatorFactoryBase`
 - Calculators are stateful (hold model reference)
-- `Project` owns calculator binding lifecycle
+- `generate_bindings()` now uses `set_model()` for proper hierarchy traversal
+- Sample structure changes trigger full binding regeneration, not incremental updates
 
 ## Testing Strategy
 

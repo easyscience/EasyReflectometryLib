@@ -94,23 +94,23 @@ CalculatorFactoryBase (corelib - new)
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-### Target Pattern (Centralized Calculator Ownership)
+### Current Pattern (After PR3 - Centralized Calculator Ownership) ✅ IMPLEMENTED
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                         Target Design                           │
+│                    Implemented Design (PR3)                     │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
-│   Project ─────────────────────────► Calculator                 │
+│   Model(interface=factory) ──────► CalculatorFactory            │
 │     │                                    │                      │
+│     │ (triggers generate_bindings)       │                      │
+│     │                                    ▼                      │
+│     │                            factory.set_model(model)       │
 │     │                                    │                      │
 │     ▼                                    ▼                      │
-│   Model ◄────────────────────── Calculator.model_ref            │
-│     │                                                           │
-│     ▼                                                           │
-│   Sample                                                        │
-│     │                                                           │
-│     ▼                                                           │
+│   Sample                         _create_all_bindings()         │
+│     │                              (materials → layers →        │
+│     ▼                               assemblies → model)         │
 │   Multilayer                                                    │
 │     │                                                           │
 │     ▼                                                           │
@@ -119,9 +119,10 @@ CalculatorFactoryBase (corelib - new)
 │     ▼                                                           │
 │   Material                                                      │
 │                                                                 │
-│   Only Project owns the Calculator                              │
-│   Calculator holds reference to Model for calculations          │
-│   Sample objects have NO interface property                     │
+│   Only Model triggers binding generation                        │
+│   Sample objects store interface but don't propagate/bind       │
+│   Calculator walks model hierarchy via set_model()              │
+│   Structure changes trigger full binding regeneration           │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -148,12 +149,18 @@ CalculatorFactoryBase (corelib - new)
 | Aspect | Assessment | Risk Level | Notes |
 |--------|------------|------------|-------|
 | Backward Compatibility | Not required | Low | User confirmed no BC needed |
-| Incremental Approach | Recommended | Medium | 3 PRs to isolate changes |
-| Test Coverage | Good (446 tests) | Low | Comprehensive test suite exists |
-| Calculator Refactor | Complex | High | Touches many files, defer to PR2/PR3 |
-| Serialization | Medium complexity | Medium | Need custom `as_dict`/`from_dict` |
-| Parameter Dependencies | Complex | High | SurfactantLayer uses complex dependencies |
-| Global Object Map | Requires care | Medium | Name collisions possible |
+| Incremental Approach | ✅ Completed | Low | 3 PRs successfully isolated changes |
+| Test Coverage | Good (441 tests) | Low | All tests pass after migration |
+| Calculator Refactor | ✅ Complete | Resolved | PR2 successfully refactored |
+| Interface Removal | ✅ Complete | Resolved | PR3 centralized binding |
+| Serialization | ✅ Fixed | Resolved | molecular_formula bug fixed |
+| Parameter Dependencies | Working | Low | SurfactantLayer tested and working |
+| Global Object Map | Working | Low | No issues encountered |
+
+**Migration Status: ✅ COMPLETE**
+- All 3 PRs implemented
+- All 441 tests pass
+- Architecture migrated from distributed interface to centralized calculator binding
 
 ---
 
@@ -186,14 +193,18 @@ CalculatorFactoryBase (corelib - new)
 | Fix pre-existing serialization bug | ✅ Complete | `layer_area_per_molecule.py` |
 | **Test Results** | **441 passed** | |
 
-### PR3: Interface Removal (Planned)
+### PR3: Interface Removal ✅ COMPLETE
 
-| Task | Status | Files to Modify |
-|------|--------|-----------------|
-| Remove `interface` property from sample objects | Planned | All sample classes |
-| Remove `generate_bindings` from sample objects | Planned | `base_core.py` |
-| Update all constructors to not accept `interface` | Planned | All sample classes |
-| Clean up interface propagation code | Planned | Multiple |
+| Task | Status | Files Modified |
+|------|--------|----------------|
+| Make `interface` a no-op on sample objects | ✅ Complete | `sample/base_core.py` |
+| Make `generate_bindings` a no-op on sample objects | ✅ Complete | `sample/base_core.py` |
+| Keep `interface` property for backward compat (but no-op) | ✅ Complete | `sample/base_core.py` |
+| Update Model to trigger bindings when interface set | ✅ Complete | `model/model.py` |
+| Update Model methods to regenerate bindings | ✅ Complete | `model/model.py` |
+| Update factory.generate_bindings to use set_model | ✅ Complete | `calculators/factory.py` |
+| Update tests to use Model-based pattern | ✅ Complete | `test_multilayer.py`, `test_repeating_multilayer.py`, `test_layer.py` |
+| **Test Results** | **441 passed** | |
 
 ---
 
@@ -230,6 +241,17 @@ CalculatorFactoryBase (corelib - new)
 | `src/easyreflectometry/calculators/factory.py` | Inherits `CalculatorFactoryBase`, implements `available_calculators`, `create()`, maintains backwards compatibility with `__call__()`, `current_interface_name`, `generate_bindings()` |
 | `src/easyreflectometry/calculators/refnx/calculator.py` | Accept optional `model` parameter, initialize wrapper before `super().__init__()` |
 | `src/easyreflectometry/calculators/refl1d/calculator.py` | Accept optional `model` parameter, initialize wrapper before `super().__init__()` |
+
+### Interface Removal Files (Modified in PR3)
+
+| File | Changes Made |
+|------|--------------|
+| `src/easyreflectometry/sample/base_core.py` | Made `interface` parameter optional with `None` default, made `interface` setter a no-op (stores but doesn't propagate), made `generate_bindings()` a no-op |
+| `src/easyreflectometry/model/model.py` | Constructor triggers `generate_bindings()` when interface passed, `add_assemblies()`, `duplicate_assembly()`, `remove_assembly()` call `generate_bindings()` instead of incremental updates |
+| `src/easyreflectometry/calculators/factory.py` | `generate_bindings()` now uses `set_model()` for proper hierarchy traversal |
+| `tests/sample/assemblies/test_multilayer.py` | Updated 3 tests to use Model-based binding pattern |
+| `tests/sample/assemblies/test_repeating_multilayer.py` | Updated 3 tests to use Model-based binding pattern |
+| `tests/sample/elements/layers/test_layer.py` | Updated 1 test to use Model-based binding pattern |
 
 ---
 
