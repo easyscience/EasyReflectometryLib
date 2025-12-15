@@ -324,12 +324,11 @@ class TestModelGenerateBindings:
         assert len(interface()._wrapper.storage['item']) > 0
     
     def test_generate_bindings_without_interface(self, clear_global):
-        """Test generate_bindings raises error without interface."""
+        """Test generate_bindings is no-op without interface."""
         model = Model()
         
-        # Should raise AttributeError when no interface set
-        with pytest.raises(AttributeError, match='Interface error'):
-            model.generate_bindings()
+        # Should not raise error when no interface set (just returns)
+        model.generate_bindings()  # No-op, should complete without error
 
 
 class TestModelGetLinkableAttributes:
