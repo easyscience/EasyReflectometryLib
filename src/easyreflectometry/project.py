@@ -268,14 +268,34 @@ class Project:
             self._with_experiments = True
         pass
 
-    def set_sample_from_orso(self, sample) -> None:
+    def set_sample_from_orso(self, sample: Sample) -> None:
+        """Replace the current project model collection with a single model built from an ORSO-parsed sample.
+
+        This is a convenience helper for the ORSO import pipeline where a complete
+        :class:`~easyreflectometry.sample.Sample` is constructed elsewhere.
+
+        :param sample: Sample to set as the project's (single) model.
+        :type sample: easyreflectometry.sample.Sample
+        :return: ``None``.
+        :rtype: None
+        """
         model = Model(sample=sample)
         self.models = ModelCollection([model])
 
-    def add_sample_from_orso(self, sample) -> None:
+    def add_sample_from_orso(self, sample: Sample) -> None:
         """Add a new model with the given sample to the existing model collection.
 
+        The created model is appended to :attr:`models`, its calculator interface is
+        set to the project's current calculator, and any materials referenced in the
+        sample are added to the project's material collection.
+
+        After adding the model, :attr:`current_model_index` is updated to point to
+        the newly added model.
+
         :param sample: Sample to add as a new model.
+        :type sample: easyreflectometry.sample.Sample
+        :return: ``None``.
+        :rtype: None
         """
         model = Model(sample=sample)
         self.models.add_model(model)
