@@ -18,11 +18,12 @@ from easyreflectometry.calculators import CalculatorFactory
 from easyreflectometry.data import DataSet1D
 from easyreflectometry.data import load_as_dataset
 from easyreflectometry.fitting import MultiFitter
+
+# from easyreflectometry.model import Pointwise
+from easyreflectometry.model import LinearSpline
 from easyreflectometry.model import Model
 from easyreflectometry.model import ModelCollection
 from easyreflectometry.model import PercentageFwhm
-from easyreflectometry.model import Pointwise
-from easyreflectometry.model import LinearSpline
 from easyreflectometry.sample import Layer
 from easyreflectometry.sample import Material
 from easyreflectometry.sample import MaterialCollection
@@ -332,9 +333,9 @@ class Project:
 
         # Set the resolution function if variance data is present
         if sum(new_experiment.ye) != 0:
-            q = new_experiment.x
-            reflectivity = new_experiment.y
-            q_error = new_experiment.xe
+            # q = new_experiment.x
+            # reflectivity = new_experiment.y
+            # q_error = new_experiment.xe
             # TODO: set resolution function based on value of control in GUI
             #resolution_function = Pointwise(q_data_points=[q, reflectivity, q_error])
             resolution_function = LinearSpline(
@@ -352,9 +353,9 @@ class Project:
 
         # Set the resolution function if variance data is present
         if sum(self._experiments[index].ye) != 0:
-            q = self._experiments[index].x
-            reflectivity = self._experiments[index].y
-            q_error = self._experiments[index].xe
+            # q = self._experiments[index].x
+            # reflectivity = self._experiments[index].y
+            # q_error = self._experiments[index].xe
             #resolution_function = Pointwise(q_data_points=[q, reflectivity, q_error])
             resolution_function = LinearSpline(
                 q_data_points=self._experiments[index].y,
