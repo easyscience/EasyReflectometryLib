@@ -22,6 +22,7 @@ from easyreflectometry.model import Model
 from easyreflectometry.model import ModelCollection
 from easyreflectometry.model import PercentageFwhm
 from easyreflectometry.model import Pointwise
+from easyreflectometry.model import LinearSpline
 from easyreflectometry.sample import Layer
 from easyreflectometry.sample import Material
 from easyreflectometry.sample import MaterialCollection
@@ -335,7 +336,11 @@ class Project:
             reflectivity = new_experiment.y
             q_error = new_experiment.xe
             # TODO: set resolution function based on value of control in GUI
-            resolution_function = Pointwise(q_data_points=[q, reflectivity, q_error])
+            #resolution_function = Pointwise(q_data_points=[q, reflectivity, q_error])
+            resolution_function = LinearSpline(
+                q_data_points=self._experiments[new_index].y,
+                fwhm_values=np.sqrt(self._experiments[new_index].ye),
+            )
             self.models[model_index].resolution_function = resolution_function
 
     def load_experiment_for_model_at_index(self, path: Union[Path, str], index: Optional[int] = 0) -> None:
@@ -350,11 +355,11 @@ class Project:
             q = self._experiments[index].x
             reflectivity = self._experiments[index].y
             q_error = self._experiments[index].xe
-            resolution_function = Pointwise(q_data_points=[q, reflectivity, q_error])
-            # resolution_function = LinearSpline(
-            #     q_data_points=self._experiments[index].y,
-            #     fwhm_values=np.sqrt(self._experiments[index].ye),
-            # )
+            #resolution_function = Pointwise(q_data_points=[q, reflectivity, q_error])
+            resolution_function = LinearSpline(
+                q_data_points=self._experiments[index].y,
+                fwhm_values=np.sqrt(self._experiments[index].ye),
+            )
             self._models[index].resolution_function = resolution_function
 
     def sld_data_for_model_at_index(self, index: int = 0) -> DataSet1D:
