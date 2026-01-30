@@ -29,13 +29,7 @@ class TestDataSet1D:
     def test_constructor_with_values(self):
         # When
         data = DataSet1D(
-            x=[1, 2, 3], 
-            y=[4, 5, 6], 
-            ye=[7, 8, 9], 
-            xe=[10, 11, 12], 
-            x_label='label_x', 
-            y_label='label_y', 
-            name='MyDataSet1D'
+            x=[1, 2, 3], y=[4, 5, 6], ye=[7, 8, 9], xe=[10, 11, 12], x_label='label_x', y_label='label_y', name='MyDataSet1D'
         )
 
         # Then
@@ -116,9 +110,7 @@ class TestDataSet1D:
 
     def test_data_points(self):
         # When
-        data = DataSet1D(
-            x=[1, 2, 3], y=[4, 5, 6], ye=[7, 8, 9], xe=[10, 11, 12]
-        )
+        data = DataSet1D(x=[1, 2, 3], y=[4, 5, 6], ye=[7, 8, 9], xe=[10, 11, 12])
 
         # Then
         points = list(data.data_points())
@@ -126,9 +118,7 @@ class TestDataSet1D:
 
     def test_repr(self):
         # When
-        data = DataSet1D(
-            x=[1, 2, 3], y=[4, 5, 6], x_label='Q', y_label='R'
-        )
+        data = DataSet1D(x=[1, 2, 3], y=[4, 5, 6], x_label='Q', y_label='R')
 
         # Then
         expected = "1D DataStore of 'Q' Vs 'R' with 3 data points"
@@ -194,7 +184,7 @@ class TestDataStore:
         item1 = DataSet1D(name='item1')
         item2 = DataSet1D(name='item2')
         store = DataStore(item1)
-        
+
         # When
         store[0] = item2
 
@@ -314,4 +304,3 @@ class TestProjectData:
         assert project.sim_data == sim_store
         assert project.exp_data.name == 'CustomExp'
         assert project.sim_data.name == 'CustomSim'
-

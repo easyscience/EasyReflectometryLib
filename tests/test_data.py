@@ -224,8 +224,7 @@ class TestData(unittest.TestCase):
         assert coords_name in er_data['coords']
 
         # xe should be zeros for 3-column file
-        assert_almost_equal(er_data['coords'][coords_name].variances,
-                           np.zeros_like(er_data['coords'][coords_name].values))
+        assert_almost_equal(er_data['coords'][coords_name].variances, np.zeros_like(er_data['coords'][coords_name].values))
 
     def test_load_txt_with_zero_errors(self):
         fpath = os.path.join(PATH_STATIC, 'ref_zero_var.txt')
@@ -246,6 +245,7 @@ class TestData(unittest.TestCase):
     def test_load_txt_insufficient_columns(self):
         # Create a temporary file with insufficient columns
         import tempfile
+
         with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as f:
             f.write('1.0 2.0\n')  # Only 2 columns
             temp_path = f.name
@@ -272,7 +272,7 @@ class TestData(unittest.TestCase):
                 if data_key.replace('R_', '') in coord_key:
                     coord_key_found = True
                     break
-            assert coord_key_found, f"No corresponding coord found for {data_key}"
+            assert coord_key_found, f'No corresponding coord found for {data_key}'
 
     def test_load_orso_with_attrs(self):
         fpath = os.path.join(PATH_STATIC, 'test_example1.ort')

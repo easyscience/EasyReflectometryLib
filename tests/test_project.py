@@ -579,6 +579,7 @@ class TestProject:
 
     def test_load_experiment(self):
         # When
+        global_object.map._clear()
         project = Project()
         model_5 = Model()
         project.models = ModelCollection(Model(), Model(), Model(), Model(), Model(), model_5)
@@ -597,6 +598,7 @@ class TestProject:
 
     def test_experimental_data_at_index(self):
         # When
+        global_object.map._clear()
         project = Project()
         project.models = ModelCollection(Model())
         fpath = os.path.join(PATH_STATIC, 'example.ort')
@@ -616,6 +618,7 @@ class TestProject:
 
     def test_q(self):
         # When
+        global_object.map._clear()
         project = Project()
 
         # Then
@@ -823,9 +826,7 @@ class TestProject:
         # Then
         project.add_sample_from_orso(sample_2)
 
-        # Expect - materials list should grow even if material is shared
-        # (MaterialCollection.extend adds duplicate check)
+        # Expect - shared material should not be duplicated
         assert len(project._models) == 2
-        # The material count may increase by 1 if the material object is the same instance
-        # but MaterialCollection might add it again - depends on implementation
-        assert len(project._materials) >= initial_material_count
+        # The shared material instance is already in the collection, so count should stay the same
+        assert len(project._materials) == initial_material_count

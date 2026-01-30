@@ -33,7 +33,7 @@ class TestMeasurementFunctions:
         """Test that load() correctly identifies and loads ORSO files."""
         fpath = os.path.join(PATH_STATIC, 'test_example1.ort')
         result = load(fpath)
-        
+
         assert 'data' in result
         assert 'coords' in result
         assert len(result['data']) > 0
@@ -43,7 +43,7 @@ class TestMeasurementFunctions:
         """Test that load() falls back to txt loading for non-ORSO files."""
         fpath = os.path.join(PATH_STATIC, 'test_example1.txt')
         result = load(fpath)
-        
+
         assert 'data' in result
         assert 'coords' in result
         assert 'R_test_example1' in result['data']
@@ -53,7 +53,7 @@ class TestMeasurementFunctions:
         """Test that load_as_dataset returns a proper DataSet1D object."""
         fpath = os.path.join(PATH_STATIC, 'test_example1.txt')
         dataset = load_as_dataset(fpath)
-        
+
         assert isinstance(dataset, DataSet1D)
         assert hasattr(dataset, 'x')
         assert hasattr(dataset, 'y')
@@ -65,7 +65,7 @@ class TestMeasurementFunctions:
         """Test that load_as_dataset correctly extracts file basename."""
         fpath = os.path.join(PATH_STATIC, 'ref_concat_1.txt')
         dataset = load_as_dataset(fpath)
-        
+
         # Should work without error and have data
         assert len(dataset.x) > 0
         assert len(dataset.y) > 0
@@ -74,12 +74,12 @@ class TestMeasurementFunctions:
         """Test that merge_datagroups combines multiple data groups correctly."""
         fpath1 = os.path.join(PATH_STATIC, 'test_example1.txt')
         fpath2 = os.path.join(PATH_STATIC, 'ref_concat_1.txt')
-        
+
         group1 = load(fpath1)
         group2 = load(fpath2)
-        
+
         merged = merge_datagroups(group1, group2)
-        
+
         # Should have data from both groups
         assert len(merged['data']) >= len(group1['data'])
         assert len(merged['coords']) >= len(group1['coords'])
@@ -88,9 +88,9 @@ class TestMeasurementFunctions:
         """Test that merge_datagroups works with a single group."""
         fpath = os.path.join(PATH_STATIC, 'test_example1.ort')
         group = load(fpath)
-        
+
         merged = merge_datagroups(group)
-        
+
         # Should be equivalent to original
         assert len(merged['data']) == len(group['data'])
         assert len(merged['coords']) == len(group['coords'])
@@ -99,7 +99,7 @@ class TestMeasurementFunctions:
         """Test that _load_txt correctly handles comma-delimited files."""
         fpath = os.path.join(PATH_STATIC, 'ref_concat_1.txt')
         result = _load_txt(fpath)
-        
+
         assert 'data' in result
         assert 'coords' in result
         # Should successfully parse comma-delimited data
@@ -110,11 +110,10 @@ class TestMeasurementFunctions:
         """Test that _load_txt handles files with only 3 columns (no xe)."""
         fpath = os.path.join(PATH_STATIC, 'ref_concat_1.txt')
         result = _load_txt(fpath)
-        
+
         coords_key = list(result['coords'].keys())[0]
         # xe should be zeros
-        assert_array_equal(result['coords'][coords_key].variances, 
-                          np.zeros_like(result['coords'][coords_key].values))
+        assert_array_equal(result['coords'][coords_key].variances, np.zeros_like(result['coords'][coords_key].values))
 
     def test_load_txt_with_insufficient_columns(self):
         """Test that _load_txt raises error for files with too few columns."""
@@ -122,7 +121,7 @@ class TestMeasurementFunctions:
         with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as f:
             f.write('1.0 2.0\n3.0 4.0\n')
             temp_path = f.name
-        
+
         try:
             with pytest.raises(ValueError, match='File must contain at least 3 columns'):
                 _load_txt(temp_path)
@@ -133,7 +132,7 @@ class TestMeasurementFunctions:
         """Test that _load_orso handles files with multiple datasets."""
         fpath = os.path.join(PATH_STATIC, 'test_example2.ort')
         result = load_data_from_orso_file(fpath)
-        
+
         # Should have multiple data entries
         assert len(result['data']) > 1
         assert 'attrs' in result
@@ -142,7 +141,7 @@ class TestMeasurementFunctions:
         """Test that _load_orso preserves ORSO metadata in attrs."""
         fpath = os.path.join(PATH_STATIC, 'test_example1.ort')
         result = load_data_from_orso_file(fpath)
-        
+
         assert 'attrs' in result
         # Should have orso_header in attrs
         for data_key in result['data']:
@@ -159,15 +158,9 @@ class TestDataSet1DComprehensive:
         y = [10, 20, 30, 40]
         xe = [0.1, 0.1, 0.1, 0.1]
         ye = [1, 2, 3, 4]
-        
-        dataset = DataSet1D(
-            name='TestData',
-            x=x, y=y, xe=xe, ye=ye,
-            x_label='Q (Å⁻¹)',
-            y_label='Reflectivity',
-            model=None
-        )
-        
+
+        dataset = DataSet1D(name='TestData', x=x, y=y, xe=xe, ye=ye, x_label='Q (Å⁻¹)', y_label='Reflectivity', model=None)
+
         assert dataset.name == 'TestData'
         assert_array_equal(dataset.x, np.array(x))
         assert_array_equal(dataset.y, np.array(y))
@@ -182,7 +175,7 @@ class TestDataSet1DComprehensive:
         sim_data = DataSet1D(x=[1, 2], y=[3, 4])
         assert sim_data.is_simulation is True
         assert sim_data.is_experiment is False
-        
+
         # Dataset with model is experiment
         exp_data = DataSet1D(x=[1, 2], y=[3, 4], model=Mock())
         assert exp_data.is_experiment is True
@@ -190,13 +183,8 @@ class TestDataSet1DComprehensive:
 
     def test_data_points_iterator(self):
         """Test the data_points method returns correct tuples."""
-        dataset = DataSet1D(
-            x=[1, 2, 3],
-            y=[10, 20, 30],
-            xe=[0.1, 0.2, 0.3],
-            ye=[1, 2, 3]
-        )
-        
+        dataset = DataSet1D(x=[1, 2, 3], y=[10, 20, 30], xe=[0.1, 0.2, 0.3], ye=[1, 2, 3])
+
         points = list(dataset.data_points())
         expected = [(1, 10, 1, 0.1), (2, 20, 2, 0.2), (3, 30, 3, 0.3)]
         assert points == expected
@@ -205,20 +193,15 @@ class TestDataSet1DComprehensive:
         """Test that setting model updates background to minimum y value."""
         dataset = DataSet1D(x=[1, 2, 3, 4], y=[5, 1, 8, 3])
         mock_model = Mock()
-        
+
         dataset.model = mock_model
-        
+
         assert mock_model.background == 1  # minimum of [5, 1, 8, 3]
 
     def test_repr_string_representation(self):
         """Test the string representation of DataSet1D."""
-        dataset = DataSet1D(
-            x=[1, 2, 3],
-            y=[4, 5, 6],
-            x_label='Momentum Transfer',
-            y_label='Intensity'
-        )
-        
+        dataset = DataSet1D(x=[1, 2, 3], y=[4, 5, 6], x_label='Momentum Transfer', y_label='Intensity')
+
         expected = "1D DataStore of 'Momentum Transfer' Vs 'Intensity' with 3 data points"
         assert str(dataset) == expected
 
@@ -230,19 +213,19 @@ class TestDataStoreComprehensive:
         """Test DataStore behaves like a sequence."""
         item1 = DataSet1D(name='item1', x=[1], y=[2])
         item2 = DataSet1D(name='item2', x=[3], y=[4])
-        
+
         store = DataStore(item1, item2, name='TestStore')
-        
+
         # Test sequence operations
         assert len(store) == 2
         assert store[0].name == 'item1'
         assert store[1].name == 'item2'
-        
+
         # Test item replacement
         item3 = DataSet1D(name='item3', x=[5], y=[6])
         store[0] = item3
         assert store[0].name == 'item3'
-        
+
         # Test deletion
         del store[0]
         assert len(store) == 1
@@ -254,12 +237,12 @@ class TestDataStoreComprehensive:
         exp2 = DataSet1D(name='exp2', x=[3], y=[4], model=Mock())
         sim1 = DataSet1D(name='sim1', x=[5], y=[6])
         sim2 = DataSet1D(name='sim2', x=[7], y=[8])
-        
+
         store = DataStore(exp1, sim1, exp2, sim2)
-        
+
         experiments = store.experiments
         simulations = store.simulations
-        
+
         assert len(experiments) == 2
         assert len(simulations) == 2
         assert all(item.is_experiment for item in experiments)
@@ -269,9 +252,9 @@ class TestDataStoreComprehensive:
         """Test append method adds items correctly."""
         store = DataStore()
         item = DataSet1D(name='new_item', x=[1], y=[2])
-        
+
         store.append(item)
-        
+
         assert len(store) == 1
         assert store[0] == item
 
@@ -282,7 +265,7 @@ class TestProjectDataComprehensive:
     def test_project_data_initialization(self):
         """Test ProjectData initializes with correct default values."""
         project = ProjectData()
-        
+
         assert project.name == 'DataStore'
         assert isinstance(project.exp_data, DataStore)
         assert isinstance(project.sim_data, DataStore)
@@ -293,13 +276,9 @@ class TestProjectDataComprehensive:
         """Test ProjectData with custom experiment and simulation stores."""
         custom_exp = DataStore(name='CustomExp')
         custom_sim = DataStore(name='CustomSim')
-        
-        project = ProjectData(
-            name='MyProject',
-            exp_data=custom_exp,
-            sim_data=custom_sim
-        )
-        
+
+        project = ProjectData(name='MyProject', exp_data=custom_exp, sim_data=custom_sim)
+
         assert project.name == 'MyProject'
         assert project.exp_data == custom_exp
         assert project.sim_data == custom_sim
@@ -307,13 +286,13 @@ class TestProjectDataComprehensive:
     def test_project_data_stores_independence(self):
         """Test that exp_data and sim_data are independent stores."""
         project = ProjectData()
-        
+
         exp_item = DataSet1D(name='exp', x=[1], y=[2], model=Mock())
         sim_item = DataSet1D(name='sim', x=[3], y=[4])
-        
+
         project.exp_data.append(exp_item)
         project.sim_data.append(sim_item)
-        
+
         assert len(project.exp_data) == 1
         assert len(project.sim_data) == 1
         assert project.exp_data[0] != project.sim_data[0]
@@ -327,11 +306,11 @@ class TestIntegrationScenarios:
         # Load file
         fpath = os.path.join(PATH_STATIC, 'test_example1.ort')
         dataset = load_as_dataset(fpath)
-        
+
         # Create project and add to experimental data
         project = ProjectData(name='MyAnalysis')
         project.exp_data.append(dataset)
-        
+
         # Verify workflow
         assert len(project.exp_data) == 1
         assert project.exp_data[0] == dataset
@@ -342,11 +321,11 @@ class TestIntegrationScenarios:
         # Load file
         fpath = os.path.join(PATH_STATIC, 'ref_concat_1.txt')
         dataset = load_as_dataset(fpath)
-        
+
         # Create project and add to simulation data (no model)
         project = ProjectData(name='MySimulation')
         project.sim_data.append(dataset)
-        
+
         # Verify workflow
         assert len(project.sim_data) == 1
         assert project.sim_data[0] == dataset
@@ -357,13 +336,13 @@ class TestIntegrationScenarios:
         # Load multiple files
         fpath1 = os.path.join(PATH_STATIC, 'test_example1.txt')
         fpath2 = os.path.join(PATH_STATIC, 'ref_concat_1.txt')
-        
+
         group1 = load(fpath1)
         group2 = load(fpath2)
-        
+
         # Merge data groups
         merged = merge_datagroups(group1, group2)
-        
+
         # Create datasets from merged data
         # This tests that merged data can be used to create datasets
         assert len(merged['data']) >= 2
@@ -374,13 +353,13 @@ class TestIntegrationScenarios:
         # Test mismatched array lengths
         with pytest.raises(ValueError, match='x and y must be the same length'):
             DataSet1D(x=[1, 2, 3], y=[4, 5])
-        
+
         # Test empty DataStore operations
         empty_store = DataStore()
         assert len(empty_store) == 0
         assert len(empty_store.experiments) == 0
         assert len(empty_store.simulations) == 0
-        
+
         # Test file not found
         with pytest.raises(FileNotFoundError):
             _load_txt('nonexistent_file.txt')
@@ -391,14 +370,14 @@ class TestIntegrationScenarios:
         original_x = [1, 2, 3, 4]
         original_y = [10, 20, 30, 40]
         dataset = DataSet1D(x=original_x, y=original_y)
-        
+
         # Store in datastore
         store = DataStore(dataset)
-        
+
         # Add to project
         project = ProjectData()
         project.sim_data = store
-        
+
         # Verify data consistency
         retrieved_dataset = project.sim_data[0]
         assert_array_equal(retrieved_dataset.x, np.array(original_x))

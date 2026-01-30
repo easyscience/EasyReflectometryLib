@@ -76,7 +76,7 @@ class DataSet1D(SerializerComponent):
         y: Optional[Union[np.ndarray, list]] = None,
         ye: Optional[Union[np.ndarray, list]] = None,
         xe: Optional[Union[np.ndarray, list]] = None,
-        model: Optional['Model'] = None, # delay type checking until runtime (quotes)
+        model: Optional['Model'] = None,  # delay type checking until runtime (quotes)
         x_label: str = 'x',
         y_label: str = 'y',
     ):
@@ -117,7 +117,7 @@ class DataSet1D(SerializerComponent):
         self._color = None
 
     @property
-    def model(self) -> 'Model': # delay type checking until runtime (quotes)
+    def model(self) -> 'Model':  # delay type checking until runtime (quotes)
         return self._model
 
     @model.setter

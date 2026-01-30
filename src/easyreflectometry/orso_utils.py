@@ -27,13 +27,15 @@ def LoadOrso(orso_str: str):
 
     return sample, data
 
+
 def load_data_from_orso_file(fname: str) -> sc.DataGroup:
     """Load data from an ORSO file."""
     try:
         orso_data = orso.load_orso(fname)
     except Exception as e:
-        raise ValueError(f"Error loading ORSO file: {e}")
+        raise ValueError(f'Error loading ORSO file: {e}')
     return load_orso_data(orso_data)
+
 
 def load_orso_model(orso_str: str) -> Sample:
     """
@@ -64,9 +66,9 @@ def load_orso_model(orso_str: str) -> Sample:
 
     # Handle case where layers are not resolved correctly
     if not orso_layers:
-        raise ValueError("Could not resolve ORSO layers.")
+        raise ValueError('Could not resolve ORSO layers.')
 
-    logger.debug(f"Resolved layers: {orso_layers}")
+    logger.debug(f'Resolved layers: {orso_layers}')
 
     # Convert ORSO layers to EasyReflectometry layers
     erl_layers = []
@@ -98,7 +100,7 @@ def _convert_orso_layer_to_erl(layer):
         material=Material(sld=m_sld, isld=m_isld, name=m_name),
         thickness=layer.thickness.magnitude if layer.thickness is not None else 0.0,
         roughness=layer.roughness.magnitude if layer.roughness is not None else 0.0,
-        name=layer.original_name if layer.original_name is not None else m_name
+        name=layer.original_name if layer.original_name is not None else m_name,
     )
 
 
@@ -107,10 +109,7 @@ def _get_sld_values(material, material_name):
     if material.sld is None and material.mass_density is not None:
         # Calculate SLD from mass density
         m_density = material.mass_density.magnitude
-        density = MaterialDensity(
-            chemical_structure=material_name,
-            density=m_density
-        )
+        density = MaterialDensity(chemical_structure=material_name, density=m_density)
         m_sld = density.sld.value
         m_isld = density.isld.value
     else:
@@ -122,6 +121,7 @@ def _get_sld_values(material, material_name):
             m_isld = 0.0
 
     return m_sld, m_isld
+
 
 def load_orso_data(orso_str: str) -> DataSet1D:
     data = {}

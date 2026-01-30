@@ -310,8 +310,6 @@ class Project:
 
     def _get_materials_from_model(self, model: Model) -> 'MaterialCollection':
         """Get all materials from a single model's sample."""
-        from easyreflectometry.sample import MaterialCollection
-
         materials_in_model = MaterialCollection(populate_if_none=False)
         for assembly in model.sample:
             for layer in assembly.layers:
@@ -337,7 +335,7 @@ class Project:
             # reflectivity = new_experiment.y
             # q_error = new_experiment.xe
             # TODO: set resolution function based on value of control in GUI
-            #resolution_function = Pointwise(q_data_points=[q, reflectivity, q_error])
+            # resolution_function = Pointwise(q_data_points=[q, reflectivity, q_error])
             resolution_function = LinearSpline(
                 q_data_points=self._experiments[new_index].y,
                 fwhm_values=np.sqrt(self._experiments[new_index].ye),
@@ -356,7 +354,7 @@ class Project:
             # q = self._experiments[index].x
             # reflectivity = self._experiments[index].y
             # q_error = self._experiments[index].xe
-            #resolution_function = Pointwise(q_data_points=[q, reflectivity, q_error])
+            # resolution_function = Pointwise(q_data_points=[q, reflectivity, q_error])
             resolution_function = LinearSpline(
                 q_data_points=self._experiments[index].y,
                 fwhm_values=np.sqrt(self._experiments[index].ye),
