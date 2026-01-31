@@ -1,4 +1,5 @@
 from .assemblies.base_assembly import BaseAssembly
+from .assemblies.bilayer import Bilayer
 from .assemblies.gradient_layer import GradientLayer
 from .assemblies.multilayer import Multilayer
 from .assemblies.repeating_multilayer import RepeatingMultilayer
@@ -15,6 +16,7 @@ from .elements.materials.material_solvated import MaterialSolvated
 
 __all__ = (
     'BaseAssembly',
+    'Bilayer',
     'GradientLayer',
     'Layer',
     'LayerAreaPerMolecule',
