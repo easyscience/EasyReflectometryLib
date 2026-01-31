@@ -153,8 +153,97 @@ Furthermore, as shown in the `surfactant monolayer tutorial`_ the conformal roug
 
 The use of the :py:class:`SurfactantLayer` in multiple contrast data analysis is shown in a `multiple contrast tutorial`_. 
 
+:py:class:`Bilayer`
+-------------------
+
+The :py:class:`Bilayer` assembly type represents a phospholipid bilayer at an interface.
+It consists of two surfactant layers where one is inverted, creating the structure:
+
+.. code-block:: text
+
+    Head₁ - Tail₁ - Tail₂ - Head₂
+
+This assembly is particularly useful for studying supported lipid bilayers and membrane systems.
+The bilayer comes pre-populated with physically meaningful constraints:
+
+- Both tail layers share the same structural parameters (thickness, area per molecule)
+- Head layers share thickness and area per molecule (different hydration/solvent fraction allowed)
+- A single roughness parameter applies to all interfaces (conformal roughness)
+
+These default constraints can be enabled or disabled as needed for specific analyses.
+
+The creation of a :py:class:`Bilayer` object is shown below.
+
+.. code-block:: python
+
+    from easyreflectometry.sample import Bilayer
+    from easyreflectometry.sample import LayerAreaPerMolecule
+    from easyreflectometry.sample import Material
+
+    # Create materials for solvents
+    d2o = Material(sld=6.36, isld=0.0, name='D2O')
+    air = Material(sld=0.0, isld=0.0, name='Air')
+    
+    # Create head layer (used for front, back head will be auto-created with constraints)
+    head = LayerAreaPerMolecule(
+        molecular_formula='C10H18NO8P',
+        thickness=10.0,
+        solvent=d2o,
+        solvent_fraction=0.3,
+        area_per_molecule=48.2,
+        roughness=3.0,
+        name='DPPC Head'
+    )
+    
+    # Create tail layer (both tail positions will share these parameters)
+    tail = LayerAreaPerMolecule(
+        molecular_formula='C32D64',
+        thickness=16.0,
+        solvent=air,
+        solvent_fraction=0.0,
+        area_per_molecule=48.2,
+        roughness=3.0,
+        name='DPPC Tail'
+    )
+    
+    # Create bilayer with default constraints
+    bilayer = Bilayer(
+        front_head_layer=head,
+        tail_layer=tail,
+        constrain_heads=True,
+        conformal_roughness=True,
+        name='DPPC Bilayer'
+    )
+
+The head layers can have different solvent fractions (hydration) even when constrained, 
+enabling the modeling of asymmetric bilayers at interfaces where the two sides of the 
+bilayer may have different solvent exposure.
+
+The constraints can be controlled at runtime:
+
+.. code-block:: python
+
+    # Disable head constraints to allow different head layer structures
+    bilayer.constrain_heads = False
+    
+    # Disable conformal roughness to allow different roughness values
+    bilayer.conformal_roughness = False
+
+Individual layers can be accessed via properties:
+
+.. code-block:: python
+
+    # Access the four layers
+    bilayer.front_head_layer  # First head layer
+    bilayer.front_tail_layer  # First tail layer  
+    bilayer.back_tail_layer   # Second tail layer (constrained to front tail)
+    bilayer.back_head_layer   # Second head layer
+
+For more detailed examples including simulation and parameter access, see the `bilayer tutorial`_.
+
 
 .. _`simple fitting tutorial`: ../tutorials/simple_fitting.html
 .. _`tutorial`: ../tutorials/repeating.html
 .. _`surfactant monolayer tutorial`: ../tutorials/monolayer.html
 .. _`multiple contrast tutorial`: ../tutorials/multi_contrast.html
+.. _`bilayer tutorial`: ../tutorials/simulation/bilayer.html
