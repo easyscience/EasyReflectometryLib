@@ -30,7 +30,7 @@ class Bilayer(BaseAssembly):
     def __init__(
         self,
         front_head_layer: Optional[LayerAreaPerMolecule] = None,
-        tail_layer: Optional[LayerAreaPerMolecule] = None,
+        front_tail_layer: Optional[LayerAreaPerMolecule] = None,
         back_head_layer: Optional[LayerAreaPerMolecule] = None,
         name: str = 'EasyBilayer',
         unique_name: Optional[str] = None,
@@ -41,7 +41,7 @@ class Bilayer(BaseAssembly):
         """Constructor.
 
         :param front_head_layer: Layer representing the front head part of the bilayer.
-        :param tail_layer: Layer representing the tail part of the bilayer. A second tail
+        :param front_tail_layer: Layer representing the tail part of the bilayer. A second tail
             layer is created internally with parameters constrained to this one.
         :param back_head_layer: Layer representing the back head part of the bilayer.
         :param name: Name for bilayer, defaults to 'EasyBilayer'.
@@ -74,19 +74,19 @@ class Bilayer(BaseAssembly):
                 interface=interface,
             )
 
-        # Create default tail layer if not provided
-        if tail_layer is None:
-            air = Material(
-                sld=0,
+        # Create default front tail layer if not provided
+        if front_tail_layer is None:
+            d2o_tail = Material(
+                sld=6.36,
                 isld=0,
-                name='Air',
+                name='D2O',
                 unique_name=unique_name + '_MaterialTail',
                 interface=interface,
             )
-            tail_layer = LayerAreaPerMolecule(
+            front_tail_layer = LayerAreaPerMolecule(
                 molecular_formula='C32D64',
                 thickness=16.0,
-                solvent=air,
+                solvent=d2o_tail,
                 solvent_fraction=0.0,
                 area_per_molecule=48.2,
                 roughness=3.0,
@@ -97,21 +97,21 @@ class Bilayer(BaseAssembly):
 
         # Create second tail layer with same parameters as the first
         # This will be constrained to the first tail layer
-        air_back = Material(
-            sld=0,
+        d2o_back_tail = Material(
+            sld=6.36,
             isld=0,
-            name='Air',
+            name='D2O',
             unique_name=unique_name + '_MaterialBackTail',
             interface=interface,
         )
         back_tail_layer = LayerAreaPerMolecule(
-            molecular_formula=tail_layer.molecular_formula,
-            thickness=tail_layer.thickness.value,
-            solvent=air_back,
-            solvent_fraction=tail_layer.solvent_fraction,
-            area_per_molecule=tail_layer.area_per_molecule,
-            roughness=tail_layer.roughness.value,
-            name=tail_layer.name + ' Back',
+            molecular_formula=front_tail_layer.molecular_formula,
+            thickness=front_tail_layer.thickness.value,
+            solvent=d2o_back_tail,
+            solvent_fraction=front_tail_layer.solvent_fraction,
+            area_per_molecule=front_tail_layer.area_per_molecule,
+            roughness=front_tail_layer.roughness.value,
+            name=front_tail_layer.name + ' Back',
             unique_name=unique_name + '_LayerAreaPerMoleculeBackTail',
             interface=interface,
         )
@@ -138,13 +138,13 @@ class Bilayer(BaseAssembly):
             )
 
         # Store the front tail layer reference for constraint setup
-        self._front_tail_layer = tail_layer
+        self._front_tail_layer = front_tail_layer
         self._back_tail_layer = back_tail_layer
 
         # Create layer collection: front_head, front_tail, back_tail, back_head
         bilayer_layers = LayerCollection(
             front_head_layer,
-            tail_layer,
+            front_tail_layer,
             back_tail_layer,
             back_head_layer,
             name='Layers',
@@ -215,11 +215,6 @@ class Bilayer(BaseAssembly):
     def front_tail_layer(self) -> Optional[LayerAreaPerMolecule]:
         """Get the front tail layer of the bilayer."""
         return self.layers[1]
-
-    @property
-    def tail_layer(self) -> Optional[LayerAreaPerMolecule]:
-        """Get the tail layer (alias for front_tail_layer for serialization compatibility)."""
-        return self.front_tail_layer
 
     @property
     def back_tail_layer(self) -> Optional[LayerAreaPerMolecule]:
@@ -417,7 +412,7 @@ class Bilayer(BaseAssembly):
         """
         this_dict = super().as_dict(skip=skip)
         this_dict['front_head_layer'] = self.front_head_layer.as_dict(skip=skip)
-        this_dict['tail_layer'] = self.front_tail_layer.as_dict(skip=skip)
+        this_dict['front_tail_layer'] = self.front_tail_layer.as_dict(skip=skip)
         this_dict['back_head_layer'] = self.back_head_layer.as_dict(skip=skip)
         this_dict['constrain_heads'] = self.constrain_heads
         this_dict['conformal_roughness'] = self.conformal_roughness

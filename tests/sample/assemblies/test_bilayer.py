@@ -57,7 +57,7 @@ class TestBilayer:
     def test_custom_layers(self):
         """Test creation with custom head/tail layers."""
         d2o = Material(sld=6.36, isld=0, name='D2O')
-        air = Material(sld=0, isld=0, name='Air')
+        air_matched_water = Material(sld=0, isld=0, name='Air Matched Water')
 
         front_head = LayerAreaPerMolecule(
             molecular_formula='C10H18NO8P',
@@ -71,7 +71,7 @@ class TestBilayer:
         tail = LayerAreaPerMolecule(
             molecular_formula='C32D64',
             thickness=18.0,
-            solvent=air,
+            solvent=air_matched_water,
             solvent_fraction=0.0,
             area_per_molecule=50.0,
             roughness=2.0,
@@ -89,7 +89,7 @@ class TestBilayer:
 
         p = Bilayer(
             front_head_layer=front_head,
-            tail_layer=tail,
+            front_tail_layer=tail,
             back_head_layer=back_head,
             name='Custom Bilayer',
         )
@@ -275,7 +275,7 @@ def test_dict_round_trip():
     """Test serialization/deserialization round trip."""
     # When
     d2o = Material(sld=6.36, isld=0, name='D2O')
-    air = Material(sld=0, isld=0, name='Air')
+    air_matched_water = Material(sld=0, isld=0, name='Air Matched Water')
 
     front_head = LayerAreaPerMolecule(
         molecular_formula='C10H18NO8P',
@@ -289,7 +289,7 @@ def test_dict_round_trip():
     tail = LayerAreaPerMolecule(
         molecular_formula='C32D64',
         thickness=18.0,
-        solvent=air,
+        solvent=air_matched_water,
         solvent_fraction=0.0,
         area_per_molecule=50.0,
         roughness=2.0,
@@ -307,7 +307,7 @@ def test_dict_round_trip():
 
     p = Bilayer(
         front_head_layer=front_head,
-        tail_layer=tail,
+        front_tail_layer=tail,
         back_head_layer=back_head,
         constrain_heads=False,
         conformal_roughness=False,
