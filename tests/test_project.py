@@ -980,7 +980,9 @@ class TestProject:
         model = Model(sample=sample)
         project._models.append(model)
         # Add experiment linked to model 0
-        experiment = DataSet1D(name='exp0', x=[0.01, 0.02], y=[1.0, 0.5], ye=[0.1, 0.1], xe=[0.001, 0.001], model=project._models[0])
+        experiment = DataSet1D(
+            name='exp0', x=[0.01, 0.02], y=[1.0, 0.5], ye=[0.1, 0.1], xe=[0.001, 0.001], model=project._models[0]
+        )
         project._experiments[0] = experiment
 
         # Then
