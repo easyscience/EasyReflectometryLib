@@ -830,3 +830,202 @@ class TestProject:
         assert len(project._models) == 2
         # The shared material instance is already in the collection, so count should stay the same
         assert len(project._materials) == initial_material_count
+
+    def test_is_default_model_true(self):
+        # When
+        global_object.map._clear()
+        project = Project()
+        project.default_model()
+
+        # Then Expect
+        assert project.is_default_model(0) is True
+
+    def test_is_default_model_false_non_default_sample(self):
+        # When
+        global_object.map._clear()
+        project = Project()
+        material = Material(sld=4.0, isld=0.0, name='Custom Material')
+        layer = Layer(material=material, thickness=50, roughness=1, name='Custom Layer')
+        sample = Sample(Multilayer([layer], name='Custom Assembly'))
+        model = Model(sample=sample)
+        project.models = ModelCollection(model)
+
+        # Then Expect
+        assert project.is_default_model(0) is False
+
+    def test_is_default_model_false_wrong_assembly_names(self):
+        # When
+        global_object.map._clear()
+        project = Project()
+        project.default_model()
+        # Modify to have wrong assembly name
+        project._models[0].sample[0].name = 'WrongName'
+
+        # Then Expect
+        assert project.is_default_model(0) is False
+
+    def test_is_default_model_false_wrong_layer_count(self):
+        # When
+        global_object.map._clear()
+        project = Project()
+        project.default_model()
+        # Add an extra layer to the first assembly
+        material = Material(sld=4.0, isld=0.0, name='Extra Material')
+        extra_layer = Layer(material=material, thickness=10, roughness=0, name='Extra Layer')
+        project._models[0].sample[0].layers.append(extra_layer)
+
+        # Then Expect
+        assert project.is_default_model(0) is False
+
+    def test_is_default_model_index_out_of_range(self):
+        # When
+        global_object.map._clear()
+        project = Project()
+        project.default_model()
+
+        # Then Expect
+        assert project.is_default_model(-1) is False
+        assert project.is_default_model(1) is False
+        assert project.is_default_model(100) is False
+
+    def test_is_default_model_multiple_models(self):
+        # When
+        global_object.map._clear()
+        project = Project()
+        project.default_model()
+        # Add a custom model
+        material = Material(sld=4.0, isld=0.0, name='Custom Material')
+        layer = Layer(material=material, thickness=50, roughness=1, name='Custom Layer')
+        sample = Sample(Multilayer([layer], name='Custom Assembly'))
+        model = Model(sample=sample)
+        project._models.append(model)
+
+        # Then Expect
+        assert project.is_default_model(0) is True
+        assert project.is_default_model(1) is False
+
+    def test_remove_model_at_index(self):
+        # When
+        global_object.map._clear()
+        project = Project()
+        project.default_model()
+        # Add a second model
+        material = Material(sld=4.0, isld=0.0, name='Custom Material')
+        layer = Layer(material=material, thickness=50, roughness=1, name='Custom Layer')
+        sample = Sample(Multilayer([layer], name='Custom Assembly'))
+        model = Model(sample=sample)
+        project._models.append(model)
+        assert len(project._models) == 2
+
+        # Then
+        project.remove_model_at_index(0)
+
+        # Expect
+        assert len(project._models) == 1
+        assert project._models[0].sample[0].name == 'Custom Assembly'
+
+    def test_remove_model_at_index_adjusts_current_index(self):
+        # When
+        global_object.map._clear()
+        project = Project()
+        project.default_model()
+        # Add a second model
+        material = Material(sld=4.0, isld=0.0, name='Custom Material')
+        layer = Layer(material=material, thickness=50, roughness=1, name='Custom Layer')
+        sample = Sample(Multilayer([layer], name='Custom Assembly'))
+        model = Model(sample=sample)
+        project._models.append(model)
+        project._current_model_index = 1
+        project._current_assembly_index = 1
+        project._current_layer_index = 1
+
+        # Then
+        project.remove_model_at_index(0)
+
+        # Expect - current_model_index should be adjusted
+        assert project._current_model_index == 0
+        assert project._current_assembly_index == 0
+        assert project._current_layer_index == 0
+
+    def test_remove_model_at_index_resets_indices_when_at_end(self):
+        # When
+        global_object.map._clear()
+        project = Project()
+        project.default_model()
+        # Add a second model
+        material = Material(sld=4.0, isld=0.0, name='Custom Material')
+        layer = Layer(material=material, thickness=50, roughness=1, name='Custom Layer')
+        sample = Sample(Multilayer([layer], name='Custom Assembly'))
+        model = Model(sample=sample)
+        project._models.append(model)
+        project._current_model_index = 1
+
+        # Then - remove the model at the current index
+        project.remove_model_at_index(1)
+
+        # Expect - current_model_index should be clamped to valid range
+        assert project._current_model_index == 0
+        assert project._current_assembly_index == 0
+        assert project._current_layer_index == 0
+
+    def test_remove_model_at_index_unlinks_experiment(self):
+        # When
+        global_object.map._clear()
+        project = Project()
+        project.default_model()
+        # Add a second model
+        material = Material(sld=4.0, isld=0.0, name='Custom Material')
+        layer = Layer(material=material, thickness=50, roughness=1, name='Custom Layer')
+        sample = Sample(Multilayer([layer], name='Custom Assembly'))
+        model = Model(sample=sample)
+        project._models.append(model)
+        # Add experiment linked to model 0
+        experiment = DataSet1D(name='exp0', x=[0.01, 0.02], y=[1.0, 0.5], ye=[0.1, 0.1], xe=[0.001, 0.001], model=project._models[0])
+        project._experiments[0] = experiment
+
+        # Then
+        project.remove_model_at_index(0)
+
+        # Expect - experiment still exists but model is unlinked
+        assert 0 in project._experiments
+        assert project._experiments[0]._model is None
+
+    def test_remove_model_at_index_raises_for_last_model(self):
+        # When
+        global_object.map._clear()
+        project = Project()
+        project.default_model()
+        assert len(project._models) == 1
+
+        # Then Expect
+        try:
+            project.remove_model_at_index(0)
+            assert False, 'Expected ValueError for removing last model'
+        except ValueError as e:
+            assert 'Cannot remove the last model' in str(e)
+
+    def test_remove_model_at_index_raises_for_invalid_index(self):
+        # When
+        global_object.map._clear()
+        project = Project()
+        project.default_model()
+        # Add a second model so we have 2
+        material = Material(sld=4.0, isld=0.0, name='Custom Material')
+        layer = Layer(material=material, thickness=50, roughness=1, name='Custom Layer')
+        sample = Sample(Multilayer([layer], name='Custom Assembly'))
+        model = Model(sample=sample)
+        project._models.append(model)
+
+        # Then Expect - negative index
+        try:
+            project.remove_model_at_index(-1)
+            assert False, 'Expected IndexError for negative index'
+        except IndexError as e:
+            assert 'out of range' in str(e)
+
+        # Then Expect - index >= len
+        try:
+            project.remove_model_at_index(2)
+            assert False, 'Expected IndexError for out-of-range index'
+        except IndexError as e:
+            assert 'out of range' in str(e)

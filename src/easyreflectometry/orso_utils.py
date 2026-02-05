@@ -45,6 +45,11 @@ def load_orso_model(orso_str: str) -> Sample:
     as a simple "stack" string, e.g. 'air | m1 | SiO2 | Si'.
     This gets parsed by the ORSO library and converted into an ORSO Dataset object.
 
+    The stack is converted to a proper Sample structure:
+    - First layer -> Superphase assembly (thickness=0, roughness=0, both fixed)
+    - Middle layers -> 'Loaded layer' Multilayer assembly (parameters enabled)
+    - Last layer -> Subphase assembly (thickness=0 fixed, roughness enabled)
+
     Args:
         orso_str: The ORSO file content as a string
 
@@ -52,11 +57,13 @@ def load_orso_model(orso_str: str) -> Sample:
         Sample: An EasyReflectometry Sample object
 
     Raises:
-        ValueError: If ORSO layers could not be resolved
+        ValueError: If ORSO layers could not be resolved or fewer than 2 layers
     """
-    # Extract stack string and create ORSO sample model
-    stack_str = orso_str[0].info.data_source.sample.model.stack
-    orso_sample = model_language.SampleModel(stack=stack_str)
+    # Extract stack string and layer definitions from ORSO sample model
+    sample_model = orso_str[0].info.data_source.sample.model
+    stack_str = sample_model.stack
+    layers_dict = sample_model.layers if hasattr(sample_model, 'layers') else None
+    orso_sample = model_language.SampleModel(stack=stack_str, layers=layers_dict)
 
     # Try to resolve layers using different methods
     try:
@@ -68,6 +75,9 @@ def load_orso_model(orso_str: str) -> Sample:
     if not orso_layers:
         raise ValueError('Could not resolve ORSO layers.')
 
+    if len(orso_layers) < 2:
+        raise ValueError('ORSO stack must contain at least 2 layers (superphase and subphase).')
+
     logger.debug(f'Resolved layers: {orso_layers}')
 
     # Convert ORSO layers to EasyReflectometry layers
@@ -76,13 +86,34 @@ def load_orso_model(orso_str: str) -> Sample:
         erl_layer = _convert_orso_layer_to_erl(layer)
         erl_layers.append(erl_layer)
 
-    # Create a Multilayer object with the extracted layers
-    multilayer = Multilayer(erl_layers, name='Multi Layer Sample from ORSO')
+    # Create Superphase from first layer (thickness=0, roughness=0, both fixed)
+    superphase_layer = erl_layers[0]
+    superphase_layer.thickness.value = 0.0
+    superphase_layer.roughness.value = 0.0
+    superphase_layer.thickness.fixed = True
+    superphase_layer.roughness.fixed = True
+    superphase = Multilayer(superphase_layer, name='Superphase')
+
+    # Create Subphase from last layer (thickness=0 fixed, roughness enabled)
+    subphase_layer = erl_layers[-1]
+    subphase_layer.thickness.value = 0.0
+    subphase_layer.thickness.fixed = True
+    subphase_layer.roughness.fixed = False
+    subphase = Multilayer(subphase_layer, name='Subphase')
 
     # Create Sample from the file
     sample_info = orso_str[0].info.data_source.sample
     sample_name = sample_info.name if sample_info.name else 'ORSO Sample'
-    sample = Sample(multilayer, name=sample_name)
+
+    # Build Sample based on number of layers
+    if len(erl_layers) == 2:
+        # Only superphase and subphase, no middle layers
+        sample = Sample(superphase, subphase, name=sample_name)
+    else:
+        # Create middle layer assembly from layers between first and last
+        middle_layers = erl_layers[1:-1]
+        loaded_layer = Multilayer(middle_layers, name='Loaded layer')
+        sample = Sample(superphase, loaded_layer, subphase, name=sample_name)
 
     return sample
 
@@ -90,10 +121,12 @@ def load_orso_model(orso_str: str) -> Sample:
 def _convert_orso_layer_to_erl(layer):
     """Helper function to convert an ORSO layer to an EasyReflectometry layer"""
     material = layer.material
-    m_name = material.formula if material.formula is not None else layer.name
+    # Prefer original_name for material name, fall back to formula if available
+    m_name = layer.original_name if layer.original_name is not None else material.formula
 
-    # Get SLD values
-    m_sld, m_isld = _get_sld_values(material, m_name)
+    # Get SLD values (use formula for density calculation if available)
+    formula_for_calc = material.formula if material.formula is not None else m_name
+    m_sld, m_isld = _get_sld_values(material, formula_for_calc)
 
     # Create and return ERL layer
     return Layer(

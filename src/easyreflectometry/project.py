@@ -412,6 +412,76 @@ class Project:
         model = Model(sample=sample, interface=self._calculator)
         self.models = ModelCollection([model])
 
+    def is_default_model(self, index: int) -> bool:
+        """Check if the model at the given index is a default model.
+
+        A default model has exactly 3 assemblies named 'Superphase', 'D2O', and 'Subphase',
+        each containing a single layer with specific names.
+
+        :param index: Index of the model to check.
+        :return: True if the model matches the default model structure.
+        """
+        if index < 0 or index >= len(self._models):
+            return False
+
+        model = self._models[index]
+        sample = model.sample
+
+        # Check for exactly 3 assemblies with expected names
+        if len(sample) != 3:
+            return False
+
+        expected_assembly_names = ['Superphase', 'D2O', 'Subphase']
+        expected_layer_names = ['Vacuum Layer', 'D2O Layer', 'Si Layer']
+
+        for assembly, expected_assembly_name, expected_layer_name in zip(
+            sample, expected_assembly_names, expected_layer_names
+        ):
+            if assembly.name != expected_assembly_name:
+                return False
+            if len(assembly.layers) != 1:
+                return False
+            if assembly.layers[0].name != expected_layer_name:
+                return False
+
+        return True
+
+    def remove_model_at_index(self, index: int) -> None:
+        """Remove the model at the given index.
+
+        Removes the model from the model collection and any associated experiment data.
+        Adjusts the current model index if necessary.
+
+        :param index: Index of the model to remove.
+        :type index: int
+        :raises IndexError: If the index is out of range.
+        :raises ValueError: If trying to remove the last remaining model.
+        """
+        if index < 0 or index >= len(self._models):
+            raise IndexError(f'Model index {index} out of range')
+
+        if len(self._models) <= 1:
+            raise ValueError('Cannot remove the last model from the project')
+
+        # Remove the model from the collection
+        self._models.pop(index)
+
+        # Remove the link between any experiment and the removed model
+        # (do not delete the experiment itself, just unlink it)
+        # Use _model directly to bypass the setter which expects a non-None model
+        if index in self._experiments:
+            self._experiments[index]._model = None
+
+        # Adjust current model index if necessary
+        if self._current_model_index >= len(self._models):
+            self._current_model_index = len(self._models) - 1
+        elif self._current_model_index > index:
+            self._current_model_index -= 1
+
+        # Reset assembly and layer indices for the new current model
+        self._current_assembly_index = 0
+        self._current_layer_index = 0
+
     def add_material(self, material: MaterialCollection) -> None:
         if material in self._materials:
             print(f'WARNING: Material {material} is already in material collection')

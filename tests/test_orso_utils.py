@@ -27,6 +27,39 @@ def test_load_orso_model(orso_data):
     assert sample is not None
     assert sample.name == 'Ni on Si'  # Based on the file
 
+    # Verify sample structure: Superphase, Loaded layer, Subphase
+    # Stack in file: air | m1 | SiO2 | Si
+    assert len(sample) == 3
+
+    # Check Superphase (first layer from stack: air)
+    superphase = sample[0]
+    assert superphase.name == 'Superphase'
+    assert len(superphase.layers) == 1
+    assert superphase.layers[0].material.name == 'air'
+    assert superphase.layers[0].thickness.value == 0.0
+    assert superphase.layers[0].roughness.value == 0.0
+    assert superphase.layers[0].thickness.fixed is True
+    assert superphase.layers[0].roughness.fixed is True
+
+    # Check Loaded layer (middle layers: m1, SiO2)
+    loaded_layer = sample[1]
+    assert loaded_layer.name == 'Loaded layer'
+    assert len(loaded_layer.layers) == 2
+    assert loaded_layer.layers[0].material.name == 'm1'  # Uses original_name, not formula
+    assert loaded_layer.layers[0].thickness.value == 1000.0  # From layer definition
+    assert loaded_layer.layers[1].material.name == 'SiO2'
+    assert loaded_layer.layers[1].thickness.value == 10.0  # From layer definition
+
+    # Check Subphase (last layer from stack: Si)
+    subphase = sample[2]
+    assert subphase.name == 'Subphase'
+    assert len(subphase.layers) == 1
+    assert subphase.layers[0].material.name == 'Si'
+    assert subphase.layers[0].thickness.value == 0.0
+    assert subphase.layers[0].thickness.fixed is True
+    # Subphase roughness should be enabled (not fixed)
+    assert subphase.layers[0].roughness.fixed is False
+
 
 def test_load_orso_data(orso_data):
     """Test loading data from ORSO data."""
