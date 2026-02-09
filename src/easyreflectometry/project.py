@@ -308,6 +308,24 @@ class Project:
         # Switch to the newly added model so its data is visible in the UI
         self.current_model_index = len(self._models) - 1
 
+    def replace_models_from_orso(self, sample: Sample) -> None:
+        """Replace all models and materials with a single model from an ORSO sample.
+
+        All existing models and their associated materials are removed. A new
+        model is created from *sample*, assigned to the project's calculator,
+        and the material collection is rebuilt from the new model only.
+
+        :param sample: Sample to set as the project's only model.
+        :type sample: easyreflectometry.sample.Sample
+        :return: ``None``.
+        :rtype: None
+        """
+        model = Model(sample=sample)
+        self.models = ModelCollection([model])
+        model.interface = self._calculator
+        self._materials = self._get_materials_from_model(model)
+        self.current_model_index = 0
+
     def _get_materials_from_model(self, model: Model) -> 'MaterialCollection':
         """Get all materials from a single model's sample."""
         materials_in_model = MaterialCollection(populate_if_none=False)
