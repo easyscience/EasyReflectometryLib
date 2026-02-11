@@ -85,3 +85,40 @@ def test_load_data_from_orso_file():
     import scipp as sc
 
     assert isinstance(data, sc.DataGroup)
+
+
+def test_orso_sld_unit_conversion(orso_data):
+    """Test that SLD values from ORSO are correctly converted from A^-2 to 10^-6 A^-2.
+
+    ORSO stores SLD in absolute units (A^-2), e.g., 3.47e-06.
+    The internal representation uses 10^-6 A^-2, so the value should be 3.47.
+    """
+    sample = load_orso_model(orso_data)
+
+    # Check SiO2 layer (second layer in Loaded layer assembly)
+    # ORSO file has: sld: {real: 3.4700000000000002e-06, imag: 0.0}
+    # Expected internal value: 3.47
+    loaded_layer = sample[1]
+    sio2_layer = loaded_layer.layers[1]
+    assert sio2_layer.material.name == 'SiO2'
+    assert abs(sio2_layer.material.sld.value - 3.47) < 1e-6, (
+        f'Expected SLD ~3.47 (10^-6 A^-2), got {sio2_layer.material.sld.value}'
+    )
+
+    # Check Si subphase layer
+    # ORSO file has: sld: {real: 2.0699999999999997e-06, imag: 0.0}
+    # Expected internal value: 2.07
+    subphase = sample[2]
+    si_layer = subphase.layers[0]
+    assert si_layer.material.name == 'Si'
+    assert abs(si_layer.material.sld.value - 2.07) < 1e-6, (
+        f'Expected SLD ~2.07 (10^-6 A^-2), got {si_layer.material.sld.value}'
+    )
+
+    # Check air superphase layer
+    # ORSO file has: sld: {real: 0.0, imag: 0.0}
+    # Expected internal value: 0.0
+    superphase = sample[0]
+    air_layer = superphase.layers[0]
+    assert air_layer.material.name == 'air'
+    assert abs(air_layer.material.sld.value - 0.0) < 1e-6, f'Expected SLD 0.0 (10^-6 A^-2), got {air_layer.material.sld.value}'

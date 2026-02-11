@@ -831,6 +831,50 @@ class TestProject:
         # The shared material instance is already in the collection, so count should stay the same
         assert len(project._materials) == initial_material_count
 
+    def test_replace_models_from_orso(self):
+        """Test that replace_models_from_orso replaces all existing models with a single new model."""
+        # When
+        global_object.map._clear()
+        project = Project()
+        project.default_model()
+
+        # Add some models to start with
+        material_1 = Material(sld=2.0, isld=0.0, name='Material 1')
+        layer_1 = Layer(material=material_1, thickness=10, roughness=0, name='Layer 1')
+        sample_1 = Sample(Multilayer([layer_1]))
+        project.add_sample_from_orso(sample_1)
+
+        material_2 = Material(sld=3.0, isld=0.0, name='Material 2')
+        layer_2 = Layer(material=material_2, thickness=20, roughness=1, name='Layer 2')
+        sample_2 = Sample(Multilayer([layer_2]))
+        project.add_sample_from_orso(sample_2)
+
+        # Verify we have multiple models
+        assert len(project._models) > 1
+        len(project._models)
+
+        # Create a new sample to replace all existing models
+        new_material = Material(sld=5.0, isld=0.5, name='New Material')
+        new_layer = Layer(material=new_material, thickness=50, roughness=2, name='New Layer')
+        new_sample = Sample(Multilayer([new_layer]))
+
+        # Then - replace all models with the new sample
+        project.replace_models_from_orso(new_sample)
+
+        # Expect - only one model should remain
+        assert len(project._models) == 1
+        assert project._models[0].sample == new_sample
+        # The interface should be set
+        assert project._models[0].interface == project._calculator
+        # Only the new material should be in the materials collection
+        assert len(project._materials) == 1
+        assert new_material in project._materials
+        # Old materials should not be in the collection
+        assert material_1 not in project._materials
+        assert material_2 not in project._materials
+        # Current model index should be reset to 0
+        assert project.current_model_index == 0
+
     def test_is_default_model_true(self):
         # When
         global_object.map._clear()

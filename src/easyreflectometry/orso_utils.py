@@ -138,19 +138,27 @@ def _convert_orso_layer_to_erl(layer):
 
 
 def _get_sld_values(material, material_name):
-    """Extract SLD values from material, calculating from density if needed"""
+    """Extract SLD values from material, calculating from density if needed
+
+    Note: ORSO stores SLD in absolute units (A^-2), but the internal representation
+    uses 10^-6 A^-2. When reading directly from ORSO, we multiply by 1e6 to convert.
+    When calculating from mass density, MaterialDensity already returns the correct units.
+    """
     if material.sld is None and material.mass_density is not None:
         # Calculate SLD from mass density
+        # MaterialDensity already returns values in 10^-6 A^-2 units
         m_density = material.mass_density.magnitude
         density = MaterialDensity(chemical_structure=material_name, density=m_density)
         m_sld = density.sld.value
         m_isld = density.isld.value
     else:
+        # ORSO stores SLD in absolute units (A^-2)
+        # Convert to internal representation (10^-6 A^-2) by multiplying by 1e6
         if isinstance(material.sld, ComplexValue):
-            m_sld = material.sld.real
-            m_isld = material.sld.imag
+            m_sld = material.sld.real * 1e6
+            m_isld = material.sld.imag * 1e6
         else:
-            m_sld = material.sld
+            m_sld = material.sld * 1e6
             m_isld = 0.0
 
     return m_sld, m_isld
