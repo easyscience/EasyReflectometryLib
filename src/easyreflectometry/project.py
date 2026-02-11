@@ -363,11 +363,13 @@ class Project:
         # Set the resolution function if variance data is present
         # Prefer Pointwise when q-resolution (xe) data is present, otherwise fall back to LinearSpline
         if sum(new_experiment.xe) != 0:
-            resolution_function = Pointwise(q_data_points=[
-                self._experiments[new_index].x,
-                self._experiments[new_index].y,
-                self._experiments[new_index].xe,
-            ])
+            resolution_function = Pointwise(
+                q_data_points=[
+                    self._experiments[new_index].x,
+                    self._experiments[new_index].y,
+                    self._experiments[new_index].xe,
+                ]
+            )
             self.models[model_index].resolution_function = resolution_function
         elif sum(new_experiment.ye) != 0:
             resolution_function = LinearSpline(
@@ -387,11 +389,13 @@ class Project:
         # Set the resolution function if variance data is present
         # Prefer Pointwise when q-resolution (xe) data is present, otherwise fall back to LinearSpline
         if sum(self._experiments[index].xe) != 0:
-            resolution_function = Pointwise(q_data_points=[
-                self._experiments[index].x,
-                self._experiments[index].y,
-                self._experiments[index].xe,
-            ])
+            resolution_function = Pointwise(
+                q_data_points=[
+                    self._experiments[index].x,
+                    self._experiments[index].y,
+                    self._experiments[index].xe,
+                ]
+            )
             self._models[index].resolution_function = resolution_function
         elif sum(self._experiments[index].ye) != 0:
             resolution_function = LinearSpline(
