@@ -17,6 +17,8 @@ from scipp import DataGroup
 from easyreflectometry.calculators import CalculatorFactory
 from easyreflectometry.data import DataSet1D
 from easyreflectometry.data import load_as_dataset
+from easyreflectometry.data.measurement import _extract_orso_title
+from easyreflectometry.data.measurement import load_data_from_orso_file
 from easyreflectometry.fitting import MultiFitter
 from easyreflectometry.model import LinearSpline
 from easyreflectometry.model import Model
@@ -350,8 +352,21 @@ class Project:
     def load_new_experiment(self, path: Union[Path, str]) -> None:
         new_experiment = load_as_dataset(str(path))
         new_index = len(self._experiments)
-        if not new_experiment.name or new_experiment.name == 'Series':
+
+        # Prefer ORSO title when available (keeps UI descriptive)
+        title = None
+        try:
+            data_group = load_data_from_orso_file(str(path))
+            data_key = list(data_group['data'].keys())[0]
+            title = _extract_orso_title(data_group, data_key)
+        except Exception:
+            title = None
+
+        if title:
+            new_experiment.name = title
+        elif not new_experiment.name or new_experiment.name == 'Series':
             new_experiment.name = f'Experiment {new_index}'
+
         model_index = 0
         if new_index < len(self.models):
             model_index = new_index
@@ -380,8 +395,21 @@ class Project:
 
     def load_experiment_for_model_at_index(self, path: Union[Path, str], index: Optional[int] = 0) -> None:
         self._experiments[index] = load_as_dataset(str(path))
-        if not self._experiments[index].name or self._experiments[index].name == 'Series':
+
+        # Prefer ORSO title when available
+        title = None
+        try:
+            data_group = load_data_from_orso_file(str(path))
+            data_key = list(data_group['data'].keys())[0]
+            title = _extract_orso_title(data_group, data_key)
+        except Exception:
+            title = None
+
+        if title:
+            self._experiments[index].name = title
+        elif not self._experiments[index].name or self._experiments[index].name == 'Series':
             self._experiments[index].name = f'Experiment {index}'
+
         self._experiments[index].model = self.models[index]
 
         self._with_experiments = True

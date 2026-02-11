@@ -591,7 +591,7 @@ class TestProject:
         # Expect
         assert list(project.experiments.keys()) == [5]
         assert isinstance(project.experiments[5], DataSet1D)
-        assert project.experiments[5].name == 'Experiment 5'
+        assert project.experiments[5].name == 'Example data file from refnx docs'
         assert project.experiments[5].model == model_5
         assert isinstance(project.models[5].resolution_function, Pointwise)
         assert isinstance(project.models[4].resolution_function, PercentageFwhm)
@@ -644,7 +644,7 @@ class TestProject:
         data = project.experimental_data_for_model_at_index()
 
         # Expect
-        assert data.name == 'Experiment 0'
+        assert data.name == 'Example data file from refnx docs'
         assert data.is_experiment
         assert isinstance(data, DataSet1D)
         assert len(data.x) == 408

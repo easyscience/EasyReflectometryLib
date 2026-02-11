@@ -129,7 +129,7 @@ class TestSummary:
         html = summary._experiments_section()
 
         # Expect
-        assert 'Experiment 0' in html
+        assert 'Example data file from refnx docs' in html
         assert 'No. of data points' in html
         assert '408' in html
         assert 'Resolution function' in html
