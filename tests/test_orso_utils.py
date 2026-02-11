@@ -122,3 +122,13 @@ def test_orso_sld_unit_conversion(orso_data):
     air_layer = superphase.layers[0]
     assert air_layer.material.name == 'air'
     assert abs(air_layer.material.sld.value - 0.0) < 1e-6, f'Expected SLD 0.0 (10^-6 A^-2), got {air_layer.material.sld.value}'
+
+
+def test_LoadOrso_returns_two_items(orso_data):
+    """LoadOrso should return exactly two values: (sample, data)."""
+    result = LoadOrso(orso_data)
+    assert isinstance(result, tuple)
+    assert len(result) == 2
+    sample, data = result
+    assert sample is not None
+    assert data is not None

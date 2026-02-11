@@ -22,8 +22,7 @@ from easyreflectometry.model import LinearSpline
 from easyreflectometry.model import Model
 from easyreflectometry.model import ModelCollection
 from easyreflectometry.model import PercentageFwhm
-
-# from easyreflectometry.model import Pointwise
+from easyreflectometry.model import Pointwise
 from easyreflectometry.sample import Layer
 from easyreflectometry.sample import Material
 from easyreflectometry.sample import MaterialCollection
@@ -267,14 +266,16 @@ class Project:
         """Load an ORSO file and optionally create a model and a data from it."""
         from easyreflectometry.orso_utils import LoadOrso
 
-        model, data = LoadOrso(path)
+        model, data, title = LoadOrso(path)
         if model is not None:
+            if isinstance(model, Sample):
+                model = Model(sample=model, name=model.name)
             self.models = ModelCollection([model])
         else:
             self.default_model()
         if data is not None:
             self._experiments[0] = data
-            self._experiments[0].name = 'Experiment from ORSO'
+            self._experiments[0].name = title or 'Experiment from ORSO'
             self._experiments[0].model = self.models[0]
             self._with_experiments = True
         pass
@@ -330,6 +331,8 @@ class Project:
         :rtype: None
         """
         model = Model(sample=sample)
+        if sample.name:
+            model.user_data['original_name'] = sample.name  # Store original name for reference
         self.models = ModelCollection([model])
         model.interface = self._calculator
         self._materials = self._get_materials_from_model(model)
@@ -347,7 +350,8 @@ class Project:
     def load_new_experiment(self, path: Union[Path, str]) -> None:
         new_experiment = load_as_dataset(str(path))
         new_index = len(self._experiments)
-        new_experiment.name = f'Experiment {new_index}'
+        if not new_experiment.name or new_experiment.name == 'Series':
+            new_experiment.name = f'Experiment {new_index}'
         model_index = 0
         if new_index < len(self.models):
             model_index = new_index
@@ -357,33 +361,41 @@ class Project:
         self._with_experiments = True
 
         # Set the resolution function if variance data is present
-        if sum(new_experiment.ye) != 0:
-            # q = new_experiment.x
-            # reflectivity = new_experiment.y
-            # q_error = new_experiment.xe
-            # # TODO: set resolution function based on value of control in GUI
-            # resolution_function = Pointwise(q_data_points=[q, reflectivity, q_error])
+        # Prefer Pointwise when q-resolution (xe) data is present, otherwise fall back to LinearSpline
+        if sum(new_experiment.xe) != 0:
+            resolution_function = Pointwise(q_data_points=[
+                self._experiments[new_index].x,
+                self._experiments[new_index].y,
+                self._experiments[new_index].xe,
+            ])
+            self.models[model_index].resolution_function = resolution_function
+        elif sum(new_experiment.ye) != 0:
             resolution_function = LinearSpline(
-                q_data_points=self._experiments[new_index].y,
+                q_data_points=self._experiments[new_index].x,
                 fwhm_values=np.sqrt(self._experiments[new_index].ye),
             )
             self.models[model_index].resolution_function = resolution_function
 
     def load_experiment_for_model_at_index(self, path: Union[Path, str], index: Optional[int] = 0) -> None:
         self._experiments[index] = load_as_dataset(str(path))
-        self._experiments[index].name = f'Experiment {index}'
+        if not self._experiments[index].name or self._experiments[index].name == 'Series':
+            self._experiments[index].name = f'Experiment {index}'
         self._experiments[index].model = self.models[index]
 
         self._with_experiments = True
 
         # Set the resolution function if variance data is present
-        if sum(self._experiments[index].ye) != 0:
-            # q = self._experiments[index].x
-            # reflectivity = self._experiments[index].y
-            # q_error = self._experiments[index].xe
-            # resolution_function = Pointwise(q_data_points=[q, reflectivity, q_error])
+        # Prefer Pointwise when q-resolution (xe) data is present, otherwise fall back to LinearSpline
+        if sum(self._experiments[index].xe) != 0:
+            resolution_function = Pointwise(q_data_points=[
+                self._experiments[index].x,
+                self._experiments[index].y,
+                self._experiments[index].xe,
+            ])
+            self._models[index].resolution_function = resolution_function
+        elif sum(self._experiments[index].ye) != 0:
             resolution_function = LinearSpline(
-                q_data_points=self._experiments[index].y,
+                q_data_points=self._experiments[index].x,
                 fwhm_values=np.sqrt(self._experiments[index].ye),
             )
             self._models[index].resolution_function = resolution_function

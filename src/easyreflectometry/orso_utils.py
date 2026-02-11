@@ -22,10 +22,50 @@ logger = logging.getLogger(__name__)
 def LoadOrso(orso_str: str):
     """Load a model from an ORSO file."""
 
-    sample = load_orso_model(orso_str)
-    data = load_orso_data(orso_str)
+    orso_obj = _coerce_orso_object(orso_str)
+    sample = load_orso_model(orso_obj)
+    data = load_orso_data(orso_obj)
+    # Keep title extraction internal for now but do not return it; callers expect (sample, data)
+    sample_name = _get_sample_name_from_data(data)
+    if sample_name:
+        sample.name = sample_name
 
     return sample, data
+
+
+def _coerce_orso_object(orso_input):
+    """Return a parsed ORSO object list from either a path or pre-parsed input."""
+    try:
+        if orso_input and hasattr(orso_input[0], 'info'):
+            return orso_input
+    except (TypeError, IndexError):
+        pass
+    return orso.load_orso(orso_input)
+
+
+def _get_experiment_title(orso_obj) -> str | None:
+    """Extract the experiment title from an ORSO object if available."""
+    try:
+        title = orso_obj[0].info.data_source.experiment.title
+    except (AttributeError, IndexError, TypeError):
+        return None
+    if title is None:
+        return None
+    title_str = str(title).strip()
+    return title_str or None
+
+
+def _get_sample_name_from_data(data_group: sc.DataGroup) -> str | None:
+    try:
+        data_name = next(iter(data_group['attrs']))
+        header = data_group['attrs'][data_name]['orso_header']
+        name = header.values.get('data_source', {}).get('sample', {}).get('name')
+    except (AttributeError, KeyError, StopIteration, TypeError):
+        return None
+    if name is None:
+        return None
+    name_str = str(name).strip()
+    return name_str or None
 
 
 def load_data_from_orso_file(fname: str) -> sc.DataGroup:

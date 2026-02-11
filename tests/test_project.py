@@ -596,6 +596,42 @@ class TestProject:
         assert isinstance(project.models[5].resolution_function, Pointwise)
         assert isinstance(project.models[4].resolution_function, PercentageFwhm)
 
+    def test_load_experiment_sets_resolution_function_pointwise_when_xe_present(self, tmp_path):
+        # When
+        global_object.map._clear()
+        project = Project()
+        project.models = ModelCollection(Model())
+
+        # Create a simple 4-column data file (x, y, e, xe)
+        fpath = tmp_path / 'four_col.txt'
+        fpath.write_text('# test data\n0.01 1e-5 1e-6 1e-4\n0.02 2e-5 1e-6 1e-4\n')
+
+        # Then
+        project.load_experiment_for_model_at_index(str(fpath))
+
+        # Expect Pointwise because xe (q-resolution) is present
+        from easyreflectometry.model.resolution_functions import Pointwise
+
+        assert isinstance(project.models[0].resolution_function, Pointwise)
+
+    def test_load_experiment_sets_linearspline_when_only_ye_present(self, tmp_path):
+        # When
+        global_object.map._clear()
+        project = Project()
+        project.models = ModelCollection(Model())
+
+        # Create a simple 3-column data file (x, y, e)
+        fpath = tmp_path / 'three_col.txt'
+        fpath.write_text('# test data\n0.01 1e-5 1e-6\n0.02 2e-5 1e-6\n')
+
+        # Then
+        project.load_experiment_for_model_at_index(str(fpath))
+
+        # Expect LinearSpline because only ye (fwhm from ye) is available
+        from easyreflectometry.model.resolution_functions import LinearSpline
+
+        assert isinstance(project.models[0].resolution_function, LinearSpline)
+
     def test_experimental_data_at_index(self):
         # When
         global_object.map._clear()
