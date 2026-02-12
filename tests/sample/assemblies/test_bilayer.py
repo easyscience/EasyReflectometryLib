@@ -123,7 +123,7 @@ class TestBilayer:
         assert p.back_tail_layer.thickness.value == 20.0
 
         # Change front tail area per molecule - back tail should follow
-        p.front_tail_layer._area_per_molecule.value = 55.0
+        p.front_tail_layer.area_per_molecule = 55.0
         assert p.front_tail_layer.area_per_molecule == 55.0
         assert p.back_tail_layer.area_per_molecule == 55.0
 
@@ -137,7 +137,7 @@ class TestBilayer:
         assert p.back_head_layer.thickness.value == 15.0
 
         # Change front head area per molecule - back head should follow
-        p.front_head_layer._area_per_molecule.value = 60.0
+        p.front_head_layer.area_per_molecule = 60.0
         assert p.front_head_layer.area_per_molecule == 60.0
         assert p.back_head_layer.area_per_molecule == 60.0
 
