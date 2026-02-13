@@ -311,6 +311,8 @@ class Project:
         :return: ``None``.
         :rtype: None
         """
+        if sample is None:
+            raise ValueError('The ORSO file does not contain a valid sample model definition.')
         model = Model(sample=sample)
         self.models.add_model(model)
         # Set interface after adding to collection
@@ -332,6 +334,8 @@ class Project:
         :return: ``None``.
         :rtype: None
         """
+        if sample is None:
+            raise ValueError('The ORSO file does not contain a valid sample model definition.')
         model = Model(sample=sample)
         if sample.name:
             model.user_data['original_name'] = sample.name  # Store original name for reference

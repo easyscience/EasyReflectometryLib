@@ -2,6 +2,7 @@
 # Copyright (c) 2025 DMSC
 
 import os
+import warnings
 from types import SimpleNamespace
 
 import pytest
@@ -156,3 +157,18 @@ def test_get_sld_values_defaults_to_zero_when_sld_and_density_missing():
     m_sld, m_isld = _get_sld_values(material, 'Unknown')
     assert m_sld == 0.0
     assert m_isld == 0.0
+
+
+def test_load_orso_model_returns_none_and_warns_when_no_sample_model():
+    """load_orso_model should return None and emit a warning when the ORSO file has no sample model."""
+    orso_data = orso.load_orso(os.path.join(PATH_STATIC, 'test_example1.ort'))
+    # Verify the file indeed has no model
+    assert orso_data[0].info.data_source.sample.model is None
+
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter('always')
+        result = load_orso_model(orso_data)
+
+    assert result is None
+    assert len(w) == 1
+    assert 'does not contain a sample model definition' in str(w[0].message)

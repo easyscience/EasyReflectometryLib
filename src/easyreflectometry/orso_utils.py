@@ -69,6 +69,13 @@ def load_orso_model(orso_data) -> Sample:
     """
     # Extract stack string and layer definitions from ORSO sample model
     sample_model = orso_data[0].info.data_source.sample.model
+    if sample_model is None:
+        warnings.warn(
+            'ORSO file does not contain a sample model definition. Only experimental data can be loaded from this file.',
+            UserWarning,
+            stacklevel=2,
+        )
+        return None
     stack_str = sample_model.stack
     layers_dict = sample_model.layers if hasattr(sample_model, 'layers') else None
     orso_sample = model_language.SampleModel(stack=stack_str, layers=layers_dict)
