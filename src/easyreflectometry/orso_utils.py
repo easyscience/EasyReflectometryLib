@@ -159,6 +159,10 @@ def _get_sld_values(material, material_name):
         density = MaterialDensity(chemical_structure=material_name, density=m_density)
         m_sld = density.sld.value
         m_isld = density.isld.value
+    elif material.sld is None:
+        # No SLD and no mass density available, default to 0.0
+        m_sld = 0.0
+        m_isld = 0.0
     else:
         # ORSO stores SLD in absolute units (A^-2)
         # Convert to internal representation (10^-6 A^-2) by multiplying by 1e6

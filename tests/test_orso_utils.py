@@ -2,12 +2,14 @@
 # Copyright (c) 2025 DMSC
 
 import os
+from types import SimpleNamespace
 
 import pytest
 from orsopy.fileio import orso
 
 import easyreflectometry
 from easyreflectometry.orso_utils import LoadOrso
+from easyreflectometry.orso_utils import _get_sld_values
 from easyreflectometry.orso_utils import load_data_from_orso_file
 from easyreflectometry.orso_utils import load_orso_data
 from easyreflectometry.orso_utils import load_orso_model
@@ -146,3 +148,11 @@ def test_LoadOrso_with_nonexistent_file():
     """LoadOrso should raise for a path that does not exist."""
     with pytest.raises((FileNotFoundError, ValueError, Exception)):
         LoadOrso('/nonexistent/path/to/file.ort')
+
+
+def test_get_sld_values_defaults_to_zero_when_sld_and_density_missing():
+    """_get_sld_values should return (0.0, 0.0) when both sld and mass_density are None."""
+    material = SimpleNamespace(sld=None, mass_density=None)
+    m_sld, m_isld = _get_sld_values(material, 'Unknown')
+    assert m_sld == 0.0
+    assert m_isld == 0.0
