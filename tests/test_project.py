@@ -1021,7 +1021,7 @@ class TestProject:
         assert project._current_assembly_index == 0
         assert project._current_layer_index == 0
 
-    def test_remove_model_at_index_unlinks_experiment(self):
+    def test_remove_model_at_index_removes_experiment_at_same_index(self):
         # When
         global_object.map._clear()
         project = Project()
@@ -1041,9 +1041,38 @@ class TestProject:
         # Then
         project.remove_model_at_index(0)
 
-        # Expect - experiment still exists but model is unlinked
-        assert 0 in project._experiments
-        assert project._experiments[0]._model is None
+        # Expect - experiment mapped to the removed model index is removed
+        assert 0 not in project._experiments
+
+    def test_remove_model_at_index_reindexes_experiments_above_removed_index(self):
+        # When
+        global_object.map._clear()
+        project = Project()
+        project.default_model()
+
+        # Add two more models (total = 3)
+        material_1 = Material(sld=4.0, isld=0.0, name='Custom Material 1')
+        layer_1 = Layer(material=material_1, thickness=50, roughness=1, name='Custom Layer 1')
+        model_1 = Model(sample=Sample(Multilayer([layer_1], name='Custom Assembly 1')))
+        project._models.append(model_1)
+
+        material_2 = Material(sld=5.0, isld=0.0, name='Custom Material 2')
+        layer_2 = Layer(material=material_2, thickness=60, roughness=2, name='Custom Layer 2')
+        model_2 = Model(sample=Sample(Multilayer([layer_2], name='Custom Assembly 2')))
+        project._models.append(model_2)
+
+        # Add experiments for all model indices 0, 1, 2
+        project._experiments[0] = DataSet1D(name='exp0', x=[0.01], y=[1.0], ye=[0.1], xe=[0.001], model=project._models[0])
+        project._experiments[1] = DataSet1D(name='exp1', x=[0.02], y=[0.9], ye=[0.1], xe=[0.001], model=project._models[1])
+        project._experiments[2] = DataSet1D(name='exp2', x=[0.03], y=[0.8], ye=[0.1], xe=[0.001], model=project._models[2])
+
+        # Then - remove middle model
+        project.remove_model_at_index(1)
+
+        # Expect - middle experiment removed and upper one shifted down
+        assert set(project._experiments.keys()) == {0, 1}
+        assert project._experiments[0].name == 'exp0'
+        assert project._experiments[1].name == 'exp2'
 
     def test_remove_model_at_index_raises_for_last_model(self):
         # When

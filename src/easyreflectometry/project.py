@@ -268,7 +268,7 @@ class Project:
         """Load an ORSO file and optionally create a model and a data from it."""
         from easyreflectometry.orso_utils import LoadOrso
 
-        model, data, title = LoadOrso(path)
+        model, data = LoadOrso(path)
         if model is not None:
             if isinstance(model, Sample):
                 model = Model(sample=model, name=model.name)
@@ -277,7 +277,7 @@ class Project:
             self.default_model()
         if data is not None:
             self._experiments[0] = data
-            self._experiments[0].name = title or 'Experiment from ORSO'
+            self._experiments[0].name = 'Experiment from ORSO'
             self._experiments[0].model = self.models[0]
             self._with_experiments = True
         pass
@@ -489,7 +489,10 @@ class Project:
     def remove_model_at_index(self, index: int) -> None:
         """Remove the model at the given index.
 
-        Removes the model from the model collection and any associated experiment data.
+        Removes the model from the model collection, removes the experiment at the
+        same index (if any), and reindexes experiments above the removed index so
+        model/experiment indices stay aligned.
+
         Adjusts the current model index if necessary.
 
         :param index: Index of the model to remove.
@@ -506,11 +509,18 @@ class Project:
         # Remove the model from the collection
         self._models.pop(index)
 
-        # Remove the link between any experiment and the removed model
-        # (do not delete the experiment itself, just unlink it)
-        # Use _model directly to bypass the setter which expects a non-None model
+        # Remove experiment mapped to the removed model index.
         if index in self._experiments:
-            self._experiments[index]._model = None
+            self._experiments.pop(index)
+
+        # Reindex experiments above the removed model index to keep mapping aligned.
+        reindexed_experiments: dict[int, DataSet1D] = {}
+        for exp_index, experiment in sorted(self._experiments.items()):
+            if exp_index > index:
+                reindexed_experiments[exp_index - 1] = experiment
+            else:
+                reindexed_experiments[exp_index] = experiment
+        self._experiments = reindexed_experiments
 
         # Adjust current model index if necessary
         if self._current_model_index >= len(self._models):
