@@ -132,3 +132,17 @@ def test_LoadOrso_returns_two_items(orso_data):
     sample, data = result
     assert sample is not None
     assert data is not None
+
+
+def test_LoadOrso_with_invalid_file(tmp_path):
+    """LoadOrso should raise for a corrupt / non-ORSO file."""
+    bad_file = tmp_path / 'bad.ort'
+    bad_file.write_text('this is not valid ORSO data')
+    with pytest.raises((ValueError, Exception)):
+        LoadOrso(str(bad_file))
+
+
+def test_LoadOrso_with_nonexistent_file():
+    """LoadOrso should raise for a path that does not exist."""
+    with pytest.raises((FileNotFoundError, ValueError, Exception)):
+        LoadOrso('/nonexistent/path/to/file.ort')

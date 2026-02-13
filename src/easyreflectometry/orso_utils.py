@@ -1,4 +1,5 @@
 import logging
+import warnings
 
 import numpy as np
 import scipp as sc
@@ -19,17 +20,12 @@ from .sample.elements.materials.material_density import MaterialDensity
 logger = logging.getLogger(__name__)
 
 
-def LoadOrso(orso_str: str):
+def LoadOrso(orso_data):
     """Load a model from an ORSO file."""
 
-    orso_obj = _coerce_orso_object(orso_str)
+    orso_obj = _coerce_orso_object(orso_data)
     sample = load_orso_model(orso_obj)
     data = load_orso_data(orso_obj)
-    # Keep title extraction internal for now but do not return it; callers expect (sample, data)
-    sample_name = _get_sample_name_from_data(data)
-    if sample_name:
-        sample.name = sample_name
-
     return sample, data
 
 
@@ -43,31 +39,6 @@ def _coerce_orso_object(orso_input):
     return orso.load_orso(orso_input)
 
 
-def _get_experiment_title(orso_obj) -> str | None:
-    """Extract the experiment title from an ORSO object if available."""
-    try:
-        title = orso_obj[0].info.data_source.experiment.title
-    except (AttributeError, IndexError, TypeError):
-        return None
-    if title is None:
-        return None
-    title_str = str(title).strip()
-    return title_str or None
-
-
-def _get_sample_name_from_data(data_group: sc.DataGroup) -> str | None:
-    try:
-        data_name = next(iter(data_group['attrs']))
-        header = data_group['attrs'][data_name]['orso_header']
-        name = header.values.get('data_source', {}).get('sample', {}).get('name')
-    except (AttributeError, KeyError, StopIteration, TypeError):
-        return None
-    if name is None:
-        return None
-    name_str = str(name).strip()
-    return name_str or None
-
-
 def load_data_from_orso_file(fname: str) -> sc.DataGroup:
     """Load data from an ORSO file."""
     try:
@@ -77,7 +48,7 @@ def load_data_from_orso_file(fname: str) -> sc.DataGroup:
     return load_orso_data(orso_data)
 
 
-def load_orso_model(orso_str: str) -> Sample:
+def load_orso_model(orso_data) -> Sample:
     """
     Load a model from an ORSO file and return a Sample object.
 
@@ -90,17 +61,14 @@ def load_orso_model(orso_str: str) -> Sample:
     - Middle layers -> 'Loaded layer' Multilayer assembly (parameters enabled)
     - Last layer -> Subphase assembly (thickness=0 fixed, roughness enabled)
 
-    Args:
-        orso_str: The ORSO file content as a string
-
-    Returns:
-        Sample: An EasyReflectometry Sample object
-
-    Raises:
-        ValueError: If ORSO layers could not be resolved or fewer than 2 layers
+    :param orso_data: Parsed ORSO dataset list (as returned by ``orso.load_orso``).
+    :type orso_data: list
+    :return: An EasyReflectometry Sample object.
+    :rtype: Sample
+    :raises ValueError: If ORSO layers could not be resolved or fewer than 2 layers.
     """
     # Extract stack string and layer definitions from ORSO sample model
-    sample_model = orso_str[0].info.data_source.sample.model
+    sample_model = orso_data[0].info.data_source.sample.model
     stack_str = sample_model.stack
     layers_dict = sample_model.layers if hasattr(sample_model, 'layers') else None
     orso_sample = model_language.SampleModel(stack=stack_str, layers=layers_dict)
@@ -142,7 +110,7 @@ def load_orso_model(orso_str: str) -> Sample:
     subphase = Multilayer(subphase_layer, name='Subphase')
 
     # Create Sample from the file
-    sample_info = orso_str[0].info.data_source.sample
+    sample_info = orso_data[0].info.data_source.sample
     sample_name = sample_info.name if sample_info.name else 'ORSO Sample'
 
     # Build Sample based on number of layers
@@ -195,20 +163,37 @@ def _get_sld_values(material, material_name):
         # ORSO stores SLD in absolute units (A^-2)
         # Convert to internal representation (10^-6 A^-2) by multiplying by 1e6
         if isinstance(material.sld, ComplexValue):
-            m_sld = material.sld.real * 1e6
+            raw_sld = material.sld.real
+            m_sld = raw_sld * 1e6
             m_isld = material.sld.imag * 1e6
         else:
-            m_sld = material.sld * 1e6
+            raw_sld = material.sld
+            m_sld = raw_sld * 1e6
             m_isld = 0.0
+        if raw_sld != 0.0 and abs(raw_sld) > 1e-2:
+            warnings.warn(
+                f'ORSO SLD value {raw_sld} for "{material_name}" seems large for '
+                f'absolute units (A^-2). Verify the file stores SLD in A^-2, not '
+                f'10^-6 A^-2, as the value is multiplied by 1e6 internally.',
+                UserWarning,
+                stacklevel=3,
+            )
 
     return m_sld, m_isld
 
 
-def load_orso_data(orso_str: str) -> DataSet1D:
+def load_orso_data(orso_data) -> DataSet1D:
+    """Convert parsed ORSO dataset objects into a scipp DataGroup.
+
+    :param orso_data: Parsed ORSO dataset list (as returned by ``orso.load_orso``).
+    :type orso_data: list
+    :return: A scipp DataGroup with data, coords, and attrs.
+    :rtype: sc.DataGroup
+    """
     data = {}
     coords = {}
     attrs = {}
-    for i, o in enumerate(orso_str):
+    for i, o in enumerate(orso_data):
         name = i
         if o.info.data_set is not None:
             name = o.info.data_set

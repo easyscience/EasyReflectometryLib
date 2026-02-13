@@ -17,7 +17,7 @@ from scipp import DataGroup
 from easyreflectometry.calculators import CalculatorFactory
 from easyreflectometry.data import DataSet1D
 from easyreflectometry.data import load_as_dataset
-from easyreflectometry.data.measurement import _extract_orso_title
+from easyreflectometry.data.measurement import extract_orso_title
 from easyreflectometry.data.measurement import load_data_from_orso_file
 from easyreflectometry.fitting import MultiFitter
 from easyreflectometry.model import LinearSpline
@@ -349,88 +349,77 @@ class Project:
                     materials_in_model.append(layer.material)
         return materials_in_model
 
-    def load_new_experiment(self, path: Union[Path, str]) -> None:
-        new_experiment = load_as_dataset(str(path))
-        new_index = len(self._experiments)
+    def _apply_experiment_metadata(
+        self,
+        path: Union[Path, str],
+        experiment: DataSet1D,
+        fallback_name: str,
+    ) -> None:
+        """Set experiment name from ORSO title and configure the resolution function.
 
+        :param path: Path to the experiment data file.
+        :param experiment: The loaded experiment dataset to configure.
+        :param fallback_name: Name to use when no ORSO title is available.
+        """
         # Prefer ORSO title when available (keeps UI descriptive)
         title = None
         try:
             data_group = load_data_from_orso_file(str(path))
             data_key = list(data_group['data'].keys())[0]
-            title = _extract_orso_title(data_group, data_key)
-        except Exception:
+            title = extract_orso_title(data_group, data_key)
+        except (KeyError, AttributeError, ValueError, IndexError):
             title = None
 
         if title:
-            new_experiment.name = title
-        elif not new_experiment.name or new_experiment.name == 'Series':
-            new_experiment.name = f'Experiment {new_index}'
+            experiment.name = title
+        elif not experiment.name or experiment.name == 'Series':
+            experiment.name = fallback_name
+
+    def _apply_resolution_function(
+        self,
+        experiment: DataSet1D,
+        model: Model,
+    ) -> None:
+        """Set the resolution function on *model* based on variance data in *experiment*.
+
+        Prefers Pointwise when q-resolution (xe) data is present, otherwise falls
+        back to LinearSpline when reflectivity error (ye) data is present.
+
+        :param experiment: The experiment whose variance data drives the choice.
+        :param model: The model whose resolution function is set.
+        """
+        if sum(experiment.xe) != 0:
+            resolution_function = Pointwise(q_data_points=[experiment.x, experiment.y, experiment.xe])
+            model.resolution_function = resolution_function
+        elif sum(experiment.ye) != 0:
+            resolution_function = LinearSpline(
+                q_data_points=experiment.x,
+                fwhm_values=np.sqrt(experiment.ye),
+            )
+            model.resolution_function = resolution_function
+
+    def load_new_experiment(self, path: Union[Path, str]) -> None:
+        new_experiment = load_as_dataset(str(path))
+        new_index = len(self._experiments)
 
         model_index = 0
         if new_index < len(self.models):
             model_index = new_index
+
+        self._apply_experiment_metadata(path, new_experiment, f'Experiment {new_index}')
         new_experiment.model = self.models[model_index]
         self._experiments[new_index] = new_experiment
-        # self._current_model_index = new_index
         self._with_experiments = True
-
-        # Set the resolution function if variance data is present
-        # Prefer Pointwise when q-resolution (xe) data is present, otherwise fall back to LinearSpline
-        if sum(new_experiment.xe) != 0:
-            resolution_function = Pointwise(
-                q_data_points=[
-                    self._experiments[new_index].x,
-                    self._experiments[new_index].y,
-                    self._experiments[new_index].xe,
-                ]
-            )
-            self.models[model_index].resolution_function = resolution_function
-        elif sum(new_experiment.ye) != 0:
-            resolution_function = LinearSpline(
-                q_data_points=self._experiments[new_index].x,
-                fwhm_values=np.sqrt(self._experiments[new_index].ye),
-            )
-            self.models[model_index].resolution_function = resolution_function
+        self._apply_resolution_function(new_experiment, self.models[model_index])
 
     def load_experiment_for_model_at_index(self, path: Union[Path, str], index: Optional[int] = 0) -> None:
-        self._experiments[index] = load_as_dataset(str(path))
+        experiment = load_as_dataset(str(path))
 
-        # Prefer ORSO title when available
-        title = None
-        try:
-            data_group = load_data_from_orso_file(str(path))
-            data_key = list(data_group['data'].keys())[0]
-            title = _extract_orso_title(data_group, data_key)
-        except Exception:
-            title = None
-
-        if title:
-            self._experiments[index].name = title
-        elif not self._experiments[index].name or self._experiments[index].name == 'Series':
-            self._experiments[index].name = f'Experiment {index}'
-
-        self._experiments[index].model = self.models[index]
-
+        self._apply_experiment_metadata(path, experiment, f'Experiment {index}')
+        experiment.model = self.models[index]
+        self._experiments[index] = experiment
         self._with_experiments = True
-
-        # Set the resolution function if variance data is present
-        # Prefer Pointwise when q-resolution (xe) data is present, otherwise fall back to LinearSpline
-        if sum(self._experiments[index].xe) != 0:
-            resolution_function = Pointwise(
-                q_data_points=[
-                    self._experiments[index].x,
-                    self._experiments[index].y,
-                    self._experiments[index].xe,
-                ]
-            )
-            self._models[index].resolution_function = resolution_function
-        elif sum(self._experiments[index].ye) != 0:
-            resolution_function = LinearSpline(
-                q_data_points=self._experiments[index].x,
-                fwhm_values=np.sqrt(self._experiments[index].ye),
-            )
-            self._models[index].resolution_function = resolution_function
+        self._apply_resolution_function(experiment, self._models[index])
 
     def sld_data_for_model_at_index(self, index: int = 0) -> DataSet1D:
         self.models[index].interface = self._calculator
@@ -481,41 +470,21 @@ class Project:
         ]
         sample = Sample(*assemblies, interface=self._calculator)
         model = Model(sample=sample, interface=self._calculator)
+        model.is_default = True
         self.models = ModelCollection([model])
 
     def is_default_model(self, index: int) -> bool:
         """Check if the model at the given index is a default model.
 
-        A default model has exactly 3 assemblies named 'Superphase', 'D2O', and 'Subphase',
-        each containing a single layer with specific names.
-
         :param index: Index of the model to check.
-        :return: True if the model matches the default model structure.
+        :type index: int
+        :return: True if the model was created as a default placeholder.
+        :rtype: bool
         """
         if index < 0 or index >= len(self._models):
             return False
 
-        model = self._models[index]
-        sample = model.sample
-
-        # Check for exactly 3 assemblies with expected names
-        if len(sample) != 3:
-            return False
-
-        expected_assembly_names = ['Superphase', 'D2O', 'Subphase']
-        expected_layer_names = ['Vacuum Layer', 'D2O Layer', 'Si Layer']
-
-        for assembly, expected_assembly_name, expected_layer_name in zip(
-            sample, expected_assembly_names, expected_layer_names
-        ):
-            if assembly.name != expected_assembly_name:
-                return False
-            if len(assembly.layers) != 1:
-                return False
-            if assembly.layers[0].name != expected_layer_name:
-                return False
-
-        return True
+        return self._models[index].is_default
 
     def remove_model_at_index(self, index: int) -> None:
         """Remove the model at the given index.

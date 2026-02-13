@@ -39,7 +39,7 @@ def load_as_dataset(fname: Union[TextIO, str]) -> DataSet1D:
     return dataset
 
 
-def _extract_orso_title(data_group: sc.DataGroup, data_name: str) -> str | None:
+def extract_orso_title(data_group: sc.DataGroup, data_name: str) -> str | None:
     try:
         header = data_group['attrs'][data_name]['orso_header']
         title = header.values.get('data_source', {}).get('experiment', {}).get('title')

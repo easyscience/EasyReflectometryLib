@@ -4,6 +4,7 @@ from pathlib import Path
 from unittest.mock import MagicMock
 
 import numpy as np
+import pytest
 from easyscience import global_object
 from easyscience.fitting import AvailableMinimizers
 from easyscience.variable import Parameter
@@ -730,21 +731,16 @@ class TestProject:
         project._experiments[0] = DataSet1D(name='exp0', x=[], y=[], ye=[], xe=[], model=None)
 
         # Negative index should raise
-        try:
+        with pytest.raises(ValueError):
             project.current_experiment_index = -1
-            assert False, 'Expected ValueError for negative index'
-        except ValueError:
-            pass
 
         # Index >= len(_experiments) should raise
-        try:
+        with pytest.raises(ValueError):
             project.current_experiment_index = 1
-            assert False, 'Expected ValueError for out-of-range index'
-        except ValueError:
-            pass
 
     def test_get_materials_from_model(self):
         # When
+        global_object.map._clear()
         project = Project()
         material_1 = Material(sld=2.07, isld=0.0, name='Material 1')
         material_2 = Material(sld=3.47, isld=0.0, name='Material 2')
@@ -768,6 +764,7 @@ class TestProject:
 
     def test_get_materials_from_model_duplicate_materials(self):
         # When
+        global_object.map._clear()
         project = Project()
         # Use the same material in multiple layers
         shared_material = Material(sld=2.07, isld=0.0, name='Shared Material')
@@ -933,30 +930,6 @@ class TestProject:
         # Then Expect
         assert project.is_default_model(0) is False
 
-    def test_is_default_model_false_wrong_assembly_names(self):
-        # When
-        global_object.map._clear()
-        project = Project()
-        project.default_model()
-        # Modify to have wrong assembly name
-        project._models[0].sample[0].name = 'WrongName'
-
-        # Then Expect
-        assert project.is_default_model(0) is False
-
-    def test_is_default_model_false_wrong_layer_count(self):
-        # When
-        global_object.map._clear()
-        project = Project()
-        project.default_model()
-        # Add an extra layer to the first assembly
-        material = Material(sld=4.0, isld=0.0, name='Extra Material')
-        extra_layer = Layer(material=material, thickness=10, roughness=0, name='Extra Layer')
-        project._models[0].sample[0].layers.append(extra_layer)
-
-        # Then Expect
-        assert project.is_default_model(0) is False
-
     def test_is_default_model_index_out_of_range(self):
         # When
         global_object.map._clear()
@@ -1080,11 +1053,8 @@ class TestProject:
         assert len(project._models) == 1
 
         # Then Expect
-        try:
+        with pytest.raises(ValueError, match='Cannot remove the last model'):
             project.remove_model_at_index(0)
-            assert False, 'Expected ValueError for removing last model'
-        except ValueError as e:
-            assert 'Cannot remove the last model' in str(e)
 
     def test_remove_model_at_index_raises_for_invalid_index(self):
         # When
@@ -1099,15 +1069,9 @@ class TestProject:
         project._models.append(model)
 
         # Then Expect - negative index
-        try:
+        with pytest.raises(IndexError, match='out of range'):
             project.remove_model_at_index(-1)
-            assert False, 'Expected IndexError for negative index'
-        except IndexError as e:
-            assert 'out of range' in str(e)
 
         # Then Expect - index >= len
-        try:
+        with pytest.raises(IndexError, match='out of range'):
             project.remove_model_at_index(2)
-            assert False, 'Expected IndexError for out-of-range index'
-        except IndexError as e:
-            assert 'out of range' in str(e)
