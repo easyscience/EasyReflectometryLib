@@ -24,59 +24,57 @@ from easyreflectometry.sample import Sample
 def make_pooch(base_url: str, registry: dict[str, str | None]) -> pooch.Pooch:
     """Make a Pooch object to download test data."""
     return pooch.create(
-        path=pooch.os_cache("data"),
-        env="POOCH_DIR",
+        path=pooch.os_cache('data'),
+        env='POOCH_DIR',
         base_url=base_url,
         registry=registry,
     )
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope='module')
 def data_registry():
     return make_pooch(
-        base_url="https://pub-6c25ef91903d4301a3338bd53b370098.r2.dev",
+        base_url='https://pub-6c25ef91903d4301a3338bd53b370098.r2.dev',
         registry={
-            "amor_reduced_iofq.ort": None,
+            'amor_reduced_iofq.ort': None,
         },
     )
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope='module')
 def load_data(data_registry):
-    path = data_registry.fetch("amor_reduced_iofq.ort")
-    logging.info("Loading data from %s", path)
+    path = data_registry.fetch('amor_reduced_iofq.ort')
+    logging.info('Loading data from %s', path)
     data = load(path)
     return data
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope='module')
 def fit_model(load_data):
     data = load_data
     # Rescale data
-    reflectivity = data["data"]["R_0"].values
+    reflectivity = data['data']['R_0'].values
     scale_factor = 1 / np.max(reflectivity)
-    data["data"]["R_0"].values *= scale_factor
+    data['data']['R_0'].values *= scale_factor
 
     # Create a model for the sample
 
-    si = Material(sld=2.07, isld=0.0, name="Si")
-    sio2 = Material(sld=3.47, isld=0.0, name="SiO2")
-    d2o = Material(sld=6.33, isld=0.0, name="D2O")
-    dlipids = Material(sld=5.0, isld=0.0, name="DLipids")
+    si = Material(sld=2.07, isld=0.0, name='Si')
+    sio2 = Material(sld=3.47, isld=0.0, name='SiO2')
+    d2o = Material(sld=6.33, isld=0.0, name='D2O')
+    dlipids = Material(sld=5.0, isld=0.0, name='DLipids')
 
-    superphase = Layer(material=si, thickness=0, roughness=0, name="Si superphase")
-    sio2_layer = Layer(material=sio2, thickness=20, roughness=4, name="SiO2 layer")
-    dlipids_layer = Layer(
-        material=dlipids, thickness=40, roughness=4, name="DLipids layer"
-    )
-    subphase = Layer(material=d2o, thickness=0, roughness=5, name="D2O subphase")
+    superphase = Layer(material=si, thickness=0, roughness=0, name='Si superphase')
+    sio2_layer = Layer(material=sio2, thickness=20, roughness=4, name='SiO2 layer')
+    dlipids_layer = Layer(material=dlipids, thickness=40, roughness=4, name='DLipids layer')
+    subphase = Layer(material=d2o, thickness=0, roughness=5, name='D2O subphase')
 
     multi_sample = Sample(
         Multilayer(superphase),
         Multilayer(sio2_layer),
         Multilayer(dlipids_layer),
         Multilayer(subphase),
-        name="Multilayer Structure",
+        name='Multilayer Structure',
     )
 
     multi_layer_model = Model(
@@ -84,7 +82,7 @@ def fit_model(load_data):
         scale=1,
         background=0.000001,
         resolution_function=PercentageFwhm(0),
-        name="Multilayer Model",
+        name='Multilayer Model',
     )
 
     # Set the fitting parameters
@@ -122,66 +120,60 @@ def fit_model(load_data):
 
 
 def test_read_reduced_data__check_structure(load_data):
-    data_keys = load_data["data"].keys()
-    coord_keys = load_data["coords"].keys()
+    data_keys = load_data['data'].keys()
+    coord_keys = load_data['coords'].keys()
     for key in data_keys:
         if key in coord_keys:
-            assert len(load_data["data"][key].values) == len(
-                load_data["coords"][key].values
-            )
+            assert len(load_data['data'][key].values) == len(load_data['coords'][key].values)
 
 
 def test_validate_physical_data__r_values_non_negative(load_data):
-    for key in load_data["data"].keys():
-        assert all(load_data["data"][key].values >= 0)
+    for key in load_data['data'].keys():
+        assert all(load_data['data'][key].values >= 0)
 
 
 def test_validate_physical_data__r_values_finite(load_data):
-    for key in load_data["data"].keys():
-        assert all(np.isfinite(load_data["data"][key].values))
+    for key in load_data['data'].keys():
+        assert all(np.isfinite(load_data['data'][key].values))
 
 
-@pytest.mark.skip("Currently no warning implemented")
+@pytest.mark.skip('Currently no warning implemented')
 def test_validate_physical_data__r_values_ureal_positive(load_data):
-    a = load_data["data"]["R_0"].values
-    b = 1 + 2 * np.sqrt(load_data["data"]["R_0"].variances)
+    a = load_data['data']['R_0'].values
+    b = 1 + 2 * np.sqrt(load_data['data']['R_0'].variances)
     for val_a, val_b in zip(a, b):
         if val_a > val_b:
             pytest.warns(
-                UserWarning,
-                reason=f"Reflectivity value {val_a} is unphysically large compared to its uncertainty {val_b}"
+                UserWarning, reason=f'Reflectivity value {val_a} is unphysically large compared to its uncertainty {val_b}'
             )
-    assert all(
-        load_data["data"]["R_0"].values
-        <= 1 + 2 * np.sqrt(load_data["data"]["R_0"].variances)
-    )
+    assert all(load_data['data']['R_0'].values <= 1 + 2 * np.sqrt(load_data['data']['R_0'].variances))
 
 
 def test_validate_physical_data__q_values_non_negative(load_data):
-    for key in load_data["coords"].keys():
-        assert all(load_data["coords"][key].values >= 0)
+    for key in load_data['coords'].keys():
+        assert all(load_data['coords'][key].values >= 0)
 
 
 def test_validate_physical_data__q_values_ureal_positive(load_data):
-    for key in load_data["coords"].keys():
+    for key in load_data['coords'].keys():
         # Reflectometry data is usually with the range of 0-5,
         # so 10 is a safe upper limit
-        assert all(load_data["coords"][key].values < 10)
+        assert all(load_data['coords'][key].values < 10)
 
 
 def test_validate_physical_data__q_values_finite(load_data):
-    for key in load_data["coords"].keys():
-        assert all(np.isfinite(load_data["coords"][key].values < 10))
+    for key in load_data['coords'].keys():
+        assert all(np.isfinite(load_data['coords'][key].values < 10))
 
 
-@pytest.mark.skip("Currently no meta data to check")
+@pytest.mark.skip('Currently no meta data to check')
 def test_validate_meta_data__required_meta_data() -> None:
-    pytest.fail(reason="Currently no meta data to check")
+    pytest.fail(reason='Currently no meta data to check')
 
 
 def test_analyze_reduced_data__fit_model_success(fit_model):
-    assert fit_model["success"] is True
+    assert fit_model['success'] is True
 
 
 def test_analyze_reduced_data__fit_model_reasonable(fit_model):
-    assert fit_model["reduced_chi"] < 0.01
+    assert fit_model['reduced_chi'] < 0.01

@@ -17,7 +17,10 @@ from scipp import DataGroup
 from easyreflectometry.calculators import CalculatorFactory
 from easyreflectometry.data import DataSet1D
 from easyreflectometry.data import load_as_dataset
+from easyreflectometry.data.measurement import extract_orso_title
+from easyreflectometry.data.measurement import load_data_from_orso_file
 from easyreflectometry.fitting import MultiFitter
+from easyreflectometry.model import LinearSpline
 from easyreflectometry.model import Model
 from easyreflectometry.model import ModelCollection
 from easyreflectometry.model import PercentageFwhm
@@ -70,11 +73,20 @@ class Project:
 
     @property
     def parameters(self) -> List[Parameter]:
-        """Get all parameters from all models in the project."""
+        """Get all unique parameters from all models in the project.
+
+        Parameters shared across multiple models (e.g. material SLD) are
+        only included once to avoid double-counting.
+        """
         parameters = []
+        seen_ids: set[int] = set()
         if self._models is not None:
             for model in self._models:
-                parameters.extend(model.get_parameters())
+                for param in model.get_parameters():
+                    pid = id(param)
+                    if pid not in seen_ids:
+                        seen_ids.add(pid)
+                        parameters.append(param)
         return parameters
 
     @property
@@ -258,6 +270,8 @@ class Project:
 
         model, data = LoadOrso(path)
         if model is not None:
+            if isinstance(model, Sample):
+                model = Model(sample=model, name=model.name)
             self.models = ModelCollection([model])
         else:
             self.default_model()
@@ -268,49 +282,148 @@ class Project:
             self._with_experiments = True
         pass
 
-    def set_sample_from_orso(self, sample) -> None:
+    def set_sample_from_orso(self, sample: Sample) -> None:
+        """Replace the current project model collection with a single model built from an ORSO-parsed sample.
+
+        This is a convenience helper for the ORSO import pipeline where a complete
+        :class:`~easyreflectometry.sample.Sample` is constructed elsewhere.
+
+        :param sample: Sample to set as the project's (single) model.
+        :type sample: easyreflectometry.sample.Sample
+        :return: ``None``.
+        :rtype: None
+        """
         model = Model(sample=sample)
         self.models = ModelCollection([model])
+
+    def add_sample_from_orso(self, sample: Sample) -> None:
+        """Add a new model with the given sample to the existing model collection.
+
+        The created model is appended to :attr:`models`, its calculator interface is
+        set to the project's current calculator, and any materials referenced in the
+        sample are added to the project's material collection.
+
+        After adding the model, :attr:`current_model_index` is updated to point to
+        the newly added model.
+
+        :param sample: Sample to add as a new model.
+        :type sample: easyreflectometry.sample.Sample
+        :return: ``None``.
+        :rtype: None
+        """
+        if sample is None:
+            raise ValueError('The ORSO file does not contain a valid sample model definition.')
+        model = Model(sample=sample)
+        self.models.add_model(model)
+        # Set interface after adding to collection
+        model.interface = self._calculator
+        # Extract materials from the new model and add to project materials
+        self._materials.extend(self._get_materials_from_model(model))
+        # Switch to the newly added model so its data is visible in the UI
+        self.current_model_index = len(self._models) - 1
+
+    def replace_models_from_orso(self, sample: Sample) -> None:
+        """Replace all models and materials with a single model from an ORSO sample.
+
+        All existing models and their associated materials are removed. A new
+        model is created from *sample*, assigned to the project's calculator,
+        and the material collection is rebuilt from the new model only.
+
+        :param sample: Sample to set as the project's only model.
+        :type sample: easyreflectometry.sample.Sample
+        :return: ``None``.
+        :rtype: None
+        """
+        if sample is None:
+            raise ValueError('The ORSO file does not contain a valid sample model definition.')
+        model = Model(sample=sample)
+        if sample.name:
+            model.user_data['original_name'] = sample.name  # Store original name for reference
+        self.models = ModelCollection([model])
+        model.interface = self._calculator
+        self._materials = self._get_materials_from_model(model)
+        self.current_model_index = 0
+
+    def _get_materials_from_model(self, model: Model) -> 'MaterialCollection':
+        """Get all materials from a single model's sample."""
+        materials_in_model = MaterialCollection(populate_if_none=False)
+        for assembly in model.sample:
+            for layer in assembly.layers:
+                if layer.material not in materials_in_model:
+                    materials_in_model.append(layer.material)
+        return materials_in_model
+
+    def _apply_experiment_metadata(
+        self,
+        path: Union[Path, str],
+        experiment: DataSet1D,
+        fallback_name: str,
+    ) -> None:
+        """Set experiment name from ORSO title and configure the resolution function.
+
+        :param path: Path to the experiment data file.
+        :param experiment: The loaded experiment dataset to configure.
+        :param fallback_name: Name to use when no ORSO title is available.
+        """
+        # Prefer ORSO title when available (keeps UI descriptive)
+        title = None
+        try:
+            data_group = load_data_from_orso_file(str(path))
+            data_key = list(data_group['data'].keys())[0]
+            title = extract_orso_title(data_group, data_key)
+        except (KeyError, AttributeError, ValueError, IndexError):
+            title = None
+
+        if title:
+            experiment.name = title
+        elif not experiment.name or experiment.name == 'Series':
+            experiment.name = fallback_name
+
+    def _apply_resolution_function(
+        self,
+        experiment: DataSet1D,
+        model: Model,
+    ) -> None:
+        """Set the resolution function on *model* based on variance data in *experiment*.
+
+        Prefers Pointwise when q-resolution (xe) data is present, otherwise falls
+        back to LinearSpline when reflectivity error (ye) data is present.
+
+        :param experiment: The experiment whose variance data drives the choice.
+        :param model: The model whose resolution function is set.
+        """
+        if sum(experiment.xe) != 0:
+            resolution_function = Pointwise(q_data_points=[experiment.x, experiment.y, experiment.xe])
+            model.resolution_function = resolution_function
+        elif sum(experiment.ye) != 0:
+            resolution_function = LinearSpline(
+                q_data_points=experiment.x,
+                fwhm_values=np.sqrt(experiment.ye),
+            )
+            model.resolution_function = resolution_function
 
     def load_new_experiment(self, path: Union[Path, str]) -> None:
         new_experiment = load_as_dataset(str(path))
         new_index = len(self._experiments)
-        new_experiment.name = f'Experiment {new_index}'
+
         model_index = 0
         if new_index < len(self.models):
             model_index = new_index
+
+        self._apply_experiment_metadata(path, new_experiment, f'Experiment {new_index}')
         new_experiment.model = self.models[model_index]
         self._experiments[new_index] = new_experiment
-        # self._current_model_index = new_index
         self._with_experiments = True
-
-        # Set the resolution function if variance data is present
-        if sum(new_experiment.ye) != 0:
-            q = new_experiment.x
-            reflectivity = new_experiment.y
-            q_error = new_experiment.xe
-            # TODO: set resolution function based on value of control in GUI
-            resolution_function = Pointwise(q_data_points=[q, reflectivity, q_error])
-            self.models[model_index].resolution_function = resolution_function
+        self._apply_resolution_function(new_experiment, self.models[model_index])
 
     def load_experiment_for_model_at_index(self, path: Union[Path, str], index: Optional[int] = 0) -> None:
-        self._experiments[index] = load_as_dataset(str(path))
-        self._experiments[index].name = f'Experiment {index}'
-        self._experiments[index].model = self.models[index]
+        experiment = load_as_dataset(str(path))
 
+        self._apply_experiment_metadata(path, experiment, f'Experiment {index}')
+        experiment.model = self.models[index]
+        self._experiments[index] = experiment
         self._with_experiments = True
-
-        # Set the resolution function if variance data is present
-        if sum(self._experiments[index].ye) != 0:
-            q = self._experiments[index].x
-            reflectivity = self._experiments[index].y
-            q_error = self._experiments[index].xe
-            resolution_function = Pointwise(q_data_points=[q, reflectivity, q_error])
-            # resolution_function = LinearSpline(
-            #     q_data_points=self._experiments[index].y,
-            #     fwhm_values=np.sqrt(self._experiments[index].ye),
-            # )
-            self._models[index].resolution_function = resolution_function
+        self._apply_resolution_function(experiment, self._models[index])
 
     def sld_data_for_model_at_index(self, index: int = 0) -> DataSet1D:
         self.models[index].interface = self._calculator
@@ -361,7 +474,67 @@ class Project:
         ]
         sample = Sample(*assemblies, interface=self._calculator)
         model = Model(sample=sample, interface=self._calculator)
+        model.is_default = True
         self.models = ModelCollection([model])
+
+    def is_default_model(self, index: int) -> bool:
+        """Check if the model at the given index is a default model.
+
+        :param index: Index of the model to check.
+        :type index: int
+        :return: True if the model was created as a default placeholder.
+        :rtype: bool
+        """
+        if index < 0 or index >= len(self._models):
+            return False
+
+        return self._models[index].is_default
+
+    def remove_model_at_index(self, index: int) -> None:
+        """Remove the model at the given index.
+
+        Removes the model from the model collection, removes the experiment at the
+        same index (if any), and reindexes experiments above the removed index so
+        model/experiment indices stay aligned.
+
+        Adjusts the current model index if necessary.
+
+        :param index: Index of the model to remove.
+        :type index: int
+        :raises IndexError: If the index is out of range.
+        :raises ValueError: If trying to remove the last remaining model.
+        """
+        if index < 0 or index >= len(self._models):
+            raise IndexError(f'Model index {index} out of range')
+
+        if len(self._models) <= 1:
+            raise ValueError('Cannot remove the last model from the project')
+
+        # Remove the model from the collection
+        self._models.pop(index)
+
+        # Remove experiment mapped to the removed model index.
+        if index in self._experiments:
+            self._experiments.pop(index)
+
+        # Reindex experiments above the removed model index to keep mapping aligned.
+        reindexed_experiments: dict[int, DataSet1D] = {}
+        for exp_index, experiment in sorted(self._experiments.items()):
+            if exp_index > index:
+                reindexed_experiments[exp_index - 1] = experiment
+            else:
+                reindexed_experiments[exp_index] = experiment
+        self._experiments = reindexed_experiments
+
+        # Adjust current model index if necessary
+        if self._current_model_index >= len(self._models):
+            self._current_model_index = len(self._models) - 1
+        elif self._current_model_index > index:
+            self._current_model_index -= 1
+
+        # Reset assembly and layer indices for the new current model
+        self._current_assembly_index = 0
+        self._current_layer_index = 0
 
     def add_material(self, material: MaterialCollection) -> None:
         if material in self._materials:

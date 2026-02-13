@@ -7,7 +7,7 @@ import numpy as np
 from easyscience.fitting.calculators.interface_factory import ItemContainer
 from easyscience.io import SerializerComponent
 
-#if TYPE_CHECKING:
+# if TYPE_CHECKING:
 from easyreflectometry.model import Model
 from easyreflectometry.sample import BaseAssembly
 from easyreflectometry.sample import Layer

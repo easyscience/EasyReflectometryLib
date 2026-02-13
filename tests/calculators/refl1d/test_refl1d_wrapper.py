@@ -232,7 +232,7 @@ class TestRefl1d(unittest.TestCase):
             5.7605e-07,
             2.3775e-07,
             1.3093e-07,
-            1.0520e-07
+            1.0520e-07,
         ]
         assert_almost_equal(p.calculate(q, 'MyModel'), expected, decimal=4)
 
@@ -276,7 +276,7 @@ class TestRefl1d(unittest.TestCase):
             1.0968e-06,
             4.5635e-07,
             3.4120e-07,
-            2.7505e-07
+            2.7505e-07,
         ]
         assert_almost_equal(p.calculate(q, 'MyModel'), expected, decimal=4)
 
@@ -396,7 +396,7 @@ def test_get_polarized_probe_oversampling():
     probe = _get_polarized_probe(q_array=q, dq_array=dq, model_name=model_name, storage=storage, oversampling_factor=2)
 
     # Then
-    assert len(probe.xs[0].calc_Qo) == 2*len(q)
+    assert len(probe.xs[0].calc_Qo) == 2 * len(q)
 
 
 def test_get_polarized_probe_polarization():

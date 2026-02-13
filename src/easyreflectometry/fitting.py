@@ -55,13 +55,13 @@ class MultiFitter:
             variances = data['data'][f'R_{i}'].variances
 
             # Find points with non-zero variance
-            zero_variance_mask = (variances == 0.0)
+            zero_variance_mask = variances == 0.0
             num_zero_variance = np.sum(zero_variance_mask)
 
             if num_zero_variance > 0:
                 warnings.warn(
-                    f"Masked {num_zero_variance} data point(s) in reflectivity {i} due to zero variance during fitting.",
-                    UserWarning
+                    f'Masked {num_zero_variance} data point(s) in reflectivity {i} due to zero variance during fitting.',
+                    UserWarning,
                 )
 
             # Keep only points with non-zero variances

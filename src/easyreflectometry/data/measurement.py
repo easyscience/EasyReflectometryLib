@@ -30,12 +30,25 @@ def load_as_dataset(fname: Union[TextIO, str]) -> DataSet1D:
     coords_name = 'Qz_' + basename
     coords_name = list(data_group['coords'].keys())[0] if coords_name not in data_group['coords'] else coords_name
     data_name = list(data_group['data'].keys())[0] if data_name not in data_group['data'] else data_name
-    return DataSet1D(
+    dataset = DataSet1D(
         x=data_group['coords'][coords_name].values,
         y=data_group['data'][data_name].values,
         ye=data_group['data'][data_name].variances,
         xe=data_group['coords'][coords_name].variances,
     )
+    return dataset
+
+
+def extract_orso_title(data_group: sc.DataGroup, data_name: str) -> str | None:
+    try:
+        header = data_group['attrs'][data_name]['orso_header']
+        title = header.values.get('data_source', {}).get('experiment', {}).get('title')
+    except (AttributeError, KeyError, TypeError):
+        return None
+    if title is None:
+        return None
+    title_str = str(title).strip()
+    return title_str or None
 
 
 def _load_txt(fname: Union[TextIO, str]) -> sc.DataGroup:

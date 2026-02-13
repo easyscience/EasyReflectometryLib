@@ -19,6 +19,15 @@ Sample is build from assemblies.
    
    sample
 
+Project
+=======
+Project provides a higher-level interface for managing models, experiments, and ORSO import.
+
+.. toctree::
+   :maxdepth: 1
+
+   project
+
 Assemblies
 ==========
 Assemblies are collections of layers that are used to represent a specific physical setup.
