@@ -99,7 +99,9 @@ class MultiFitter:
         :param data: DataGroup to be fitted to and populated
         :param method: Optimisation method
         """
-        return self.easy_science_multi_fitter.fit(x=[data.x], y=[data.y], weights=[data.ye])[0]
+        # ye contains variances (sigma²); weights = 1/sigma = 1/sqrt(variance)
+        weights = 1.0 / np.sqrt(data.ye)
+        return self.easy_science_multi_fitter.fit(x=[data.x], y=[data.y], weights=[weights])[0]
 
     def switch_minimizer(self, minimizer: AvailableMinimizers) -> None:
         """

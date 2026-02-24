@@ -392,15 +392,7 @@ class Project:
         :param experiment: The experiment whose variance data drives the choice.
         :param model: The model whose resolution function is set.
         """
-        if sum(experiment.xe) != 0:
-            resolution_function = Pointwise(q_data_points=[experiment.x, experiment.y, experiment.xe])
-            model.resolution_function = resolution_function
-        elif sum(experiment.ye) != 0:
-            resolution_function = LinearSpline(
-                q_data_points=experiment.x,
-                fwhm_values=np.sqrt(experiment.ye),
-            )
-            model.resolution_function = resolution_function
+        model.resolution_function = PercentageFwhm(5.0)
 
     def load_new_experiment(self, path: Union[Path, str]) -> None:
         new_experiment = load_as_dataset(str(path))
