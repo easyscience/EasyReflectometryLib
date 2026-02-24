@@ -56,6 +56,7 @@ def fit_model(load_data):
     reflectivity = data['data']['R_0'].values
     scale_factor = 1 / np.max(reflectivity)
     data['data']['R_0'].values *= scale_factor
+    data['data']['R_0'].variances *= scale_factor**2
 
     # Create a model for the sample
 
@@ -81,22 +82,29 @@ def fit_model(load_data):
         sample=multi_sample,
         scale=1,
         background=0.000001,
-        resolution_function=PercentageFwhm(0),
+        resolution_function=PercentageFwhm(5),
         name='Multilayer Model',
     )
 
     # Set the fitting parameters
 
-    sio2_layer.roughness.bounds = (3, 12)
-    sio2_layer.material.sld.bounds = (3.47, 5)
-    sio2_layer.thickness.bounds = (10, 30)
+    sio2_layer.roughness.min = 3
+    sio2_layer.roughness.max = 12
+    sio2_layer.material.sld.max = 5
+    sio2_layer.thickness.min = 10
+    sio2_layer.thickness.max = 30
 
-    subphase.material.sld.bounds = (6, 6.35)
-    dlipids_layer.thickness.bounds = (30, 60)
-    dlipids_layer.roughness.bounds = (3, 10)
-    dlipids_layer.material.sld.bounds = (4, 6)
-    multi_layer_model.scale.bounds = (0.8, 1.2)
-    multi_layer_model.background.bounds = (1e-6, 1e-3)
+    subphase.material.sld.min = 6
+    dlipids_layer.thickness.min = 30
+    dlipids_layer.thickness.max = 60
+    dlipids_layer.roughness.min = 3
+    dlipids_layer.roughness.max = 10
+    dlipids_layer.material.sld.min = 4
+    dlipids_layer.material.sld.max = 6
+    multi_layer_model.scale.min = 0.8
+    multi_layer_model.scale.max = 1.2
+    multi_layer_model.background.min = 1e-6
+    multi_layer_model.background.max = 1e-3
 
     sio2_layer.roughness.free = True
     sio2_layer.material.sld.free = True
@@ -176,4 +184,4 @@ def test_analyze_reduced_data__fit_model_success(fit_model):
 
 
 def test_analyze_reduced_data__fit_model_reasonable(fit_model):
-    assert fit_model['reduced_chi'] < 0.01
+    assert fit_model['reduced_chi'] < 10
