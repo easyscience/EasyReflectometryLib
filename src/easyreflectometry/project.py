@@ -1,5 +1,6 @@
 import datetime
 import json
+import logging
 import os
 from pathlib import Path
 from typing import Dict
@@ -7,10 +8,11 @@ from typing import List
 from typing import Optional
 from typing import Union
 
+logger = logging.getLogger(__name__)
+
 import numpy as np
 from easyscience import global_object
 from easyscience.fitting import AvailableMinimizers
-from easyscience.fitting.fitter import DEFAULT_MINIMIZER
 from easyscience.variable import Parameter
 from scipp import DataGroup
 
@@ -46,6 +48,7 @@ class Project:
         self._calculator = CalculatorFactory()
         self._experiments: Dict[DataGroup] = {}
         self._fitter: MultiFitter = None
+        self._minimizer_selection: AvailableMinimizers = DEFAULT_MINIZER
         self._colors: list[str] = None
         self._report = None
         self._q_min: float = None
@@ -205,9 +208,8 @@ class Project:
     def fitter(self) -> MultiFitter:
         if len(self._models):
             if (self._fitter is None) or (self._fitter_model_index != self._current_model_index):
-                minimizer = self.minimizer
                 self._fitter = MultiFitter(self._models[self._current_model_index])
-                self.minimizer = minimizer
+                self._fitter.easy_science_multi_fitter.switch_minimizer(self._minimizer_selection)
                 self._fitter_model_index = self._current_model_index
         return self._fitter
 
@@ -223,10 +225,14 @@ class Project:
     def minimizer(self) -> AvailableMinimizers:
         if self._fitter is not None:
             return self._fitter.easy_science_multi_fitter.minimizer.enum
-        return DEFAULT_MINIMIZER
+        return self._minimizer_selection
 
     @minimizer.setter
     def minimizer(self, minimizer: AvailableMinimizers) -> None:
+        old_name = getattr(self._minimizer_selection, 'name', str(self._minimizer_selection))
+        new_name = getattr(minimizer, 'name', str(minimizer))
+        logger.info('Minimizer changed from %s to %s (fitter active: %s)', old_name, new_name, self._fitter is not None)
+        self._minimizer_selection = minimizer
         if self._fitter is not None:
             self._fitter.easy_science_multi_fitter.switch_minimizer(minimizer)
 
@@ -593,6 +599,8 @@ class Project:
             self._as_dict_add_experiments(project_dict)
         if self.fitter is not None:
             project_dict['fitter_minimizer'] = self.fitter.easy_science_multi_fitter.minimizer.name
+        elif self._minimizer_selection is not None:
+            project_dict['fitter_minimizer'] = self._minimizer_selection.name
         if self._calculator is not None:
             project_dict['calculator'] = self._calculator.current_interface_name
         if self._colors is not None:
@@ -631,7 +639,7 @@ class Project:
         if 'materials_not_in_model' in keys:
             self._materials.extend(MaterialCollection.from_dict(project_dict['materials_not_in_model']))
         if 'fitter_minimizer' in keys:
-            self.fitter.easy_science_multi_fitter.switch_minimizer(AvailableMinimizers[project_dict['fitter_minimizer']])
+            self.minimizer = AvailableMinimizers[project_dict['fitter_minimizer']]
         else:
             self._fitter = None
         if 'experiments' in keys:

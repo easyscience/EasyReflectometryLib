@@ -349,6 +349,7 @@ class TestProject:
         keys.sort()
         assert keys == [
             'calculator',
+            'fitter_minimizer',
             'info',
             'models',
             'with_experiments',
