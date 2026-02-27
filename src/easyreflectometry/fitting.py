@@ -101,9 +101,29 @@ class MultiFitter:
         :param data: DataGroup to be fitted to and populated
         :param method: Optimisation method
         """
-        # ye contains variances (sigma²); weights = 1/sigma = 1/sqrt(variance)
-        weights = 1.0 / np.sqrt(data.ye)
-        result = self.easy_science_multi_fitter.fit(x=[data.x], y=[data.y], weights=[weights])[0]
+        x_vals = np.asarray(data.x)
+        y_vals = np.asarray(data.y)
+        variances = np.asarray(data.ye)
+
+        zero_variance_mask = variances == 0.0
+        num_zero_variance = int(np.sum(zero_variance_mask))
+
+        if num_zero_variance > 0:
+            warnings.warn(
+                f'Masked {num_zero_variance} data point(s) in single-dataset fit due to zero variance during fitting.',
+                UserWarning,
+            )
+
+        valid_mask = ~zero_variance_mask
+        if not np.any(valid_mask):
+            raise ValueError('Cannot fit single dataset: all points have zero variance.')
+
+        x_vals_masked = x_vals[valid_mask]
+        y_vals_masked = y_vals[valid_mask]
+        variances_masked = variances[valid_mask]
+
+        weights = 1.0 / np.sqrt(variances_masked)
+        result = self.easy_science_multi_fitter.fit(x=[x_vals_masked], y=[y_vals_masked], weights=[weights])[0]
         self._fit_results = [result]
         return result
 
@@ -119,7 +139,15 @@ class MultiFitter:
         """Reduced chi-squared from the most recent fit, or None if no fit has been performed."""
         if self._fit_results is None:
             return None
-        return sum(r.reduced_chi for r in self._fit_results) / len(self._fit_results)
+        total_chi2 = sum(r.chi2 for r in self._fit_results)
+        total_points = sum(np.size(r.x) for r in self._fit_results)
+        n_params = self._fit_results[0].n_pars
+        total_dof = total_points - n_params
+
+        if total_dof <= 0:
+            return None
+
+        return total_chi2 / total_dof
 
     def switch_minimizer(self, minimizer: AvailableMinimizers) -> None:
         """
