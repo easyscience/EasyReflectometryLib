@@ -31,6 +31,7 @@ class MultiFitter:
         self._fit_func = [func_wrapper(m.interface.fit_func, m.unique_name) for m in args]
         self._models = args
         self.easy_science_multi_fitter = EasyScienceMultiFitter(args, self._fit_func)
+        self._fit_results: list[FitResults] | None = None
 
     def fit(self, data: sc.DataGroup, id: int = 0) -> sc.DataGroup:
         """
@@ -75,6 +76,7 @@ class MultiFitter:
             dy.append(1 / np.sqrt(variances_masked))
 
         result = self.easy_science_multi_fitter.fit(x, y, weights=dy)
+        self._fit_results = result
         new_data = data.copy()
         for i, _ in enumerate(result):
             id = refl_nums[i]
@@ -101,7 +103,23 @@ class MultiFitter:
         """
         # ye contains variances (sigma²); weights = 1/sigma = 1/sqrt(variance)
         weights = 1.0 / np.sqrt(data.ye)
-        return self.easy_science_multi_fitter.fit(x=[data.x], y=[data.y], weights=[weights])[0]
+        result = self.easy_science_multi_fitter.fit(x=[data.x], y=[data.y], weights=[weights])[0]
+        self._fit_results = [result]
+        return result
+
+    @property
+    def chi2(self) -> float | None:
+        """Total chi-squared across all fitted datasets, or None if no fit has been performed."""
+        if self._fit_results is None:
+            return None
+        return sum(r.chi2 for r in self._fit_results)
+
+    @property
+    def reduced_chi(self) -> float | None:
+        """Reduced chi-squared from the most recent fit, or None if no fit has been performed."""
+        if self._fit_results is None:
+            return None
+        return sum(r.reduced_chi for r in self._fit_results) / len(self._fit_results)
 
     def switch_minimizer(self, minimizer: AvailableMinimizers) -> None:
         """

@@ -8,8 +8,6 @@ from typing import List
 from typing import Optional
 from typing import Union
 
-logger = logging.getLogger(__name__)
-
 import numpy as np
 from easyscience import global_object
 from easyscience.fitting import AvailableMinimizers
@@ -32,6 +30,8 @@ from easyreflectometry.sample import MaterialCollection
 from easyreflectometry.sample import Multilayer
 from easyreflectometry.sample import Sample
 from easyreflectometry.sample.collections.base_collection import BaseCollection
+
+logger = logging.getLogger(__name__)
 
 Q_MIN = 0.001
 Q_MAX = 0.3
