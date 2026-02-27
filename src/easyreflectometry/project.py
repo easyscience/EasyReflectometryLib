@@ -14,6 +14,7 @@ import numpy as np
 from easyscience import global_object
 from easyscience.fitting import AvailableMinimizers
 from easyscience.variable import Parameter
+from easyscience.variable.parameter_dependency_resolver import resolve_all_parameter_dependencies
 from scipp import DataGroup
 
 from easyreflectometry.calculators import CalculatorFactory
@@ -646,6 +647,9 @@ class Project:
             self._experiments = self._from_dict_extract_experiments(project_dict)
         else:
             self._experiments = {}
+
+        # Resolve any pending parameter dependencies (constraints) after all objects are loaded
+        resolve_all_parameter_dependencies(self)
 
     def _from_dict_extract_experiments(self, project_dict: dict) -> Dict[int, DataSet1D]:
         experiments = {}
