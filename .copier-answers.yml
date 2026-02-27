@@ -2,7 +2,7 @@
 _commit: 8bdcedc
 _src_path: gh:/EasyScience/EasyProjectTemplate
 description: A reflectometry python package built on the EasyScience framework.
-max_python: '3.12'
+max_python: '3.13'
 min_python: '3.9'
 orgname: EasyScience
 packagename: easyreflectometry
