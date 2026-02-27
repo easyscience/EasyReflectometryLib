@@ -38,7 +38,7 @@ Q_MIN = 0.001
 Q_MAX = 0.3
 Q_RESOLUTION = 500
 
-DEFAULT_MINIZER = AvailableMinimizers.LMFit_leastsq
+DEFAULT_MINIMIZER = AvailableMinimizers.LMFit_leastsq
 
 
 class Project:
@@ -50,7 +50,7 @@ class Project:
         self._calculator = CalculatorFactory()
         self._experiments: Dict[DataGroup] = {}
         self._fitter: MultiFitter = None
-        self._minimizer_selection: AvailableMinimizers = DEFAULT_MINIZER
+        self._minimizer_selection: AvailableMinimizers = DEFAULT_MINIMIZER
         self._colors: list[str] = None
         self._report = None
         self._q_min: float = None
@@ -391,9 +391,6 @@ class Project:
         model: Model,
     ) -> None:
         """Set the resolution function on *model* based on variance data in *experiment*.
-
-        Prefers Pointwise when q-resolution (xe) data is present, otherwise falls
-        back to LinearSpline when reflectivity error (ye) data is present.
 
         :param experiment: The experiment whose variance data drives the choice.
         :param model: The model whose resolution function is set.

@@ -90,6 +90,7 @@ def fit_model(load_data):
 
     sio2_layer.roughness.min = 3
     sio2_layer.roughness.max = 12
+    sio2_layer.material.sld.min = 3.47
     sio2_layer.material.sld.max = 5
     sio2_layer.thickness.min = 10
     sio2_layer.thickness.max = 30
@@ -184,4 +185,4 @@ def test_analyze_reduced_data__fit_model_success(fit_model):
 
 
 def test_analyze_reduced_data__fit_model_reasonable(fit_model):
-    assert fit_model['reduced_chi'] < 10
+    assert fit_model['reduced_chi'] < 6.0
