@@ -1,5 +1,6 @@
 import datetime
 import json
+import logging
 import os
 from pathlib import Path
 from typing import Dict
@@ -10,8 +11,8 @@ from typing import Union
 import numpy as np
 from easyscience import global_object
 from easyscience.fitting import AvailableMinimizers
-from easyscience.fitting.fitter import DEFAULT_MINIMIZER
 from easyscience.variable import Parameter
+from easyscience.variable.parameter_dependency_resolver import resolve_all_parameter_dependencies
 from scipp import DataGroup
 
 from easyreflectometry.calculators import CalculatorFactory
@@ -20,11 +21,9 @@ from easyreflectometry.data import load_as_dataset
 from easyreflectometry.data.measurement import extract_orso_title
 from easyreflectometry.data.measurement import load_data_from_orso_file
 from easyreflectometry.fitting import MultiFitter
-from easyreflectometry.model import LinearSpline
 from easyreflectometry.model import Model
 from easyreflectometry.model import ModelCollection
 from easyreflectometry.model import PercentageFwhm
-from easyreflectometry.model import Pointwise
 from easyreflectometry.sample import Layer
 from easyreflectometry.sample import Material
 from easyreflectometry.sample import MaterialCollection
@@ -32,11 +31,13 @@ from easyreflectometry.sample import Multilayer
 from easyreflectometry.sample import Sample
 from easyreflectometry.sample.collections.base_collection import BaseCollection
 
+logger = logging.getLogger(__name__)
+
 Q_MIN = 0.001
 Q_MAX = 0.3
 Q_RESOLUTION = 500
 
-DEFAULT_MINIZER = AvailableMinimizers.LMFit_leastsq
+DEFAULT_MINIMIZER = AvailableMinimizers.LMFit_leastsq
 
 
 class Project:
@@ -48,6 +49,7 @@ class Project:
         self._calculator = CalculatorFactory()
         self._experiments: Dict[DataGroup] = {}
         self._fitter: MultiFitter = None
+        self._minimizer_selection: AvailableMinimizers = DEFAULT_MINIMIZER
         self._colors: list[str] = None
         self._report = None
         self._q_min: float = None
@@ -207,9 +209,8 @@ class Project:
     def fitter(self) -> MultiFitter:
         if len(self._models):
             if (self._fitter is None) or (self._fitter_model_index != self._current_model_index):
-                minimizer = self.minimizer
                 self._fitter = MultiFitter(self._models[self._current_model_index])
-                self.minimizer = minimizer
+                self._fitter.easy_science_multi_fitter.switch_minimizer(self._minimizer_selection)
                 self._fitter_model_index = self._current_model_index
         return self._fitter
 
@@ -225,10 +226,14 @@ class Project:
     def minimizer(self) -> AvailableMinimizers:
         if self._fitter is not None:
             return self._fitter.easy_science_multi_fitter.minimizer.enum
-        return DEFAULT_MINIMIZER
+        return self._minimizer_selection
 
     @minimizer.setter
     def minimizer(self, minimizer: AvailableMinimizers) -> None:
+        old_name = getattr(self._minimizer_selection, 'name', str(self._minimizer_selection))
+        new_name = getattr(minimizer, 'name', str(minimizer))
+        logger.info('Minimizer changed from %s to %s (fitter active: %s)', old_name, new_name, self._fitter is not None)
+        self._minimizer_selection = minimizer
         if self._fitter is not None:
             self._fitter.easy_science_multi_fitter.switch_minimizer(minimizer)
 
@@ -386,21 +391,10 @@ class Project:
     ) -> None:
         """Set the resolution function on *model* based on variance data in *experiment*.
 
-        Prefers Pointwise when q-resolution (xe) data is present, otherwise falls
-        back to LinearSpline when reflectivity error (ye) data is present.
-
         :param experiment: The experiment whose variance data drives the choice.
         :param model: The model whose resolution function is set.
         """
-        if sum(experiment.xe) != 0:
-            resolution_function = Pointwise(q_data_points=[experiment.x, experiment.y, experiment.xe])
-            model.resolution_function = resolution_function
-        elif sum(experiment.ye) != 0:
-            resolution_function = LinearSpline(
-                q_data_points=experiment.x,
-                fwhm_values=np.sqrt(experiment.ye),
-            )
-            model.resolution_function = resolution_function
+        model.resolution_function = PercentageFwhm(5.0)
 
     def load_new_experiment(self, path: Union[Path, str]) -> None:
         new_experiment = load_as_dataset(str(path))
@@ -603,6 +597,8 @@ class Project:
             self._as_dict_add_experiments(project_dict)
         if self.fitter is not None:
             project_dict['fitter_minimizer'] = self.fitter.easy_science_multi_fitter.minimizer.name
+        elif self._minimizer_selection is not None:
+            project_dict['fitter_minimizer'] = self._minimizer_selection.name
         if self._calculator is not None:
             project_dict['calculator'] = self._calculator.current_interface_name
         if self._colors is not None:
@@ -641,13 +637,16 @@ class Project:
         if 'materials_not_in_model' in keys:
             self._materials.extend(MaterialCollection.from_dict(project_dict['materials_not_in_model']))
         if 'fitter_minimizer' in keys:
-            self.fitter.easy_science_multi_fitter.switch_minimizer(AvailableMinimizers[project_dict['fitter_minimizer']])
+            self.minimizer = AvailableMinimizers[project_dict['fitter_minimizer']]
         else:
             self._fitter = None
         if 'experiments' in keys:
             self._experiments = self._from_dict_extract_experiments(project_dict)
         else:
             self._experiments = {}
+
+        # Resolve any pending parameter dependencies (constraints) after all objects are loaded
+        resolve_all_parameter_dependencies(self)
 
     def _from_dict_extract_experiments(self, project_dict: dict) -> Dict[int, DataSet1D]:
         experiments = {}

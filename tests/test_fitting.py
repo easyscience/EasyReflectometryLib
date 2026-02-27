@@ -1,12 +1,15 @@
 __author__ = 'github.com/arm61'
 
 import os
+from unittest.mock import MagicMock
 
+import numpy as np
 import pytest
 from easyscience.fitting.minimizers.factory import AvailableMinimizers
 
 import easyreflectometry
 from easyreflectometry.calculators import CalculatorFactory
+from easyreflectometry.data import DataSet1D
 from easyreflectometry.data.measurement import load
 from easyreflectometry.fitting import MultiFitter
 from easyreflectometry.model import Model
@@ -224,3 +227,152 @@ def test_fitting_with_manual_zero_variance():
     assert 'R_0_model' in analysed.keys()
     assert 'SLD_0' in analysed.keys()
     assert 'success' in analysed.keys()
+
+
+def test_fit_single_data_set_1d_masks_zero_variance_points():
+    model = Model()
+    model.interface = CalculatorFactory()
+    fitter = MultiFitter(model)
+
+    captured = {}
+    mock_result = MagicMock()
+    mock_result.chi2 = 1.0
+    mock_result.n_pars = 1
+
+    def _fake_fit(*, x, y, weights):
+        captured['x'] = x
+        captured['y'] = y
+        captured['weights'] = weights
+        return [mock_result]
+
+    fitter.easy_science_multi_fitter = MagicMock()
+    fitter.easy_science_multi_fitter.fit = MagicMock(side_effect=_fake_fit)
+
+    data = DataSet1D(
+        name='single_dataset',
+        x=np.array([0.01, 0.02, 0.03]),
+        y=np.array([1.0, 0.8, 0.6]),
+        ye=np.array([0.01, 0.0, 0.04]),
+    )
+
+    with pytest.warns(UserWarning, match='Masked 1 data point\(s\) in single-dataset fit'):
+        result = fitter.fit_single_data_set_1d(data)
+
+    assert result is mock_result
+    assert np.allclose(captured['x'][0], np.array([0.01, 0.03]))
+    assert np.allclose(captured['y'][0], np.array([1.0, 0.6]))
+    assert np.allclose(captured['weights'][0], np.array([10.0, 5.0]))
+
+
+def test_reduced_chi_uses_global_dof_across_fit_results():
+    model = Model()
+    model.interface = CalculatorFactory()
+    fitter = MultiFitter(model)
+
+    fit_result_1 = MagicMock()
+    fit_result_1.chi2 = 10.0
+    fit_result_1.x = np.arange(5)
+    fit_result_1.n_pars = 3
+
+    fit_result_2 = MagicMock()
+    fit_result_2.chi2 = 14.0
+    fit_result_2.x = np.arange(7)
+    fit_result_2.n_pars = 3
+
+    fitter._fit_results = [fit_result_1, fit_result_2]
+
+    expected = (10.0 + 14.0) / ((5 + 7) - 3)
+    assert fitter.reduced_chi == pytest.approx(expected)
+
+
+def test_fit_single_data_set_1d_all_zero_variance_raises():
+    model = Model()
+    model.interface = CalculatorFactory()
+    fitter = MultiFitter(model)
+
+    data = DataSet1D(
+        name='all_zero',
+        x=np.array([0.01, 0.02, 0.03]),
+        y=np.array([1.0, 0.8, 0.6]),
+        ye=np.array([0.0, 0.0, 0.0]),
+    )
+
+    with pytest.raises(ValueError, match='all points have zero variance'):
+        fitter.fit_single_data_set_1d(data)
+
+
+def test_chi2_returns_none_before_fit():
+    model = Model()
+    model.interface = CalculatorFactory()
+    fitter = MultiFitter(model)
+
+    assert fitter.chi2 is None
+
+
+def test_chi2_returns_total_after_fit():
+    model = Model()
+    model.interface = CalculatorFactory()
+    fitter = MultiFitter(model)
+
+    r1 = MagicMock()
+    r1.chi2 = 5.0
+    r2 = MagicMock()
+    r2.chi2 = 3.0
+
+    fitter._fit_results = [r1, r2]
+    assert fitter.chi2 == pytest.approx(8.0)
+
+
+def test_reduced_chi_returns_none_before_fit():
+    model = Model()
+    model.interface = CalculatorFactory()
+    fitter = MultiFitter(model)
+
+    assert fitter.reduced_chi is None
+
+
+def test_reduced_chi_returns_none_when_dof_zero():
+    model = Model()
+    model.interface = CalculatorFactory()
+    fitter = MultiFitter(model)
+
+    r1 = MagicMock()
+    r1.chi2 = 5.0
+    r1.x = np.arange(3)
+    r1.n_pars = 3  # total_points == n_params => dof == 0
+
+    fitter._fit_results = [r1]
+    assert fitter.reduced_chi is None
+
+
+def test_fit_single_data_set_1d_no_zero_variance():
+    model = Model()
+    model.interface = CalculatorFactory()
+    fitter = MultiFitter(model)
+
+    captured = {}
+    mock_result = MagicMock()
+    mock_result.chi2 = 2.0
+    mock_result.n_pars = 1
+
+    def _fake_fit(*, x, y, weights):
+        captured['x'] = x
+        captured['y'] = y
+        captured['weights'] = weights
+        return [mock_result]
+
+    fitter.easy_science_multi_fitter = MagicMock()
+    fitter.easy_science_multi_fitter.fit = MagicMock(side_effect=_fake_fit)
+
+    data = DataSet1D(
+        name='no_zero',
+        x=np.array([0.01, 0.02, 0.03]),
+        y=np.array([1.0, 0.8, 0.6]),
+        ye=np.array([0.01, 0.04, 0.09]),
+    )
+
+    result = fitter.fit_single_data_set_1d(data)
+
+    assert result is mock_result
+    assert np.allclose(captured['x'][0], np.array([0.01, 0.02, 0.03]))
+    assert np.allclose(captured['y'][0], np.array([1.0, 0.8, 0.6]))
