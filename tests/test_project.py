@@ -16,7 +16,6 @@ from easyreflectometry.fitting import MultiFitter
 from easyreflectometry.model import Model
 from easyreflectometry.model import ModelCollection
 from easyreflectometry.model import PercentageFwhm
-from easyreflectometry.model import Pointwise
 from easyreflectometry.project import Project
 from easyreflectometry.sample import Layer
 from easyreflectometry.sample import Material
@@ -350,6 +349,7 @@ class TestProject:
         keys.sort()
         assert keys == [
             'calculator',
+            'fitter_minimizer',
             'info',
             'models',
             'with_experiments',
@@ -594,7 +594,7 @@ class TestProject:
         assert isinstance(project.experiments[5], DataSet1D)
         assert project.experiments[5].name == 'Example data file from refnx docs'
         assert project.experiments[5].model == model_5
-        assert isinstance(project.models[5].resolution_function, Pointwise)
+        assert isinstance(project.models[5].resolution_function, PercentageFwhm)
         assert isinstance(project.models[4].resolution_function, PercentageFwhm)
 
     def test_load_experiment_sets_resolution_function_pointwise_when_xe_present(self, tmp_path):
@@ -610,10 +610,10 @@ class TestProject:
         # Then
         project.load_experiment_for_model_at_index(str(fpath))
 
-        # Expect Pointwise because xe (q-resolution) is present
-        from easyreflectometry.model.resolution_functions import Pointwise
+        # Resolution is always set to PercentageFwhm
+        from easyreflectometry.model.resolution_functions import PercentageFwhm
 
-        assert isinstance(project.models[0].resolution_function, Pointwise)
+        assert isinstance(project.models[0].resolution_function, PercentageFwhm)
 
     def test_load_experiment_sets_linearspline_when_only_ye_present(self, tmp_path):
         # When
@@ -628,10 +628,10 @@ class TestProject:
         # Then
         project.load_experiment_for_model_at_index(str(fpath))
 
-        # Expect LinearSpline because only ye (fwhm from ye) is available
-        from easyreflectometry.model.resolution_functions import LinearSpline
+        # Resolution is always set to PercentageFwhm
+        from easyreflectometry.model.resolution_functions import PercentageFwhm
 
-        assert isinstance(project.models[0].resolution_function, LinearSpline)
+        assert isinstance(project.models[0].resolution_function, PercentageFwhm)
 
     def test_experimental_data_at_index(self):
         # When
