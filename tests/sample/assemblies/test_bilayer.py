@@ -17,12 +17,14 @@ from easyreflectometry.sample.elements.materials.material import Material
 class TestBilayer:
     def setup_method(self):
         from easyscience import global_object
+
         # Clear the global object map to prevent name collisions
         # Accessing private _clear method as Map doesn't expose a public clear
         if hasattr(global_object.map, 'clear'):
             global_object.map.clear()
         elif hasattr(global_object.map, '_clear'):
             global_object.map._clear()
+
     def test_default(self):
         """Test default bilayer creation with expected structure."""
         p = Bilayer()
