@@ -79,9 +79,10 @@ class DataSet1D(SerializerComponent):
         model: Optional['Model'] = None,  # delay type checking until runtime (quotes)
         x_label: str = 'x',
         y_label: str = 'y',
+        auto_background: bool = True,
     ):
         self._model = model
-        if y is not None and model is not None:
+        if y is not None and model is not None and auto_background:
             self._model.background = max(np.min(y), 1e-10)
 
         if x is None:
@@ -123,7 +124,6 @@ class DataSet1D(SerializerComponent):
     @model.setter
     def model(self, new_model: 'Model') -> None:
         self._model = new_model
-        self._model.background = max(np.min(self.y), 1e-10)
 
     @property
     def is_experiment(self) -> bool:

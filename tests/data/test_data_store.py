@@ -79,16 +79,17 @@ class TestDataSet1D:
         # Then
         assert data.model == mock_model
 
-    def test_model_setter_updates_background(self):
+    def test_model_setter_does_not_update_background(self):
         # Given
         mock_model = Mock()
+        mock_model.background = 1e-8  # Original background value
         data = DataSet1D(x=[1, 2, 3, 4], y=[1, 2, 0.5, 3])
 
         # When
         data.model = mock_model
 
-        # Then
-        assert mock_model.background == 0.5
+        # Then - background should NOT be overwritten by model setter
+        assert mock_model.background == 1e-8
 
     def test_is_experiment_property(self):
         # Given
