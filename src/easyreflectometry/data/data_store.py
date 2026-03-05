@@ -82,7 +82,7 @@ class DataSet1D(SerializerComponent):
     ):
         self._model = model
         if y is not None and model is not None:
-            self._model.background = np.min(y)
+            self._model.background = max(np.min(y), 1e-10)
 
         if x is None:
             x = np.array([])
@@ -123,7 +123,7 @@ class DataSet1D(SerializerComponent):
     @model.setter
     def model(self, new_model: 'Model') -> None:
         self._model = new_model
-        self._model.background = np.min(self.y)
+        self._model.background = max(np.min(self.y), 1e-10)
 
     @property
     def is_experiment(self) -> bool:

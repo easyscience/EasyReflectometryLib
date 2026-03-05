@@ -363,18 +363,24 @@ class Project:
         path: Union[Path, str],
         experiment: DataSet1D,
         fallback_name: str,
+        data_group=None,
+        data_key: Optional[str] = None,
     ) -> None:
         """Set experiment name from ORSO title and configure the resolution function.
 
         :param path: Path to the experiment data file.
         :param experiment: The loaded experiment dataset to configure.
         :param fallback_name: Name to use when no ORSO title is available.
+        :param data_group: Pre-loaded scipp DataGroup (avoids reloading the file).
+        :param data_key: Specific dataset key to use for title extraction (e.g. ``'R_1'``).
         """
         # Prefer ORSO title when available (keeps UI descriptive)
         title = None
         try:
-            data_group = load_data_from_orso_file(str(path))
-            data_key = list(data_group['data'].keys())[0]
+            if data_group is None:
+                data_group = load_data_from_orso_file(str(path))
+            if data_key is None:
+                data_key = list(data_group['data'].keys())[0]
             title = extract_orso_title(data_group, data_key)
         except (KeyError, AttributeError, ValueError, IndexError):
             title = None
@@ -409,6 +415,69 @@ class Project:
         self._experiments[new_index] = new_experiment
         self._with_experiments = True
         self._apply_resolution_function(new_experiment, self.models[model_index])
+
+    def count_datasets_in_file(self, path: Union[Path, str]) -> int:
+        """Return the number of datasets contained in the file at *path*.
+
+        :param path: Path to the data file.
+        :return: Number of datasets found; 1 if the file cannot be introspected.
+        """
+        try:
+            data_group = load_data_from_orso_file(str(path))
+            return len(data_group['data'])
+        except Exception:
+            return 1
+
+    def load_all_experiments_from_file(self, path: Union[Path, str]) -> int:
+        """Load all datasets from a file as separate experiments sharing the current model.
+
+        For a multi-dataset ORSO file (e.g. a multi-angle measurement), each dataset is
+        registered as an independent experiment.  All experiments share the model that is
+        currently selected.  Falls back to :meth:`load_new_experiment` for single-dataset
+        files or on any loading error.
+
+        :param path: Path to the data file.
+        :return: Number of experiments that were added.
+        """
+        try:
+            data_group = load_data_from_orso_file(str(path))
+        except Exception:
+            self.load_new_experiment(path)
+            return 1
+
+        data_keys = sorted(data_group['data'].keys())
+        if len(data_keys) <= 1:
+            self.load_new_experiment(path)
+            return 1
+
+        model_index = self._current_model_index
+        for data_key in data_keys:
+            coord_key = data_key.replace('R_', 'Qz_')
+            new_index = len(self._experiments)
+
+            d = data_group['data'][data_key]
+            c = data_group['coords'][coord_key]
+
+            new_experiment = DataSet1D(
+                name=f'Experiment {new_index}',
+                x=c.values,
+                y=d.values,
+                ye=d.variances,
+                xe=c.variances if c.variances is not None else None,
+            )
+            self._apply_experiment_metadata(
+                path,
+                new_experiment,
+                f'Experiment {new_index}',
+                data_group=data_group,
+                data_key=data_key,
+            )
+            new_experiment.model = self.models[model_index]
+            self._experiments[new_index] = new_experiment
+            self._apply_resolution_function(new_experiment, self.models[model_index])
+
+        self._with_experiments = True
+        return len(data_keys)
 
     def load_experiment_for_model_at_index(self, path: Union[Path, str], index: Optional[int] = 0) -> None:
         experiment = load_as_dataset(str(path))
