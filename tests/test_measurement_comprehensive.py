@@ -189,14 +189,15 @@ class TestDataSet1DComprehensive:
         expected = [(1, 10, 1, 0.1), (2, 20, 2, 0.2), (3, 30, 3, 0.3)]
         assert points == expected
 
-    def test_model_property_with_background_setting(self):
-        """Test that setting model updates background to minimum y value."""
+    def test_model_property_setter_does_not_update_background(self):
+        """Test that setting model via setter does not overwrite background."""
         dataset = DataSet1D(x=[1, 2, 3, 4], y=[5, 1, 8, 3])
         mock_model = Mock()
+        mock_model.background = 1e-8  # Original value
 
         dataset.model = mock_model
 
-        assert mock_model.background == 1  # minimum of [5, 1, 8, 3]
+        assert mock_model.background == 1e-8  # background should NOT be changed by setter
 
     def test_repr_string_representation(self):
         """Test the string representation of DataSet1D."""

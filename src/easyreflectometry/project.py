@@ -402,6 +402,12 @@ class Project:
         """
         model.resolution_function = PercentageFwhm(5.0)
 
+    @staticmethod
+    def _auto_set_background(experiment: DataSet1D) -> None:
+        """Set the model background to the minimum y-value of the experiment data."""
+        if experiment.model is not None and len(experiment.y) > 0:
+            experiment.model.background = max(np.min(experiment.y), 1e-10)
+
     def load_new_experiment(self, path: Union[Path, str]) -> None:
         new_experiment = load_as_dataset(str(path))
         new_index = len(self._experiments)
@@ -412,6 +418,7 @@ class Project:
 
         self._apply_experiment_metadata(path, new_experiment, f'Experiment {new_index}')
         new_experiment.model = self.models[model_index]
+        self._auto_set_background(new_experiment)
         self._experiments[new_index] = new_experiment
         self._with_experiments = True
         self._apply_resolution_function(new_experiment, self.models[model_index])
@@ -473,6 +480,7 @@ class Project:
                 data_key=data_key,
             )
             new_experiment.model = self.models[model_index]
+            self._auto_set_background(new_experiment)
             self._experiments[new_index] = new_experiment
             self._apply_resolution_function(new_experiment, self.models[model_index])
 
@@ -484,6 +492,7 @@ class Project:
 
         self._apply_experiment_metadata(path, experiment, f'Experiment {index}')
         experiment.model = self.models[index]
+        self._auto_set_background(experiment)
         self._experiments[index] = experiment
         self._with_experiments = True
         self._apply_resolution_function(experiment, self._models[index])
@@ -727,6 +736,7 @@ class Project:
                 ye=project_dict['experiments'][key][2],
                 xe=project_dict['experiments'][key][3],
                 model=self._models[project_dict['experiments_models'][key]],
+                auto_background=False,
             )
         return experiments
 
