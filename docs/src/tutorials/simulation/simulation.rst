@@ -6,5 +6,6 @@ These are basic simulation examples using the :py:mod:`easyreflectometry` librar
 .. toctree:: 
    :maxdepth: 1
    
+   bilayer.ipynb
    magnetism.ipynb
    resolution_functions.ipynb
