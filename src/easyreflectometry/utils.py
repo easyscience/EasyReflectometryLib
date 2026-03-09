@@ -54,22 +54,24 @@ def yaml_dump(dict_repr: dict) -> str:
     return yaml.dump(dict_repr, sort_keys=False, allow_unicode=True)
 
 
-def collect_unique_names_from_dict(structure_dict: dict, unique_names: Optional[list[str]] = None) -> dict:
+def collect_unique_names_from_dict(structure_dict: dict, unique_names: Optional[list[str]] = None) -> list[str]:
     """
     This function returns a list with the 'unique_name' found the input dictionary.
     """
     if unique_names is None:
         unique_names = []
 
-    if isinstance(structure_dict, dict):
-        for key, value in structure_dict.items():
-            if isinstance(value, dict):
-                collect_unique_names_from_dict(value, unique_names)
-            elif isinstance(value, list):
-                for element in value:
-                    collect_unique_names_from_dict(element, unique_names)
-            if key == 'unique_name':
-                unique_names.append(value)
+    def _collect(item):
+        if isinstance(item, dict):
+            if 'unique_name' in item:
+                unique_names.append(item['unique_name'])
+            for value in item.values():
+                _collect(value)
+        elif isinstance(item, list):
+            for element in item:
+                _collect(element)
+
+    _collect(structure_dict)
     return unique_names
 
 

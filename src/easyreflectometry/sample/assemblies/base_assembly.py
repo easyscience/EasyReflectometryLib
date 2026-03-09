@@ -99,8 +99,6 @@ class BaseAssembly(BaseCore):
             # Make sure that the thickness constraint is enabled
             self._setup_thickness_constraints()
             # Make sure that the thickness parameter is enabled
-            for i in range(len(self.layers)):
-                self.layers[i].thickness.enabled = True
         else:
             raise Exception('Thickness constraints not setup')
 

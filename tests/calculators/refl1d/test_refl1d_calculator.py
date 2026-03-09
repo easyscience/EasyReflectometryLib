@@ -61,7 +61,7 @@ class TestRefl1d(unittest.TestCase):
             5.7605e-07,
             2.3775e-07,
             1.3093e-07,
-            1.0520e-07
+            1.0520e-07,
         ]
         assert_almost_equal(p.reflectity_profile(q, 'MyModel'), expected, decimal=4)
 
@@ -106,7 +106,7 @@ class TestRefl1d(unittest.TestCase):
             1.0968e-06,
             4.5635e-07,
             3.4120e-07,
-            2.7505e-07
+            2.7505e-07,
         ]
         assert_almost_equal(actual, expected, decimal=4)
 

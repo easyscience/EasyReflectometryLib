@@ -88,6 +88,7 @@ class Model(BaseObj):
         scale = get_as_parameter('scale', scale, DEFAULTS)
         background = get_as_parameter('background', background, DEFAULTS)
         self.color = color
+        self._is_default = False
 
         super().__init__(
             name=name,
@@ -137,6 +138,20 @@ class Model(BaseObj):
         self.sample.remove_assembly(index)
         if self.interface is not None:
             self.interface().remove_item_from_model(assembly_unique_name, self.unique_name)
+
+    @property
+    def is_default(self) -> bool:
+        """Whether this model was created as a default placeholder."""
+        return self._is_default
+
+    @is_default.setter
+    def is_default(self, value: bool) -> None:
+        """Set whether this model is a default placeholder.
+
+        :param value: True if the model is a default placeholder.
+        :type value: bool
+        """
+        self._is_default = value
 
     @property
     def resolution_function(self) -> ResolutionFunction:
@@ -206,6 +221,12 @@ class Model(BaseObj):
             this_dict['interface'] = None
         else:
             this_dict['interface'] = self.interface().name
+        return this_dict
+
+    def as_orso(self) -> dict:
+        """Convert the model to a dictionary suitable for ORSO."""
+        this_dict = self.as_dict()
+
         return this_dict
 
     @classmethod

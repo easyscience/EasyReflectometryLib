@@ -31,6 +31,7 @@ class MultiFitter:
         self._fit_func = [func_wrapper(m.interface.fit_func, m.unique_name) for m in args]
         self._models = args
         self.easy_science_multi_fitter = EasyScienceMultiFitter(args, self._fit_func)
+        self._fit_results: list[FitResults] | None = None
 
     def fit(self, data: sc.DataGroup, id: int = 0) -> sc.DataGroup:
         """
@@ -55,13 +56,13 @@ class MultiFitter:
             variances = data['data'][f'R_{i}'].variances
 
             # Find points with non-zero variance
-            zero_variance_mask = (variances == 0.0)
+            zero_variance_mask = variances == 0.0
             num_zero_variance = np.sum(zero_variance_mask)
 
             if num_zero_variance > 0:
                 warnings.warn(
-                    f"Masked {num_zero_variance} data point(s) in reflectivity {i} due to zero variance during fitting.",
-                    UserWarning
+                    f'Masked {num_zero_variance} data point(s) in reflectivity {i} due to zero variance during fitting.',
+                    UserWarning,
                 )
 
             # Keep only points with non-zero variances
@@ -75,6 +76,7 @@ class MultiFitter:
             dy.append(1 / np.sqrt(variances_masked))
 
         result = self.easy_science_multi_fitter.fit(x, y, weights=dy)
+        self._fit_results = result
         new_data = data.copy()
         for i, _ in enumerate(result):
             id = refl_nums[i]
@@ -99,7 +101,53 @@ class MultiFitter:
         :param data: DataGroup to be fitted to and populated
         :param method: Optimisation method
         """
-        return self.easy_science_multi_fitter.fit(x=[data.x], y=[data.y], weights=[data.ye])[0]
+        x_vals = np.asarray(data.x)
+        y_vals = np.asarray(data.y)
+        variances = np.asarray(data.ye)
+
+        zero_variance_mask = variances == 0.0
+        num_zero_variance = int(np.sum(zero_variance_mask))
+
+        if num_zero_variance > 0:
+            warnings.warn(
+                f'Masked {num_zero_variance} data point(s) in single-dataset fit due to zero variance during fitting.',
+                UserWarning,
+            )
+
+        valid_mask = ~zero_variance_mask
+        if not np.any(valid_mask):
+            raise ValueError('Cannot fit single dataset: all points have zero variance.')
+
+        x_vals_masked = x_vals[valid_mask]
+        y_vals_masked = y_vals[valid_mask]
+        variances_masked = variances[valid_mask]
+
+        weights = 1.0 / np.sqrt(variances_masked)
+        result = self.easy_science_multi_fitter.fit(x=[x_vals_masked], y=[y_vals_masked], weights=[weights])[0]
+        self._fit_results = [result]
+        return result
+
+    @property
+    def chi2(self) -> float | None:
+        """Total chi-squared across all fitted datasets, or None if no fit has been performed."""
+        if self._fit_results is None:
+            return None
+        return sum(r.chi2 for r in self._fit_results)
+
+    @property
+    def reduced_chi(self) -> float | None:
+        """Reduced chi-squared from the most recent fit, or None if no fit has been performed."""
+        if self._fit_results is None:
+            return None
+        total_chi2 = sum(r.chi2 for r in self._fit_results)
+        total_points = sum(np.size(r.x) for r in self._fit_results)
+        n_params = self._fit_results[0].n_pars
+        total_dof = total_points - n_params
+
+        if total_dof <= 0:
+            return None
+
+        return total_chi2 / total_dof
 
     def switch_minimizer(self, minimizer: AvailableMinimizers) -> None:
         """

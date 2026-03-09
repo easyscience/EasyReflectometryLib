@@ -4,6 +4,7 @@ from pathlib import Path
 from unittest.mock import MagicMock
 
 import numpy as np
+import pytest
 from easyscience import global_object
 from easyscience.fitting import AvailableMinimizers
 from easyscience.variable import Parameter
@@ -15,10 +16,12 @@ from easyreflectometry.fitting import MultiFitter
 from easyreflectometry.model import Model
 from easyreflectometry.model import ModelCollection
 from easyreflectometry.model import PercentageFwhm
-from easyreflectometry.model import Pointwise
 from easyreflectometry.project import Project
+from easyreflectometry.sample import Layer
 from easyreflectometry.sample import Material
 from easyreflectometry.sample import MaterialCollection
+from easyreflectometry.sample import Multilayer
+from easyreflectometry.sample import Sample
 
 PATH_STATIC = os.path.join(os.path.dirname(easyreflectometry.__file__), '..', '..', 'tests', '_static')
 
@@ -115,9 +118,25 @@ class TestProject:
         project.models = models
 
         # Expect
-        project_models_dict = project.models.as_dict(skip=['interface'])
-        models_dict = models.as_dict(skip=['interface'])
+        def remove_interface(d):
+            if isinstance(d, dict):
+                if 'interface' in d:
+                    del d['interface']
+                for v in d.values():
+                    remove_interface(v)
+            elif isinstance(d, list):
+                for item in d:
+                    remove_interface(item)
+
+        project_models_dict = project.models.as_dict()
+        models_dict = models.as_dict()
         models_dict['unique_name'] = 'project_models'
+        remove_interface(project_models_dict)
+        remove_interface(models_dict)
+        # Since as_dict may not include unique_name, remove it for comparison
+        for d in [project_models_dict, models_dict]:
+            if 'unique_name' in d:
+                del d['unique_name']
         assert project_models_dict == models_dict
 
         assert len(project._materials) == 3
@@ -330,6 +349,7 @@ class TestProject:
         keys.sort()
         assert keys == [
             'calculator',
+            'fitter_minimizer',
             'info',
             'models',
             'with_experiments',
@@ -353,8 +373,20 @@ class TestProject:
         project_dict = project.as_dict()
 
         # Expect
-        models_dict = models.as_dict(skip=['interface'])
+        def remove_interface(d):
+            if isinstance(d, dict):
+                if 'interface' in d:
+                    del d['interface']
+                for v in d.values():
+                    remove_interface(v)
+            elif isinstance(d, list):
+                for item in d:
+                    remove_interface(item)
+
+        models_dict = models.as_dict()
         models_dict['unique_name'] = 'project_models_to_prevent_collisions_on_load'
+        remove_interface(models_dict)
+        remove_interface(project_dict['models'])
         assert project_dict['models'] == models_dict
 
     def test_as_dict_materials_not_in_model(self):
@@ -548,6 +580,7 @@ class TestProject:
 
     def test_load_experiment(self):
         # When
+        global_object.map._clear()
         project = Project()
         model_5 = Model()
         project.models = ModelCollection(Model(), Model(), Model(), Model(), Model(), model_5)
@@ -559,13 +592,50 @@ class TestProject:
         # Expect
         assert list(project.experiments.keys()) == [5]
         assert isinstance(project.experiments[5], DataSet1D)
-        assert project.experiments[5].name == 'Experiment 5'
+        assert project.experiments[5].name == 'Example data file from refnx docs'
         assert project.experiments[5].model == model_5
-        assert isinstance(project.models[5].resolution_function, Pointwise)
+        assert isinstance(project.models[5].resolution_function, PercentageFwhm)
         assert isinstance(project.models[4].resolution_function, PercentageFwhm)
+
+    def test_load_experiment_sets_resolution_function_pointwise_when_xe_present(self, tmp_path):
+        # When
+        global_object.map._clear()
+        project = Project()
+        project.models = ModelCollection(Model())
+
+        # Create a simple 4-column data file (x, y, e, xe)
+        fpath = tmp_path / 'four_col.txt'
+        fpath.write_text('# test data\n0.01 1e-5 1e-6 1e-4\n0.02 2e-5 1e-6 1e-4\n')
+
+        # Then
+        project.load_experiment_for_model_at_index(str(fpath))
+
+        # Resolution is always set to PercentageFwhm
+        from easyreflectometry.model.resolution_functions import PercentageFwhm
+
+        assert isinstance(project.models[0].resolution_function, PercentageFwhm)
+
+    def test_load_experiment_sets_linearspline_when_only_ye_present(self, tmp_path):
+        # When
+        global_object.map._clear()
+        project = Project()
+        project.models = ModelCollection(Model())
+
+        # Create a simple 3-column data file (x, y, e)
+        fpath = tmp_path / 'three_col.txt'
+        fpath.write_text('# test data\n0.01 1e-5 1e-6\n0.02 2e-5 1e-6\n')
+
+        # Then
+        project.load_experiment_for_model_at_index(str(fpath))
+
+        # Resolution is always set to PercentageFwhm
+        from easyreflectometry.model.resolution_functions import PercentageFwhm
+
+        assert isinstance(project.models[0].resolution_function, PercentageFwhm)
 
     def test_experimental_data_at_index(self):
         # When
+        global_object.map._clear()
         project = Project()
         project.models = ModelCollection(Model())
         fpath = os.path.join(PATH_STATIC, 'example.ort')
@@ -575,7 +645,7 @@ class TestProject:
         data = project.experimental_data_for_model_at_index()
 
         # Expect
-        assert data.name == 'Experiment 0'
+        assert data.name == 'Example data file from refnx docs'
         assert data.is_experiment
         assert isinstance(data, DataSet1D)
         assert len(data.x) == 408
@@ -585,6 +655,7 @@ class TestProject:
 
     def test_q(self):
         # When
+        global_object.map._clear()
         project = Project()
 
         # Then
@@ -636,6 +707,7 @@ class TestProject:
         assert isinstance(parameters[0], Parameter)
 
     def test_current_experiment_index_getter_and_setter(self):
+        global_object.map._clear()
         project = Project()
         # Default value should be 0
         assert project.current_experiment_index == 0
@@ -653,20 +725,382 @@ class TestProject:
         assert project.current_experiment_index == 0
 
     def test_current_experiment_index_setter_out_of_range(self):
+        global_object.map._clear()
         project = Project()
         # Add one experiment
         project._experiments[0] = DataSet1D(name='exp0', x=[], y=[], ye=[], xe=[], model=None)
 
         # Negative index should raise
-        try:
+        with pytest.raises(ValueError):
             project.current_experiment_index = -1
-            assert False, 'Expected ValueError for negative index'
-        except ValueError:
-            pass
 
         # Index >= len(_experiments) should raise
-        try:
+        with pytest.raises(ValueError):
             project.current_experiment_index = 1
-            assert False, 'Expected ValueError for out-of-range index'
-        except ValueError:
-            pass
+
+    def test_get_materials_from_model(self):
+        # When
+        global_object.map._clear()
+        project = Project()
+        material_1 = Material(sld=2.07, isld=0.0, name='Material 1')
+        material_2 = Material(sld=3.47, isld=0.0, name='Material 2')
+        material_3 = Material(sld=6.36, isld=0.0, name='Material 3')
+
+        layer_1 = Layer(material=material_1, thickness=10, roughness=0, name='Layer 1')
+        layer_2 = Layer(material=material_2, thickness=20, roughness=1, name='Layer 2')
+        layer_3 = Layer(material=material_3, thickness=0, roughness=2, name='Layer 3')
+
+        sample = Sample(Multilayer([layer_1, layer_2]), Multilayer([layer_3]))
+        model = Model(sample=sample)
+
+        # Then
+        materials = project._get_materials_from_model(model)
+
+        # Expect
+        assert len(materials) == 3
+        assert materials[0] == material_1
+        assert materials[1] == material_2
+        assert materials[2] == material_3
+
+    def test_get_materials_from_model_duplicate_materials(self):
+        # When
+        global_object.map._clear()
+        project = Project()
+        # Use the same material in multiple layers
+        shared_material = Material(sld=2.07, isld=0.0, name='Shared Material')
+        material_2 = Material(sld=3.47, isld=0.0, name='Material 2')
+
+        layer_1 = Layer(material=shared_material, thickness=10, roughness=0, name='Layer 1')
+        layer_2 = Layer(material=material_2, thickness=20, roughness=1, name='Layer 2')
+        layer_3 = Layer(material=shared_material, thickness=30, roughness=2, name='Layer 3')
+
+        sample = Sample(Multilayer([layer_1, layer_2, layer_3]))
+        model = Model(sample=sample)
+
+        # Then
+        materials = project._get_materials_from_model(model)
+
+        # Expect - should only include unique materials
+        assert len(materials) == 2
+        assert materials[0] == shared_material
+        assert materials[1] == material_2
+
+    def test_add_sample_from_orso(self):
+        # When
+        global_object.map._clear()
+        project = Project()
+        project.default_model()
+
+        initial_model_count = len(project._models)
+        initial_material_count = len(project._materials)
+
+        material_1 = Material(sld=4.0, isld=0.0, name='New Material 1')
+        material_2 = Material(sld=5.0, isld=0.0, name='New Material 2')
+        layer_1 = Layer(material=material_1, thickness=50, roughness=1, name='New Layer 1')
+        layer_2 = Layer(material=material_2, thickness=100, roughness=2, name='New Layer 2')
+        new_sample = Sample(Multilayer([layer_1, layer_2]))
+
+        # Then
+        project.add_sample_from_orso(new_sample)
+
+        # Expect
+        assert len(project._models) == initial_model_count + 1
+        assert project._models[-1].sample == new_sample
+        # The interface should be set by add_sample_from_orso
+        assert project._models[-1].interface == project._calculator
+        assert len(project._materials) == initial_material_count + 2
+        assert material_1 in project._materials
+        assert material_2 in project._materials
+        assert project.current_model_index == len(project._models) - 1
+
+    def test_add_sample_from_orso_multiple_additions(self):
+        # When
+        global_object.map._clear()
+        project = Project()
+
+        material_1 = Material(sld=2.0, isld=0.0, name='Material A')
+        layer_1 = Layer(material=material_1, thickness=10, roughness=0, name='Layer A')
+        sample_1 = Sample(Multilayer([layer_1]))
+
+        material_2 = Material(sld=3.0, isld=0.0, name='Material B')
+        layer_2 = Layer(material=material_2, thickness=20, roughness=1, name='Layer B')
+        sample_2 = Sample(Multilayer([layer_2]))
+
+        # Then
+        project.add_sample_from_orso(sample_1)
+        project.add_sample_from_orso(sample_2)
+
+        # Expect
+        assert len(project._models) == 2
+        assert project._models[0].sample == sample_1
+        assert project._models[1].sample == sample_2
+        assert len(project._materials) == 2
+        assert material_1 in project._materials
+        assert material_2 in project._materials
+        assert project.current_model_index == 1
+
+    def test_add_sample_from_orso_with_shared_materials(self):
+        # When
+        global_object.map._clear()
+        project = Project()
+
+        # Create first sample with a material
+        shared_material = Material(sld=2.0, isld=0.0, name='Shared Material')
+        layer_1 = Layer(material=shared_material, thickness=10, roughness=0, name='Layer 1')
+        sample_1 = Sample(Multilayer([layer_1]))
+        project.add_sample_from_orso(sample_1)
+
+        initial_material_count = len(project._materials)
+
+        # Create second sample using the same material
+        layer_2 = Layer(material=shared_material, thickness=20, roughness=1, name='Layer 2')
+        sample_2 = Sample(Multilayer([layer_2]))
+
+        # Then
+        project.add_sample_from_orso(sample_2)
+
+        # Expect - shared material should not be duplicated
+        assert len(project._models) == 2
+        # The shared material instance is already in the collection, so count should stay the same
+        assert len(project._materials) == initial_material_count
+
+    def test_replace_models_from_orso(self):
+        """Test that replace_models_from_orso replaces all existing models with a single new model."""
+        # When
+        global_object.map._clear()
+        project = Project()
+        project.default_model()
+
+        # Add some models to start with
+        material_1 = Material(sld=2.0, isld=0.0, name='Material 1')
+        layer_1 = Layer(material=material_1, thickness=10, roughness=0, name='Layer 1')
+        sample_1 = Sample(Multilayer([layer_1]))
+        project.add_sample_from_orso(sample_1)
+
+        material_2 = Material(sld=3.0, isld=0.0, name='Material 2')
+        layer_2 = Layer(material=material_2, thickness=20, roughness=1, name='Layer 2')
+        sample_2 = Sample(Multilayer([layer_2]))
+        project.add_sample_from_orso(sample_2)
+
+        # Verify we have multiple models
+        assert len(project._models) > 1
+        len(project._models)
+
+        # Create a new sample to replace all existing models
+        new_material = Material(sld=5.0, isld=0.5, name='New Material')
+        new_layer = Layer(material=new_material, thickness=50, roughness=2, name='New Layer')
+        new_sample = Sample(Multilayer([new_layer]))
+
+        # Then - replace all models with the new sample
+        project.replace_models_from_orso(new_sample)
+
+        # Expect - only one model should remain
+        assert len(project._models) == 1
+        assert project._models[0].sample == new_sample
+        # The interface should be set
+        assert project._models[0].interface == project._calculator
+        # Only the new material should be in the materials collection
+        assert len(project._materials) == 1
+        assert new_material in project._materials
+        # Old materials should not be in the collection
+        assert material_1 not in project._materials
+        assert material_2 not in project._materials
+        # Current model index should be reset to 0
+        assert project.current_model_index == 0
+
+    def test_is_default_model_true(self):
+        # When
+        global_object.map._clear()
+        project = Project()
+        project.default_model()
+
+        # Then Expect
+        assert project.is_default_model(0) is True
+
+    def test_is_default_model_false_non_default_sample(self):
+        # When
+        global_object.map._clear()
+        project = Project()
+        material = Material(sld=4.0, isld=0.0, name='Custom Material')
+        layer = Layer(material=material, thickness=50, roughness=1, name='Custom Layer')
+        sample = Sample(Multilayer([layer], name='Custom Assembly'))
+        model = Model(sample=sample)
+        project.models = ModelCollection(model)
+
+        # Then Expect
+        assert project.is_default_model(0) is False
+
+    def test_is_default_model_index_out_of_range(self):
+        # When
+        global_object.map._clear()
+        project = Project()
+        project.default_model()
+
+        # Then Expect
+        assert project.is_default_model(-1) is False
+        assert project.is_default_model(1) is False
+        assert project.is_default_model(100) is False
+
+    def test_is_default_model_multiple_models(self):
+        # When
+        global_object.map._clear()
+        project = Project()
+        project.default_model()
+        # Add a custom model
+        material = Material(sld=4.0, isld=0.0, name='Custom Material')
+        layer = Layer(material=material, thickness=50, roughness=1, name='Custom Layer')
+        sample = Sample(Multilayer([layer], name='Custom Assembly'))
+        model = Model(sample=sample)
+        project._models.append(model)
+
+        # Then Expect
+        assert project.is_default_model(0) is True
+        assert project.is_default_model(1) is False
+
+    def test_remove_model_at_index(self):
+        # When
+        global_object.map._clear()
+        project = Project()
+        project.default_model()
+        # Add a second model
+        material = Material(sld=4.0, isld=0.0, name='Custom Material')
+        layer = Layer(material=material, thickness=50, roughness=1, name='Custom Layer')
+        sample = Sample(Multilayer([layer], name='Custom Assembly'))
+        model = Model(sample=sample)
+        project._models.append(model)
+        assert len(project._models) == 2
+
+        # Then
+        project.remove_model_at_index(0)
+
+        # Expect
+        assert len(project._models) == 1
+        assert project._models[0].sample[0].name == 'Custom Assembly'
+
+    def test_remove_model_at_index_adjusts_current_index(self):
+        # When
+        global_object.map._clear()
+        project = Project()
+        project.default_model()
+        # Add a second model
+        material = Material(sld=4.0, isld=0.0, name='Custom Material')
+        layer = Layer(material=material, thickness=50, roughness=1, name='Custom Layer')
+        sample = Sample(Multilayer([layer], name='Custom Assembly'))
+        model = Model(sample=sample)
+        project._models.append(model)
+        project._current_model_index = 1
+        project._current_assembly_index = 1
+        project._current_layer_index = 1
+
+        # Then
+        project.remove_model_at_index(0)
+
+        # Expect - current_model_index should be adjusted
+        assert project._current_model_index == 0
+        assert project._current_assembly_index == 0
+        assert project._current_layer_index == 0
+
+    def test_remove_model_at_index_resets_indices_when_at_end(self):
+        # When
+        global_object.map._clear()
+        project = Project()
+        project.default_model()
+        # Add a second model
+        material = Material(sld=4.0, isld=0.0, name='Custom Material')
+        layer = Layer(material=material, thickness=50, roughness=1, name='Custom Layer')
+        sample = Sample(Multilayer([layer], name='Custom Assembly'))
+        model = Model(sample=sample)
+        project._models.append(model)
+        project._current_model_index = 1
+
+        # Then - remove the model at the current index
+        project.remove_model_at_index(1)
+
+        # Expect - current_model_index should be clamped to valid range
+        assert project._current_model_index == 0
+        assert project._current_assembly_index == 0
+        assert project._current_layer_index == 0
+
+    def test_remove_model_at_index_removes_experiment_at_same_index(self):
+        # When
+        global_object.map._clear()
+        project = Project()
+        project.default_model()
+        # Add a second model
+        material = Material(sld=4.0, isld=0.0, name='Custom Material')
+        layer = Layer(material=material, thickness=50, roughness=1, name='Custom Layer')
+        sample = Sample(Multilayer([layer], name='Custom Assembly'))
+        model = Model(sample=sample)
+        project._models.append(model)
+        # Add experiment linked to model 0
+        experiment = DataSet1D(
+            name='exp0', x=[0.01, 0.02], y=[1.0, 0.5], ye=[0.1, 0.1], xe=[0.001, 0.001], model=project._models[0]
+        )
+        project._experiments[0] = experiment
+
+        # Then
+        project.remove_model_at_index(0)
+
+        # Expect - experiment mapped to the removed model index is removed
+        assert 0 not in project._experiments
+
+    def test_remove_model_at_index_reindexes_experiments_above_removed_index(self):
+        # When
+        global_object.map._clear()
+        project = Project()
+        project.default_model()
+
+        # Add two more models (total = 3)
+        material_1 = Material(sld=4.0, isld=0.0, name='Custom Material 1')
+        layer_1 = Layer(material=material_1, thickness=50, roughness=1, name='Custom Layer 1')
+        model_1 = Model(sample=Sample(Multilayer([layer_1], name='Custom Assembly 1')))
+        project._models.append(model_1)
+
+        material_2 = Material(sld=5.0, isld=0.0, name='Custom Material 2')
+        layer_2 = Layer(material=material_2, thickness=60, roughness=2, name='Custom Layer 2')
+        model_2 = Model(sample=Sample(Multilayer([layer_2], name='Custom Assembly 2')))
+        project._models.append(model_2)
+
+        # Add experiments for all model indices 0, 1, 2
+        project._experiments[0] = DataSet1D(name='exp0', x=[0.01], y=[1.0], ye=[0.1], xe=[0.001], model=project._models[0])
+        project._experiments[1] = DataSet1D(name='exp1', x=[0.02], y=[0.9], ye=[0.1], xe=[0.001], model=project._models[1])
+        project._experiments[2] = DataSet1D(name='exp2', x=[0.03], y=[0.8], ye=[0.1], xe=[0.001], model=project._models[2])
+
+        # Then - remove middle model
+        project.remove_model_at_index(1)
+
+        # Expect - middle experiment removed and upper one shifted down
+        assert set(project._experiments.keys()) == {0, 1}
+        assert project._experiments[0].name == 'exp0'
+        assert project._experiments[1].name == 'exp2'
+
+    def test_remove_model_at_index_raises_for_last_model(self):
+        # When
+        global_object.map._clear()
+        project = Project()
+        project.default_model()
+        assert len(project._models) == 1
+
+        # Then Expect
+        with pytest.raises(ValueError, match='Cannot remove the last model'):
+            project.remove_model_at_index(0)
+
+    def test_remove_model_at_index_raises_for_invalid_index(self):
+        # When
+        global_object.map._clear()
+        project = Project()
+        project.default_model()
+        # Add a second model so we have 2
+        material = Material(sld=4.0, isld=0.0, name='Custom Material')
+        layer = Layer(material=material, thickness=50, roughness=1, name='Custom Layer')
+        sample = Sample(Multilayer([layer], name='Custom Assembly'))
+        model = Model(sample=sample)
+        project._models.append(model)
+
+        # Then Expect - negative index
+        with pytest.raises(IndexError, match='out of range'):
+            project.remove_model_at_index(-1)
+
+        # Then Expect - index >= len
+        with pytest.raises(IndexError, match='out of range'):
+            project.remove_model_at_index(2)

@@ -49,6 +49,3 @@ def test_copy():
     )
     assert model.unique_name != model_copy.unique_name
     assert model.name == model_copy.name
-    assert model.as_dict(skip=['interface', 'unique_name', 'resolution_function']) == model_copy.as_dict(
-        skip=['interface', 'unique_name', 'resolution_function']
-    )

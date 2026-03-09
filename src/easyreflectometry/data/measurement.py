@@ -6,10 +6,9 @@ from typing import Union
 
 import numpy as np
 import scipp as sc
-from orsopy.fileio import Header
-from orsopy.fileio import orso
 
 from easyreflectometry.data import DataSet1D
+from easyreflectometry.orso_utils import load_data_from_orso_file
 
 
 def load(fname: Union[TextIO, str]) -> sc.DataGroup:
@@ -18,7 +17,7 @@ def load(fname: Union[TextIO, str]) -> sc.DataGroup:
     :param fname: The file to be read.
     """
     try:
-        return _load_orso(fname)
+        return load_data_from_orso_file(fname)
     except (IndexError, ValueError):
         return _load_txt(fname)
 
@@ -31,48 +30,25 @@ def load_as_dataset(fname: Union[TextIO, str]) -> DataSet1D:
     coords_name = 'Qz_' + basename
     coords_name = list(data_group['coords'].keys())[0] if coords_name not in data_group['coords'] else coords_name
     data_name = list(data_group['data'].keys())[0] if data_name not in data_group['data'] else data_name
-    return DataSet1D(
+    dataset = DataSet1D(
         x=data_group['coords'][coords_name].values,
         y=data_group['data'][data_name].values,
         ye=data_group['data'][data_name].variances,
         xe=data_group['coords'][coords_name].variances,
     )
+    return dataset
 
 
-def _load_orso(fname: Union[TextIO, str]) -> sc.DataGroup:
-    """Load from an ORSO compatible file.
-
-    :param fname: The path for the file to be read.
-    """
-    data = {}
-    coords = {}
-    attrs = {}
-    f_data = orso.load_orso(fname)
-    for i, o in enumerate(f_data):
-        name = i
-        if o.info.data_set is not None:
-            name = o.info.data_set
-        coords[f'Qz_{name}'] = sc.array(
-            dims=[f'{o.info.columns[0].name}_{name}'],
-            values=o.data[:, 0],
-            variances=np.square(o.data[:, 3]),
-            unit=sc.Unit(o.info.columns[0].unit),
-        )
-        try:
-            data[f'R_{name}'] = sc.array(
-                dims=[f'{o.info.columns[0].name}_{name}'],
-                values=o.data[:, 1],
-                variances=np.square(o.data[:, 2]),
-                unit=sc.Unit(o.info.columns[1].unit),
-            )
-        except TypeError:
-            data[f'R_{name}'] = sc.array(
-                dims=[f'{o.info.columns[0].name}_{name}'],
-                values=o.data[:, 1],
-                variances=np.square(o.data[:, 2]),
-            )
-        attrs[f'R_{name}'] = {'orso_header': sc.scalar(Header.asdict(o.info))}
-    return sc.DataGroup(data=data, coords=coords, attrs=attrs)
+def extract_orso_title(data_group: sc.DataGroup, data_name: str) -> str | None:
+    try:
+        header = data_group['attrs'][data_name]['orso_header']
+        title = header.values.get('data_source', {}).get('experiment', {}).get('title')
+    except (AttributeError, KeyError, TypeError):
+        return None
+    if title is None:
+        return None
+    title_str = str(title).strip()
+    return title_str or None
 
 
 def _load_txt(fname: Union[TextIO, str]) -> sc.DataGroup:

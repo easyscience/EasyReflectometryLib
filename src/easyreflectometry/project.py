@@ -1,5 +1,6 @@
 import datetime
 import json
+import logging
 import os
 from pathlib import Path
 from typing import Dict
@@ -10,31 +11,33 @@ from typing import Union
 import numpy as np
 from easyscience import global_object
 from easyscience.fitting import AvailableMinimizers
-from easyscience.fitting.fitter import DEFAULT_MINIMIZER
 from easyscience.variable import Parameter
+from easyscience.variable.parameter_dependency_resolver import resolve_all_parameter_dependencies
 from scipp import DataGroup
 
 from easyreflectometry.calculators import CalculatorFactory
 from easyreflectometry.data import DataSet1D
 from easyreflectometry.data import load_as_dataset
+from easyreflectometry.data.measurement import extract_orso_title
+from easyreflectometry.data.measurement import load_data_from_orso_file
 from easyreflectometry.fitting import MultiFitter
 from easyreflectometry.model import Model
 from easyreflectometry.model import ModelCollection
 from easyreflectometry.model import PercentageFwhm
-from easyreflectometry.model import Pointwise
 from easyreflectometry.sample import Layer
 from easyreflectometry.sample import Material
 from easyreflectometry.sample import MaterialCollection
 from easyreflectometry.sample import Multilayer
 from easyreflectometry.sample import Sample
 from easyreflectometry.sample.collections.base_collection import BaseCollection
-from easyreflectometry.utils import collect_unique_names_from_dict
+
+logger = logging.getLogger(__name__)
 
 Q_MIN = 0.001
 Q_MAX = 0.3
 Q_RESOLUTION = 500
 
-DEFAULT_MINIZER = AvailableMinimizers.LMFit_leastsq
+DEFAULT_MINIMIZER = AvailableMinimizers.LMFit_leastsq
 
 
 class Project:
@@ -46,6 +49,7 @@ class Project:
         self._calculator = CalculatorFactory()
         self._experiments: Dict[DataGroup] = {}
         self._fitter: MultiFitter = None
+        self._minimizer_selection: AvailableMinimizers = DEFAULT_MINIMIZER
         self._colors: list[str] = None
         self._report = None
         self._q_min: float = None
@@ -71,19 +75,21 @@ class Project:
 
     @property
     def parameters(self) -> List[Parameter]:
-        unique_names_in_project = collect_unique_names_from_dict(self.as_dict())
-        parameters = []
-        for vertice_str in global_object.map.vertices():
-            vertice_obj = global_object.map.get_item_by_key(vertice_str)
-            if isinstance(vertice_obj, Parameter) and vertice_str in unique_names_in_project:
-                parameters.append(vertice_obj)
-        return parameters
+        """Get all unique parameters from all models in the project.
 
-    @property
-    def enabled_parameters(self) -> List[Parameter]:
-        parameters = self.parameters
-        # Only include enabled parameters
-        return [param for param in parameters if param.enabled]
+        Parameters shared across multiple models (e.g. material SLD) are
+        only included once to avoid double-counting.
+        """
+        parameters = []
+        seen_ids: set[int] = set()
+        if self._models is not None:
+            for model in self._models:
+                for param in model.get_parameters():
+                    pid = id(param)
+                    if pid not in seen_ids:
+                        seen_ids.add(pid)
+                        parameters.append(param)
+        return parameters
 
     @property
     def q_min(self):
@@ -203,9 +209,8 @@ class Project:
     def fitter(self) -> MultiFitter:
         if len(self._models):
             if (self._fitter is None) or (self._fitter_model_index != self._current_model_index):
-                minimizer = self.minimizer
                 self._fitter = MultiFitter(self._models[self._current_model_index])
-                self.minimizer = minimizer
+                self._fitter.easy_science_multi_fitter.switch_minimizer(self._minimizer_selection)
                 self._fitter_model_index = self._current_model_index
         return self._fitter
 
@@ -221,10 +226,14 @@ class Project:
     def minimizer(self) -> AvailableMinimizers:
         if self._fitter is not None:
             return self._fitter.easy_science_multi_fitter.minimizer.enum
-        return DEFAULT_MINIMIZER
+        return self._minimizer_selection
 
     @minimizer.setter
     def minimizer(self, minimizer: AvailableMinimizers) -> None:
+        old_name = getattr(self._minimizer_selection, 'name', str(self._minimizer_selection))
+        new_name = getattr(minimizer, 'name', str(minimizer))
+        logger.info('Minimizer changed from %s to %s (fitter active: %s)', old_name, new_name, self._fitter is not None)
+        self._minimizer_selection = minimizer
         if self._fitter is not None:
             self._fitter.easy_science_multi_fitter.switch_minimizer(minimizer)
 
@@ -260,35 +269,233 @@ class Project:
             self._materials.add_material(Material(name='D2O', sld=6.36, isld=0.0))
         return [material.name for material in self._materials].index('D2O')
 
+    def load_orso_file(self, path: Union[Path, str]) -> None:
+        """Load an ORSO file and optionally create a model and a data from it."""
+        from easyreflectometry.orso_utils import LoadOrso
+
+        model, data = LoadOrso(path)
+        if model is not None:
+            if isinstance(model, Sample):
+                model = Model(sample=model, name=model.name)
+            self.models = ModelCollection([model])
+        else:
+            self.default_model()
+        if data is not None:
+            self._experiments[0] = data
+            self._experiments[0].name = 'Experiment from ORSO'
+            self._experiments[0].model = self.models[0]
+            self._with_experiments = True
+        pass
+
+    def set_sample_from_orso(self, sample: Sample) -> None:
+        """Replace the current project model collection with a single model built from an ORSO-parsed sample.
+
+        This is a convenience helper for the ORSO import pipeline where a complete
+        :class:`~easyreflectometry.sample.Sample` is constructed elsewhere.
+
+        :param sample: Sample to set as the project's (single) model.
+        :type sample: easyreflectometry.sample.Sample
+        :return: ``None``.
+        :rtype: None
+        """
+        model = Model(sample=sample)
+        self.models = ModelCollection([model])
+
+    def add_sample_from_orso(self, sample: Sample) -> None:
+        """Add a new model with the given sample to the existing model collection.
+
+        The created model is appended to :attr:`models`, its calculator interface is
+        set to the project's current calculator, and any materials referenced in the
+        sample are added to the project's material collection.
+
+        After adding the model, :attr:`current_model_index` is updated to point to
+        the newly added model.
+
+        :param sample: Sample to add as a new model.
+        :type sample: easyreflectometry.sample.Sample
+        :return: ``None``.
+        :rtype: None
+        """
+        if sample is None:
+            raise ValueError('The ORSO file does not contain a valid sample model definition.')
+        model = Model(sample=sample)
+        self.models.add_model(model)
+        # Set interface after adding to collection
+        model.interface = self._calculator
+        # Extract materials from the new model and add to project materials
+        self._materials.extend(self._get_materials_from_model(model))
+        # Switch to the newly added model so its data is visible in the UI
+        self.current_model_index = len(self._models) - 1
+
+    def replace_models_from_orso(self, sample: Sample) -> None:
+        """Replace all models and materials with a single model from an ORSO sample.
+
+        All existing models and their associated materials are removed. A new
+        model is created from *sample*, assigned to the project's calculator,
+        and the material collection is rebuilt from the new model only.
+
+        :param sample: Sample to set as the project's only model.
+        :type sample: easyreflectometry.sample.Sample
+        :return: ``None``.
+        :rtype: None
+        """
+        if sample is None:
+            raise ValueError('The ORSO file does not contain a valid sample model definition.')
+        model = Model(sample=sample)
+        if sample.name:
+            model.user_data['original_name'] = sample.name  # Store original name for reference
+        self.models = ModelCollection([model])
+        model.interface = self._calculator
+        self._materials = self._get_materials_from_model(model)
+        self.current_model_index = 0
+
+    def _get_materials_from_model(self, model: Model) -> 'MaterialCollection':
+        """Get all materials from a single model's sample."""
+        materials_in_model = MaterialCollection(populate_if_none=False)
+        for assembly in model.sample:
+            for layer in assembly.layers:
+                if layer.material not in materials_in_model:
+                    materials_in_model.append(layer.material)
+        return materials_in_model
+
+    def _apply_experiment_metadata(
+        self,
+        path: Union[Path, str],
+        experiment: DataSet1D,
+        fallback_name: str,
+        data_group=None,
+        data_key: Optional[str] = None,
+    ) -> None:
+        """Set experiment name from ORSO title and configure the resolution function.
+
+        :param path: Path to the experiment data file.
+        :param experiment: The loaded experiment dataset to configure.
+        :param fallback_name: Name to use when no ORSO title is available.
+        :param data_group: Pre-loaded scipp DataGroup (avoids reloading the file).
+        :param data_key: Specific dataset key to use for title extraction (e.g. ``'R_1'``).
+        """
+        # Prefer ORSO title when available (keeps UI descriptive)
+        title = None
+        try:
+            if data_group is None:
+                data_group = load_data_from_orso_file(str(path))
+            if data_key is None:
+                data_key = list(data_group['data'].keys())[0]
+            title = extract_orso_title(data_group, data_key)
+        except (KeyError, AttributeError, ValueError, IndexError):
+            title = None
+
+        if title:
+            experiment.name = title
+        elif not experiment.name or experiment.name == 'Series':
+            experiment.name = fallback_name
+
+    def _apply_resolution_function(
+        self,
+        experiment: DataSet1D,
+        model: Model,
+    ) -> None:
+        """Set the resolution function on *model* based on variance data in *experiment*.
+
+        :param experiment: The experiment whose variance data drives the choice.
+        :param model: The model whose resolution function is set.
+        """
+        model.resolution_function = PercentageFwhm(5.0)
+
+    @staticmethod
+    def _auto_set_background(experiment: DataSet1D) -> None:
+        """Set the model background to the minimum y-value of the experiment data."""
+        if experiment.model is not None and len(experiment.y) > 0:
+            experiment.model.background = max(np.min(experiment.y), 1e-10)
+
     def load_new_experiment(self, path: Union[Path, str]) -> None:
         new_experiment = load_as_dataset(str(path))
         new_index = len(self._experiments)
-        new_experiment.name = f'Experiment {new_index}'
+
         model_index = 0
         if new_index < len(self.models):
             model_index = new_index
-        new_experiment.model = self.models[model_index]
-        self._experiments[new_index] = new_experiment
-        # self._current_model_index = new_index
 
-    def load_experiment_for_model_at_index(self, path: Union[Path, str], index: Optional[int] = 0) -> None:
-        self._experiments[index] = load_as_dataset(str(path))
-        self._experiments[index].name = f'Experiment {index}'
-        self._experiments[index].model = self.models[index]
+        self._apply_experiment_metadata(path, new_experiment, f'Experiment {new_index}')
+        new_experiment.model = self.models[model_index]
+        self._auto_set_background(new_experiment)
+        self._experiments[new_index] = new_experiment
+        self._with_experiments = True
+        self._apply_resolution_function(new_experiment, self.models[model_index])
+
+    def count_datasets_in_file(self, path: Union[Path, str]) -> int:
+        """Return the number of datasets contained in the file at *path*.
+
+        :param path: Path to the data file.
+        :return: Number of datasets found; 1 if the file cannot be introspected.
+        """
+        try:
+            data_group = load_data_from_orso_file(str(path))
+            return len(data_group['data'])
+        except Exception:
+            return 1
+
+    def load_all_experiments_from_file(self, path: Union[Path, str]) -> int:
+        """Load all datasets from a file as separate experiments sharing the current model.
+
+        For a multi-dataset ORSO file (e.g. a multi-angle measurement), each dataset is
+        registered as an independent experiment.  All experiments share the model that is
+        currently selected.  Falls back to :meth:`load_new_experiment` for single-dataset
+        files or on any loading error.
+
+        :param path: Path to the data file.
+        :return: Number of experiments that were added.
+        """
+        try:
+            data_group = load_data_from_orso_file(str(path))
+        except Exception:
+            self.load_new_experiment(path)
+            return 1
+
+        data_keys = sorted(data_group['data'].keys())
+        if len(data_keys) <= 1:
+            self.load_new_experiment(path)
+            return 1
+
+        model_index = self._current_model_index
+        for data_key in data_keys:
+            coord_key = data_key.replace('R_', 'Qz_')
+            new_index = len(self._experiments)
+
+            d = data_group['data'][data_key]
+            c = data_group['coords'][coord_key]
+
+            new_experiment = DataSet1D(
+                name=f'Experiment {new_index}',
+                x=c.values,
+                y=d.values,
+                ye=d.variances,
+                xe=c.variances if c.variances is not None else None,
+            )
+            self._apply_experiment_metadata(
+                path,
+                new_experiment,
+                f'Experiment {new_index}',
+                data_group=data_group,
+                data_key=data_key,
+            )
+            new_experiment.model = self.models[model_index]
+            self._auto_set_background(new_experiment)
+            self._experiments[new_index] = new_experiment
+            self._apply_resolution_function(new_experiment, self.models[model_index])
 
         self._with_experiments = True
+        return len(data_keys)
 
-        # Set the resolution function if variance data is present
-        if sum(self._experiments[index].ye) != 0:
-            q = self._experiments[index].x
-            reflectivity = self._experiments[index].y
-            q_error = self._experiments[index].xe
-            resolution_function = Pointwise(q_data_points=[q, reflectivity, q_error])
-            # resolution_function = LinearSpline(
-            #     q_data_points=self._experiments[index].y,
-            #     fwhm_values=np.sqrt(self._experiments[index].ye),
-            # )
-            self._models[index].resolution_function = resolution_function
+    def load_experiment_for_model_at_index(self, path: Union[Path, str], index: Optional[int] = 0) -> None:
+        experiment = load_as_dataset(str(path))
+
+        self._apply_experiment_metadata(path, experiment, f'Experiment {index}')
+        experiment.model = self.models[index]
+        self._auto_set_background(experiment)
+        self._experiments[index] = experiment
+        self._with_experiments = True
+        self._apply_resolution_function(experiment, self._models[index])
 
     def sld_data_for_model_at_index(self, index: int = 0) -> DataSet1D:
         self.models[index].interface = self._calculator
@@ -325,21 +532,81 @@ class Project:
             raise IndexError(f'No experiment data for model at index {index}')
 
     def default_model(self):
-        self._replace_collection(MaterialCollection(), self._materials)
+        self._replace_collection(MaterialCollection(interface=self._calculator), self._materials)
 
         layers = [
-            Layer(material=self._materials[0], thickness=0.0, roughness=0.0, name='Vacuum Layer'),
-            Layer(material=self._materials[1], thickness=100.0, roughness=3.0, name='D2O Layer'),
-            Layer(material=self._materials[2], thickness=0.0, roughness=1.2, name='Si Layer'),
+            Layer(material=self._materials[0], thickness=0.0, roughness=0.0, name='Vacuum Layer', interface=self._calculator),
+            Layer(material=self._materials[1], thickness=100.0, roughness=3.0, name='D2O Layer', interface=self._calculator),
+            Layer(material=self._materials[2], thickness=0.0, roughness=1.2, name='Si Layer', interface=self._calculator),
         ]
         assemblies = [
-            Multilayer(layers[0], name='Superphase'),
-            Multilayer(layers[1], name='D2O'),
-            Multilayer(layers[2], name='Subphase'),
+            Multilayer(layers[0], name='Superphase', interface=self._calculator),
+            Multilayer(layers[1], name='D2O', interface=self._calculator),
+            Multilayer(layers[2], name='Subphase', interface=self._calculator),
         ]
-        sample = Sample(*assemblies)
-        model = Model(sample=sample)
+        sample = Sample(*assemblies, interface=self._calculator)
+        model = Model(sample=sample, interface=self._calculator)
+        model.is_default = True
         self.models = ModelCollection([model])
+
+    def is_default_model(self, index: int) -> bool:
+        """Check if the model at the given index is a default model.
+
+        :param index: Index of the model to check.
+        :type index: int
+        :return: True if the model was created as a default placeholder.
+        :rtype: bool
+        """
+        if index < 0 or index >= len(self._models):
+            return False
+
+        return self._models[index].is_default
+
+    def remove_model_at_index(self, index: int) -> None:
+        """Remove the model at the given index.
+
+        Removes the model from the model collection, removes the experiment at the
+        same index (if any), and reindexes experiments above the removed index so
+        model/experiment indices stay aligned.
+
+        Adjusts the current model index if necessary.
+
+        :param index: Index of the model to remove.
+        :type index: int
+        :raises IndexError: If the index is out of range.
+        :raises ValueError: If trying to remove the last remaining model.
+        """
+        if index < 0 or index >= len(self._models):
+            raise IndexError(f'Model index {index} out of range')
+
+        if len(self._models) <= 1:
+            raise ValueError('Cannot remove the last model from the project')
+
+        # Remove the model from the collection
+        self._models.pop(index)
+
+        # Remove experiment mapped to the removed model index.
+        if index in self._experiments:
+            self._experiments.pop(index)
+
+        # Reindex experiments above the removed model index to keep mapping aligned.
+        reindexed_experiments: dict[int, DataSet1D] = {}
+        for exp_index, experiment in sorted(self._experiments.items()):
+            if exp_index > index:
+                reindexed_experiments[exp_index - 1] = experiment
+            else:
+                reindexed_experiments[exp_index] = experiment
+        self._experiments = reindexed_experiments
+
+        # Adjust current model index if necessary
+        if self._current_model_index >= len(self._models):
+            self._current_model_index = len(self._models) - 1
+        elif self._current_model_index > index:
+            self._current_model_index -= 1
+
+        # Reset assembly and layer indices for the new current model
+        self._current_assembly_index = 0
+        self._current_layer_index = 0
 
     def add_material(self, material: MaterialCollection) -> None:
         if material in self._materials:
@@ -400,14 +667,16 @@ class Project:
         project_dict['info'] = self._info
         project_dict['with_experiments'] = self._with_experiments
         if self._models is not None:
-            project_dict['models'] = self._models.as_dict(skip=['interface'])
-            project_dict['models']['unique_name'] = project_dict['models']['unique_name'] + '_to_prevent_collisions_on_load'
+            project_dict['models'] = self._models.as_dict()
+            project_dict['models']['unique_name'] = self._models.unique_name + '_to_prevent_collisions_on_load'
         if include_materials_not_in_model:
             self._as_dict_add_materials_not_in_model_dict(project_dict)
         if self._with_experiments:
             self._as_dict_add_experiments(project_dict)
         if self.fitter is not None:
             project_dict['fitter_minimizer'] = self.fitter.easy_science_multi_fitter.minimizer.name
+        elif self._minimizer_selection is not None:
+            project_dict['fitter_minimizer'] = self._minimizer_selection.name
         if self._calculator is not None:
             project_dict['calculator'] = self._calculator.current_interface_name
         if self._colors is not None:
@@ -446,13 +715,16 @@ class Project:
         if 'materials_not_in_model' in keys:
             self._materials.extend(MaterialCollection.from_dict(project_dict['materials_not_in_model']))
         if 'fitter_minimizer' in keys:
-            self.fitter.easy_science_multi_fitter.switch_minimizer(AvailableMinimizers[project_dict['fitter_minimizer']])
+            self.minimizer = AvailableMinimizers[project_dict['fitter_minimizer']]
         else:
             self._fitter = None
         if 'experiments' in keys:
             self._experiments = self._from_dict_extract_experiments(project_dict)
         else:
             self._experiments = {}
+
+        # Resolve any pending parameter dependencies (constraints) after all objects are loaded
+        resolve_all_parameter_dependencies(self)
 
     def _from_dict_extract_experiments(self, project_dict: dict) -> Dict[int, DataSet1D]:
         experiments = {}
@@ -464,6 +736,7 @@ class Project:
                 ye=project_dict['experiments'][key][2],
                 xe=project_dict['experiments'][key][3],
                 model=self._models[project_dict['experiments_models'][key]],
+                auto_background=False,
             )
         return experiments
 
