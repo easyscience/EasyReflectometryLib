@@ -12,6 +12,8 @@ from easyreflectometry.calculators import CalculatorFactory
 from easyreflectometry.data import DataSet1D
 from easyreflectometry.data.measurement import load
 from easyreflectometry.fitting import MultiFitter
+from easyreflectometry.fitting import _prepare_fit_arrays
+from easyreflectometry.fitting import _validate_objective
 from easyreflectometry.model import Model
 from easyreflectometry.model import PercentageFwhm
 from easyreflectometry.sample import Layer
@@ -76,7 +78,7 @@ def test_fitting(minimizer):
 
 
 def test_fitting_with_zero_variance():
-    """Test that zero variance points are properly detected and masked during fitting when present in the data."""
+    """Test that zero variance points are handled via Mighell substitution (hybrid default)."""
     import warnings
 
     import numpy as np
@@ -129,26 +131,24 @@ def test_fitting_with_zero_variance():
     model.interface = interface
     fitter = MultiFitter(model)
 
-    # Capture warnings during fitting - check if zero variance points still exist in the data
-    # and are properly handled by the fitting method
+    # Capture warnings during fitting
     with warnings.catch_warnings(record=True) as w:
         warnings.simplefilter('always')
         analysed = fitter.fit(data)
 
-        # Check if any zero variance warnings were issued during fitting
-        fitting_warnings = [str(warning.message) for warning in w if 'zero variance during fitting' in str(warning.message)]
+        # Under hybrid default, zero variance points trigger Mighell substitution warnings
+        mighell_warnings = [str(warning.message) for warning in w if 'Mighell substitution' in str(warning.message)]
+        mask_warnings = [str(warning.message) for warning in w if 'Masked' in str(warning.message)]
 
-        # The fitting method should handle zero variance points gracefully
-        # If there are any zero variance points remaining in the data, they should be masked
-        # and a warning should be issued
-        if len(fitting_warnings) > 0:
-            # Verify the warning message format and that it mentions masking points
-            for warning_msg in fitting_warnings:
-                assert 'Masked' in warning_msg and 'zero variance during fitting' in warning_msg
-                print(f'Info: {warning_msg}')  # Log for debugging
+        # Hybrid mode should NOT produce mask warnings
+        assert len(mask_warnings) == 0, f'Unexpected mask warnings under hybrid: {mask_warnings}'
+
+        # If there are zero-variance points in the loaded data, Mighell warnings should appear
+        if len(mighell_warnings) > 0:
+            for warning_msg in mighell_warnings:
+                assert 'zero-variance point(s)' in warning_msg
 
     # Basic checks that fitting completed
-    # The keys will be based on the filename, not just '0'
     model_keys = [k for k in analysed.keys() if k.endswith('_model')]
     sld_keys = [k for k in analysed.keys() if k.startswith('SLD_')]
     assert len(model_keys) > 0, f'No model keys found in {list(analysed.keys())}'
@@ -157,7 +157,7 @@ def test_fitting_with_zero_variance():
 
 
 def test_fitting_with_manual_zero_variance():
-    """Test the fit method with manually created zero variance points."""
+    """Test the fit method with manually created zero variance points using hybrid (default)."""
     import warnings
 
     import numpy as np
@@ -217,12 +217,12 @@ def test_fitting_with_manual_zero_variance():
         warnings.simplefilter('always')
         analysed = fitter.fit(data)
 
-        # Check that warnings were issued about zero variance points
-        fitting_warnings = [str(warning.message) for warning in w if 'zero variance during fitting' in str(warning.message)]
+        # Under hybrid default, should get Mighell substitution warning, not masking
+        mighell_warnings = [str(warning.message) for warning in w if 'Mighell substitution' in str(warning.message)]
 
-        # Should have one warning about the 7 zero variance points (5 + 2)
-        assert len(fitting_warnings) == 1, f'Expected 1 warning, got {len(fitting_warnings)}: {fitting_warnings}'
-        assert 'Masked 7 data point(s)' in fitting_warnings[0], f'Unexpected warning content: {fitting_warnings[0]}'
+        assert len(mighell_warnings) == 1, f'Expected 1 Mighell warning, got {len(mighell_warnings)}: {mighell_warnings}'
+        assert '7 zero-variance point(s)' in mighell_warnings[0], f'Unexpected warning content: {mighell_warnings[0]}'
+
     # Basic checks that fitting completed despite zero variance points
     assert 'R_0_model' in analysed.keys()
     assert 'SLD_0' in analysed.keys()
@@ -230,9 +230,10 @@ def test_fitting_with_manual_zero_variance():
 
 
 def test_fit_single_data_set_1d_masks_zero_variance_points():
+    """Legacy mask mode: zero-variance points are dropped."""
     model = Model()
     model.interface = CalculatorFactory()
-    fitter = MultiFitter(model)
+    fitter = MultiFitter(model, objective='legacy_mask')
 
     captured = {}
     mock_result = MagicMock()
@@ -255,7 +256,7 @@ def test_fit_single_data_set_1d_masks_zero_variance_points():
         ye=np.array([0.01, 0.0, 0.04]),
     )
 
-    with pytest.warns(UserWarning, match='Masked 1 data point\(s\) in single-dataset fit'):
+    with pytest.warns(UserWarning, match='Masked 1 data point\\(s\\) in single-dataset fit'):
         result = fitter.fit_single_data_set_1d(data)
 
     assert result is mock_result
@@ -286,9 +287,10 @@ def test_reduced_chi_uses_global_dof_across_fit_results():
 
 
 def test_fit_single_data_set_1d_all_zero_variance_raises():
+    """Legacy mask mode raises when all points have zero variance."""
     model = Model()
     model.interface = CalculatorFactory()
-    fitter = MultiFitter(model)
+    fitter = MultiFitter(model, objective='legacy_mask')
 
     data = DataSet1D(
         name='all_zero',
@@ -376,3 +378,338 @@ def test_fit_single_data_set_1d_no_zero_variance():
     assert result is mock_result
     assert np.allclose(captured['x'][0], np.array([0.01, 0.02, 0.03]))
     assert np.allclose(captured['y'][0], np.array([1.0, 0.8, 0.6]))
+
+
+# --- New tests for objective-based zero-variance handling ---
+
+
+def test_objective_validation_rejects_unknown_value():
+    with pytest.raises(ValueError, match='Unknown objective'):
+        _validate_objective('bad_value')
+
+
+def test_objective_validation_resolves_auto():
+    assert _validate_objective('auto') == 'hybrid'
+    assert _validate_objective('hybrid') == 'hybrid'
+    assert _validate_objective('legacy_mask') == 'legacy_mask'
+    assert _validate_objective('mighell') == 'mighell'
+
+
+def test_prepare_fit_arrays_weights_always_positive_and_finite():
+    """Weights must be strictly positive and finite for all inputs and objectives."""
+    test_cases = [
+        # (y_vals, variances, description)
+        (np.array([0.0]), np.array([0.0]), 'y=0, var=0'),
+        (np.array([-0.5]), np.array([0.0]), 'y=-0.5, var=0'),
+        (np.array([-1.0]), np.array([0.0]), 'y=-1, var=0'),
+        (np.array([1e6]), np.array([0.0]), 'y=1e6, var=0'),
+        (np.array([0.5, 0.3, 0.1]), np.array([0.0, 0.0, 0.0]), 'all-zero variances'),
+        (np.array([0.5, 0.3, 0.1]), np.array([0.01, 0.0, 0.04]), 'mixed variances'),
+        (np.array([0.0, -0.5, -1.0, 1e6]), np.array([0.0, 0.0, 0.0, 0.0]), 'edge y values'),
+    ]
+
+    for objective in ('hybrid', 'mighell'):
+        for y_vals, variances, desc in test_cases:
+            x = np.arange(len(y_vals), dtype=float)
+            _, _, weights, _ = _prepare_fit_arrays(x, y_vals, variances, objective)
+            assert len(weights) == len(y_vals), f'Wrong length for {desc}, {objective}'
+            assert np.all(weights > 0), f'Non-positive weight for {desc}, {objective}: {weights}'
+            assert np.all(np.isfinite(weights)), f'Non-finite weight for {desc}, {objective}: {weights}'
+
+
+def test_prepare_fit_arrays_legacy_mask_drops_zero_variance():
+    x = np.array([0.01, 0.02, 0.03])
+    y = np.array([1.0, 0.8, 0.6])
+    var = np.array([0.01, 0.0, 0.04])
+
+    x_out, y_eff, weights, stats = _prepare_fit_arrays(x, y, var, 'legacy_mask')
+
+    assert np.allclose(x_out, [0.01, 0.03])
+    assert np.allclose(y_eff, [1.0, 0.6])
+    assert np.allclose(weights, [1.0 / np.sqrt(0.01), 1.0 / np.sqrt(0.04)])
+    assert stats == {'valid': 2, 'mighell_substituted': 0, 'masked': 1}
+
+
+def test_prepare_fit_arrays_hybrid_transforms_zero_variance():
+    x = np.array([0.01, 0.02, 0.03])
+    y = np.array([1.0, 0.8, 0.6])
+    var = np.array([0.01, 0.0, 0.04])
+
+    x_out, y_eff, weights, stats = _prepare_fit_arrays(x, y, var, 'hybrid')
+
+    # x unchanged
+    assert np.allclose(x_out, x)
+    # Index 0 and 2: standard WLS (unchanged y)
+    assert y_eff[0] == pytest.approx(1.0)
+    assert y_eff[2] == pytest.approx(0.6)
+    assert weights[0] == pytest.approx(1.0 / np.sqrt(0.01))
+    assert weights[2] == pytest.approx(1.0 / np.sqrt(0.04))
+    # Index 1: Mighell transform — y_eff = y + min(y, 1) = 0.8 + 0.8 = 1.6
+    assert y_eff[1] == pytest.approx(0.8 + 0.8)
+    # sigma = sqrt(y + 1) = sqrt(1.8)
+    assert weights[1] == pytest.approx(1.0 / np.sqrt(1.8))
+    assert stats == {'valid': 2, 'mighell_substituted': 1, 'masked': 0}
+
+
+def test_prepare_fit_arrays_mighell_transforms_all():
+    x = np.array([0.01, 0.02])
+    y = np.array([0.5, 0.3])
+    var = np.array([0.01, 0.04])  # All valid, but mighell transforms everything
+
+    x_out, y_eff, weights, stats = _prepare_fit_arrays(x, y, var, 'mighell')
+
+    assert np.allclose(x_out, x)
+    # y_eff = y + min(y, 1) = y + y (since y < 1)
+    assert y_eff[0] == pytest.approx(0.5 + 0.5)
+    assert y_eff[1] == pytest.approx(0.3 + 0.3)
+    # sigma = sqrt(y + 1)
+    assert weights[0] == pytest.approx(1.0 / np.sqrt(1.5))
+    assert weights[1] == pytest.approx(1.0 / np.sqrt(1.3))
+    assert stats == {'valid': 0, 'mighell_substituted': 2, 'masked': 0}
+
+
+def test_fit_single_data_set_1d_hybrid_keeps_zero_variance_points():
+    """Hybrid mode keeps all points (transforms zero-variance ones)."""
+    model = Model()
+    model.interface = CalculatorFactory()
+    fitter = MultiFitter(model)  # default objective='hybrid'
+
+    captured = {}
+    mock_result = MagicMock()
+    mock_result.chi2 = 1.0
+    mock_result.n_pars = 1
+
+    def _fake_fit(*, x, y, weights):
+        captured['x'] = x
+        captured['y'] = y
+        captured['weights'] = weights
+        return [mock_result]
+
+    fitter.easy_science_multi_fitter = MagicMock()
+    fitter.easy_science_multi_fitter.fit = MagicMock(side_effect=_fake_fit)
+
+    data = DataSet1D(
+        name='hybrid_test',
+        x=np.array([0.01, 0.02, 0.03]),
+        y=np.array([1.0, 0.8, 0.6]),
+        ye=np.array([0.01, 0.0, 0.04]),
+    )
+
+    with pytest.warns(UserWarning, match='Mighell substitution'):
+        result = fitter.fit_single_data_set_1d(data)
+
+    assert result is mock_result
+    # All 3 points should be passed through (not masked)
+    assert len(captured['x'][0]) == 3
+    assert len(captured['y'][0]) == 3
+    assert len(captured['weights'][0]) == 3
+
+
+def test_fit_single_data_set_1d_all_zero_variance_hybrid_does_not_raise():
+    """Hybrid mode handles all-zero-variance data without raising."""
+    model = Model()
+    model.interface = CalculatorFactory()
+    fitter = MultiFitter(model)  # default objective='hybrid'
+
+    captured = {}
+    mock_result = MagicMock()
+    mock_result.chi2 = 1.0
+    mock_result.n_pars = 1
+
+    def _fake_fit(*, x, y, weights):
+        captured['x'] = x
+        captured['y'] = y
+        captured['weights'] = weights
+        return [mock_result]
+
+    fitter.easy_science_multi_fitter = MagicMock()
+    fitter.easy_science_multi_fitter.fit = MagicMock(side_effect=_fake_fit)
+
+    data = DataSet1D(
+        name='all_zero_hybrid',
+        x=np.array([0.01, 0.02, 0.03]),
+        y=np.array([1.0, 0.8, 0.6]),
+        ye=np.array([0.0, 0.0, 0.0]),
+    )
+
+    with pytest.warns(UserWarning, match='Mighell substitution'):
+        result = fitter.fit_single_data_set_1d(data)
+
+    assert result is mock_result
+    assert len(captured['x'][0]) == 3
+
+
+def test_fit_single_data_set_1d_legacy_mask_preserves_old_behavior():
+    """Legacy mask mode drops zero-variance points and warns with old message."""
+    model = Model()
+    model.interface = CalculatorFactory()
+    fitter = MultiFitter(model, objective='legacy_mask')
+
+    captured = {}
+    mock_result = MagicMock()
+    mock_result.chi2 = 1.0
+    mock_result.n_pars = 1
+
+    def _fake_fit(*, x, y, weights):
+        captured['x'] = x
+        captured['y'] = y
+        captured['weights'] = weights
+        return [mock_result]
+
+    fitter.easy_science_multi_fitter = MagicMock()
+    fitter.easy_science_multi_fitter.fit = MagicMock(side_effect=_fake_fit)
+
+    data = DataSet1D(
+        name='legacy_test',
+        x=np.array([0.01, 0.02, 0.03]),
+        y=np.array([1.0, 0.8, 0.6]),
+        ye=np.array([0.01, 0.0, 0.04]),
+    )
+
+    with pytest.warns(UserWarning, match='Masked 1 data point'):
+        result = fitter.fit_single_data_set_1d(data)
+
+    assert result is mock_result
+    assert np.allclose(captured['x'][0], np.array([0.01, 0.03]))
+    assert np.allclose(captured['y'][0], np.array([1.0, 0.6]))
+
+
+def test_fit_multi_dataset_hybrid_uses_transformed_y_and_weights():
+    """Multi-dataset fit with hybrid objective transforms zero-variance points."""
+    import scipp as sc
+
+    qz_values = np.linspace(0.01, 0.3, 10)
+    r_values = np.exp(-qz_values * 50)
+    variances = np.ones_like(r_values) * 0.01
+    variances[3:5] = 0.0  # 2 zero-variance points
+
+    data = sc.DataGroup(
+        {
+            'coords': {'Qz_0': sc.array(dims=['Qz_0'], values=qz_values)},
+            'data': {'R_0': sc.array(dims=['Qz_0'], values=r_values, variances=variances)},
+        }
+    )
+
+    model = Model()
+    model.interface = CalculatorFactory()
+    fitter = MultiFitter(model)
+
+    captured = {}
+
+    def _fake_fit(x, y, weights):
+        captured['x'] = x
+        captured['y'] = y
+        captured['weights'] = weights
+        mock_r = MagicMock()
+        mock_r.reduced_chi = 1.0
+        mock_r.success = True
+        mock_r.chi2 = 1.0
+        mock_r.n_pars = 1
+        mock_r.x = x[0]
+        return [mock_r]
+
+    fitter.easy_science_multi_fitter = MagicMock()
+    fitter.easy_science_multi_fitter.fit = MagicMock(side_effect=_fake_fit)
+    fitter.easy_science_multi_fitter._fit_objects = [MagicMock()]
+    fitter.easy_science_multi_fitter._fit_objects[0].interface.sld_profile.return_value = (
+        np.linspace(0, 100, 5),
+        np.ones(5),
+    )
+
+    import warnings
+
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter('always')
+        fitter.fit(data)
+
+    # All 10 points should be present (not masked)
+    assert len(captured['x'][0]) == 10
+    assert len(captured['y'][0]) == 10
+    assert len(captured['weights'][0]) == 10
+
+    # Zero-variance points should have Mighell-transformed y
+    for idx in [3, 4]:
+        y_orig = r_values[idx]
+        expected_y_eff = y_orig + min(y_orig, 1.0)
+        assert captured['y'][0][idx] == pytest.approx(expected_y_eff)
+
+    # Check that Mighell warning was emitted
+    mighell_warnings = [str(ww.message) for ww in w if 'Mighell substitution' in str(ww.message)]
+    assert len(mighell_warnings) == 1
+    assert '2 zero-variance point(s)' in mighell_warnings[0]
+
+
+def test_fit_warnings_objective_specific():
+    """Verify that each objective mode produces the correct warning type."""
+    import warnings
+
+    model = Model()
+    model.interface = CalculatorFactory()
+
+    mock_result = MagicMock()
+    mock_result.chi2 = 1.0
+    mock_result.n_pars = 1
+
+    data = DataSet1D(
+        name='warn_test',
+        x=np.array([0.01, 0.02, 0.03]),
+        y=np.array([1.0, 0.8, 0.6]),
+        ye=np.array([0.01, 0.0, 0.04]),
+    )
+
+    for obj, expected_fragment in [
+        ('legacy_mask', 'Masked 1 data point(s)'),
+        ('hybrid', 'Mighell substitution'),
+        ('mighell', 'Mighell substitution'),
+    ]:
+        fitter = MultiFitter(model, objective=obj)
+        fitter.easy_science_multi_fitter = MagicMock()
+        fitter.easy_science_multi_fitter.fit = MagicMock(return_value=[mock_result])
+
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter('always')
+            fitter.fit_single_data_set_1d(data)
+
+        matching = [str(ww.message) for ww in w if expected_fragment in str(ww.message)]
+        assert len(matching) > 0, f'No warning containing {expected_fragment!r} for objective={obj}'
+
+
+def test_multifitter_constructor_rejects_bad_objective():
+    model = Model()
+    model.interface = CalculatorFactory()
+    with pytest.raises(ValueError, match='Unknown objective'):
+        MultiFitter(model, objective='nonsense')
+
+
+def test_fit_per_call_objective_override():
+    """Per-call objective override in fit_single_data_set_1d works."""
+    model = Model()
+    model.interface = CalculatorFactory()
+    fitter = MultiFitter(model, objective='hybrid')  # default
+
+    captured = {}
+    mock_result = MagicMock()
+    mock_result.chi2 = 1.0
+    mock_result.n_pars = 1
+
+    def _fake_fit(*, x, y, weights):
+        captured['x'] = x
+        captured['y'] = y
+        captured['weights'] = weights
+        return [mock_result]
+
+    fitter.easy_science_multi_fitter = MagicMock()
+    fitter.easy_science_multi_fitter.fit = MagicMock(side_effect=_fake_fit)
+
+    data = DataSet1D(
+        name='override_test',
+        x=np.array([0.01, 0.02, 0.03]),
+        y=np.array([1.0, 0.8, 0.6]),
+        ye=np.array([0.01, 0.0, 0.04]),
+    )
+
+    # Override to legacy_mask — should drop the zero-variance point
+    with pytest.warns(UserWarning, match='Masked 1 data point'):
+        fitter.fit_single_data_set_1d(data, objective='legacy_mask')
+
+    assert len(captured['x'][0]) == 2  # one point dropped

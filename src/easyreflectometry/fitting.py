@@ -11,14 +11,110 @@ from easyscience.fitting.multi_fitter import MultiFitter as EasyScienceMultiFitt
 from easyreflectometry.data import DataSet1D
 from easyreflectometry.model import Model
 
+_VALID_OBJECTIVES = ('legacy_mask', 'mighell', 'hybrid', 'auto')
+_EPS = 1e-30
+
+
+def _validate_objective(objective: str) -> str:
+    """Validate and resolve the objective string.
+
+    :param objective: The objective mode string.
+    :type objective: str
+    :return: Resolved objective string ('auto' becomes 'hybrid').
+    :rtype: str
+    :raises ValueError: If the objective is not one of the valid options.
+    """
+    if objective not in _VALID_OBJECTIVES:
+        raise ValueError(f'Unknown objective {objective!r}. Valid options: {_VALID_OBJECTIVES}')
+    if objective == 'auto':
+        return 'hybrid'
+    return objective
+
+
+def _prepare_fit_arrays(
+    x_vals: np.ndarray,
+    y_vals: np.ndarray,
+    variances: np.ndarray,
+    objective: str,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, dict]:
+    """Prepare x, y_eff, and weights arrays for fitting based on the objective mode.
+
+    For ``legacy_mask``, zero-variance points are removed from all arrays.
+    For ``hybrid``, valid-variance points use standard WLS while zero-variance
+    points use Mighell-transformed y and weights.
+    For ``mighell``, all points use the Mighell transform.
+
+    Note: ``variances`` here means σ² (the scipp convention), not σ.
+
+    :param x_vals: Independent variable values.
+    :type x_vals: np.ndarray
+    :param y_vals: Observed dependent variable values.
+    :type y_vals: np.ndarray
+    :param variances: Variance (σ²) of each observed point.
+    :type variances: np.ndarray
+    :param objective: One of 'legacy_mask', 'hybrid', 'mighell'.
+    :type objective: str
+    :return: Tuple of (x_out, y_eff, weights, stats) where stats is a dict
+             with keys 'valid', 'mighell_substituted', 'masked'.
+    :rtype: tuple[np.ndarray, np.ndarray, np.ndarray, dict]
+    """
+    n = len(y_vals)
+    zero_mask = variances <= 0.0
+    n_zero = int(np.sum(zero_mask))
+    n_valid = n - n_zero
+
+    if objective == 'legacy_mask':
+        valid = ~zero_mask
+        x_out = x_vals[valid]
+        y_eff = y_vals[valid]
+        if n_valid > 0:
+            weights = 1.0 / np.sqrt(variances[valid])
+        else:
+            weights = np.array([])
+        stats = {'valid': n_valid, 'mighell_substituted': 0, 'masked': n_zero}
+        return x_out, y_eff, weights, stats
+
+    # hybrid or mighell
+    y_eff = np.copy(y_vals)
+    sigma = np.empty(n)
+
+    if objective == 'mighell':
+        apply_mighell = np.ones(n, dtype=bool)
+    else:
+        # hybrid: apply Mighell only to zero-variance points
+        apply_mighell = zero_mask
+
+    # Standard WLS for non-Mighell points
+    standard = ~apply_mighell
+    if np.any(standard):
+        sigma[standard] = np.sqrt(variances[standard])
+
+    # Mighell transform for selected points
+    if np.any(apply_mighell):
+        y_m = y_vals[apply_mighell]
+        delta = np.minimum(y_m, 1.0)
+        y_eff[apply_mighell] = y_m + delta
+        sigma[apply_mighell] = np.sqrt(np.maximum(y_m + 1.0, _EPS))
+
+    weights = 1.0 / sigma
+    n_mighell = int(np.sum(apply_mighell))
+    stats = {'valid': n - n_mighell, 'mighell_substituted': n_mighell, 'masked': 0}
+    return x_vals, y_eff, weights, stats
+
 
 class MultiFitter:
-    def __init__(self, *args: Model):
-        r"""A convinence class for the :py:class:`easyscience.Fitting.Fitting`
+    def __init__(self, *args: Model, objective: str = 'hybrid'):
+        r"""A convenience class for the :py:class:`easyscience.Fitting.Fitting`
         which will populate the :py:class:`sc.DataGroup` appropriately
         after the fitting is performed.
 
-        :param args: Reflectometry model
+        :param args: Reflectometry model(s).
+        :param objective: Zero-variance handling strategy. One of
+            ``'hybrid'`` (default, Mighell for zero-variance, WLS otherwise),
+            ``'mighell'`` (Mighell transform for all points),
+            ``'legacy_mask'`` (drop zero-variance points),
+            ``'auto'`` (alias for ``'hybrid'``).
+        :type objective: str
         """
 
         # This lets the unique_name be passed with the fit_func.
@@ -32,18 +128,29 @@ class MultiFitter:
         self._models = args
         self.easy_science_multi_fitter = EasyScienceMultiFitter(args, self._fit_func)
         self._fit_results: list[FitResults] | None = None
+        self._objective = _validate_objective(objective)
 
-    def fit(self, data: sc.DataGroup, id: int = 0) -> sc.DataGroup:
+    def fit(self, data: sc.DataGroup, id: int = 0, objective: str | None = None) -> sc.DataGroup:
+        """Perform the fitting and populate the DataGroups with the result.
+
+        :param data: DataGroup to be fitted to and populated.
+        :type data: sc.DataGroup
+        :param id: Unused parameter kept for backward compatibility.
+        :type id: int
+        :param objective: Per-call override for the zero-variance objective.
+            If ``None``, uses the instance default set at construction.
+        :type objective: str or None
+        :return: A new DataGroup with fitted model curves, SLD profiles, and fit statistics.
+        :rtype: sc.DataGroup
+
+        :note: Under the ``mighell`` objective all points are transformed,
+               so ``reduced_chi`` is not a classical chi-square statistic.
+               Under ``hybrid``, only zero-variance points are transformed;
+               when they are a small fraction of the data the chi-square
+               remains approximately classical.
         """
-        Perform the fitting and populate the DataGroups with the result.
+        obj = _validate_objective(objective) if objective is not None else self._objective
 
-        :param data: DataGroup to be fitted to and populated
-        :param method: Optimisation method
-
-        :note: Points with zero variance in the data will be automatically masked
-               out during fitting. A warning will be issued if any such points
-               are found, indicating the number of points masked per reflectivity.
-        """
         refl_nums = [k[3:] for k in data['coords'].keys() if 'Qz' == k[:2]]
         x = []
         y = []
@@ -55,25 +162,24 @@ class MultiFitter:
             y_vals = data['data'][f'R_{i}'].values
             variances = data['data'][f'R_{i}'].variances
 
-            # Find points with non-zero variance
-            zero_variance_mask = variances == 0.0
-            num_zero_variance = np.sum(zero_variance_mask)
+            x_out, y_eff, weights, stats = _prepare_fit_arrays(x_vals, y_vals, variances, obj)
 
-            if num_zero_variance > 0:
+            if stats['masked'] > 0:
                 warnings.warn(
-                    f'Masked {num_zero_variance} data point(s) in reflectivity {i} due to zero variance during fitting.',
+                    f'Masked {stats["masked"]} data point(s) in reflectivity {i} '
+                    'due to zero variance during fitting.',
+                    UserWarning,
+                )
+            if stats['mighell_substituted'] > 0:
+                warnings.warn(
+                    f'Applied Mighell substitution to {stats["mighell_substituted"]} '
+                    f'zero-variance point(s) in reflectivity {i} during fitting.',
                     UserWarning,
                 )
 
-            # Keep only points with non-zero variances
-            valid_mask = ~zero_variance_mask
-            x_vals_masked = x_vals[valid_mask]
-            y_vals_masked = y_vals[valid_mask]
-            variances_masked = variances[valid_mask]
-
-            x.append(x_vals_masked)
-            y.append(y_vals_masked)
-            dy.append(1 / np.sqrt(variances_masked))
+            x.append(x_out)
+            y.append(y_eff)
+            dy.append(weights)
 
         result = self.easy_science_multi_fitter.fit(x, y, weights=dy)
         self._fit_results = result
@@ -94,36 +200,43 @@ class MultiFitter:
             new_data['success'] = result[i].success
         return new_data
 
-    def fit_single_data_set_1d(self, data: DataSet1D) -> FitResults:
-        """
-        Perform the fitting and populate the DataGroups with the result.
+    def fit_single_data_set_1d(self, data: DataSet1D, objective: str | None = None) -> FitResults:
+        """Perform fitting on a single 1D dataset.
 
-        :param data: DataGroup to be fitted to and populated
-        :param method: Optimisation method
+        :param data: The 1D dataset to fit. Note that ``data.ye`` stores
+            variances (σ²), not standard deviations.
+        :type data: DataSet1D
+        :param objective: Per-call override for the zero-variance objective.
+            If ``None``, uses the instance default set at construction.
+        :type objective: str or None
+        :return: Fit results from the minimizer.
+        :rtype: FitResults
         """
+        obj = _validate_objective(objective) if objective is not None else self._objective
+
         x_vals = np.asarray(data.x)
         y_vals = np.asarray(data.y)
         variances = np.asarray(data.ye)
 
-        zero_variance_mask = variances == 0.0
-        num_zero_variance = int(np.sum(zero_variance_mask))
+        x_out, y_eff, weights, stats = _prepare_fit_arrays(x_vals, y_vals, variances, obj)
 
-        if num_zero_variance > 0:
+        if stats['masked'] > 0:
             warnings.warn(
-                f'Masked {num_zero_variance} data point(s) in single-dataset fit due to zero variance during fitting.',
+                f'Masked {stats["masked"]} data point(s) in single-dataset fit '
+                'due to zero variance during fitting.',
+                UserWarning,
+            )
+        if stats['mighell_substituted'] > 0:
+            warnings.warn(
+                f'Applied Mighell substitution to {stats["mighell_substituted"]} '
+                'zero-variance point(s) in single-dataset fit during fitting.',
                 UserWarning,
             )
 
-        valid_mask = ~zero_variance_mask
-        if not np.any(valid_mask):
+        if obj == 'legacy_mask' and len(x_out) == 0:
             raise ValueError('Cannot fit single dataset: all points have zero variance.')
 
-        x_vals_masked = x_vals[valid_mask]
-        y_vals_masked = y_vals[valid_mask]
-        variances_masked = variances[valid_mask]
-
-        weights = 1.0 / np.sqrt(variances_masked)
-        result = self.easy_science_multi_fitter.fit(x=[x_vals_masked], y=[y_vals_masked], weights=[weights])[0]
+        result = self.easy_science_multi_fitter.fit(x=[x_out], y=[y_eff], weights=[weights])[0]
         self._fit_results = [result]
         return result
 
