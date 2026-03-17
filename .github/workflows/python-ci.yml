@@ -61,7 +61,7 @@ jobs:
         name: unit-tests-job
         flags: unittests
         files: ./coverage-unit.xml
-        fail_ci_if_error: true
+        fail_ci_if_error: false
         verbose: true
         token: ${{ secrets.CODECOV_TOKEN }}
         slug: EasyScience/EasyReflectometryLib
