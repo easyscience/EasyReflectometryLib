@@ -428,7 +428,7 @@ def test_prepare_fit_arrays_legacy_mask_drops_zero_variance():
     assert np.allclose(x_out, [0.01, 0.03])
     assert np.allclose(y_eff, [1.0, 0.6])
     assert np.allclose(weights, [1.0 / np.sqrt(0.01), 1.0 / np.sqrt(0.04)])
-    assert stats == {'valid': 2, 'mighell_substituted': 0, 'masked': 1}
+    assert stats == {'valid': 2, 'mighell_substituted': 0, 'masked': 1, 'transformed_all_points': False}
 
 
 def test_prepare_fit_arrays_hybrid_transforms_zero_variance():
@@ -449,7 +449,7 @@ def test_prepare_fit_arrays_hybrid_transforms_zero_variance():
     assert y_eff[1] == pytest.approx(0.8 + 0.8)
     # sigma = sqrt(y + 1) = sqrt(1.8)
     assert weights[1] == pytest.approx(1.0 / np.sqrt(1.8))
-    assert stats == {'valid': 2, 'mighell_substituted': 1, 'masked': 0}
+    assert stats == {'valid': 2, 'mighell_substituted': 1, 'masked': 0, 'transformed_all_points': False}
 
 
 def test_prepare_fit_arrays_mighell_transforms_all():
@@ -466,7 +466,7 @@ def test_prepare_fit_arrays_mighell_transforms_all():
     # sigma = sqrt(y + 1)
     assert weights[0] == pytest.approx(1.0 / np.sqrt(1.5))
     assert weights[1] == pytest.approx(1.0 / np.sqrt(1.3))
-    assert stats == {'valid': 0, 'mighell_substituted': 2, 'masked': 0}
+    assert stats == {'valid': 0, 'mighell_substituted': 2, 'masked': 0, 'transformed_all_points': True}
 
 
 def test_fit_single_data_set_1d_hybrid_keeps_zero_variance_points():
@@ -545,9 +545,11 @@ def test_classical_and_objective_chi_are_split_for_fit_results():
     fitter.easy_science_multi_fitter = MagicMock()
     fitter.easy_science_multi_fitter.fit = MagicMock(return_value=[fit_result])
     fitter.easy_science_multi_fitter._fit_objects = [MagicMock(interface=MagicMock())]
-    fitter.easy_science_multi_fitter._fit_objects[0].interface.sld_profile.return_value = (np.array([0.0, 1.0]), np.array([1.0, 2.0]))
+    fitter.easy_science_multi_fitter._fit_objects[0].interface.sld_profile.return_value = \
+        (np.array([0.0, 1.0]), np.array([1.0, 2.0]))
 
-    fitter._models = [MagicMock(unique_name='model_0', as_dict=MagicMock(return_value={'name': 'model_0'}))]
+    fitter._models = [MagicMock(unique_name='model_0',
+                                as_dict=MagicMock(return_value={'name': 'model_0'}))]
     fitter._fit_func = [lambda x: np.array([0.8, 0.75, 0.7])]
 
     data = sc.DataGroup(
@@ -728,7 +730,7 @@ def test_fit_warnings_objective_specific():
     for obj, expected_fragment in [
         ('legacy_mask', 'Masked 1 data point(s)'),
         ('hybrid', 'Mighell substitution'),
-        ('mighell', 'Mighell substitution'),
+        ('mighell', 'Applied Mighell transform to all 3 point(s)'),
     ]:
         fitter = MultiFitter(model, objective=obj)
         fitter.easy_science_multi_fitter = MagicMock()
