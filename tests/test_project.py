@@ -268,6 +268,20 @@ class TestProject:
         # Expect
         assert fitter_0 is not fitter_1
 
+    def test_switch_calculator_rebuilds_model_bindings(self):
+        # When
+        project = Project()
+        project.default_model()
+
+        # Then
+        project.calculator = 'refl1d'
+        reflectivity = project.model_data_for_model_at_index(0, np.array([0.01, 0.05, 0.1, 0.5]))
+
+        # Expect
+        assert project.calculator == 'refl1d'
+        assert len(reflectivity.y) == 4
+        assert np.all(np.isfinite(reflectivity.y))
+
     def test_experiments(self):
         # When
         project = Project()

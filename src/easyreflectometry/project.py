@@ -220,7 +220,17 @@ class Project:
 
     @calculator.setter
     def calculator(self, calculator: str) -> None:
+        if calculator == self._calculator.current_interface_name:
+            return
+
         self._calculator.switch(calculator)
+        self._calculator.reset_storage()
+
+        for model in self._models:
+            model.generate_bindings()
+
+        self._fitter = None
+        self._fitter_model_index = None
 
     @property
     def minimizer(self) -> AvailableMinimizers:
