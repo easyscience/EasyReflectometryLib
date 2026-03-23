@@ -71,7 +71,7 @@ def _prepare_fit_arrays(
             weights = 1.0 / np.sqrt(variances[valid])
         else:
             weights = np.array([])
-        stats = {'valid': n_valid, 'mighell_substituted': 0, 'masked': n_zero}
+        stats = {'valid': n_valid, 'mighell_substituted': 0, 'masked': n_zero, 'transformed_all_points': False}
         return x_out, y_eff, weights, stats
 
     # hybrid or mighell
@@ -98,8 +98,30 @@ def _prepare_fit_arrays(
 
     weights = 1.0 / sigma
     n_mighell = int(np.sum(apply_mighell))
-    stats = {'valid': n - n_mighell, 'mighell_substituted': n_mighell, 'masked': 0}
+    stats = {
+        'valid': n - n_mighell,
+        'mighell_substituted': n_mighell,
+        'masked': 0,
+        'transformed_all_points': bool(objective == 'mighell'),
+    }
     return x_vals, y_eff, weights, stats
+
+
+def _compute_weighted_chi2(y_obs: np.ndarray, y_calc: np.ndarray, sigma: np.ndarray) -> float:
+    """Return weighted chi-square for finite, strictly positive uncertainties."""
+    valid = np.isfinite(y_obs) & np.isfinite(y_calc) & np.isfinite(sigma) & (sigma > 0.0)
+    if not np.any(valid):
+        return 0.0
+    residual = (y_obs[valid] - y_calc[valid]) / sigma[valid]
+    return float(np.sum(residual**2))
+
+
+def _compute_reduced_chi2(chi2: float, n_points: int, n_params: int) -> float | None:
+    """Return reduced chi-square or None when degrees of freedom are not positive."""
+    dof = int(n_points) - int(n_params)
+    if dof <= 0:
+        return None
+    return float(chi2 / dof)
 
 
 class MultiFitter:
@@ -128,6 +150,7 @@ class MultiFitter:
         self._models = args
         self.easy_science_multi_fitter = EasyScienceMultiFitter(args, self._fit_func)
         self._fit_results: list[FitResults] | None = None
+        self._classical_fit_metrics: list[dict] | None = None
         self._objective = _validate_objective(objective)
 
     def fit(self, data: sc.DataGroup, id: int = 0, objective: str | None = None) -> sc.DataGroup:
@@ -155,6 +178,7 @@ class MultiFitter:
         x = []
         y = []
         dy = []
+        original_arrays = []
 
         # Process each reflectivity dataset
         for i in refl_nums:
@@ -170,7 +194,13 @@ class MultiFitter:
                     'due to zero variance during fitting.',
                     UserWarning,
                 )
-            if stats['mighell_substituted'] > 0:
+            if stats.get('transformed_all_points'):
+                warnings.warn(
+                    f'Applied Mighell transform to all {len(y_vals)} point(s) '
+                    f'in reflectivity {i} during fitting.',
+                    UserWarning,
+                )
+            elif stats['mighell_substituted'] > 0:
                 warnings.warn(
                     f'Applied Mighell substitution to {stats["mighell_substituted"]} '
                     f'zero-variance point(s) in reflectivity {i} during fitting.',
@@ -180,15 +210,16 @@ class MultiFitter:
             x.append(x_out)
             y.append(y_eff)
             dy.append(weights)
+            original_arrays.append({'x': x_vals, 'y': y_vals, 'variances': variances})
 
         result = self.easy_science_multi_fitter.fit(x, y, weights=dy)
         self._fit_results = result
+        self._classical_fit_metrics = []
         new_data = data.copy()
         for i, _ in enumerate(result):
             id = refl_nums[i]
-            new_data[f'R_{id}_model'] = sc.array(
-                dims=[f'Qz_{id}'], values=self._fit_func[i](data['coords'][f'Qz_{id}'].values)
-            )
+            model_curve = self._fit_func[i](data['coords'][f'Qz_{id}'].values)
+            new_data[f'R_{id}_model'] = sc.array(dims=[f'Qz_{id}'], values=model_curve)
             sld_profile = self.easy_science_multi_fitter._fit_objects[i].interface.sld_profile(self._models[i].unique_name)
             new_data[f'SLD_{id}'] = sc.array(dims=[f'z_{id}'], values=sld_profile[1] * 1e-6, unit=sc.Unit('1/angstrom') ** 2)
             if 'attrs' in new_data:
@@ -196,6 +227,28 @@ class MultiFitter:
             new_data['coords'][f'z_{id}'] = sc.array(
                 dims=[f'z_{id}'], values=sld_profile[0], unit=(1 / new_data['coords'][f'Qz_{id}'].unit).unit
             )
+            original = original_arrays[i]
+            sigma_classical = np.sqrt(np.clip(original['variances'], 0.0, None))
+            n_classical_points = int(np.sum(original['variances'] > 0.0))
+            classical_chi2 = _compute_weighted_chi2(original['y'], model_curve, sigma_classical)
+            classical_reduced_chi = _compute_reduced_chi2(classical_chi2, n_classical_points, result[i].n_pars)
+            objective_chi2 = float(result[i].chi2)
+            objective_reduced_chi = float(result[i].reduced_chi)
+
+            self._classical_fit_metrics.append(
+                {
+                    'classical_chi2': classical_chi2,
+                    'classical_reduced_chi': classical_reduced_chi,
+                    'objective_chi2': objective_chi2,
+                    'objective_reduced_chi': objective_reduced_chi,
+                    'n_classical_points': n_classical_points,
+                }
+            )
+
+            new_data['objective_chi2'] = objective_chi2
+            new_data['objective_reduced_chi'] = objective_reduced_chi
+            new_data['classical_chi2'] = classical_chi2
+            new_data['classical_reduced_chi'] = classical_reduced_chi
             new_data['reduced_chi'] = float(result[i].reduced_chi)
             new_data['success'] = result[i].success
         return new_data
@@ -226,7 +279,13 @@ class MultiFitter:
                 'due to zero variance during fitting.',
                 UserWarning,
             )
-        if stats['mighell_substituted'] > 0:
+        if stats.get('transformed_all_points'):
+            warnings.warn(
+                f'Applied Mighell transform to all {len(y_vals)} point(s) '
+                'in single-dataset fit during fitting.',
+                UserWarning,
+            )
+        elif stats['mighell_substituted'] > 0:
             warnings.warn(
                 f'Applied Mighell substitution to {stats["mighell_substituted"]} '
                 'zero-variance point(s) in single-dataset fit during fitting.',
@@ -238,6 +297,20 @@ class MultiFitter:
 
         result = self.easy_science_multi_fitter.fit(x=[x_out], y=[y_eff], weights=[weights])[0]
         self._fit_results = [result]
+        sigma_classical = np.sqrt(np.clip(variances, 0.0, None))
+        model_curve = self._fit_func[0](x_vals)
+        n_classical_points = int(np.sum(variances > 0.0))
+        classical_chi2 = _compute_weighted_chi2(y_vals, model_curve, sigma_classical)
+        classical_reduced_chi = _compute_reduced_chi2(classical_chi2, n_classical_points, result.n_pars)
+        self._classical_fit_metrics = [
+            {
+                'classical_chi2': classical_chi2,
+                'classical_reduced_chi': classical_reduced_chi,
+                'objective_chi2': float(result.chi2),
+                'objective_reduced_chi': float(result.reduced_chi),
+                'n_classical_points': n_classical_points,
+            }
+        ]
         return result
 
     @property
@@ -261,6 +334,33 @@ class MultiFitter:
             return None
 
         return total_chi2 / total_dof
+
+    @property
+    def classical_chi2(self) -> float | None:
+        """Classical chi-squared using only points with positive variances."""
+        if self._classical_fit_metrics is None:
+            return None
+        return float(sum(metric['classical_chi2'] for metric in self._classical_fit_metrics))
+
+    @property
+    def classical_reduced_chi(self) -> float | None:
+        """Reduced classical chi-squared using only points with positive variances."""
+        if self._classical_fit_metrics is None or self._fit_results is None:
+            return None
+        total_chi2 = self.classical_chi2
+        total_points = sum(metric['n_classical_points'] for metric in self._classical_fit_metrics)
+        n_params = self._fit_results[0].n_pars
+        return _compute_reduced_chi2(total_chi2, total_points, n_params)
+
+    @property
+    def objective_chi2(self) -> float | None:
+        """Objective-space chi-squared returned by the minimizer."""
+        return self.chi2
+
+    @property
+    def objective_reduced_chi(self) -> float | None:
+        """Objective-space reduced chi-squared returned by the minimizer."""
+        return self.reduced_chi
 
     def switch_minimizer(self, minimizer: AvailableMinimizers) -> None:
         """

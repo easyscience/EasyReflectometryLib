@@ -5,6 +5,7 @@ from unittest.mock import MagicMock
 
 import numpy as np
 import pytest
+import scipp as sc
 from easyscience.fitting.minimizers.factory import AvailableMinimizers
 
 import easyreflectometry
@@ -503,6 +504,73 @@ def test_fit_single_data_set_1d_hybrid_keeps_zero_variance_points():
     assert len(captured['x'][0]) == 3
     assert len(captured['y'][0]) == 3
     assert len(captured['weights'][0]) == 3
+
+
+def test_fit_single_data_set_1d_mighell_warning_mentions_all_points():
+    model = Model()
+    model.interface = CalculatorFactory()
+    fitter = MultiFitter(model, objective='mighell')
+
+    mock_result = MagicMock()
+    mock_result.chi2 = 1.0
+    mock_result.reduced_chi = 0.5
+    mock_result.n_pars = 1
+
+    fitter.easy_science_multi_fitter = MagicMock()
+    fitter.easy_science_multi_fitter.fit = MagicMock(return_value=[mock_result])
+    fitter._fit_func = [lambda x: np.zeros_like(x)]
+
+    data = DataSet1D(
+        name='mighell_warning',
+        x=np.array([0.01, 0.02, 0.03]),
+        y=np.array([1.0, 0.8, 0.6]),
+        ye=np.array([0.01, 0.02, 0.04]),
+    )
+
+    with pytest.warns(UserWarning, match=r'Applied Mighell transform to all 3 point\(s\)'):
+        fitter.fit_single_data_set_1d(data)
+
+
+def test_classical_and_objective_chi_are_split_for_fit_results():
+    model = Model()
+    model.interface = CalculatorFactory()
+    fitter = MultiFitter(model, objective='mighell')
+
+    fit_result = MagicMock()
+    fit_result.chi2 = 0.25
+    fit_result.reduced_chi = 0.125
+    fit_result.n_pars = 1
+    fit_result.x = np.array([0.01, 0.02, 0.03])
+
+    fitter.easy_science_multi_fitter = MagicMock()
+    fitter.easy_science_multi_fitter.fit = MagicMock(return_value=[fit_result])
+    fitter.easy_science_multi_fitter._fit_objects = [MagicMock(interface=MagicMock())]
+    fitter.easy_science_multi_fitter._fit_objects[0].interface.sld_profile.return_value = (np.array([0.0, 1.0]), np.array([1.0, 2.0]))
+
+    fitter._models = [MagicMock(unique_name='model_0', as_dict=MagicMock(return_value={'name': 'model_0'}))]
+    fitter._fit_func = [lambda x: np.array([0.8, 0.75, 0.7])]
+
+    data = sc.DataGroup(
+        {
+            'coords': {'Qz_0': sc.array(dims=['Qz_0'], values=np.array([0.01, 0.02, 0.03]), unit=sc.Unit('1/angstrom'))},
+            'data': {'R_0': sc.array(dims=['Qz_0'], values=np.array([1.0, 0.9, 0.7]), variances=np.array([0.01, 0.0, 0.04]))},
+            'attrs': {},
+        }
+    )
+
+    analysed = fitter.fit(data)
+
+    expected_classical_chi2 = ((1.0 - 0.8) / 0.1) ** 2 + ((0.7 - 0.7) / 0.2) ** 2
+    expected_classical_reduced = expected_classical_chi2 / (2 - fit_result.n_pars)
+
+    assert analysed['objective_chi2'] == pytest.approx(0.25)
+    assert analysed['objective_reduced_chi'] == pytest.approx(0.125)
+    assert analysed['classical_chi2'] == pytest.approx(expected_classical_chi2)
+    assert analysed['classical_reduced_chi'] == pytest.approx(expected_classical_reduced)
+    assert fitter.objective_chi2 == pytest.approx(0.25)
+    assert fitter.objective_reduced_chi == pytest.approx(0.125)
+    assert fitter.classical_chi2 == pytest.approx(expected_classical_chi2)
+    assert fitter.classical_reduced_chi == pytest.approx(expected_classical_reduced)
 
 
 def test_fit_single_data_set_1d_all_zero_variance_hybrid_does_not_raise():
