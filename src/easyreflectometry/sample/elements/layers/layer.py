@@ -6,6 +6,7 @@ import numpy as np
 from easyscience import global_object
 from easyscience.variable import Parameter
 
+from easyreflectometry.limits import apply_default_limits
 from easyreflectometry.utils import get_as_parameter
 
 from ...base_core import BaseCore
@@ -71,12 +72,15 @@ class Layer(BaseCore):
             default_dict=DEFAULTS,
             unique_name_prefix=f'{unique_name}_Thickness',
         )
+        apply_default_limits(thickness, 'thickness')
+
         roughness = get_as_parameter(
             name='roughness',
             value=roughness,
             default_dict=DEFAULTS,
             unique_name_prefix=f'{unique_name}_Roughness',
         )
+        apply_default_limits(roughness, 'roughness')
 
         super().__init__(
             name=name,
