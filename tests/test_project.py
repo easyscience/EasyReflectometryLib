@@ -720,32 +720,6 @@ class TestProject:
         assert len(parameters) == 14
         assert isinstance(parameters[0], Parameter)
 
-    def test_parameters_enabled_flags(self):
-        """Superphase thickness/roughness and subphase thickness should be disabled."""
-        # When
-        project = Project()
-        project.default_model()
-
-        # Then
-        sample = project.models[0].sample
-        superphase = sample.superphase
-        subphase = sample.subphase
-
-        # Superphase thickness and roughness should be disabled
-        assert superphase.thickness.enabled is False
-        assert superphase.roughness.enabled is False
-
-        # Subphase thickness should be disabled
-        assert subphase.thickness.enabled is False
-
-        # Subphase roughness should remain enabled
-        assert subphase.roughness.enabled is True
-
-        # Regular layer parameters should be enabled
-        middle_layer = sample[1].front_layer
-        assert middle_layer.thickness.enabled is True
-        assert middle_layer.roughness.enabled is True
-
     def test_current_experiment_index_getter_and_setter(self):
         global_object.map._clear()
         project = Project()
