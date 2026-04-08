@@ -89,7 +89,35 @@ class Project:
                     if pid not in seen_ids:
                         seen_ids.add(pid)
                         parameters.append(param)
+        self._update_parameter_enabled_flags()
         return parameters
+
+    def _update_parameter_enabled_flags(self) -> None:
+        """Mark physically non-fittable parameters as disabled.
+
+        Superphase thickness/roughness and subphase thickness are physically
+        meaningless (superphase is semi-infinite above, subphase is semi-infinite
+        below) and should not appear in the fittable parameters table.
+        """
+        if self._models is None:
+            return
+        # Collect the ids of parameters that should be disabled
+        disabled_ids: set[int] = set()
+        for model in self._models:
+            sample = model.sample
+            if sample is None or len(sample) == 0:
+                continue
+            superphase = sample.superphase
+            if superphase is not None:
+                disabled_ids.add(id(superphase.thickness))
+                disabled_ids.add(id(superphase.roughness))
+            subphase = sample.subphase
+            if subphase is not None:
+                disabled_ids.add(id(subphase.thickness))
+        # Reset all, then disable the non-physical ones
+        for model in self._models:
+            for param in model.get_parameters():
+                param.enabled = id(param) not in disabled_ids
 
     @property
     def q_min(self):
