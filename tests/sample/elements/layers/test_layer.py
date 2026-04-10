@@ -7,6 +7,7 @@ __version__ = '0.0.1'
 
 import unittest
 
+import numpy as np
 from easyscience import global_object
 from numpy.testing import assert_almost_equal
 from numpy.testing import assert_equal
@@ -28,13 +29,13 @@ class TestLayer(unittest.TestCase):
         assert_equal(str(p.thickness.unit), 'Å')
         assert_equal(p.thickness.value, 10.0)
         assert_equal(p.thickness.min, 0.0)
-        assert_equal(p.thickness.max, 20.0)
+        assert_equal(p.thickness.max, np.inf)
         assert_equal(p.thickness.fixed, True)
         assert_equal(p.roughness.display_name, 'roughness')
         assert_equal(str(p.roughness.unit), 'Å')
         assert_equal(p.roughness.value, 3.3)
         assert_equal(p.roughness.min, 0.0)
-        assert_equal(p.roughness.max, 6.6)
+        assert_equal(p.roughness.max, np.inf)
         assert_equal(p.roughness.fixed, True)
 
     def test_shuffled_arguments(self):
@@ -47,13 +48,13 @@ class TestLayer(unittest.TestCase):
         assert_equal(str(p.thickness.unit), 'Å')
         assert_equal(p.thickness.value, 5.0)
         assert_equal(p.thickness.min, 0.0)
-        assert_equal(p.thickness.max, 10.0)
+        assert_equal(p.thickness.max, np.inf)
         assert_equal(p.thickness.fixed, True)
         assert_equal(p.roughness.display_name, 'roughness')
         assert_equal(str(p.roughness.unit), 'Å')
         assert_equal(p.roughness.value, 2.0)
         assert_equal(p.roughness.min, 0.0)
-        assert_equal(p.roughness.max, 4.0)
+        assert_equal(p.roughness.max, np.inf)
         assert_equal(p.roughness.fixed, True)
 
     def test_only_roughness_key(self):
@@ -62,7 +63,7 @@ class TestLayer(unittest.TestCase):
         assert_equal(str(p.roughness.unit), 'Å')
         assert_equal(p.roughness.value, 10.0)
         assert_equal(p.roughness.min, 0.0)
-        assert_equal(p.roughness.max, 20.0)
+        assert_equal(p.roughness.max, np.inf)
         assert_equal(p.roughness.fixed, True)
 
     def test_only_roughness_key_paramter(self):
@@ -78,7 +79,7 @@ class TestLayer(unittest.TestCase):
         assert_equal(str(p.thickness.unit), 'Å')
         assert_equal(p.thickness.value, 10.0)
         assert_equal(p.thickness.min, 0.0)
-        assert_equal(p.thickness.max, 20.0)
+        assert_equal(p.thickness.max, np.inf)
         assert_equal(p.thickness.fixed, True)
 
     def test_only_thickness_key_paramter(self):

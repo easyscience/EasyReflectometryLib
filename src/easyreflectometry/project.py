@@ -21,6 +21,7 @@ from easyreflectometry.data import load_as_dataset
 from easyreflectometry.data.measurement import extract_orso_title
 from easyreflectometry.data.measurement import load_data_from_orso_file
 from easyreflectometry.fitting import MultiFitter
+from easyreflectometry.limits import apply_default_limits
 from easyreflectometry.model import Model
 from easyreflectometry.model import ModelCollection
 from easyreflectometry.model import PercentageFwhm
@@ -89,19 +90,19 @@ class Project:
                     if pid not in seen_ids:
                         seen_ids.add(pid)
                         parameters.append(param)
-        self._update_parameter_enabled_flags()
         return parameters
 
-    def _update_parameter_enabled_flags(self) -> None:
-        """Mark physically non-fittable parameters as disabled.
+    def _sync_parameter_states(self) -> None:
+        """Apply project-level parameter enablement and default limits.
 
         Superphase thickness/roughness and subphase thickness are physically
-        meaningless (superphase is semi-infinite above, subphase is semi-infinite
-        below) and should not appear in the fittable parameters table.
+        meaningless and are marked as disabled. Thickness and roughness default
+        ranges are then applied only to enabled parameters created from project
+        defaults, leaving explicit user-provided bounds untouched.
         """
         if self._models is None:
             return
-        # Collect the ids of parameters that should be disabled
+
         disabled_ids: set[int] = set()
         for model in self._models:
             sample = model.sample
@@ -114,10 +115,28 @@ class Project:
             subphase = sample.subphase
             if subphase is not None:
                 disabled_ids.add(id(subphase.thickness))
-        # Reset all, then disable the non-physical ones
+
         for model in self._models:
-            for param in model.get_parameters():
-                param.enabled = id(param) not in disabled_ids
+            sample = model.sample
+            if sample is None or len(sample) == 0:
+                continue
+            for assembly in sample:
+                for layer in assembly.layers:
+                    self._sync_layer_parameter_state(layer.thickness, 'thickness', disabled_ids)
+                    self._sync_layer_parameter_state(layer.roughness, 'roughness', disabled_ids)
+
+    def _sync_layer_parameter_state(self, parameter: Parameter, kind: str, disabled_ids: set[int]) -> None:
+        """Update a layer parameter's enabled state and pending default limits."""
+        if id(parameter) in disabled_ids:
+            parameter.enabled = False
+            return
+
+        if getattr(parameter, 'default_limits_pending', False):
+            delattr(parameter, 'default_limits_pending')
+            if getattr(parameter, 'enabled', True):
+                parameter.min = -np.inf
+                parameter.max = np.inf
+                apply_default_limits(parameter, kind)
 
     @property
     def q_min(self):
@@ -232,6 +251,7 @@ class Project:
         self._materials.extend(self._get_materials_in_models())
         for model in self._models:
             model.interface = self._calculator
+        self._sync_parameter_states()
 
     @property
     def fitter(self) -> MultiFitter:
@@ -362,6 +382,7 @@ class Project:
         model.interface = self._calculator
         # Extract materials from the new model and add to project materials
         self._materials.extend(self._get_materials_from_model(model))
+        self._sync_parameter_states()
         # Switch to the newly added model so its data is visible in the UI
         self.current_model_index = len(self._models) - 1
 
