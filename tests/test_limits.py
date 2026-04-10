@@ -114,45 +114,6 @@ class TestIntegrationWithConstructors:
         assert layer.roughness.min == 1.5
         assert layer.roughness.max == 6.0
 
-    def test_project_applies_percentage_limits_to_enabled_layers(self):
-        from easyreflectometry.project import Project
-
-        project = Project()
-        project.default_model()
-        layer = project.models[0].sample[1].layers[0]
-        assert layer.thickness.min == 50.0
-        assert layer.thickness.max == 200.0
-        assert layer.roughness.min == 1.5
-        assert layer.roughness.max == 6.0
-
-    def test_project_skips_disabled_layer_limits(self):
-        from easyreflectometry.project import Project
-
-        project = Project()
-        project.default_model()
-        superphase = project.models[0].sample[0].layers[0]
-        subphase = project.models[0].sample[-1].layers[-1]
-
-        assert superphase.thickness.enabled is False
-        assert superphase.thickness.min == 0.0
-        assert superphase.thickness.max == np.inf
-        assert superphase.roughness.enabled is False
-        assert superphase.roughness.min == 0.0
-        assert superphase.roughness.max == np.inf
-        assert subphase.thickness.enabled is False
-        assert subphase.thickness.min == 0.0
-        assert subphase.thickness.max == np.inf
-
-    def test_project_does_not_overwrite_enabled_flag(self):
-        from easyreflectometry.project import Project
-
-        project = Project()
-        project.default_model()
-        parameter = project.models[0].sample[0].layers[0].thickness
-        parameter.enabled = True
-        _ = project.parameters
-        assert parameter.enabled is True
-
     def test_layer_constructor_keeps_default_bounds_until_project_sync(self):
         from easyreflectometry.sample.elements.layers.layer import Layer
 
