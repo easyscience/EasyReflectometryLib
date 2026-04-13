@@ -720,6 +720,35 @@ class TestProject:
         assert len(parameters) == 14
         assert isinstance(parameters[0], Parameter)
 
+    def test_parameters_enabled_flags(self):
+        global_object.map._clear()
+        project = Project()
+        project.default_model()
+
+        sample = project.models[0].sample
+        superphase = sample.superphase
+        subphase = sample.subphase
+        middle_layer = sample[1].front_layer
+
+        assert superphase.thickness.enabled is False
+        assert superphase.roughness.enabled is False
+        assert subphase.thickness.enabled is False
+        assert getattr(subphase.roughness, 'enabled', True) is True
+        assert getattr(middle_layer.thickness, 'enabled', True) is True
+        assert getattr(middle_layer.roughness, 'enabled', True) is True
+
+    def test_parameters_read_does_not_overwrite_enabled_flag(self):
+        global_object.map._clear()
+        project = Project()
+        project.default_model()
+
+        parameter = project.models[0].sample[0].layers[0].thickness
+        parameter.enabled = True
+
+        _ = project.parameters
+
+        assert parameter.enabled is True
+
     def test_current_experiment_index_getter_and_setter(self):
         global_object.map._clear()
         project = Project()

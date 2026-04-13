@@ -65,18 +65,23 @@ class Layer(BaseCore):
         if unique_name is None:
             unique_name = global_object.generate_unique_name(self.__class__.__name__)
 
+        thickness_value = thickness
         thickness = get_as_parameter(
             name='thickness',
             value=thickness,
             default_dict=DEFAULTS,
             unique_name_prefix=f'{unique_name}_Thickness',
         )
+        thickness.default_limits_pending = not isinstance(thickness_value, Parameter)
+
+        roughness_value = roughness
         roughness = get_as_parameter(
             name='roughness',
             value=roughness,
             default_dict=DEFAULTS,
             unique_name_prefix=f'{unique_name}_Roughness',
         )
+        roughness.default_limits_pending = not isinstance(roughness_value, Parameter)
 
         super().__init__(
             name=name,
