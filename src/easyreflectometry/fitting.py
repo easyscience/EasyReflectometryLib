@@ -124,6 +124,19 @@ def _compute_reduced_chi2(chi2: float, n_points: int, n_params: int) -> float | 
     return float(chi2 / dof)
 
 
+def _fit_result_reduced_chi(result: FitResults, n_points: int | None = None) -> float:
+    """Return reduced chi-square from either supported FitResults attribute name."""
+    for attribute in ('reduced_chi', 'reduced_chi2'):
+        value = getattr(result, attribute, None)
+        if isinstance(value, (int, float, np.number)):
+            return float(value)
+    if n_points is not None:
+        reduced_chi = _compute_reduced_chi2(float(result.chi2), n_points, result.n_pars)
+        if reduced_chi is not None:
+            return reduced_chi
+    raise AttributeError('FitResults object has neither reduced_chi nor reduced_chi2')
+
+
 class MultiFitter:
     def __init__(self, *args: Model, objective: str = 'hybrid'):
         r"""A convenience class for the :py:class:`easyscience.Fitting.Fitting`
@@ -231,7 +244,7 @@ class MultiFitter:
             classical_chi2 = _compute_weighted_chi2(original['y'], model_curve, sigma_classical)
             classical_reduced_chi = _compute_reduced_chi2(classical_chi2, n_classical_points, result[i].n_pars)
             objective_chi2 = float(result[i].chi2)
-            objective_reduced_chi = float(result[i].reduced_chi)
+            objective_reduced_chi = _fit_result_reduced_chi(result[i], np.size(result[i].x))
 
             self._classical_fit_metrics.append(
                 {
@@ -247,7 +260,7 @@ class MultiFitter:
             new_data['objective_reduced_chi'] = objective_reduced_chi
             new_data['classical_chi2'] = classical_chi2
             new_data['classical_reduced_chi'] = classical_reduced_chi
-            new_data['reduced_chi'] = float(result[i].reduced_chi)
+            new_data['reduced_chi'] = objective_reduced_chi
             new_data['success'] = result[i].success
         return new_data
 
@@ -303,7 +316,7 @@ class MultiFitter:
                 'classical_chi2': classical_chi2,
                 'classical_reduced_chi': classical_reduced_chi,
                 'objective_chi2': float(result.chi2),
-                'objective_reduced_chi': float(result.reduced_chi),
+                'objective_reduced_chi': _fit_result_reduced_chi(result, len(x_out)),
                 'n_classical_points': n_classical_points,
             }
         ]
