@@ -28,6 +28,15 @@ Project provides a higher-level interface for managing models, experiments, and 
 
    project
 
+Fitting
+=======
+Fitting helpers and objective functions.
+
+.. toctree::
+   :maxdepth: 1
+
+   fitting
+
 Assemblies
 ==========
 Assemblies are collections of layers that are used to represent a specific physical setup.
