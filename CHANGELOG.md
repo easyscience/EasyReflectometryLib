@@ -1,3 +1,12 @@
+# Version 1.4.0 (unreleased)
+
+Add Mighell-based handling of zero-variance points in fitting (issue #256).
+Zero-variance data points are no longer forcibly discarded; instead, a hybrid
+objective applies a Mighell substitution for zero-variance points while using
+standard weighted least squares for the rest. The previous masking behavior is
+available via `objective='legacy_mask'`. New `objective` parameter on
+`MultiFitter`, `fit()`, and `fit_single_data_set_1d()`.
+
 # Version 1.3.3 (17 June 2025)
 
 Added Chi^2 and fit status to fitting results.
