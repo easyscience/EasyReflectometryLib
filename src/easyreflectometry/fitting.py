@@ -190,14 +190,12 @@ class MultiFitter:
 
             if stats['masked'] > 0:
                 warnings.warn(
-                    f'Masked {stats["masked"]} data point(s) in reflectivity {i} '
-                    'due to zero variance during fitting.',
+                    f'Masked {stats["masked"]} data point(s) in reflectivity {i} due to zero variance during fitting.',
                     UserWarning,
                 )
             if stats.get('transformed_all_points'):
                 warnings.warn(
-                    f'Applied Mighell transform to all {len(y_vals)} point(s) '
-                    f'in reflectivity {i} during fitting.',
+                    f'Applied Mighell transform to all {len(y_vals)} point(s) in reflectivity {i} during fitting.',
                     UserWarning,
                 )
             elif stats['mighell_substituted'] > 0:
@@ -275,14 +273,12 @@ class MultiFitter:
 
         if stats['masked'] > 0:
             warnings.warn(
-                f'Masked {stats["masked"]} data point(s) in single-dataset fit '
-                'due to zero variance during fitting.',
+                f'Masked {stats["masked"]} data point(s) in single-dataset fit due to zero variance during fitting.',
                 UserWarning,
             )
         if stats.get('transformed_all_points'):
             warnings.warn(
-                f'Applied Mighell transform to all {len(y_vals)} point(s) '
-                'in single-dataset fit during fitting.',
+                f'Applied Mighell transform to all {len(y_vals)} point(s) in single-dataset fit during fitting.',
                 UserWarning,
             )
         elif stats['mighell_substituted'] > 0:

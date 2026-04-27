@@ -545,11 +545,12 @@ def test_classical_and_objective_chi_are_split_for_fit_results():
     fitter.easy_science_multi_fitter = MagicMock()
     fitter.easy_science_multi_fitter.fit = MagicMock(return_value=[fit_result])
     fitter.easy_science_multi_fitter._fit_objects = [MagicMock(interface=MagicMock())]
-    fitter.easy_science_multi_fitter._fit_objects[0].interface.sld_profile.return_value = \
-        (np.array([0.0, 1.0]), np.array([1.0, 2.0]))
+    fitter.easy_science_multi_fitter._fit_objects[0].interface.sld_profile.return_value = (
+        np.array([0.0, 1.0]),
+        np.array([1.0, 2.0]),
+    )
 
-    fitter._models = [MagicMock(unique_name='model_0',
-                                as_dict=MagicMock(return_value={'name': 'model_0'}))]
+    fitter._models = [MagicMock(unique_name='model_0', as_dict=MagicMock(return_value={'name': 'model_0'}))]
     fitter._fit_func = [lambda x: np.array([0.8, 0.75, 0.7])]
 
     data = sc.DataGroup(
