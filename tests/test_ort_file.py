@@ -20,6 +20,8 @@ from easyreflectometry.sample import Material
 from easyreflectometry.sample import Multilayer
 from easyreflectometry.sample import Sample
 
+BUMPS_MAX_EVALUATIONS = 5000
+
 
 def make_pooch(base_url: str, registry: dict[str, str | None]) -> pooch.Pooch:
     """Make a Pooch object to download test data."""
@@ -123,6 +125,7 @@ def fit_model(load_data):
 
     fitter1 = MultiFitter(multi_layer_model)
     fitter1.switch_minimizer(AvailableMinimizers.Bumps_simplex)
+    fitter1.easy_science_multi_fitter.max_evaluations = BUMPS_MAX_EVALUATIONS
 
     analysed = fitter1.fit(data)
     return analysed

@@ -23,6 +23,7 @@ from easyreflectometry.sample import Multilayer
 from easyreflectometry.sample import Sample
 
 PATH_STATIC = os.path.join(os.path.dirname(easyreflectometry.__file__), '..', '..', 'tests', '_static')
+BUMPS_MAX_EVALUATIONS = 1000
 
 
 @pytest.mark.parametrize('minimizer', [AvailableMinimizers.Bumps, AvailableMinimizers.LMFit])
@@ -71,6 +72,8 @@ def test_fitting(minimizer):
     model.interface = interface
     fitter = MultiFitter(model)
     fitter.easy_science_multi_fitter.switch_minimizer(minimizer)
+    if minimizer.package == 'bumps':
+        fitter.easy_science_multi_fitter.max_evaluations = BUMPS_MAX_EVALUATIONS
     analysed = fitter.fit(data)
     assert 'R_0_model' in analysed.keys()
     assert 'SLD_0' in analysed.keys()
