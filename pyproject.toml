@@ -30,7 +30,7 @@ classifiers = [
 requires-python = ">=3.11,<3.14"
 
 dependencies = [
-    #"easyscience",
+    "easyscience",
     "easyscience @ git+https://github.com/EasyScience/core.git@develop",
     "scipp",
     "refnx",
