@@ -31,7 +31,7 @@ requires-python = ">=3.11,<3.14"
 
 dependencies = [
     "easyscience",
-    "easyscience @ git+https://github.com/EasyScience/core.git@interim_updates",
+    "easyscience @ git+https://github.com/EasyScience/core.git@develop",
     "scipp",
     "refnx",
     "refl1d>=1.0.0",
