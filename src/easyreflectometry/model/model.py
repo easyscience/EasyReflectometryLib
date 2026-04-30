@@ -12,6 +12,7 @@ from easyscience import ObjBase as BaseObj
 from easyscience import global_object
 from easyscience.variable import Parameter
 
+from easyreflectometry.limits import apply_default_limits
 from easyreflectometry.sample import BaseAssembly
 from easyreflectometry.sample import Sample
 from easyreflectometry.utils import get_as_parameter
@@ -86,6 +87,7 @@ class Model(BaseObj):
             resolution_function = PercentageFwhm(DEFAULTS['resolution']['value'])
 
         scale = get_as_parameter('scale', scale, DEFAULTS)
+        apply_default_limits(scale, 'scale')
         background = get_as_parameter('background', background, DEFAULTS)
         self.color = color
         self._is_default = False

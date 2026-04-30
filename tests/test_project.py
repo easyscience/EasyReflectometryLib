@@ -268,6 +268,20 @@ class TestProject:
         # Expect
         assert fitter_0 is not fitter_1
 
+    def test_switch_calculator_rebuilds_model_bindings(self):
+        # When
+        project = Project()
+        project.default_model()
+
+        # Then
+        project.calculator = 'refl1d'
+        reflectivity = project.model_data_for_model_at_index(0, np.array([0.01, 0.05, 0.1, 0.5]))
+
+        # Expect
+        assert project.calculator == 'refl1d'
+        assert len(reflectivity.y) == 4
+        assert np.all(np.isfinite(reflectivity.y))
+
     def test_experiments(self):
         # When
         project = Project()
@@ -705,6 +719,35 @@ class TestProject:
         # Expect
         assert len(parameters) == 14
         assert isinstance(parameters[0], Parameter)
+
+    def test_parameters_enabled_flags(self):
+        global_object.map._clear()
+        project = Project()
+        project.default_model()
+
+        sample = project.models[0].sample
+        superphase = sample.superphase
+        subphase = sample.subphase
+        middle_layer = sample[1].front_layer
+
+        assert superphase.thickness.enabled is False
+        assert superphase.roughness.enabled is False
+        assert subphase.thickness.enabled is False
+        assert getattr(subphase.roughness, 'enabled', True) is True
+        assert getattr(middle_layer.thickness, 'enabled', True) is True
+        assert getattr(middle_layer.roughness, 'enabled', True) is True
+
+    def test_parameters_read_does_not_overwrite_enabled_flag(self):
+        global_object.map._clear()
+        project = Project()
+        project.default_model()
+
+        parameter = project.models[0].sample[0].layers[0].thickness
+        parameter.enabled = True
+
+        _ = project.parameters
+
+        assert parameter.enabled is True
 
     def test_current_experiment_index_getter_and_setter(self):
         global_object.map._clear()

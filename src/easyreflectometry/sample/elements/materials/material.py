@@ -7,6 +7,7 @@ import numpy as np
 from easyscience import global_object
 from easyscience.variable import Parameter
 
+from easyreflectometry.limits import apply_default_limits
 from easyreflectometry.utils import get_as_parameter
 
 from ...base_core import BaseCore
@@ -62,12 +63,15 @@ class Material(BaseCore):
             default_dict=DEFAULTS,
             unique_name_prefix=f'{unique_name}_Sld',
         )
+        apply_default_limits(sld, 'sld')
+
         isld = get_as_parameter(
             name='isld',
             value=isld,
             default_dict=DEFAULTS,
             unique_name_prefix=f'{unique_name}_Isld',
         )
+        apply_default_limits(isld, 'isld')
 
         super().__init__(
             name=name,

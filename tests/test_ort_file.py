@@ -123,6 +123,7 @@ def fit_model(load_data):
 
     fitter1 = MultiFitter(multi_layer_model)
     fitter1.switch_minimizer(AvailableMinimizers.Bumps_simplex)
+    fitter1.easy_science_multi_fitter.max_evaluations = 3000
 
     analysed = fitter1.fit(data)
     return analysed
