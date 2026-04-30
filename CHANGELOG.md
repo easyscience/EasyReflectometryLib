@@ -1,4 +1,4 @@
-# Version 1.4.0 (unreleased)
+# Version 1.6.0 (1 May 2026)
 
 Add Mighell-based handling of zero-variance points in fitting (issue #256).
 Zero-variance data points are no longer forcibly discarded; instead, a hybrid
