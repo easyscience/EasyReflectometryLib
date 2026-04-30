@@ -3,16 +3,16 @@ Fitting
 
 .. currentmodule:: easyreflectometry.fitting
 
-Objective functions and zero-variance handling
-----------------------------------------------
+Objective functions and non-positive variance handling
+-----------------------------------------------------
 
 :class:`MultiFitter` supports several objective modes for handling reflectometry
-data during fitting, especially when measured variances are zero or invalid.
+data during fitting, especially when measured variances are non-positive.
 
 The default objective is ``hybrid``. This uses ordinary weighted least squares
 for points with positive variance and applies a Mighell-style substitution only
-to points whose variance is zero or invalid. The older ``legacy_mask`` mode
-drops zero-variance points before fitting. The ``mighell`` mode applies the
+to points whose variance is non-positive. The older ``legacy_mask`` mode
+drops non-positive-variance points before fitting. The ``mighell`` mode applies the
 Mighell transform to every point.
 
 Mighell objective
@@ -69,8 +69,8 @@ Mighell objective value while looking poorer against the originally plotted
 reflectivity curve, or while having a worse classical chi-square.
 
 For reflectometry data, ``hybrid`` is generally the recommended compromise:
-it preserves ordinary weighted least-squares behavior where valid variances are
-available, while still allowing zero-variance points to contribute through the
+it preserves ordinary weighted least-squares behavior where positive variances are
+available, while still allowing non-positive-variance points to contribute through the
 Mighell-style substitution.
 
 Objective modes
@@ -78,8 +78,8 @@ Objective modes
 
 ``hybrid``
    Default. Use standard weighted least squares for points with positive
-   variance and apply the Mighell substitution only where variance is zero or
-   invalid.
+   variance and apply the Mighell substitution only where variance is
+   non-positive.
 
 ``mighell``
    Apply the Mighell transform to all points. The reported objective chi-square
@@ -87,7 +87,7 @@ Objective modes
    a classical chi-square against the original reflectivity values.
 
 ``legacy_mask``
-   Remove zero-variance points before fitting and use standard weighted least
+   Remove non-positive-variance points before fitting and use standard weighted least
    squares for the remaining points.
 
 ``auto``
