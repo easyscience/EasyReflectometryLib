@@ -69,6 +69,11 @@ docs = [
     "toml"
 ]
 
+bayesian = [
+    "corner>=2.2",
+    "arviz>=0.18",
+]
+
 [project.urls]
 homepage = "https://docs.easyreflectometry.org"
 documentation = "https://docs.easyreflectometry.org"

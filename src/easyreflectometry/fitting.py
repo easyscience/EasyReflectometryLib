@@ -322,6 +322,99 @@ class MultiFitter:
         ]
         return result
 
+    def sample(
+        self,
+        data: sc.DataGroup,
+        samples: int = 10000,
+        burn: int = 2000,
+        thin: int = 10,
+        chains: int | None = None,
+        population: int | None = None,
+        seed: int | None = None,
+        objective: str | None = None,
+    ) -> dict:
+        """Run Bayesian MCMC sampling on reflectometry data using the DREAM sampler.
+
+        Requires that the minimizer is a BUMPS instance (i.e. the minimizer was
+        switched to ``AvailableMinimizers.Bumps``).
+
+        :param data: DataGroup with reflectivity data.
+        :type data: sc.DataGroup
+        :param samples: Number of retained DREAM samples requested from BUMPS.
+        :type samples: int
+        :param burn: Burn-in steps.
+        :type burn: int
+        :param thin: Thinning interval.
+        :type thin: int
+        :param chains: User-friendly alias for BUMPS DREAM population count.
+        :type chains: int | None
+        :param population: BUMPS DREAM population count (``pop``) for advanced users.
+        :type population: int | None
+        :param seed: Random seed for reproducibility.
+        :type seed: int | None
+        :param objective: Zero-variance handling strategy. If ``None``, uses the
+            instance default set at construction.
+        :type objective: str or None
+        :return: Dictionary with keys ``'draws'``, ``'param_names'``, ``'state'``,
+            and ``'logp'``.
+        :rtype: dict
+        :raises AttributeError: If the current minimizer is not a BUMPS instance
+            (i.e. does not have a ``sample`` method).
+        """
+        obj = _validate_objective(objective) if objective is not None else self._objective
+
+        refl_nums = [k[3:] for k in data['coords'].keys() if 'Qz' == k[:2]]
+        x = []
+        y = []
+        dy = []
+
+        # Process each reflectivity dataset
+        for i in refl_nums:
+            x_vals = data['coords'][f'Qz_{i}'].values
+            y_vals = data['data'][f'R_{i}'].values
+            variances = data['data'][f'R_{i}'].variances
+
+            x_out, y_eff, weights, stats = _prepare_fit_arrays(x_vals, y_vals, variances, obj)
+
+            if stats['masked'] > 0:
+                warnings.warn(
+                    f'Masked {stats["masked"]} data point(s) in reflectivity {i} '
+                    'due to zero variance during sampling.',
+                    UserWarning,
+                )
+            x.append(x_out)
+            y.append(y_eff)
+            dy.append(weights)
+
+        # Flatten multi-dataset arrays using the easyscience MultiFitter reshaping
+        es_multi = self.easy_science_multi_fitter
+        _, x_new, y_new, w_new, _dims = es_multi._precompute_reshaping(x, y, dy, vectorized=False)
+        es_multi._dependent_dims = _dims
+
+        # Wrap fit functions for multi-dataset flattening, mirroring the
+        # ``Fitter.fit`` lifecycle: use the property setter so the minimizer
+        # is re-created with the wrapped fit function.
+        original_fit_func = es_multi.fit_function
+        fit_fun_wrap = es_multi._fit_function_wrapper(x_new, flatten=True)
+        es_multi.fit_function = fit_fun_wrap
+
+        try:
+            result = es_multi.minimizer.sample(
+                x=np.linspace(0, y_new.size - 1, y_new.size),
+                y=y_new,
+                weights=w_new,
+                samples=samples,
+                burn=burn,
+                thin=thin,
+                chains=chains,
+                population=population,
+                seed=seed,
+            )
+        finally:
+            es_multi.fit_function = original_fit_func
+
+        return result
+
     @property
     def chi2(self) -> float | None:
         """Total chi-squared across all fitted datasets, or None if no fit has been performed."""
