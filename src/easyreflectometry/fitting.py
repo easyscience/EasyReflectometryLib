@@ -358,10 +358,26 @@ class MultiFitter:
         :return: Dictionary with keys ``'draws'``, ``'param_names'``, ``'state'``,
             and ``'logp'``.
         :rtype: dict
-        :raises AttributeError: If the current minimizer is not a BUMPS instance
-            (i.e. does not have a ``sample`` method).
+        :raises RuntimeError: If the current minimizer is not a BUMPS instance.
         """
         obj = _validate_objective(objective) if objective is not None else self._objective
+
+        # --- Alias resolution (moved here from core) ---
+        if chains is not None and population is not None:
+            if chains != population:
+                raise ValueError(
+                    f'Conflicting population arguments: chains={chains}, population={population}. Only provide one.'
+                )
+            pop = chains
+        elif chains is not None:
+            pop = chains
+        elif population is not None:
+            pop = population
+        else:
+            pop = None
+
+        if seed is not None:
+            np.random.seed(seed)
 
         refl_nums = [k[3:] for k in data['coords'].keys() if 'Qz' == k[:2]]
         x = []
@@ -398,21 +414,48 @@ class MultiFitter:
         es_multi.fit_function = fit_fun_wrap
 
         try:
-            result = es_multi.minimizer.sample(
-                x=np.linspace(0, y_new.size - 1, y_new.size),
-                y=y_new,
-                weights=w_new,
-                samples=samples,
-                burn=burn,
-                thin=thin,
-                chains=chains,
-                population=population,
-                seed=seed,
-            )
+            # Build a BUMPS model and problem directly (no core changes needed).
+            # The minimizer's _make_model() and bumps public API are sufficient.
+            from bumps.fitters import fit as bumps_fit
+            from bumps.names import FitProblem
+
+            minimizer = es_multi.minimizer
+
+            # Verify it's a BUMPS minimizer (sampling only works with BUMPS/DREAM)
+            if not hasattr(minimizer, '_make_model'):
+                raise RuntimeError(
+                    'Bayesian sampling requires a BUMPS minimizer. '
+                    'Use ``fitter.switch_minimizer(AvailableMinimizers.Bumps)`` first.'
+                )
+
+            # Build the BUMPS Curve model using the minimizer's existing machinery
+            model_func = minimizer._make_model()
+            x_flat = np.linspace(0, y_new.size - 1, y_new.size)
+            curve = model_func(x_flat, y_new, w_new)
+            problem = FitProblem(curve)
+
+            # Run DREAM sampler
+            dream_kwargs = {'samples': samples, 'burn': burn, 'thin': thin}
+            if pop is not None:
+                dream_kwargs['pop'] = pop
+            result = bumps_fit(problem, method='dream', **dream_kwargs)
+
+            # Extract posterior
+            from easyscience.fitting.minimizers.minimizer_base import MINIMIZER_PARAMETER_PREFIX
+
+            draws = result.state.draw().points
+            param_names = [p.name[len(MINIMIZER_PARAMETER_PREFIX) :] for p in problem._parameters]
+            logp = getattr(result.state, 'logp', None)
+
         finally:
             es_multi.fit_function = original_fit_func
 
-        return result
+        return {
+            'draws': draws,
+            'param_names': param_names,
+            'state': result.state,
+            'logp': logp,
+        }
 
     @property
     def chi2(self) -> float | None:
