@@ -91,10 +91,7 @@ class PosteriorResults:
 
     def __repr__(self) -> str:
         n_samples, n_params = self.draws.shape
-        return (
-            f'PosteriorResults(n_samples={n_samples}, n_params={n_params}, '
-            f'param_names={self.param_names})'
-        )
+        return f'PosteriorResults(n_samples={n_samples}, n_params={n_params}, param_names={self.param_names})'
 
     def summary(self) -> str:
         """Return a formatted summary table with mean, sd, and HDI for each parameter.
@@ -143,8 +140,7 @@ class PosteriorResults:
         """
         if not _HAS_ARVIZ:
             warnings.warn(
-                'The ``arviz`` library is required for Gelman-Rubin R-hat. '
-                'Install it with ``pip install arviz``.',
+                'The ``arviz`` library is required for Gelman-Rubin R-hat. Install it with ``pip install arviz``.',
                 UserWarning,
             )
             return None
@@ -165,9 +161,7 @@ def posterior_summary(draws: np.ndarray, param_names: list[str]) -> str:
     :rtype: str
     """
     draws = np.asarray(draws)
-    lines = [
-        f'{"parameter":<30s} {"mean":>10s} {"sd":>10s} {"hdi_2.5%":>10s} {"hdi_97.5%":>10s}'
-    ]
+    lines = [f'{"parameter":<30s} {"mean":>10s} {"sd":>10s} {"hdi_2.5%":>10s} {"hdi_97.5%":>10s}']
     for i, name in enumerate(param_names):
         col = draws[:, i]
         lo, hi = np.percentile(col, [2.5, 97.5])

@@ -119,7 +119,11 @@ class TestPosteriorPredictiveReflectivity:
 
         q_values = np.linspace(0.01, 0.3, 50)
         median, lower, upper = posterior_predictive_reflectivity(
-            draws, param_names, mock_model, q_values, n_samples=20,
+            draws,
+            param_names,
+            mock_model,
+            q_values,
+            n_samples=20,
         )
         assert median.shape == (50,)
         assert lower.shape == (50,)
@@ -137,13 +141,14 @@ class TestPosteriorPredictiveSLDProfile:
         mock_model = MagicMock()
         mock_model.unique_name = 'test_model'
         mock_model.interface = MagicMock()
-        mock_model.interface.sld_profile = MagicMock(
-            return_value=(np.linspace(0, 500, 100), np.ones(100) * 2.0)
-        )
+        mock_model.interface.sld_profile = MagicMock(return_value=(np.linspace(0, 500, 100), np.ones(100) * 2.0))
         mock_model.get_parameters = MagicMock(return_value=[])
 
         z, median, lower, upper = posterior_predictive_sld_profile(
-            draws, param_names, mock_model, n_samples=20,
+            draws,
+            param_names,
+            mock_model,
+            n_samples=20,
         )
         assert z.shape == (100,)
         assert median.shape == (100,)

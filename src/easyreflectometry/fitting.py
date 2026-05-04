@@ -378,8 +378,7 @@ class MultiFitter:
 
             if stats['masked'] > 0:
                 warnings.warn(
-                    f'Masked {stats["masked"]} data point(s) in reflectivity {i} '
-                    'due to zero variance during sampling.',
+                    f'Masked {stats["masked"]} data point(s) in reflectivity {i} due to zero variance during sampling.',
                     UserWarning,
                 )
             x.append(x_out)
