@@ -1,5 +1,6 @@
 from importlib import metadata
 
+from .analysis.bayesian import PosteriorResults
 from .project import Project
 
 try:
@@ -9,5 +10,6 @@ except metadata.PackageNotFoundError:
 
 __all__ = [
     Project,
+    PosteriorResults,
     __version__,
 ]

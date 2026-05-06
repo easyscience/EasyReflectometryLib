@@ -30,6 +30,7 @@ classifiers = [
 requires-python = ">=3.11,<3.14"
 
 dependencies = [
+    "easyscience @ git+https://github.com/easyscience/corelib.git@bayesian",
     "easyscience",
     "scipp",
     "refnx",
@@ -68,6 +69,11 @@ docs = [
     "sphinx_book_theme",
     "sphinx-copybutton",
     "toml"
+]
+
+bayesian = [
+    "corner>=2.2",
+    "arviz>=0.18",
 ]
 
 [project.urls]
