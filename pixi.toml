@@ -272,3 +272,6 @@ post-install = { depends-on = [
 # 🔗 Main Package Shortcut
 ##########################
 easyreflectometry = 'python -m easyreflectometry'
+
+[dependencies]
+ruff = ">=0.15.12,<0.16"

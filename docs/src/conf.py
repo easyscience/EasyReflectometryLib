@@ -20,8 +20,9 @@
 import datetime
 import os
 import sys
-import toml
 from pathlib import Path
+
+import toml
 
 import easyreflectometry
 
@@ -54,7 +55,7 @@ extensions = [
     'sphinx_autodoc_typehints',
     'sphinx_copybutton',
     'nbsphinx',
-    'myst_parser'
+    'myst_parser',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -71,8 +72,8 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'EasyReflectometry'
-copyright = f"{datetime.date.today().year}, EasyReflectometry"
-author = "EasyReflectometry"
+copyright = f'{datetime.date.today().year}, EasyReflectometry'
+author = 'EasyReflectometry'
 
 # The version info for the project you're documenting, acts as replacement
 # for |version| and |release|, also used in various other places throughout
@@ -105,7 +106,7 @@ todo_include_todos = False
 autoclass_content = 'class'
 autodoc_member_order = 'bysource'
 autodoc_typehints = 'signature'
-autodoc_class_signature = "separated"
+autodoc_class_signature = 'separated'
 
 # -- Options for HTML output -------------------------------------------
 
@@ -116,7 +117,7 @@ html_theme = 'sphinx_book_theme'
 html_logo = os.path.join('_static', 'logo.png')
 html_favicon = os.path.join('_static', 'favicon.ico')
 html_theme_options = {
-#    'logo_only': True,
+    #    'logo_only': True,
     'navigation_with_keys': True
 }
 html_baseurl = 'https://docs.easyreflectometry.org'
@@ -132,7 +133,7 @@ html_baseurl = 'https://docs.easyreflectometry.org'
 html_static_path = ['_static']
 
 nbsphinx_execute_arguments = [
-    "--Session.metadata=scipp_docs_build=True",
+    '--Session.metadata=scipp_docs_build=True',
 ]
 
 
@@ -148,15 +149,12 @@ latex_elements = {
     # The paper size ('letterpaper' or 'a4paper').
     #
     # 'papersize': 'letterpaper',
-
     # The font size ('10pt', '11pt' or '12pt').
     #
     # 'pointsize': '10pt',
-
     # Additional stuff for the LaTeX preamble.
     #
     # 'preamble': '',
-
     # Latex figure (float) alignment
     #
     # 'figure_align': 'htbp',
@@ -166,9 +164,7 @@ latex_elements = {
 # (source start file, target name, title, author, documentclass
 # [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'EasyReflectometry.tex',
-     'EasyReflectometry Documentation',
-     'Andrew R. McCluskey', 'manual'),
+    (master_doc, 'EasyReflectometry.tex', 'EasyReflectometry Documentation', 'Andrew R. McCluskey', 'manual'),
 ]
 
 
@@ -176,11 +172,7 @@ latex_documents = [
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
-man_pages = [
-    (master_doc, 'EasyReflectometry',
-     'EasyReflectometry Documentation',
-     [author], 1)
-]
+man_pages = [(master_doc, 'EasyReflectometry', 'EasyReflectometry Documentation', [author], 1)]
 
 
 # -- Options for Texinfo output ----------------------------------------
@@ -189,11 +181,13 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'EasyReflectometry',
-     'EasyReflectometry Documentation',
-     author,
-     'EasyReflectometry',
-     'One line description of project.',
-     'Miscellaneous'),
+    (
+        master_doc,
+        'EasyReflectometry',
+        'EasyReflectometry Documentation',
+        author,
+        'EasyReflectometry',
+        'One line description of project.',
+        'Miscellaneous',
+    ),
 ]
-
