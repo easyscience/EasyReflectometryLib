@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 EasyScience contributors <https://github.com/easyscience>
+# SPDX-License-Identifier: BSD-3-Clause
+
 __author__ = 'github.com/arm61'
 
 from ..calculator_base import CalculatorBase
@@ -5,9 +8,7 @@ from .wrapper import RefnxWrapper
 
 
 class Refnx(CalculatorBase):
-    """
-    Calculator for refnx
-    """
+    """Calculator for refnx."""
 
     name = 'refnx'
 
@@ -31,5 +32,6 @@ class Refnx(CalculatorBase):
     }
 
     def __init__(self):
+        """Init function."""
         super().__init__()
         self._wrapper = RefnxWrapper()

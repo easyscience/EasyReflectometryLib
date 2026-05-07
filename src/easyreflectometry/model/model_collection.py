@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 EasyScience contributors <https://github.com/easyscience>
+# SPDX-License-Identifier: BSD-3-Clause
+
 from __future__ import annotations
 
 from typing import List
@@ -12,6 +15,7 @@ from .model import Model
 
 # Needs to be a function, elements are added to the global_object.map
 def DEFAULT_ELEMENTS(interface):
+    """Default elements."""
     return (Model(interface),)
 
 
@@ -26,6 +30,7 @@ class ModelCollection(BaseCollection):
         next_color_index: Optional[int] = None,
         **kwargs,
     ):
+        """Init function."""
         if not models:
             if populate_if_none:
                 models = DEFAULT_ELEMENTS(interface)
@@ -49,7 +54,10 @@ class ModelCollection(BaseCollection):
     def add_model(self, model: Optional[Model] = None):
         """Add a model to the collection.
 
-        :param model: Model to add.
+        Parameters
+        ----------
+        model : Optional[Model], optional
+            Model to add. By default, None.
         """
         if model is None:
             model = Model(name='Model', interface=self.interface, color=self._current_color())
@@ -58,7 +66,10 @@ class ModelCollection(BaseCollection):
     def duplicate_model(self, index: int):
         """Duplicate a model in the collection.
 
-        :param index: Model to duplicate.
+        Parameters
+        ----------
+        index : int
+            Model to duplicate.
         """
         to_be_duplicated = self[index]
         duplicate = Model.from_dict(to_be_duplicated.as_dict(skip=['unique_name']))
@@ -66,6 +77,7 @@ class ModelCollection(BaseCollection):
         self.append(duplicate)
 
     def as_dict(self, skip: List[str] | None = None) -> dict:
+        """As dict."""
         this_dict = super().as_dict(skip=skip)
         this_dict['populate_if_none'] = self.populate_if_none
         this_dict['next_color_index'] = self._next_color_index
@@ -73,10 +85,14 @@ class ModelCollection(BaseCollection):
 
     @classmethod
     def from_dict(cls, this_dict: dict) -> ModelCollection:
-        """
-        Create an instance of a collection from a dictionary.
+        """Create an instance of a collection from a dictionary.
 
-        :param data: The dictionary for the collection
+        Parameters
+        ----------
+        this_dict : dict
+        cls :
+        data :
+            The dictionary for the collection.
         """
         collection_dict = this_dict.copy()
         # We need to call from_dict on the base class to get the models
@@ -102,14 +118,17 @@ class ModelCollection(BaseCollection):
         return collection
 
     def append(self, model: Model) -> None:  # type: ignore[override]
+        """Append function."""
         self._append_internal(model, advance=True)
 
     def _append_internal(self, model: Model, advance: bool) -> None:
+        """Append internal."""
         super().append(model)
         if advance:
             self._advance_color_index()
 
     def _advance_color_index(self) -> None:
+        """Advance color index."""
         if not COLORS:
             self._next_color_index = 0
             return
@@ -119,6 +138,7 @@ class ModelCollection(BaseCollection):
         self._next_color_index = (self._next_color_index + 1) % len(COLORS)
 
     def _current_color(self) -> str:
+        """Current color."""
         if not COLORS:
             raise ValueError('No colors defined for models.')
         if self._next_color_index is None:

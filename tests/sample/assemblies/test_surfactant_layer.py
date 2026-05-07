@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 EasyScience contributors <https://github.com/easyscience>
+# SPDX-License-Identifier: BSD-3-Clause
+
 """
 Tests for SurfactantLayer class module
 """
@@ -111,7 +114,12 @@ class TestSurfactantLayer:
                                 'solvent_fraction': '0.200 dimensionless',
                                 'sld': '2.269e-6 1/Å^2',
                                 'isld': '0.000e-6 1/Å^2',
-                                'material': {'C10H18NO8P': {'sld': '1.246e-6 1/Å^2', 'isld': '0.000e-6 1/Å^2'}},
+                                'material': {
+                                    'C10H18NO8P': {
+                                        'sld': '1.246e-6 1/Å^2',
+                                        'isld': '0.000e-6 1/Å^2',
+                                    }
+                                },
                                 'solvent': {'D2O': {'sld': '6.360e-6 1/Å^2', 'isld': '0.000e-6 1/Å^2'}},
                             }
                         },

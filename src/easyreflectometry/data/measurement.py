@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 EasyScience contributors <https://github.com/easyscience>
+# SPDX-License-Identifier: BSD-3-Clause
+
 __author__ = 'github.com/arm61'
 
 import os
@@ -14,7 +17,10 @@ from easyreflectometry.orso_utils import load_data_from_orso_file
 def load(fname: Union[TextIO, str]) -> sc.DataGroup:
     """Load data from an ORSO .ort file.
 
-    :param fname: The file to be read.
+    Parameters
+    ----------
+    fname : Union[TextIO, str]
+        The file to be read.
     """
     try:
         return load_data_from_orso_file(fname)
@@ -40,6 +46,7 @@ def load_as_dataset(fname: Union[TextIO, str]) -> DataSet1D:
 
 
 def extract_orso_title(data_group: sc.DataGroup, data_name: str) -> str | None:
+    """Extract orso title."""
     try:
         header = data_group['attrs'][data_name]['orso_header']
         title = header.values.get('data_source', {}).get('experiment', {}).get('title')
@@ -54,7 +61,10 @@ def extract_orso_title(data_group: sc.DataGroup, data_name: str) -> str | None:
 def _load_txt(fname: Union[TextIO, str]) -> sc.DataGroup:
     """Load data from a simple txt file.
 
-    :param fname: The path for the file to be read.
+    Parameters
+    ----------
+    fname : Union[TextIO, str]
+        The path for the file to be read.
     """
     # fname can have either a space or a comma as delimiter
     # Determine the delimiter used in the file

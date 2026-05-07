@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 EasyScience contributors <https://github.com/easyscience>
+# SPDX-License-Identifier: BSD-3-Clause
+
 __author__ = 'github.com/arm61'
 
 from typing import Optional
@@ -49,10 +52,18 @@ class Material(BaseCore):
     ):
         """Constructor.
 
-        :param sld: Real scattering length density.
-        :param isld: Imaginary scattering length density.
-        :param name: Name of the material, defaults to 'EasyMaterial'.
-        :param interface: Calculator interface, defaults to `None`.
+        Parameters
+        ----------
+        unique_name : Optional[str], optional
+            By default, None.
+        sld : Union[Parameter, float, None], optional
+            Real scattering length density. By default, None.
+        isld : Union[Parameter, float, None], optional
+            Imaginary scattering length density. By default, None.
+        name : str, optional
+            Name of the material. By default, 'EasyMaterial'.
+        interface :
+            Calculator interface. By default, None.
         """
         if unique_name is None:
             unique_name = global_object.generate_unique_name(self.__class__.__name__)

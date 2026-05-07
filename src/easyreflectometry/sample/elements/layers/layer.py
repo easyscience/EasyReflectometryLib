@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 EasyScience contributors <https://github.com/easyscience>
+# SPDX-License-Identifier: BSD-3-Clause
+
 __author__ = 'github.com/arm61'
 from typing import Optional
 from typing import Union
@@ -53,11 +56,20 @@ class Layer(BaseCore):
     ):
         """Constructor.
 
-        :param material: The material for the layer.
-        :param thickness: Layer thickness in Angstrom.
-        :param roughness: Upper roughness on the layer in Angstrom.
-        :param name: Name of the layer, defaults to 'EasyLayer'
-        :param interface: Interface object, defaults to `None`
+        Parameters
+        ----------
+        unique_name : Optional[str], optional
+            By default, None.
+        material : Union[Material, None], optional
+            The material for the layer. By default, None.
+        thickness : Union[Parameter, float, None], optional
+            Layer thickness in Angstrom. By default, None.
+        roughness : Union[Parameter, float, None], optional
+            Upper roughness on the layer in Angstrom. By default, None.
+        name : str, optional
+            Name of the layer. By default, 'EasyLayer'.
+        interface :
+            Interface object. By default, None.
         """
         if material is None:
             material = Material(interface=interface)
@@ -95,7 +107,10 @@ class Layer(BaseCore):
     def assign_material(self, material: Material) -> None:
         """Assign a material to the layer interface.
 
-        :param material: The material to assign to the layer.
+        Parameters
+        ----------
+        material : Material
+            The material to assign to the layer.
         """
         self.material = material
         if self.interface is not None:

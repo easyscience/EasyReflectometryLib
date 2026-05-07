@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 EasyScience contributors <https://github.com/easyscience>
+# SPDX-License-Identifier: BSD-3-Clause
+
 """
 Tests for GradientLayer class module
 """
@@ -168,7 +171,11 @@ def test_prepare_gradient_layers(monkeypatch):
     mock_LayerCollection = MagicMock()
     mock_Material = MagicMock(return_value='Material_from_mock')
     mock_linear_gradient = MagicMock(return_value=[1.0, 2.0, 3.0])
-    monkeypatch.setattr(easyreflectometry.sample.assemblies.gradient_layer, '_linear_gradient', mock_linear_gradient)
+    monkeypatch.setattr(
+        easyreflectometry.sample.assemblies.gradient_layer,
+        '_linear_gradient',
+        mock_linear_gradient,
+    )
     monkeypatch.setattr(easyreflectometry.sample.assemblies.gradient_layer, 'Layer', mock_Layer)
     monkeypatch.setattr(easyreflectometry.sample.assemblies.gradient_layer, 'Material', mock_Material)
     monkeypatch.setattr(easyreflectometry.sample.assemblies.gradient_layer, 'LayerCollection', mock_LayerCollection)

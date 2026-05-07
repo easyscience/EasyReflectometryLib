@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2024 EasyScience contributors <https://github.com/easyscience>
+# SPDX-License-Identifier: BSD-3-Clause
+
 import datetime
 import os
 from pathlib import Path
@@ -133,7 +136,8 @@ class TestProject:
         models_dict['unique_name'] = 'project_models'
         remove_interface(project_models_dict)
         remove_interface(models_dict)
-        # Since as_dict may not include unique_name, remove it for comparison
+        # Since as_dict may not include unique_name,
+        # remove it for comparison
         for d in [project_models_dict, models_dict]:
             if 'unique_name' in d:
                 del d['unique_name']
@@ -171,7 +175,12 @@ class TestProject:
         assert len(sample_data.x) == 500
         assert_allclose(
             np.array([4.6119497e-08, 6.3189932e00, 6.3350000e00, 2.0740000e00]),
-            np.array([sample_data.y[0], sample_data.y[100], sample_data.y[300], sample_data.y[499]]),
+            np.array([
+                sample_data.y[0],
+                sample_data.y[100],
+                sample_data.y[300],
+                sample_data.y[499],
+            ]),
         )
 
     def test_sample_data_for_model_at_index(self):
@@ -200,7 +209,12 @@ class TestProject:
         # Expect
         assert len(model_data.y) == 4
         assert_allclose(
-            np.array([0.9738701849233727, 0.0017678986451491123, 0.00016581714423990004, 3.3290653551465554e-08]),
+            np.array([
+                0.9738701849233727,
+                0.0017678986451491123,
+                0.00016581714423990004,
+                3.3290653551465554e-08,
+            ]),
             model_data.y,
         )
 
@@ -558,7 +572,8 @@ class TestProject:
 
         # Then
         new_project.load_from_json(tmp_path / 'name' / 'project.json')
-        # Do it twice to ensure that potential global objects don't collide
+        # Do it twice to ensure that potential
+        # global objects don't collide
         new_project.load_from_json(tmp_path / 'name' / 'project.json')
 
         # Expect
@@ -904,11 +919,13 @@ class TestProject:
 
         # Expect - shared material should not be duplicated
         assert len(project._models) == 2
-        # The shared material instance is already in the collection, so count should stay the same
+        # The shared material instance is already in the collection,
+        # so count should stay the same
         assert len(project._materials) == initial_material_count
 
     def test_replace_models_from_orso(self):
-        """Test that replace_models_from_orso replaces all existing models with a single new model."""
+        """Test that replace_models_from_orso replaces all existing
+        models with a single new model."""
         # When
         global_object.map._clear()
         project = Project()
@@ -1077,7 +1094,12 @@ class TestProject:
         project._models.append(model)
         # Add experiment linked to model 0
         experiment = DataSet1D(
-            name='exp0', x=[0.01, 0.02], y=[1.0, 0.5], ye=[0.1, 0.1], xe=[0.001, 0.001], model=project._models[0]
+            name='exp0',
+            x=[0.01, 0.02],
+            y=[1.0, 0.5],
+            ye=[0.1, 0.1],
+            xe=[0.001, 0.001],
+            model=project._models[0],
         )
         project._experiments[0] = experiment
 

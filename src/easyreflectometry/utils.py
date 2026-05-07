@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 EasyScience contributors <https://github.com/easyscience>
+# SPDX-License-Identifier: BSD-3-Clause
+
 from copy import deepcopy
 from numbers import Number
 from typing import Optional
@@ -14,15 +17,16 @@ def get_as_parameter(
     default_dict: dict,
     unique_name_prefix: Optional[str] = None,
 ) -> Parameter:
-    """
-    This function creates a parameter for the variable `name`.  A parameter has a value and metadata.
-    If the value already is a parameter, it is returned.
-    If the value is a number, a parameter is created with this value and metadata from the dictionary.
-    If the value is None, a parameter is created with the default value and metadata from the dictionary.
+    """This function creates a parameter for the variable `name`.
 
-    param value: The value to use for the parameter.  If None, the default value in the dictionary is used.
-    param name: The name of the parameter
-    param default_dict: Dictionary with entry for `name` containing the default value and metadata for the parameter
+        A parameter has a value and metadata.
+    If the value already is a parameter, it is returned.
+        If the value is a number, a parameter is created with this value and metadata from the dictionary.
+        If the value is None, a parameter is created with the default value and metadata from the dictionary.
+
+        param value: The value to use for the parameter.  If None, the default value in the dictionary is used.
+        param name: The name of the parameter
+        param default_dict: Dictionary with entry for `name` containing the default value and metadata for the parameter
     """
     # This is a parameter, return it
     if isinstance(value, Parameter):
@@ -51,17 +55,17 @@ def get_as_parameter(
 
 
 def yaml_dump(dict_repr: dict) -> str:
+    """Yaml dump."""
     return yaml.dump(dict_repr, sort_keys=False, allow_unicode=True)
 
 
 def collect_unique_names_from_dict(structure_dict: dict, unique_names: Optional[list[str]] = None) -> list[str]:
-    """
-    This function returns a list with the 'unique_name' found the input dictionary.
-    """
+    """This function returns a list with the 'unique_name' found the input dictionary."""
     if unique_names is None:
         unique_names = []
 
     def _collect(item):
+        """Collect function."""
         if isinstance(item, dict):
             if 'unique_name' in item:
                 unique_names.append(item['unique_name'])
@@ -76,12 +80,15 @@ def collect_unique_names_from_dict(structure_dict: dict, unique_names: Optional[
 
 
 def count_free_parameters(project) -> int:
+    """Count free parameters."""
     return sum(1 for parameter in project.parameters if parameter.free)
 
 
 def count_fixed_parameters(project) -> int:
+    """Count fixed parameters."""
     return sum(1 for parameter in project.parameters if not parameter.free)
 
 
 def count_parameter_user_constraints(project) -> int:
+    """Count parameter user constraints."""
     return sum(1 for parameter in project.parameters if not parameter.independent)

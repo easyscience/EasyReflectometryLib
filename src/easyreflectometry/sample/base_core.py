@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 EasyScience contributors <https://github.com/easyscience>
+# SPDX-License-Identifier: BSD-3-Clause
+
 from abc import abstractmethod
 
 from easyscience import ObjBase as BaseObj
@@ -12,6 +15,7 @@ class BaseCore(BaseObj):
         interface,
         **kwargs,
     ):
+        """Init function."""
         super().__init__(name=name, **kwargs)
 
         # Updates interface using property in base object
@@ -21,11 +25,12 @@ class BaseCore(BaseObj):
     def _dict_repr(self) -> dict[str, str]: ...
 
     def __repr__(self) -> str:
-        """
-        String representation of the layer.
+        """String representation of the layer.
 
-        :return: a string representation of the layer
-        :rtype: str
+        Returns
+        -------
+        str
+            A string representation of the layer.
         """
         return yaml_dump(self._dict_repr)
 

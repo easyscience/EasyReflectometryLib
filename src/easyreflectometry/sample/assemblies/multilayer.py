@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 EasyScience contributors <https://github.com/easyscience>
+# SPDX-License-Identifier: BSD-3-Clause
+
 from __future__ import annotations
 
 from typing import Optional
@@ -10,6 +13,7 @@ from .base_assembly import BaseAssembly
 
 class Multilayer(BaseAssembly):
     """A multi layer is build from a single or a list of `Layer` or `LayerCollection`.
+
     The multi layer will arrange the layers as slabs, allowing the reflectometry to be determined from them.
     The front layer is where the neutron beam starts in, it has an index of 0.
 
@@ -30,10 +34,20 @@ class Multilayer(BaseAssembly):
     ):
         """Constructor.
 
-        :param layers: The layers that make up the multi-layer.
-        :param name: Name for multi layer, defaults to 'EasyMultilayer'.
-        :param interface: Calculator interface, defaults to `None`.
-        :param type: Type of the constructed instance, defaults to 'Multi-layer'
+        Parameters
+        ----------
+        populate_if_none : Optional[bool], optional
+            By default, True.
+        unique_name : Optional[str], optional
+            By default, None.
+        layers : Union[Layer, list[Layer], LayerCollection, None], optional
+            The layers that make up the multi-layer. By default, None.
+        name : str, optional
+            Name for multi layer. By default, 'EasyMultilayer'.
+        interface :
+            Calculator interface. By default, None.
+        type : str, optional
+            Type of the constructed instance. By default, 'Multi-layer'.
         """
         if layers is None:
             if populate_if_none:
@@ -53,7 +67,10 @@ class Multilayer(BaseAssembly):
     def add_layer(self, *layers: tuple[Layer]) -> None:
         """Add a layer to the multi layer.
 
-        :param layers: Layers to add to the multi layer.
+        Parameters
+        ----------
+        *layers : tuple[Layer]
+            Layers to add to the multi layer.
         """
         for arg in layers:
             if issubclass(arg.__class__, Layer):
@@ -64,8 +81,10 @@ class Multilayer(BaseAssembly):
     def duplicate_layer(self, idx: int) -> None:
         """Duplicate a given layer.
 
-        :param idx: index of layer to duplicate.
-        :type idx: int
+        Parameters
+        ----------
+        idx : int
+            Index of layer to duplicate.
         """
         to_duplicate = self.layers[idx]
         duplicate_layer = Layer(
@@ -79,7 +98,10 @@ class Multilayer(BaseAssembly):
     def remove_layer(self, idx: int) -> None:
         """Remove a layer from the item.
 
-        :param idx: index of layer to remove
+        Parameters
+        ----------
+        idx : int
+            Index of layer to remove.
         """
         if self.interface is not None:
             self.interface().remove_layer_from_item(self.layers[idx].unique_name, self.unique_name)
@@ -93,11 +115,18 @@ class Multilayer(BaseAssembly):
 
     @classmethod
     def from_dict(cls, data: dict) -> Multilayer:
-        """
-        Create a Multilayer from a dictionary.
+        """Create a Multilayer from a dictionary.
 
-        :param data: dictionary of the Multilayer
-        :return: Multilayer
+        Parameters
+        ----------
+        cls :
+        data : dict
+            Dictionary of the Multilayer.
+
+        Returns
+        -------
+        Multilayer
+            Multilayer.
         """
         multilayer = super().from_dict(data)
         return multilayer

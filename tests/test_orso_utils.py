@@ -91,10 +91,12 @@ def test_load_data_from_orso_file():
 
 
 def test_orso_sld_unit_conversion(orso_data):
-    """Test that SLD values from ORSO are correctly converted from A^-2 to 10^-6 A^-2.
+    """Test that SLD values from ORSO are correctly converted
+       from A^-2 to 10^-6 A^-2.
 
     ORSO stores SLD in absolute units (A^-2), e.g., 3.47e-06.
-    The internal representation uses 10^-6 A^-2, so the value should be 3.47.
+    The internal representation uses 10^-6 A^-2,
+    so the value should be 3.47.
     """
     sample = load_orso_model(orso_data)
 
@@ -114,9 +116,7 @@ def test_orso_sld_unit_conversion(orso_data):
     subphase = sample[2]
     si_layer = subphase.layers[0]
     assert si_layer.material.name == 'Si'
-    assert abs(si_layer.material.sld.value - 2.07) < 1e-6, (
-        f'Expected SLD ~2.07 (10^-6 A^-2), got {si_layer.material.sld.value}'
-    )
+    assert abs(si_layer.material.sld.value - 2.07) < 1e-6, f'Expected SLD ~2.07 (10^-6 A^-2), got {si_layer.material.sld.value}'
 
     # Check air superphase layer
     # ORSO file has: sld: {real: 0.0, imag: 0.0}
@@ -152,7 +152,8 @@ def test_LoadOrso_with_nonexistent_file():
 
 
 def test_get_sld_values_defaults_to_zero_when_sld_and_density_missing():
-    """_get_sld_values should return (0.0, 0.0) when both sld and mass_density are None."""
+    """_get_sld_values should return (0.0, 0.0) when both
+    sld and mass_density are None."""
     material = SimpleNamespace(sld=None, mass_density=None)
     m_sld, m_isld = _get_sld_values(material, 'Unknown')
     assert m_sld == 0.0
@@ -160,7 +161,8 @@ def test_get_sld_values_defaults_to_zero_when_sld_and_density_missing():
 
 
 def test_load_orso_model_returns_none_and_warns_when_no_sample_model():
-    """load_orso_model should return None and emit a warning when the ORSO file has no sample model."""
+    """load_orso_model should return None and emit a warning
+    when the ORSO file has no sample model."""
     orso_data = orso.load_orso(os.path.join(PATH_STATIC, 'test_example1.ort'))
     # Verify the file indeed has no model
     assert orso_data[0].info.data_source.sample.model is None

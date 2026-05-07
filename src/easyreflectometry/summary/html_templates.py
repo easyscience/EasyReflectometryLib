@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2024 EasyScience contributors <https://github.com/easyscience>
+# SPDX-License-Identifier: BSD-3-Clause
+
 HTML_TEMPLATE = """<!DOCTYPE html>
 
 <html>
@@ -39,7 +42,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             experiments_section
 
             <tr></tr>
-            
+
             <!-- Analysis -->
             <tr>
                 <td><h2>Refinement</h2></td>
@@ -49,7 +52,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         </table>
 
         figures_section
-        
+
     </body>
 </html>"""
 
@@ -75,18 +78,18 @@ HTML_PROJECT_INFORMATION_TEMPLATE = """
 
 HTML_PARAMETER_HEADER_TEMPLATE = """
 <tr>
-    <th>parameter_name</th> 
+    <th>parameter_name</th>
     <th>parameter_value</th>
-    <th>parameter_unit</th> 
+    <th>parameter_unit</th>
     <th>parameter_error</th>
 </tr>
 """
 
 HTML_PARAMETER_TEMPLATE = """
 <tr>
-    <td>parameter_name</td> 
+    <td>parameter_name</td>
     <td>parameter_value</td>
-    <td>parameter_unit</td> 
+    <td>parameter_unit</td>
     <td>parameter_error</td>
 </tr>
 """

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 EasyScience contributors <https://github.com/easyscience>
+# SPDX-License-Identifier: BSD-3-Clause
+
 from __future__ import annotations
 
 __author__ = 'github.com/arm61'
@@ -43,11 +46,23 @@ DEFAULTS = {
     },
 }
 
-COLORS = ['#0173B2', '#DE8F05', '#029E73', '#D55E00', '#CC78BC', '#CA9161', '#FBAFE4', '#949494', '#ECE133', '#56B4E9']
+COLORS = [
+    '#0173B2',
+    '#DE8F05',
+    '#029E73',
+    '#D55E00',
+    '#CC78BC',
+    '#CA9161',
+    '#FBAFE4',
+    '#949494',
+    '#ECE133',
+    '#56B4E9',
+]
 
 
 class Model(BaseObj):
     """Model is the class that represents the experiment.
+
     It is used to store the information about the experiment and to perform the calculations.
     """
 
@@ -70,13 +85,24 @@ class Model(BaseObj):
     ):
         """Constructor.
 
-        :param sample: The sample being modelled.
-        :param scale: Scaling factor of profile.
-        :param background: Linear background magnitude.
-        :param name: Name of the model, defaults to 'Model'.
-        :param resolution_function: Resolution function, defaults to PercentageFwhm.
-        :param interface: Calculator interface, defaults to `None`.
-
+        Parameters
+        ----------
+        unique_name : Optional[str], optional
+            By default, None.
+        color : str, optional
+            By default, COLORS[0].
+        sample : Union[Sample, None], optional
+            The sample being modelled. By default, None.
+        scale : Union[Parameter, Number, None], optional
+            Scaling factor of profile. By default, None.
+        background : Union[Parameter, Number, None], optional
+            Linear background magnitude. By default, None.
+        name : str, optional
+            Name of the model. By default, 'Model'.
+        resolution_function : Union[ResolutionFunction, None], optional
+            Resolution function. By default, None.
+        interface :
+            Calculator interface. By default, None.
         """
         if unique_name is None:
             unique_name = global_object.generate_unique_name(self.__class__.__name__)
@@ -107,7 +133,10 @@ class Model(BaseObj):
     def add_assemblies(self, *assemblies: list[BaseAssembly]) -> None:
         """Add assemblies to the model sample.
 
-        :param assemblies: Assemblies to add to model sample.
+        Parameters
+        ----------
+        *assemblies : list[BaseAssembly]
+            Assemblies to add to model sample.
         """
         if not assemblies:
             self.sample.add_assembly()
@@ -125,7 +154,11 @@ class Model(BaseObj):
     def duplicate_assembly(self, index: int) -> None:
         """Duplicate a given item or layer in a sample.
 
-        :param idx: Index of the item or layer to duplicate
+        Parameters
+        ----------
+        index : int
+        idx :
+            Index of the item or layer to duplicate.
         """
         self.sample.duplicate_assembly(index)
         if self.interface is not None:
@@ -134,7 +167,11 @@ class Model(BaseObj):
     def remove_assembly(self, index: int) -> None:
         """Remove an assembly from the model.
 
-        :param idx: Index of the item to remove.
+        Parameters
+        ----------
+        index : int
+        idx :
+            Index of the item to remove.
         """
         assembly_unique_name = self.sample[index].unique_name
         self.sample.remove_assembly(index)
@@ -150,8 +187,10 @@ class Model(BaseObj):
     def is_default(self, value: bool) -> None:
         """Set whether this model is a default placeholder.
 
-        :param value: True if the model is a default placeholder.
-        :type value: bool
+        Parameters
+        ----------
+        value : bool
+            True if the model is a default placeholder.
         """
         self._is_default = value
 
@@ -169,9 +208,7 @@ class Model(BaseObj):
 
     @property
     def interface(self):
-        """
-        Get the current interface of the object
-        """
+        """Get the current interface of the object."""
         return self._interface
 
     @interface.setter
@@ -209,9 +246,13 @@ class Model(BaseObj):
 
     def as_dict(self, skip: Optional[list[str]] = None) -> dict:
         """Produces a cleaned dict using a custom as_dict method to skip necessary things.
+
         The resulting dict matches the parameters in __init__
 
-        :param skip: List of keys to skip, defaults to `None`.
+        Parameters
+        ----------
+        skip : Optional[list[str]], optional
+            List of keys to skip. By default, None.
         """
         if skip is None:
             skip = []
@@ -233,11 +274,19 @@ class Model(BaseObj):
 
     @classmethod
     def from_dict(cls, passed_dict: dict) -> Model:
-        """
-        Create a Model from a dictionary.
+        """Create a Model from a dictionary.
 
-        :param this_dict: dictionary of the Model
-        :return: Model
+        Parameters
+        ----------
+        passed_dict : dict
+        cls :
+        this_dict :
+            Dictionary of the Model.
+
+        Returns
+        -------
+        Model
+            Model.
         """
         # Causes circular import if imported at the top
         from easyreflectometry.calculators import CalculatorFactory

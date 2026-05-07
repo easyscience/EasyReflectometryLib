@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 EasyScience contributors <https://github.com/easyscience>
+# SPDX-License-Identifier: BSD-3-Clause
+
 from typing import Optional
 from typing import Union
 
@@ -54,10 +57,18 @@ class MaterialDensity(Material):
     ):
         """Constructor.
 
-        :param chemical_structure: Chemical formula for the material.
-        :param density: Mass density for the material.
-        :param name: Identifier, defaults to `EasyMaterialDensity`.
-        :param interface: Interface object, defaults to `None`.
+        Parameters
+        ----------
+        unique_name : Optional[str], optional
+            By default, None.
+        chemical_structure : Union[str, None], optional
+            Chemical formula for the material. By default, None.
+        density : Union[Parameter, float, None], optional
+            Mass density for the material. By default, None.
+        name : str, optional
+            Identifier. By default, 'EasyMaterialDensity'.
+        interface :
+            Interface object. By default, None.
         """
         if unique_name is None:
             unique_name = global_object.generate_unique_name(self.__class__.__name__)
@@ -130,7 +141,10 @@ class MaterialDensity(Material):
     def chemical_structure(self, structure_string: str) -> None:
         """Set the chemical structure string.
 
-        :param structure_string: String that defines the chemical structure.
+        Parameters
+        ----------
+        structure_string : str
+            String that defines the chemical structure.
         """
         self._chemical_structure = structure_string
         scattering_length = neutron_scattering_length(structure_string)
@@ -147,9 +161,13 @@ class MaterialDensity(Material):
 
     def as_dict(self, skip: list = []) -> dict[str, str]:
         """Produces a cleaned dict using a custom as_dict method to skip necessary things.
+
         The resulting dict matches the parameters in __init__
 
-        :param skip: List of keys to skip, defaults to `None`.
+        Parameters
+        ----------
+        skip : list, optional
+            List of keys to skip. By default, [].
         """
         this_dict = super().as_dict(skip=skip)
         # From Material

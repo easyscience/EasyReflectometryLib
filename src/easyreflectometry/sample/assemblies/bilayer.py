@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 EasyScience contributors <https://github.com/easyscience>
+# SPDX-License-Identifier: BSD-3-Clause
+
 from __future__ import annotations
 
 from typing import Any
@@ -64,19 +67,29 @@ class Bilayer(BaseAssembly):
     ):
         """Constructor.
 
-        :param front_head_layer: Layer representing the front head part of the bilayer.
-        :param front_tail_layer: Layer representing the front tail part of the bilayer.
+        Parameters
+        ----------
+        front_head_layer : LayerAreaPerMolecule | None, optional
+            Layer representing the front head part of the bilayer. By default, None.
+        front_tail_layer : LayerAreaPerMolecule | None, optional
+            Layer representing the front tail part of the bilayer.
             A back tail layer is created internally with its thickness, area per molecule,
-            and solvent fraction constrained to match this layer.
-        :param back_head_layer: Layer representing the back head part of the bilayer.
-        :param name: Name for bilayer, defaults to 'EasyBilayer'.
-        :param unique_name: Unique name for internal object tracking, defaults to `None`.
-        :param constrain_heads: When `True`, the back head layer thickness and area per
+            and solvent fraction constrained to match this layer. By default, None.
+        back_head_layer : LayerAreaPerMolecule | None, optional
+            Layer representing the back head part of the bilayer. By default, None.
+        name : str, optional
+            Name for bilayer. By default, 'EasyBilayer'.
+        unique_name : str | None, optional
+            Unique name for internal object tracking. By default, None.
+        constrain_heads : bool, optional
+            When `True`, the back head layer thickness and area per
             molecule are constrained to match the front head layer. Solvent fraction
-            (hydration) remains independent on each side. Defaults to `True`.
-        :param conformal_roughness: When `True`, all four layer interfaces share
-            the same roughness value, controlled by the front head layer. Defaults to `True`.
-        :param interface: Calculator interface, defaults to `None`.
+            (hydration) remains independent on each side. By default, True.
+        conformal_roughness : bool, optional
+            When `True`, all four layer interfaces share
+            the same roughness value, controlled by the front head layer. By default, True.
+        interface : Any, optional
+            Calculator interface. By default, None.
         """
         # Generate unique name for nested objects
         if unique_name is None:
@@ -154,10 +167,19 @@ class Bilayer(BaseAssembly):
     ) -> LayerAreaPerMolecule:
         """Create a default head layer with DPPC head group parameters.
 
-        :param unique_name: Base unique name for internal object tracking.
-        :param name_suffix: Suffix for layer name ('Front' or 'Back').
-        :param interface: Calculator interface, defaults to `None`.
-        :return: A new LayerAreaPerMolecule for the head group.
+        Parameters
+        ----------
+        unique_name : str
+            Base unique name for internal object tracking.
+        name_suffix : str
+            Suffix for layer name ('Front' or 'Back').
+        interface : Any, optional
+            Calculator interface. By default, None.
+
+        Returns
+        -------
+        LayerAreaPerMolecule
+            A new LayerAreaPerMolecule for the head group.
         """
         solvent = Material(
             sld=DEFAULTS['solvent']['sld'],
@@ -185,9 +207,17 @@ class Bilayer(BaseAssembly):
     ) -> LayerAreaPerMolecule:
         """Create a default tail layer with DPPC tail group parameters.
 
-        :param unique_name: Base unique name for internal object tracking.
-        :param interface: Calculator interface, defaults to `None`.
-        :return: A new LayerAreaPerMolecule for the tail group.
+        Parameters
+        ----------
+        unique_name : str
+            Base unique name for internal object tracking.
+        interface : Any, optional
+            Calculator interface. By default, None.
+
+        Returns
+        -------
+        LayerAreaPerMolecule
+            A new LayerAreaPerMolecule for the tail group.
         """
         solvent = Material(
             sld=DEFAULTS['solvent']['sld'],
@@ -216,10 +246,19 @@ class Bilayer(BaseAssembly):
     ) -> LayerAreaPerMolecule:
         """Create a back tail layer with initial values copied from the front tail layer.
 
-        :param front_tail_layer: The front tail layer to copy initial values from.
-        :param unique_name: Base unique name for internal object tracking.
-        :param interface: Calculator interface, defaults to `None`.
-        :return: A new LayerAreaPerMolecule for the back tail.
+        Parameters
+        ----------
+        front_tail_layer : LayerAreaPerMolecule
+            The front tail layer to copy initial values from.
+        unique_name : str
+            Base unique name for internal object tracking.
+        interface : Any, optional
+            Calculator interface. By default, None.
+
+        Returns
+        -------
+        LayerAreaPerMolecule
+            A new LayerAreaPerMolecule for the back tail.
         """
         solvent = Material(
             sld=DEFAULTS['solvent']['sld'],
@@ -312,7 +351,10 @@ class Bilayer(BaseAssembly):
         are constrained to match the front head layer. Solvent fraction
         (hydration) remains independent.
 
-        :param status: Boolean for the constraint status.
+        Parameters
+        ----------
+        status : bool
+            Boolean for the constraint status.
         """
         if status:
             self._enable_head_constraints()
@@ -354,7 +396,10 @@ class Bilayer(BaseAssembly):
         When enabled, all layers share the same roughness parameter
         (controlled by the front head layer).
 
-        :param status: Boolean for the constraint status.
+        Parameters
+        ----------
+        status : bool
+            Boolean for the constraint status.
         """
         if status:
             self._setup_roughness_constraints()
@@ -367,7 +412,10 @@ class Bilayer(BaseAssembly):
     def constrain_solvent_roughness(self, solvent_roughness: Parameter) -> None:
         """Add the constraint to the solvent roughness.
 
-        :param solvent_roughness: The solvent roughness parameter.
+        Parameters
+        ----------
+        solvent_roughness : Parameter
+            The solvent roughness parameter.
         """
         if not self.conformal_roughness:
             raise ValueError('Roughness must be conformal to use this function.')
@@ -395,16 +443,28 @@ class Bilayer(BaseAssembly):
         Makes this bilayer's parameters dependent on another_contrast's parameters,
         so that changes to another_contrast propagate to this bilayer.
 
-        :param another_contrast: The bilayer to constrain to.
-        :param front_head_thickness: Constrain front head thickness.
-        :param back_head_thickness: Constrain back head thickness.
-        :param tail_thickness: Constrain tail thickness.
-        :param front_head_area_per_molecule: Constrain front head area per molecule.
-        :param back_head_area_per_molecule: Constrain back head area per molecule.
-        :param tail_area_per_molecule: Constrain tail area per molecule.
-        :param front_head_fraction: Constrain front head solvent fraction.
-        :param back_head_fraction: Constrain back head solvent fraction.
-        :param tail_fraction: Constrain tail solvent fraction.
+        Parameters
+        ----------
+        another_contrast : Bilayer
+            The bilayer to constrain to.
+        front_head_thickness : bool, optional
+            Constrain front head thickness. By default, True.
+        back_head_thickness : bool, optional
+            Constrain back head thickness. By default, True.
+        tail_thickness : bool, optional
+            Constrain tail thickness. By default, True.
+        front_head_area_per_molecule : bool, optional
+            Constrain front head area per molecule. By default, True.
+        back_head_area_per_molecule : bool, optional
+            Constrain back head area per molecule. By default, True.
+        tail_area_per_molecule : bool, optional
+            Constrain tail area per molecule. By default, True.
+        front_head_fraction : bool, optional
+            Constrain front head solvent fraction. By default, True.
+        back_head_fraction : bool, optional
+            Constrain back head solvent fraction. By default, True.
+        tail_fraction : bool, optional
+            Constrain tail solvent fraction. By default, True.
         """
         if front_head_thickness:
             self.front_head_layer.thickness.make_dependent_on(
@@ -479,7 +539,10 @@ class Bilayer(BaseAssembly):
 
         The resulting dict matches the parameters in __init__
 
-        :param skip: List of keys to skip, defaults to `None`.
+        Parameters
+        ----------
+        skip : list[str] | None, optional
+            List of keys to skip. By default, None.
         """
         this_dict = super().as_dict(skip=skip)
         this_dict['front_head_layer'] = self.front_head_layer.as_dict(skip=skip)
