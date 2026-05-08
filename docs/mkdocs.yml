@@ -177,6 +177,7 @@ nav:
   - Tutorials:
       - Tutorials: tutorials/index.md
       - Getting Started:
+          - Dummy Tutorial: tutorials/tutorial.ipynb
           - Creating a Model: tutorials/basic/model.md
           - Defining Materials: tutorials/basic/material_library.md
           - Defining Layers: tutorials/basic/layer_library.md

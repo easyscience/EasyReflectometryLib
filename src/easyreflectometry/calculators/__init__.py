@@ -31,4 +31,4 @@ except Exception:
     traceback.print_exc()
     print('Warning: refl1d is not installed')
 
-__all__ = [CalculatorBase, CalculatorFactory] + imported_calculators
+__all__ = ['CalculatorBase', 'CalculatorFactory'] + imported_calculators

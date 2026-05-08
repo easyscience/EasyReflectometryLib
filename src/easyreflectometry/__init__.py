@@ -13,6 +13,6 @@ except metadata.PackageNotFoundError:
     __version__ = '0.0.0'
 
 __all__ = [
-    Project,
-    __version__,
+    'Project',
+    '__version__',
 ]

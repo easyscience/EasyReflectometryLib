@@ -1,4 +1,7 @@
 # Fitting
 
-::: easyreflectometry.fitting options: members: true show_inheritance:
-true
+<!-- prettier-ignore -->
+::: easyreflectometry.fitting
+    options:
+        members: true
+        show_inheritance: true
