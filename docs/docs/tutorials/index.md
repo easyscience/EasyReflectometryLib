@@ -1,4 +1,4 @@
----
+﻿---
 icon: material/school
 ---
 
@@ -13,9 +13,58 @@ Instructions on how to run the tutorials are provided in the
 [:material-cog-box: Installation & Setup](../installation-and-setup/index.md#how-to-run-tutorials)
 section of the documentation.
 
-The tutorials are organized into the following categories:
+## Calculators and Optimisation
+
+EasyReflectometry is built on the EasyScience framework which
+facilitates the use of a range of different reflectometry calculation
+engines and optimiser solutions. Currently, EasyReflectometry can offer
+two different calculation engines, namely:
+
+- [refnx](https://refnx.readthedocs.io/)
+- [Refl1D](https://refl1d.readthedocs.io/en/latest/)
+
+And we are working to add more, in particular
+[BornAgain](https://www.bornagainproject.org) and
+[GenX](https://aglavic.github.io/genx/doc/).
 
 ## Getting Started
 
-- [Dummy tutorial](tutorial.ipynb) – A dummy tutorial to ensure the
-  tutorial infrastructure is working correctly.
+- [Creating a Model](basic/model.md) – Learn how to define a
+  reflectometry model with sample, scale, background, and resolution
+  functions.
+- [Defining Materials](basic/material_library.md) – Explore different
+  material types: `Material`, `MaterialDensity`, `MaterialSolvated`, and
+  `MaterialMixture`.
+- [Defining Layers](basic/layer_library.md) – Understand layer types
+  including `Layer` and `LayerAreaPerMolecule`.
+- [Creating Assemblies](basic/assemblies_library.md) – Build complex
+  structures with `Multilayer`, `RepeatingMultilayer`, and
+  `SurfactantLayer`.
+
+## Simulation
+
+These are basic simulation examples using the EasyReflectometry library.
+
+- [Bilayer Simulation](simulation/bilayer.ipynb)
+- [Magnetism Simulation](simulation/magnetism.ipynb)
+- [Resolution Functions](simulation/resolution_functions.ipynb)
+
+## Fitting
+
+These are basic fitting examples using the EasyReflectometry library.
+
+- [Simple Fitting](fitting/simple_fitting.ipynb)
+- [Repeating Multilayer Fitting](fitting/repeating.ipynb)
+- [Monolayer Fitting](fitting/monolayer.ipynb)
+- [Solvated Material Fitting](fitting/material_solvated.ipynb)
+
+## Advanced Fitting
+
+These are advanced fitting examples using the EasyReflectometry library.
+
+- [Multi-Contrast Fitting](advancedfitting/multi_contrast.ipynb)
+
+## Extra
+
+Additional examples and supplementary material using the
+EasyReflectometry library.

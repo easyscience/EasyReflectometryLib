@@ -177,6 +177,39 @@ nav:
   - Tutorials:
       - Tutorials: tutorials/index.md
       - Getting Started:
-          - Dummy tutorial: tutorials/tutorial.ipynb
+          - Creating a Model: tutorials/basic/model.md
+          - Defining Materials: tutorials/basic/material_library.md
+          - Defining Layers: tutorials/basic/layer_library.md
+          - Creating Assemblies: tutorials/basic/assemblies_library.md
+      - Simulation:
+          - Bilayer Simulation: tutorials/simulation/bilayer.ipynb
+          - Magnetism Simulation: tutorials/simulation/magnetism.ipynb
+          - Resolution Functions: tutorials/simulation/resolution_functions.ipynb
+      - Fitting:
+          - Simple Fitting: tutorials/fitting/simple_fitting.ipynb
+          - Repeating Multilayer Fitting: tutorials/fitting/repeating.ipynb
+          - Monolayer Fitting: tutorials/fitting/monolayer.ipynb
+          - Solvated Material Fitting: tutorials/fitting/material_solvated.ipynb
+      - Advanced Fitting:
+          - Multi-Contrast Fitting: tutorials/advancedfitting/multi_contrast.ipynb
   - API Reference:
       - API Reference: api-reference/index.md
+      - Model: api-reference/model.md
+      - Sample: api-reference/sample.md
+      - Project: api-reference/project.md
+      - Fitting: api-reference/fitting.md
+      - Assemblies:
+          - Multilayer: api-reference/assemblies/multilayer.md
+          - Repeating Multilayer: api-reference/assemblies/repeating_multilayer.md
+          - Surfactant Layer: api-reference/assemblies/surfactant_layer.md
+          - Gradient Layer: api-reference/assemblies/gradient_layer.md
+      - Elements:
+          - Layers:
+              - Layer: api-reference/elements/layer.md
+              - Layer Area Per Molecule: api-reference/elements/layer_area_per_molecule.md
+          - Materials:
+              - Material: api-reference/elements/material.md
+              - Material Density: api-reference/elements/material_density.md
+              - Material Mixture: api-reference/elements/material_mixture.md
+              - Material Solvated: api-reference/elements/material_solvated.md
+      - Data: api-reference/data.md
