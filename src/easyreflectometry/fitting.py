@@ -332,6 +332,8 @@ class MultiFitter:
         population: int | None = None,
         seed: int | None = None,
         objective: str | None = None,
+        progress_callback=None,
+        abort_test=None,
     ) -> dict:
         """Run Bayesian MCMC sampling on reflectometry data using the DREAM sampler.
 
@@ -339,25 +341,17 @@ class MultiFitter:
         switched to ``AvailableMinimizers.Bumps``).
 
         :param data: DataGroup with reflectivity data.
-        :type data: sc.DataGroup
         :param samples: Number of retained DREAM samples requested from BUMPS.
-        :type samples: int
         :param burn: Burn-in steps.
-        :type burn: int
         :param thin: Thinning interval.
-        :type thin: int
         :param chains: User-friendly alias for BUMPS DREAM population count.
-        :type chains: int | None
-        :param population: BUMPS DREAM population count (``pop``) for advanced users.
-        :type population: int | None
+        :param population: BUMPS DREAM population count for advanced users.
         :param seed: Random seed for reproducibility.
-        :type seed: int | None
-        :param objective: Zero-variance handling strategy. If ``None``, uses the
-            instance default set at construction.
-        :type objective: str or None
+        :param objective: Zero-variance handling strategy.
+        :param progress_callback: Optional callback for progress updates during
+            sampling.  Forwarded to the core MultiFitter.
         :return: Dictionary with keys ``'draws'``, ``'param_names'``, ``'state'``,
             and ``'logp'``.
-        :rtype: dict
         :raises RuntimeError: If the current minimizer is not a BUMPS instance.
         """
         obj = _validate_objective(objective) if objective is not None else self._objective
@@ -395,6 +389,8 @@ class MultiFitter:
             chains=chains,
             population=population,
             seed=seed,
+            progress_callback=progress_callback,
+            abort_test=abort_test,
         )
 
     @property
