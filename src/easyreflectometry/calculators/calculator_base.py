@@ -51,7 +51,7 @@ class CalculatorBase(SerializerComponent, metaclass=ABCMeta):
         self._wrapper: WrapperBase
 
     def reset_storage(self) -> None:
-        r"""Reset the storage area of the calculato."""
+        r"""Reset the storage area of the calculator."""
         self._wrapper.reset_storage()
 
     def create(self, model: Material | Layer | Multilayer | Model) -> list[ItemContainer]:
