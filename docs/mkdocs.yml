@@ -148,8 +148,10 @@ plugins:
             annotations_path: source
             docstring_style: numpy
             group_by_category: true
+            members: true
             members_order: source
             heading_level: 1
+            show_inheritance: true
             show_root_heading: true
             show_root_full_path: false
             show_submodules: true
