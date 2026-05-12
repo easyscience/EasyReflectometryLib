@@ -6,7 +6,6 @@ Tests for Bilayer class module
 """
 
 __author__ = 'github.com/easyscience'
-__version__ = '0.0.1'
 
 
 from easyscience import global_object

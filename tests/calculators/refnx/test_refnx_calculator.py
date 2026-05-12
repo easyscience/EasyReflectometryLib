@@ -5,8 +5,6 @@
 Tests for Refnx calculator.
 """
 
-__version__ = '0.0.1'
-
 import unittest
 
 import numpy as np

@@ -5,8 +5,6 @@
 Tests for Model class.
 """
 
-__version__ = '0.0.1'
-
 import unittest
 from unittest.mock import MagicMock
 

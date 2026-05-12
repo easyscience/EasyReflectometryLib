@@ -5,9 +5,6 @@
 Tests for Refnx wrapper.
 """
 
-__version__ = '0.0.1'
-
-
 import unittest
 
 import numpy as np

@@ -5,9 +5,6 @@
 Tests for SurfactantLayer class module
 """
 
-__version__ = '0.0.1'
-
-
 import unittest
 
 from easyscience import global_object

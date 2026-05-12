@@ -5,9 +5,6 @@
 Tests for Sample class.
 """
 
-__version__ = '0.0.1'
-
-
 import pytest
 from easyscience import global_object
 from numpy.testing import assert_equal

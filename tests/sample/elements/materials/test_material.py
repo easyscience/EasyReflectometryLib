@@ -5,8 +5,6 @@
 Tests for Material class.
 """
 
-__version__ = '0.0.1'
-
 from easyscience import global_object
 
 from easyreflectometry.sample.elements.materials.material import DEFAULTS

@@ -5,7 +5,6 @@
 Tests for BornAgain calculator.
 """
 
-__version__ = '0.0.1'
 
 # import os
 # import unittest

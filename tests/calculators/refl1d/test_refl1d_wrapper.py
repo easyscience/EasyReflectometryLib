@@ -5,8 +5,6 @@
 Tests for Refl1d wrapper.
 """
 
-__version__ = '0.0.1'
-
 import unittest
 from unittest.mock import MagicMock
 from unittest.mock import patch
