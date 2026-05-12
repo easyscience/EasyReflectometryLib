@@ -5373,8 +5373,8 @@ packages:
   requires_python: '>=3.12'
 - pypi: ./
   name: easyreflectometry
-  version: 1.4.1+devdirty38
-  sha256: 6caeb3885750733e84c69c29bc16c7800e3c7b1143de078711b5bbd1b5274041
+  version: 1.4.1+devdirty39
+  sha256: 4ec8c51ba0a6b6582ff3e2a5758d63f81474a4f837ba5c485b2496d179cf3f7e
   requires_dist:
   - bumps
   - easyscience @ git+https://github.com/easyscience/corelib.git@bayesian

@@ -23,16 +23,16 @@ classifiers = [
 ]
 requires-python = '>=3.11'
 dependencies = [
-    'easyscience @ git+https://github.com/easyscience/corelib.git@bayesian',
-    # 'easyscience',
-    'scipp',
-    'refnx',
-    'refl1d>=1.0.0',
-    'orsopy',
-    'svglib<1.6 ; platform_system=="Linux" or sys_platform == "darwin"',
-    'xhtml2pdf',
-    'bumps',
-    'pooch',
+  'easyscience @ git+https://github.com/easyscience/corelib.git@bayesian',
+  # 'easyscience',
+  'scipp',
+  'refnx',
+  'refl1d>=1.0.0',
+  'orsopy',
+  'svglib<1.6 ; platform_system=="Linux" or sys_platform == "darwin"',
+  'xhtml2pdf',
+  'bumps',
+  'pooch',
 ]
 
 [project.optional-dependencies]
@@ -71,10 +71,7 @@ dev = [
   'spdx-headers',                    # SPDX license header validation
 ]
 
-bayesian = [
-    "corner>=2.2",
-    "arviz>=0.18",
-]
+bayesian = ["corner>=2.2", "arviz>=0.18"]
 
 [project.urls]
 Documentation = 'https://easyscience.github.io/reflectometry-lib'
