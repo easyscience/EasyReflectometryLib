@@ -13,20 +13,6 @@ Instructions on how to run the tutorials are provided in the
 [:material-cog-box: Installation & Setup](../installation-and-setup/index.md#how-to-run-tutorials)
 section of the documentation.
 
-## Calculators and Optimisation
-
-EasyReflectometry is built on the EasyScience framework which
-facilitates the use of a range of different reflectometry calculation
-engines and optimiser solutions. Currently, EasyReflectometry can offer
-two different calculation engines, namely:
-
-- [refnx](https://refnx.readthedocs.io/)
-- [Refl1D](https://refl1d.readthedocs.io/en/latest/)
-
-And we are working to add more, in particular
-[BornAgain](https://www.bornagainproject.org) and
-[GenX](https://aglavic.github.io/genx/doc/).
-
 ## Getting Started
 
 - [Creating a Model](basic/model.md) – Learn how to define a
