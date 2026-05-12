@@ -86,13 +86,6 @@ class ModelCollection(BaseCollection):
     @classmethod
     def from_dict(cls, this_dict: dict) -> ModelCollection:
         """Create an instance of a collection from a dictionary.
-
-        Parameters
-        ----------
-        this_dict : dict
-        cls :
-        data :
-            The dictionary for the collection.
         """
         collection_dict = this_dict.copy()
         # We need to call from_dict on the base class to get the models

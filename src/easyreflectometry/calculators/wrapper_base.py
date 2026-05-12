@@ -203,9 +203,10 @@ class WrapperBase:
 
         Parameters
         ----------
-        **kwargs :
         name : str
             The name of the material.
+        **kwargs :
+            Key-value pairs of attributes to update.
         """
         material = self.storage['material'][name]
         for key in kwargs.keys():

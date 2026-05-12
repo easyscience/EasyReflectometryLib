@@ -275,18 +275,6 @@ class Model(BaseObj):
     @classmethod
     def from_dict(cls, passed_dict: dict) -> Model:
         """Create a Model from a dictionary.
-
-        Parameters
-        ----------
-        passed_dict : dict
-        cls :
-        this_dict :
-            Dictionary of the Model.
-
-        Returns
-        -------
-        Model
-            Model.
         """
         # Causes circular import if imported at the top
         from easyreflectometry.calculators import CalculatorFactory

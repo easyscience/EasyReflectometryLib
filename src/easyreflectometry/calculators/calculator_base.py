@@ -212,7 +212,7 @@ class CalculatorBase(SerializerComponent, metaclass=ABCMeta):
         Returns
         -------
         tuple[np.ndarray, np.ndarray]
-            Z and sld(z).
+            z and sld(z).
         """
         return self._wrapper.sld_profile(model_id)
 
