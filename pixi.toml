@@ -1,0 +1,278 @@
+###########
+# WORKSPACE
+###########
+
+[workspace]
+
+# Supported platforms for the lock file (pixi.lock)
+platforms = ['win-64', 'linux-64', 'osx-arm64']
+
+# Channels for fetching packages
+channels = ['nodefaults', 'conda-forge']
+
+##########
+# FEATURES
+##########
+
+# Default features:
+
+[activation.env]
+PYTHONIOENCODING = 'utf-8'
+
+[system-requirements]
+# Set minimum supported version for macOS to be 14.0 to ensure packages
+# like `scipp` that only have wheels for macOS 14.0+ (macosx_14_0_arm64)
+# are used instead of building from source. This is a workaround for
+# Pixi, see https://github.com/prefix-dev/pixi/issues/5667
+macos = '14.0'
+
+# Non-default features:
+
+# Set specific Python versions to be used in CI testing.
+
+[feature.py-min.dependencies]
+python = '3.11.*'
+
+[feature.py-max.dependencies]
+python = '3.13.*'
+
+# Development dependencies for local development and testing with
+# editable installations.
+
+[feature.dev.dependencies]
+nodejs = '*'      # Required for Prettier (non-Python formatting)
+jupyterlab = '*'  # Jupyter notebooks
+ipython = '*'     # Interactive Python shell
+pixi-kernel = '*' # Pixi Jupyter kernel
+
+[feature.dev.pypi-dependencies]
+pip = '*'
+easyreflectometry = { path = '.', editable = true, extras = ['dev'] }
+
+# User-like behavior for testing with pip-installed dependencies instead
+# of editable installations.
+
+[feature.user.dependencies]
+jupyterlab = '*'  # Jupyter notebooks
+ipython = '*'     # Interactive Python shell
+pixi-kernel = '*' # Pixi Jupyter kernel
+
+[feature.user.pypi-dependencies]
+pip = '*'
+easydiffraction = '*'
+
+##############
+# ENVIRONMENTS
+##############
+
+[environments]
+
+# The `default` feature is always included in all environments.
+# Additional features can be specified per environment.
+
+# Specific environments for CI testing with different Python versions.
+py-311-env = { features = ['py-min', 'dev'] }
+py-313-env = { features = ['py-max', 'dev'] }
+
+# The `default` environment is developer-oriented for local development
+# and testing with editable installation of the current package.
+default = { features = ['py-max', 'dev'] }
+
+# The `user` environment allows testing with pip-installed dependencies
+# instead of editable installation of the current package.
+user = { features = ['py-max', 'user'] }
+
+#######
+# TASKS
+#######
+
+[tasks]
+
+##################
+# 🧪 Testing Tasks
+##################
+
+unit-tests = 'python -m pytest tests/unit/ --color=yes -v'
+functional-tests = 'python -m pytest tests/functional/ --color=yes -v'
+integration-tests = 'python -m pytest tests/integration/ --color=yes -n auto -v'
+notebook-tests = 'python -m pytest --nbmake docs/docs/tutorials/**/ --nbmake-timeout=1200 --color=yes -n auto -v'
+
+test = { depends-on = ['unit-tests'] }
+
+###########
+# ✔️ Checks
+###########
+
+pyproject-check = 'python -m validate_pyproject pyproject.toml'
+docstring-lint-check = 'pydoclint --quiet src/'
+notebook-lint-check = 'nbqa ruff docs/docs/tutorials/'
+py-lint-check = 'ruff check src/ tests/ docs/docs/tutorials/'
+py-format-check = 'ruff format --check src/ tests/ docs/docs/tutorials/'
+nonpy-format-check = 'npx prettier --list-different --config=prettierrc.toml --ignore-unknown .'
+nonpy-format-check-modified = 'python tools/nonpy_prettier_modified.py'
+
+check = 'pre-commit run --hook-stage manual --all-files'
+
+##########
+# 🛠️ Fixes
+##########
+
+docstring-transform = 'pixi run docstripy src/ -s=numpy -w'
+docstring-format-fix = 'format-docstring src/'
+notebook-lint-fix = 'nbqa ruff --fix docs/docs/tutorials/'
+py-lint-fix = 'ruff check --fix src/ tests/ docs/docs/tutorials/'
+py-lint-fix-unsafe = 'ruff check --fix --unsafe-fixes src/ tests/ docs/docs/tutorials/'
+py-format-fix = 'ruff format src/ tests/ docs/docs/tutorials/'
+nonpy-format-fix = 'npx prettier --write --list-different --config=prettierrc.toml --ignore-unknown .'
+nonpy-format-fix-modified = 'python tools/nonpy_prettier_modified.py --write'
+success-message = 'echo "✅ All auto-formatting steps completed successfully!"'
+
+fix = { depends-on = [
+  'docstring-format-fix',
+  'py-format-fix',
+  'py-lint-fix',
+  'nonpy-format-fix',
+  'notebook-lint-fix',
+  'success-message',
+] }
+
+####################
+# 🧮 Code Complexity
+####################
+
+complexity-check = 'radon cc -s src/'
+complexity-check-json = 'radon cc -s -j src/'
+maintainability-check = 'radon mi src/'
+maintainability-check-json = 'radon mi -j src/'
+raw-metrics = 'radon raw -s src/'
+raw-metrics-json = 'radon raw -s -j src/'
+
+#############
+# 📊 Coverage
+#############
+
+unit-tests-coverage = 'pixi run unit-tests --cov=src/easyreflectometry --cov-report=term-missing'
+functional-tests-coverage = 'pixi run functional-tests --cov=src/easyreflectometry --cov-report=term-missing'
+integration-tests-coverage = 'pixi run integration-tests --cov=src/easyreflectometry --cov-report=term-missing'
+docstring-coverage = 'interrogate -c pyproject.toml src/easyreflectometry'
+
+cov = { depends-on = [
+  'docstring-coverage',
+  'unit-tests-coverage',
+  'integration-tests-coverage',
+] }
+
+########################
+# 📓 Notebook Management
+########################
+
+notebook-convert = 'jupytext docs/docs/tutorials/*.py --from py:percent --to ipynb'
+notebook-strip = 'nbstripout docs/docs/tutorials/**/*.ipynb'
+notebook-tweak = 'python tools/tweak_notebooks.py docs/docs/tutorials/**/*.ipynb'
+notebook-exec = 'python -m pytest --nbmake docs/docs/tutorials/ --nbmake-timeout=1200 --overwrite --color=yes -n auto -v'
+
+notebook-prepare = { depends-on = [
+  #'notebook-convert',
+  'notebook-strip',
+  #'notebook-tweak',
+] }
+
+########################
+# 📚 Documentation Tasks
+########################
+
+docs-vars = "JUPYTER_PLATFORM_DIRS=1 PYTHONWARNINGS='ignore::RuntimeWarning'"
+docs-pre = 'pixi run docs-vars python -m mkdocs'
+docs-serve = 'pixi run docs-pre serve -f docs/mkdocs.yml'
+docs-serve-dirty = 'pixi run docs-serve --dirty'
+docs-build = 'pixi run docs-pre build -f docs/mkdocs.yml'
+docs-build-local = 'pixi run docs-build --no-directory-urls'
+
+docs-deploy-pre = 'mike deploy -F docs/mkdocs.yml --push --branch gh-pages --update-aliases --alias-type redirect'
+docs-set-default-pre = 'mike set-default -F docs/mkdocs.yml --push --branch gh-pages'
+
+docs-update-assets = 'python tools/update_docs_assets.py'
+
+##############################
+# 📦 Template Management Tasks
+##############################
+
+copier-copy = 'copier copy gh:easyscience/templates . --data-file .copier-answers.yml --data template_type=lib'
+copier-recopy = 'copier recopy --data-file .copier-answers.yml --data template_type=lib'
+copier-update = 'copier update --data-file .copier-answers.yml --data template_type=lib'
+
+#####################
+# 🪝 Pre-commit Hooks
+#####################
+
+pre-commit-clean = 'pre-commit clean'
+pre-commit-install = 'pre-commit install --hook-type pre-commit --hook-type pre-push --overwrite'
+pre-commit-uninstall = 'pre-commit uninstall --hook-type pre-commit --hook-type pre-push'
+pre-commit-setup = { depends-on = [
+  'pre-commit-clean',
+  'pre-commit-uninstall',
+  'pre-commit-install',
+] }
+
+#################
+# 🐙️ GitHub Tasks
+#################
+
+repo-wiki = 'gh api -X PATCH repos/easyscience/reflectometry-lib -f has_wiki=false'
+repo-discussions = 'gh api -X PATCH repos/easyscience/reflectometry-lib -f has_discussions=true'
+repo-description = "gh api -X PATCH repos/easyscience/reflectometry-lib -f description='Reflectometry data analysis'"
+repo-homepage = "gh api -X PATCH repos/easyscience/reflectometry-lib -f homepage='https://easyscience.github.io/reflectometry-lib'"
+repo-config = { depends-on = [
+  'repo-wiki',
+  'repo-discussions',
+  'repo-description',
+  'repo-homepage',
+] }
+
+master-protection = 'gh api -X POST repos/easyscience/reflectometry-lib/rulesets --input .github/configs/rulesets-master.json'
+develop-protection = 'gh api -X POST repos/easyscience/reflectometry-lib/rulesets --input .github/configs/rulesets-develop.json'
+gh-pages-protection = 'gh api -X POST repos/easyscience/reflectometry-lib/rulesets --input .github/configs/rulesets-gh-pages.json'
+branch-protection = { depends-on = [
+  'master-protection',
+  'develop-protection',
+  'gh-pages-protection',
+] }
+
+pages-deployment = 'gh api -X POST repos/easyscience/reflectometry-lib/pages --input .github/configs/pages-deployment.json'
+
+github-labels = 'python tools/update_github_labels.py'
+
+#########################
+# ⚖️ SPDX License Headers
+#########################
+
+license-remove = 'python tools/license_headers.py remove src/ tests/ --exclude-from-pyproject-toml tool.ruff.exclude'
+license-add = 'python tools/license_headers.py add src/ tests/ --exclude-from-pyproject-toml tool.ruff.exclude'
+license-check = 'python tools/license_headers.py check src/ tests/ --exclude-from-pyproject-toml tool.ruff.exclude'
+
+####################################
+# 🚀 Other Development & Build Tasks
+####################################
+
+default-build = 'python -m build'
+dist-build = 'python -m build --wheel --outdir dist'
+
+npm-config = 'npm config set registry https://registry.npmjs.org/'
+prettier-install = 'npm install --no-save --no-audit --no-fund prettier prettier-plugin-toml'
+
+clean-pycache = "find . -type d -name '__pycache__' -prune -exec rm -rf '{}' +"
+
+post-install = { depends-on = [
+  'npm-config',
+  'prettier-install',
+  #'pre-commit-setup',
+] }
+
+##########################
+# 🔗 Main Package Shortcut
+##########################
+easyreflectometry = 'python -m easyreflectometry'
+
+[dependencies]
+ruff = ">=0.15.12,<0.16"
+copier = ">=9.15.0,<10"

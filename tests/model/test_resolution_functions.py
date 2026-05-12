@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 EasyScience contributors <https://github.com/easyscience>
+# SPDX-License-Identifier: BSD-3-Clause
+
 import unittest
 
 import numpy as np
@@ -64,7 +67,11 @@ class TestLinearSpline(unittest.TestCase):
         resolution_function = LinearSpline(q_data_points=[0, 10], fwhm_values=[5, 10])
 
         # Then Expect
-        resolution_function.as_dict() == {'smearing': 'LinearSpline', 'q_data_points': [0, 10], 'fwhm_values': [5, 10]}
+        resolution_function.as_dict() == {
+            'smearing': 'LinearSpline',
+            'q_data_points': [0, 10],
+            'fwhm_values': [5, 10],
+        }
 
     def test_dict_round_trip(self):
         # When
@@ -90,7 +97,8 @@ class TestPointwise(unittest.TestCase):
 
         # Then Expect
         assert np.allclose(
-            np.array(resolution_function.smearing()), np.array([2.51664683, 2.84038734, 3.2460762, 3.6796519, 4.07869271])
+            np.array(resolution_function.smearing()),
+            np.array([2.51664683, 2.84038734, 3.2460762, 3.6796519, 4.07869271]),
         )
 
     def test_as_dict(self):

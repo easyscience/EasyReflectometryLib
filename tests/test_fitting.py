@@ -1,4 +1,6 @@
-__author__ = 'github.com/arm61'
+# SPDX-FileCopyrightText: 2026 EasyScience contributors <https://github.com/easyscience>
+# SPDX-License-Identifier: BSD-3-Clause
+
 
 import os
 from unittest.mock import MagicMock
@@ -175,12 +177,10 @@ def test_fitting_with_manual_zero_variance():
     variances[30:32] = 0.0  # 2 more zero variance points
 
     # Create scipp DataGroup manually
-    data = sc.DataGroup(
-        {
-            'coords': {'Qz_0': sc.array(dims=['Qz_0'], values=qz_values)},
-            'data': {'R_0': sc.array(dims=['Qz_0'], values=r_values, variances=variances)},
-        }
-    )
+    data = sc.DataGroup({
+        'coords': {'Qz_0': sc.array(dims=['Qz_0'], values=qz_values)},
+        'data': {'R_0': sc.array(dims=['Qz_0'], values=r_values, variances=variances)},
+    })
 
     # Create a simple model for fitting
     si = Material(2.07, 0, 'Si')
@@ -428,7 +428,12 @@ def test_prepare_fit_arrays_legacy_mask_drops_zero_variance():
     assert np.allclose(x_out, [0.01, 0.03])
     assert np.allclose(y_eff, [1.0, 0.6])
     assert np.allclose(weights, [1.0 / np.sqrt(0.01), 1.0 / np.sqrt(0.04)])
-    assert stats == {'valid': 2, 'mighell_substituted': 0, 'masked': 1, 'transformed_all_points': False}
+    assert stats == {
+        'valid': 2,
+        'mighell_substituted': 0,
+        'masked': 1,
+        'transformed_all_points': False,
+    }
 
 
 def test_prepare_fit_arrays_hybrid_transforms_zero_variance():
@@ -449,7 +454,12 @@ def test_prepare_fit_arrays_hybrid_transforms_zero_variance():
     assert y_eff[1] == pytest.approx(0.8 + 0.8)
     # sigma = sqrt(y + 1) = sqrt(1.8)
     assert weights[1] == pytest.approx(1.0 / np.sqrt(1.8))
-    assert stats == {'valid': 2, 'mighell_substituted': 1, 'masked': 0, 'transformed_all_points': False}
+    assert stats == {
+        'valid': 2,
+        'mighell_substituted': 1,
+        'masked': 0,
+        'transformed_all_points': False,
+    }
 
 
 def test_prepare_fit_arrays_mighell_transforms_all():
@@ -466,7 +476,12 @@ def test_prepare_fit_arrays_mighell_transforms_all():
     # sigma = sqrt(y + 1)
     assert weights[0] == pytest.approx(1.0 / np.sqrt(1.5))
     assert weights[1] == pytest.approx(1.0 / np.sqrt(1.3))
-    assert stats == {'valid': 0, 'mighell_substituted': 2, 'masked': 0, 'transformed_all_points': True}
+    assert stats == {
+        'valid': 0,
+        'mighell_substituted': 2,
+        'masked': 0,
+        'transformed_all_points': True,
+    }
 
 
 def test_fit_single_data_set_1d_hybrid_keeps_zero_variance_points():
@@ -553,13 +568,17 @@ def test_classical_and_objective_chi_are_split_for_fit_results():
     fitter._models = [MagicMock(unique_name='model_0', as_dict=MagicMock(return_value={'name': 'model_0'}))]
     fitter._fit_func = [lambda x: np.array([0.8, 0.75, 0.7])]
 
-    data = sc.DataGroup(
-        {
-            'coords': {'Qz_0': sc.array(dims=['Qz_0'], values=np.array([0.01, 0.02, 0.03]), unit=sc.Unit('1/angstrom'))},
-            'data': {'R_0': sc.array(dims=['Qz_0'], values=np.array([1.0, 0.9, 0.7]), variances=np.array([0.01, 0.0, 0.04]))},
-            'attrs': {},
-        }
-    )
+    data = sc.DataGroup({
+        'coords': {'Qz_0': sc.array(dims=['Qz_0'], values=np.array([0.01, 0.02, 0.03]), unit=sc.Unit('1/angstrom'))},
+        'data': {
+            'R_0': sc.array(
+                dims=['Qz_0'],
+                values=np.array([1.0, 0.9, 0.7]),
+                variances=np.array([0.01, 0.0, 0.04]),
+            )
+        },
+        'attrs': {},
+    })
 
     analysed = fitter.fit(data)
 
@@ -654,12 +673,10 @@ def test_fit_multi_dataset_hybrid_uses_transformed_y_and_weights():
     variances = np.ones_like(r_values) * 0.01
     variances[3:5] = 0.0  # 2 zero-variance points
 
-    data = sc.DataGroup(
-        {
-            'coords': {'Qz_0': sc.array(dims=['Qz_0'], values=qz_values)},
-            'data': {'R_0': sc.array(dims=['Qz_0'], values=r_values, variances=variances)},
-        }
-    )
+    data = sc.DataGroup({
+        'coords': {'Qz_0': sc.array(dims=['Qz_0'], values=qz_values)},
+        'data': {'R_0': sc.array(dims=['Qz_0'], values=r_values, variances=variances)},
+    })
 
     model = Model()
     model.interface = CalculatorFactory()

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2024 EasyScience contributors <https://github.com/easyscience>
+# SPDX-License-Identifier: BSD-3-Clause
+
 from unittest.mock import Mock
 
 import numpy as np
@@ -29,7 +32,13 @@ class TestDataSet1D:
     def test_constructor_with_values(self):
         # When
         data = DataSet1D(
-            x=[1, 2, 3], y=[4, 5, 6], ye=[7, 8, 9], xe=[10, 11, 12], x_label='label_x', y_label='label_y', name='MyDataSet1D'
+            x=[1, 2, 3],
+            y=[4, 5, 6],
+            ye=[7, 8, 9],
+            xe=[10, 11, 12],
+            x_label='label_x',
+            y_label='label_y',
+            name='MyDataSet1D',
         )
 
         # Then

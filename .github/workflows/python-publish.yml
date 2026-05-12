@@ -4,7 +4,6 @@
 #
 # For more information see: https://help.github.com/en/actions/language-and-framework-guides/using-python-with-github-actions#publishing-to-package-registries
 
-
 name: Publish Python Package
 
 # Controls when the workflow will run
@@ -19,24 +18,23 @@ on:
 
 jobs:
   deploy:
-
     runs-on: ubuntu-latest
     permissions:
       id-token: write
-    
+
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - uses: actions/setup-python@v5
-      with:
-        python-version: 3.12
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.12
 
-    - name: Install dependencies and build
-      run: |
-        pip install -e '.[dev]'
-        python -m build
+      - name: Install dependencies and build
+        run: |
+          pip install -e '.[dev]'
+          python -m build
 
-    - name: Publish distribution 📦 to PyPI
-      uses: pypa/gh-action-pypi-publish@release/v1
-      #with:
-      #  password: ${{ secrets.PYPI_PASSWORD }}
+      - name: Publish distribution 📦 to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        #with:
+        #  password: ${{ secrets.PYPI_PASSWORD }}

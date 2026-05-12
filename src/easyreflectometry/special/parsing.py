@@ -1,4 +1,6 @@
-__author__ = 'github.com/arm61'
+# SPDX-FileCopyrightText: 2026 EasyScience contributors <https://github.com/easyscience>
+# SPDX-License-Identifier: BSD-3-Clause
+
 
 import re
 from typing import Tuple
@@ -9,9 +11,17 @@ CLOSERS = ')}]'
 
 
 def _dictify(tuples: Tuple[Tuple[str, str]]) -> dict:
-    """
-    :param tuples: tuples of tuples with atom and occurance.
-    :return: Dict of atoms and occurance.
+    """Dictify function.
+
+    Parameters
+    ----------
+    tuples : Tuple[Tuple[str, str]]
+        Tuples of tuples with atom and occurance.
+
+    Returns
+    -------
+    dict
+        Dict of atoms and occurance.
     """
     res = dict()
     for atom, n in tuples:
@@ -23,19 +33,37 @@ def _dictify(tuples: Tuple[Tuple[str, str]]) -> dict:
 
 
 def _fuse(mol1: dict, mol2: dict, w: int = 1) -> dict:
-    """
-    :param mol1: First dict to fuse
-    :param mol2: Second dict to fuse
-    :param w: Weight for dicts
-    :return: Fused dictionaries
+    """Fuse function.
+
+    Parameters
+    ----------
+    mol1 : dict
+        First dict to fuse.
+    mol2 : dict
+        Second dict to fuse.
+    w : int, optional
+        Weight for dicts. By default, 1.
+
+    Returns
+    -------
+    dict
+        Fused dictionaries.
     """
     return {atom: (mol1.get(atom, 0) + mol2.get(atom, 0)) * w for atom in set(mol1) | set(mol2)}
 
 
 def _parse(formula: str) -> Tuple[dict, int]:
-    """
-    :param formula: Chemical formula as a string
-    :return: Tuple containing; formula as a dictwith occurences
+    """Parse function.
+
+    Parameters
+    ----------
+    formula : str
+        Chemical formula as a string.
+
+    Returns
+    -------
+
+        Tuple containing; formula as a dictwith occurences
         of each atom and an iterator.
     """
     token_list = []
@@ -73,8 +101,16 @@ def _parse(formula: str) -> Tuple[dict, int]:
 
 
 def parse_formula(formula: str) -> dict:
-    """
-    :param formula: Chemical formula as a string
-    :return: Formula as a dict with occurences of each atom.
+    """Parse formula.
+
+    Parameters
+    ----------
+    formula : str
+        Chemical formula as a string.
+
+    Returns
+    -------
+    dict
+        Formula as a dict with occurences of each atom.
     """
     return _parse(formula)[0]

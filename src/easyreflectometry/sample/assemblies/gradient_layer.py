@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 EasyScience contributors <https://github.com/easyscience>
+# SPDX-License-Identifier: BSD-3-Clause
+
 from typing import Optional
 
 from easyscience import global_object
@@ -11,8 +14,8 @@ from .base_assembly import BaseAssembly
 
 class GradientLayer(BaseAssembly):
     """A set of discrete gradient layers changing from the front to the back material.
-    The front layer is where the neutron beam starts in, it has an index of 0.
 
+    The front layer is where the neutron beam starts in, it has an index of 0.
     """
 
     def __init__(
@@ -28,13 +31,24 @@ class GradientLayer(BaseAssembly):
     ):
         """Constructor.
 
-        :param front_material: Material of front of the layer
-        :param back_material: Material of back of the layer
-        :param thickness: Thicknkess of the layer
-        :param roughness: Roughness of the layer
-        :param discretisation_elements: Number of discrete layers
-        :param name: Name for gradient layer, defaults to 'EasyGradienLayer'.
-        :param interface: Calculator interface, defaults to `None`.
+        Parameters
+        ----------
+        unique_name : Optional[str], optional
+            By default, None.
+        front_material : Optional[Material], optional
+            Material of front of the layer. By default, None.
+        back_material : Optional[Material], optional
+            Material of back of the layer. By default, None.
+        thickness : Optional[float], optional
+            Thicknkess of the layer. By default, 2.0.
+        roughness : Optional[float], optional
+            Roughness of the layer. By default, 0.2.
+        discretisation_elements : int, optional
+            Number of discrete layers. By default, 10.
+        name : str, optional
+            Name for gradient layer. By default, 'EasyGradienLayer'.
+        interface :
+            Calculator interface. By default, None.
         """
 
         if front_material is None:
@@ -82,7 +96,10 @@ class GradientLayer(BaseAssembly):
     def thickness(self, thickness: float) -> None:
         """Set the thickness of the gradient layer.
 
-        :param thickness: Thickness of the gradient layer in Angstroms.
+        Parameters
+        ----------
+        thickness : float
+            Thickness of the gradient layer in Angstroms.
         """
         self.front_layer.thickness.value = thickness / self._discretisation_elements
 
@@ -95,7 +112,10 @@ class GradientLayer(BaseAssembly):
     def roughness(self, roughness: float) -> None:
         """Set the roughness of the gradient layer.
 
-        :param roughness: Roughness of the gradient layer in Angstroms.
+        Parameters
+        ----------
+        roughness : float
+            Roughness of the gradient layer in Angstroms.
         """
         self.front_layer.roughness.value = roughness
 
@@ -103,7 +123,7 @@ class GradientLayer(BaseAssembly):
     def _dict_repr(self) -> dict[str, str]:
         """A simplified dict representation."""
         return {
-            'thickness': float(self.thickness),  #  Conversion to float is necessary to prevent property reference in dict
+            'thickness': float(self.thickness),  # Conversion to float is necessary to prevent property reference in dict
             'discretisation_elements': int(self._discretisation_elements),  # Same as above
             'back_layer': self.back_layer._dict_repr,
             'front_layer': self.front_layer._dict_repr,
@@ -111,9 +131,13 @@ class GradientLayer(BaseAssembly):
 
     def as_dict(self, skip: Optional[list[str]] = None) -> dict:
         """Produces a cleaned dict using a custom as_dict method to skip necessary things.
+
         The resulting dict matches the parameters in __init__
 
-        :param skip: List of keys to skip, defaults to `None`.
+        Parameters
+        ----------
+        skip : Optional[list[str]], optional
+            List of keys to skip. By default, None.
         """
         this_dict = super().as_dict(skip=skip)
         # Determined in __init__
@@ -126,6 +150,7 @@ def _linear_gradient(
     back_value: float,
     discretisation_elements: int,
 ) -> list[float]:
+    """Linear gradient."""
     discrete_step = (back_value - front_value) / discretisation_elements
     if discrete_step != 0:
         # Both front and back values are included
@@ -141,6 +166,7 @@ def _prepare_gradient_layers(
     discretisation_elements: int,
     interface=None,
 ) -> LayerCollection:
+    """Prepare gradient layers."""
     gradient_sld = _linear_gradient(
         front_value=front_material.sld.value,
         back_value=back_material.sld.value,

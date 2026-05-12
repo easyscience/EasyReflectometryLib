@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 EasyScience contributors <https://github.com/easyscience>
+# SPDX-License-Identifier: BSD-3-Clause
+
 import traceback
 
 from .calculator_base import CalculatorBase
@@ -28,4 +31,4 @@ except Exception:
     traceback.print_exc()
     print('Warning: refl1d is not installed')
 
-__all__ = [CalculatorBase, CalculatorFactory] + imported_calculators
+__all__ = ['CalculatorBase', 'CalculatorFactory'] + [c.__name__ for c in imported_calculators]

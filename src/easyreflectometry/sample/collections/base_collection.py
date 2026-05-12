@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 EasyScience contributors <https://github.com/easyscience>
+# SPDX-License-Identifier: BSD-3-Clause
+
 from typing import List
 from typing import Optional
 
@@ -16,6 +19,7 @@ class BaseCollection(EasyBaseCollection):
         unique_name: Optional[str] = None,
         **kwargs,
     ):
+        """Init function."""
         if unique_name is None:
             unique_name = global_object.generate_unique_name(self.__class__.__name__)
 
@@ -27,24 +31,33 @@ class BaseCollection(EasyBaseCollection):
         self.populate_if_none = False
 
     def __repr__(self) -> str:
-        """
-        String representation of the collection.
+        """String representation of the collection.
 
-        :return: a string representation of the collection
+        Returns
+        -------
+        str
+            A string representation of the collection.
         """
         return yaml_dump(self._dict_repr)
 
     @property
     def names(self) -> list:
-        """
-        :returns: list of names for the elements in the collection.
+        """Names function.
+
+        Returns
+        -------
+        s : list
+            List of names for the elements in the collection.
         """
         return [i.name for i in self]
 
     def move_up(self, index: int):
         """Move the element at the given index up in the collection.
 
-        :param index: Index of the element to move up.
+        Parameters
+        ----------
+        index : int
+            Index of the element to move up.
         """
         if index == 0:
             return
@@ -53,34 +66,43 @@ class BaseCollection(EasyBaseCollection):
     def move_down(self, index: int):
         """Move the element at the given index down in the collection.
 
-        :param index: Index of the element to move down.
+        Parameters
+        ----------
+        index : int
+            Index of the element to move down.
         """
         if index == len(self) - 1:
             return
         self.insert(index + 1, self.pop(index))
 
     def remove(self, index: int):
-        """
-        Remove an element from the elements.
+        """Remove an element from the elements.
 
-        :param index: Index of the element to remove
+        Parameters
+        ----------
+        index : int
+            Index of the element to remove.
         """
         self.pop(index)
 
     @property
     def _dict_repr(self) -> dict:
-        """
-        A simplified dict representation.
+        """A simplified dict representation.
 
-        :return: Simple dictionary
+        Returns
+        -------
+        dict
+            Simple dictionary.
         """
         return {self.name: [i._dict_repr for i in self]}
 
     def as_dict(self, skip: Optional[List[str]] = None) -> dict:
-        """
-        Create a dictionary representation of the collection.
+        """Create a dictionary representation of the collection.
 
-        :return: A dictionary representation of the collection
+        Returns
+        -------
+        dict
+            A dictionary representation of the collection.
         """
         if skip is None:
             skip = []
@@ -92,4 +114,5 @@ class BaseCollection(EasyBaseCollection):
         return this_dict
 
     def __deepcopy__(self, memo):
+        """Deepcopy function."""
         return self.from_dict(self.as_dict(skip=['unique_name']))

@@ -1,3 +1,8 @@
+# SPDX-FileCopyrightText: 2026 EasyScience contributors <https://github.com/easyscience>
+# SPDX-License-Identifier: BSD-3-Clause
+
+"""EasyReflectometry library."""
+
 from importlib import metadata
 
 from .project import Project
@@ -8,6 +13,6 @@ except metadata.PackageNotFoundError:
     __version__ = '0.0.0'
 
 __all__ = [
-    Project,
-    __version__,
+    'Project',
+    '__version__',
 ]

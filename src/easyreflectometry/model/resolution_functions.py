@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 EasyScience contributors <https://github.com/easyscience>
+# SPDX-License-Identifier: BSD-3-Clause
+
 """Resolution functions for the resolution of the experiment.
 When a percentage is provided we assume that the resolution is a
 Gaussian distribution with a FWHM of the percentage of the q value.
@@ -26,51 +29,68 @@ class ResolutionFunction:
 
     @classmethod
     def from_dict(cls, data: dict) -> ResolutionFunction:
+        """Smearing function."""
         if data['smearing'] == 'PercentageFwhm':
             return PercentageFwhm(data['constant'])
         if data['smearing'] == 'LinearSpline':
             return LinearSpline(data['q_data_points'], data['fwhm_values'])
         if data['smearing'] == 'Pointwise':
-            return Pointwise([data['q_data_points'], data['R_data_points'], data['sQz_data_points']])
+            return Pointwise([
+                data['q_data_points'],
+                data['R_data_points'],
+                data['sQz_data_points'],
+            ])
         raise ValueError('Unknown resolution function type')
 
 
 class PercentageFwhm(ResolutionFunction):
     def __init__(self, constant: Union[None, float] = None):
+        """Init function."""
         if constant is None:
             constant = DEFAULT_RESOLUTION_FWHM_PERCENTAGE
         self.constant = constant
 
     def smearing(self, q: Union[np.array, float]) -> np.array:
+        """Smearing function."""
         return np.ones(np.array(q).size) * self.constant
 
     def as_dict(
         self, skip: Optional[List[str]] = None
     ) -> dict[str, str]:  # skip is kept for consistency of the as_dict signature
+        """As dict."""
         return {'smearing': 'PercentageFwhm', 'constant': self.constant}
 
 
 class LinearSpline(ResolutionFunction):
     def __init__(self, q_data_points: np.array, fwhm_values: np.array):
+        """Init function."""
         self.q_data_points = q_data_points
         self.fwhm_values = fwhm_values
 
     def smearing(self, q: Union[np.array, float]) -> np.array:
+        """Smearing function."""
         return np.interp(q, self.q_data_points, self.fwhm_values)
 
     def as_dict(
         self, skip: Optional[List[str]] = None
     ) -> dict[str, str]:  # skip is kept for consistency of the as_dict signature
-        return {'smearing': 'LinearSpline', 'q_data_points': list(self.q_data_points), 'fwhm_values': list(self.fwhm_values)}
+        """As dict."""
+        return {
+            'smearing': 'LinearSpline',
+            'q_data_points': list(self.q_data_points),
+            'fwhm_values': list(self.fwhm_values),
+        }
 
 
 # add pointwise smearing funtion
 class Pointwise(ResolutionFunction):
     def __init__(self, q_data_points: list[np.ndarray]):
+        """Init function."""
         self.q_data_points = q_data_points
         self.q = None
 
     def smearing(self, q: Union[np.ndarray, float] = None) -> np.ndarray:
+        """Smearing function."""
         Qz = self.q_data_points[0]
         R = self.q_data_points[1]
         sQz = self.q_data_points[2]
@@ -87,6 +107,7 @@ class Pointwise(ResolutionFunction):
     def as_dict(
         self, skip: Optional[List[str]] = None
     ) -> dict[str, str]:  # skip is kept for consistency of the as_dict signature
+        """As dict."""
         return {
             'smearing': 'Pointwise',
             'q_data_points': list(self.q_data_points[0]),
@@ -95,6 +116,7 @@ class Pointwise(ResolutionFunction):
         }
 
     def gaussian_smearing(self, qt, Qz, R, sQz):
+        """Gaussian smearing."""
         weights = np.exp(-0.5 * ((qt - Qz) / sQz) ** 2)
         if np.sum(weights) == 0 or not np.isfinite(np.sum(weights)):
             return np.sum(R)
@@ -102,9 +124,7 @@ class Pointwise(ResolutionFunction):
         return np.sum(R * weights) / np.sum(weights)
 
     def apply_smooth_smearing(self, Qz, R, sQzs):
-        """
-        Apply smooth resolution smearing using convolution with Gaussian kernel.
-        """
+        """Apply smooth resolution smearing using convolution with Gaussian kernel."""
         if self.q is None:
             R_smeared = np.zeros_like(Qz)
         else:

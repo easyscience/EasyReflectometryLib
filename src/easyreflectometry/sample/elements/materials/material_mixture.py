@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 EasyScience contributors <https://github.com/easyscience>
+# SPDX-License-Identifier: BSD-3-Clause
+
 from typing import Optional
 from typing import Union
 
@@ -41,11 +44,20 @@ class MaterialMixture(BaseCore):
     ):
         """Constructor.
 
-        :param material_a: The first material.
-        :param material_b: The second material.
-        :param fraction: The fraction of material_b in material_a.
-        :param name: Name of the material, defaults to None that causes the name to be constructed.
-        :param interface: Calculator interface, defaults to `None`.
+        Parameters
+        ----------
+        unique_name : Optional[str], optional
+            By default, None.
+        material_a : Union[Material, None], optional
+            The first material. By default, None.
+        material_b : Union[Material, None], optional
+            The second material. By default, None.
+        fraction : Union[Parameter, float, None], optional
+            The fraction of material_b in material_a. By default, None.
+        name : Union[str, None], optional
+            Name of the material. By default, None.
+        interface :
+            Calculator interface. By default, None.
         """
         if unique_name is None:
             unique_name = global_object.generate_unique_name(self.__class__.__name__)
@@ -102,22 +114,34 @@ class MaterialMixture(BaseCore):
         self.interface = interface
 
     def _get_linkable_attributes(self):
+        """Get linkable attributes."""
         return [self._sld, self._isld]
 
     @property
     def sld(self) -> float:
+        """Sld function."""
         return self._sld.value
 
     @property
     def isld(self) -> float:
+        """Isld function."""
         return self._isld.value
 
     def _materials_constraints(self):
+        """Materials constraints."""
         dependency_expression = 'a * (1 - p) + b * p'
-        dependency_map = {'a': self._material_a.sld, 'b': self._material_b.sld, 'p': self._fraction}
+        dependency_map = {
+            'a': self._material_a.sld,
+            'b': self._material_b.sld,
+            'p': self._fraction,
+        }
         self._sld.make_dependent_on(dependency_expression=dependency_expression, dependency_map=dependency_map)
 
-        dependency_map = {'a': self._material_a.isld, 'b': self._material_b.isld, 'p': self._fraction}
+        dependency_map = {
+            'a': self._material_a.isld,
+            'b': self._material_b.isld,
+            'p': self._fraction,
+        }
         self._isld.make_dependent_on(dependency_expression=dependency_expression, dependency_map=dependency_map)
 
     @property
@@ -129,7 +153,10 @@ class MaterialMixture(BaseCore):
     def fraction(self, fraction: float) -> None:
         """Setter for fraction of material_b.
 
-        :param fraction: The fraction of material_b in material_a.
+        Parameters
+        ----------
+        fraction : float
+            The fraction of material_b in material_a.
         """
         if not isinstance(fraction, float):
             raise ValueError('fraction must be a float')
@@ -142,9 +169,12 @@ class MaterialMixture(BaseCore):
 
     @material_a.setter
     def material_a(self, new_material_a: Material) -> None:
-        """Setter for material_a
+        """Setter for material_a.
 
-        :param new_material_a: New Material for material_a
+        Parameters
+        ----------
+        new_material_a : Material
+            New Material for material_a.
         """
         self._material_a = new_material_a
         self._materials_constraints()
@@ -159,9 +189,12 @@ class MaterialMixture(BaseCore):
 
     @material_b.setter
     def material_b(self, new_material_b: Material) -> None:
-        """Setter for material_b
+        """Setter for material_b.
 
-        :param new_material_b: New Materialfor material_b
+        Parameters
+        ----------
+        new_material_b : Material
+            New Materialfor material_b.
         """
         self._material_b = new_material_b
         self._materials_constraints()
@@ -170,6 +203,7 @@ class MaterialMixture(BaseCore):
         self._update_name()
 
     def _update_name(self) -> None:
+        """Update name."""
         self.name = self._material_a.name + '/' + self._material_b.name
 
     # Representation
@@ -188,9 +222,13 @@ class MaterialMixture(BaseCore):
 
     def as_dict(self, skip: Optional[list[str]] = None) -> dict[str, str]:
         """Produces a cleaned dict using a custom as_dict method to skip necessary things.
+
         The resulting dict matches the parameters in __init__
 
-        :param skip: List of keys to skip, defaults to `None`.
+        Parameters
+        ----------
+        skip : Optional[list[str]], optional
+            List of keys to skip. By default, None.
         """
         this_dict = super().as_dict(skip=skip)
         this_dict['material_a'] = self._material_a.as_dict(skip=skip)

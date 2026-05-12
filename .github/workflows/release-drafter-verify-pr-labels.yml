@@ -5,7 +5,6 @@
 #
 # For more information see: https://github.com/marketplace/actions/release-drafter
 
-
 name: Verify PR labels
 on:
   pull_request_target:
@@ -16,11 +15,12 @@ jobs:
     runs-on: ubuntu-latest
     name: Verify that the PR has a valid label
     steps:
-    - name: Verify PR label action
-      uses: jesusvasquez333/verify-pr-label-action@v1.4.0
-      id: verify-pr-label
-      with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        valid-labels: chore, fix, bugfix, bug, enhancement, feature, dependencies, documentation
-        pull-request-number: ${{ github.event.pull_request.number }}
-        disable-reviews: false
+      - name: Verify PR label action
+        uses: jesusvasquez333/verify-pr-label-action@v1.4.0
+        id: verify-pr-label
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          valid-labels:
+            chore, fix, bugfix, bug, enhancement, feature, dependencies, documentation
+          pull-request-number: ${{ github.event.pull_request.number }}
+          disable-reviews: false

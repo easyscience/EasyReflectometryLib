@@ -1,18 +1,48 @@
-![Logo](https://github.com/easyScience/EasyReflectometryLib/raw/master/docs/src/_static/logo.png)
-[![CI badge](https://github.com/easyScience/EasyReflectometryLib/actions/workflows/python-ci.yml/badge.svg)](https://github.com/easyScience/easyReflectometryLib/actions/workflows/python-ci.yml)
-[![PyPI badge](https://img.shields.io/pypi/v/easyreflectometry.svg)](https://pypi.python.org/pypi/easyreflectometry)
-[![Quality badge](https://www.codefactor.io/repository/github/easyscience/easyreflectometrylib/badge)](https://www.codefactor.io/repository/github/easyscience/easyreflectometrylib)
-[![Docs badge](https://img.shields.io/badge/docs-built-blue)](http://docs.easyreflectometry.org)
+<p>
+  <picture>
+    <!-- light mode logo -->
+    <source media='(prefers-color-scheme: light)' srcset='https://raw.githubusercontent.com/easyscience/assets-branding/refs/heads/master/easyreflectometry/logos/light.svg'>
+    <!-- dark mode logo -->
+    <source media='(prefers-color-scheme: dark)' srcset='https://raw.githubusercontent.com/easyscience/assets-branding/refs/heads/master/easyreflectometry/logos/dark.svg'>
+    <!-- default logo == light mode logo -->
+    <img src='https://raw.githubusercontent.com/easyscience/assets-branding/refs/heads/master/easyreflectometry/logos/light.svg' alt='EasyReflectometry'>
+  </picture>
+</p>
 
-# About
+**EasyReflectometry** is a software for performing reflectometry
+calculations based on a layer model and refining its parameters against
+reflectometry data.
 
-A reflectometry python package and an application.
+<!-- HOME REPOSITORY SECTION -->
 
-This repo and documentation is for the `easyreflectometry` Python package that is built on the `easyscience` [framework](https://easyscience.software).
-To get more information about the application visit [`easyreflectometry.org`](https://easyreflectometry.org)
+**EasyReflectometry** is developed as a Python library.
 
-# Installation
+License:
+[BSD 3-Clause](https://github.com/easyscience/reflectometry-lib/blob/master/LICENSE)
 
-```sh
-python -m pip install easyreflectometry
-```
+## Useful Links
+
+### For Users
+
+- 📖
+  [Documentation](https://easyscience.github.io/reflectometry-lib/latest)
+- 🚀
+  [Getting Started](https://easyscience.github.io/reflectometry-lib/latest/introduction)
+- 🧪
+  [Tutorials](https://easyscience.github.io/reflectometry-lib/latest/tutorials)
+- 💬
+  [Get in Touch](https://easyscience.github.io/reflectometry-lib/latest/introduction/#get-in-touch)
+- 🧾
+  [Citation](https://easyscience.github.io/reflectometry-lib/latest/introduction/#citation)
+
+### For Contributors
+
+- 🧑‍💻 [Source Code](https://github.com/easyscience/reflectometry-lib)
+- 🐞
+  [Issue Tracker](https://github.com/easyscience/reflectometry-lib/issues)
+- 💡
+  [Discussions](https://github.com/easyscience/reflectometry-lib/discussions)
+- 🤝
+  [Contributing Guide](https://github.com/easyscience/reflectometry-lib/blob/master/CONTRIBUTING.md)
+- 🛡
+  [Code of Conduct](https://github.com/easyscience/.github/blob/master/CODE_OF_CONDUCT.md)

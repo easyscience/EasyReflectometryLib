@@ -1,5 +1,6 @@
-__author__ = 'github.com/arm61'
-__version__ = '0.0.1'
+# SPDX-FileCopyrightText: 2022 EasyScience contributors <https://github.com/easyscience>
+# SPDX-License-Identifier: BSD-3-Clause
+
 
 import os
 import unittest
@@ -224,7 +225,10 @@ class TestData(unittest.TestCase):
         assert coords_name in er_data['coords']
 
         # xe should be zeros for 3-column file
-        assert_almost_equal(er_data['coords'][coords_name].variances, np.zeros_like(er_data['coords'][coords_name].values))
+        assert_almost_equal(
+            er_data['coords'][coords_name].variances,
+            np.zeros_like(er_data['coords'][coords_name].values),
+        )
 
     def test_load_txt_with_zero_errors(self):
         fpath = os.path.join(PATH_STATIC, 'ref_zero_var.txt')

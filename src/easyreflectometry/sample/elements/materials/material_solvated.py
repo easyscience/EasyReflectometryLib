@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 EasyScience contributors <https://github.com/easyscience>
+# SPDX-License-Identifier: BSD-3-Clause
+
 from typing import Optional
 from typing import Union
 
@@ -33,11 +36,20 @@ class MaterialSolvated(MaterialMixture):
     ):
         """Constructor.
 
-        :param material: The material being solvated.
-        :param solvent: The solvent material.
-        :param solvent_fraction: Fraction of solvent in layer. E.g. solvation or surface coverage.
-        :param name: Name of the material, defaults to None that causes the name to be constructed.
-        :param interface: Calculator interface, defaults to `None`.
+        Parameters
+        ----------
+        unique_name : Optional[str], optional
+            By default, None.
+        material : Union[Material, None], optional
+            The material being solvated. By default, None.
+        solvent : Union[Material, None], optional
+            The solvent material. By default, None.
+        solvent_fraction : Union[Parameter, float, None], optional
+            Fraction of solvent in layer. E.g. solvation or surface coverage. By default, None.
+        name :
+            Name of the material. By default, None.
+        interface :
+            Calculator interface. By default, None.
         """
         if unique_name is None:
             unique_name = global_object.generate_unique_name(self.__class__.__name__)
@@ -74,7 +86,10 @@ class MaterialSolvated(MaterialMixture):
     def material(self, new_material: Material) -> None:
         """Set the material.
 
-        :param new_material: Matrerial to be useed.
+        Parameters
+        ----------
+        new_material : Material
+            Matrerial to be useed.
         """
         self.material_a = new_material
 
@@ -87,7 +102,10 @@ class MaterialSolvated(MaterialMixture):
     def solvent(self, new_solvent: Material) -> None:
         """Set the solvent.
 
-        :param new_solvent: Solvent to be used.
+        Parameters
+        ----------
+        new_solvent : Material
+            Solvent to be used.
         """
         self.material_b = new_solvent
 
@@ -99,6 +117,7 @@ class MaterialSolvated(MaterialMixture):
     @property
     def solvent_fraction(self) -> float:
         """Get the fraction of layer described by the solvent.
+
         This might be fraction of:
         Solvation where solvent is within the layer
         Patches of solvent in the layer where no material is present.
@@ -108,11 +127,15 @@ class MaterialSolvated(MaterialMixture):
     @solvent_fraction.setter
     def solvent_fraction(self, solvent_fraction: float) -> None:
         """Set the fraction of layer covered by the material.
+
         This might be fraction of:
         Solvation where solvent is within the layer
         Patches of solvent in the layer where no material is present.
 
-        :param solvent_fraction : Fraction of layer described by the solvent.
+        Parameters
+        ----------
+        solvent_fraction : float
+            Fraction of layer described by the solvent.
         """
         try:
             self.fraction = solvent_fraction
@@ -122,6 +145,7 @@ class MaterialSolvated(MaterialMixture):
             raise ValueError('solvent_fraction must be a float between 0 and 1')
 
     def _update_name(self) -> None:
+        """Update name."""
         self.name = self._material_a.name + ' in ' + self._material_b.name
 
     # Representation
@@ -140,9 +164,13 @@ class MaterialSolvated(MaterialMixture):
 
     def as_dict(self, skip: Optional[list[str]] = None) -> dict[str, str]:
         """Produces a cleaned dict using a custom as_dict method to skip necessary things.
+
         The resulting dict matches the parameters in __init__
 
-        :param skip: List of keys to skip, defaults to `None`.
+        Parameters
+        ----------
+        skip : Optional[list[str]], optional
+            List of keys to skip. By default, None.
         """
         this_dict = super().as_dict(skip=skip)
         this_dict['material'] = self.material.as_dict(skip=skip)

@@ -1,5 +1,5 @@
+# SPDX-FileCopyrightText: 2025 EasyScience contributors <https://github.com/easyscience>
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright (c) 2025 DMSC
 
 import logging
 
@@ -154,7 +154,8 @@ def test_validate_physical_data__r_values_ureal_positive(load_data):
     for val_a, val_b in zip(a, b):
         if val_a > val_b:
             pytest.warns(
-                UserWarning, reason=f'Reflectivity value {val_a} is unphysically large compared to its uncertainty {val_b}'
+                UserWarning,
+                reason=f'Reflectivity value {val_a} is unphysically large compared to its uncertainty {val_b}',
             )
     assert all(load_data['data']['R_0'].values <= 1 + 2 * np.sqrt(load_data['data']['R_0'].variances))
 

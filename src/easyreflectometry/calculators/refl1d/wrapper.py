@@ -1,4 +1,6 @@
-__author__ = 'github.com/arm61'
+# SPDX-FileCopyrightText: 2026 EasyScience contributors <https://github.com/easyscience>
+# SPDX-License-Identifier: BSD-3-Clause
+
 
 from typing import Tuple
 
@@ -17,18 +19,22 @@ ALL_POLARIZATIONS = False
 
 class Refl1dWrapper(WrapperBase):
     def create_material(self, name: str):
-        """
-        Create a material using SLD.
+        """Create a material using SLD.
 
-        :param name: The name of the material
+        Parameters
+        ----------
+        name : str
+            The name of the material.
         """
         self.storage['material'][name] = names.SLD(str(name))
 
     def create_layer(self, name: str):
-        """
-        Create a layer using Slab.
+        """Create a layer using Slab.
 
-        :param name: The name of the layer
+        Parameters
+        ----------
+        name : str
+            The name of the layer.
         """
         if self._magnetism:
             magnetism = names.Magnetism(rhoM=0.0, thetaM=0.0)
@@ -37,10 +43,12 @@ class Refl1dWrapper(WrapperBase):
         self.storage['layer'][name] = names.Slab(name=str(name), magnetism=magnetism)
 
     def create_item(self, name: str):
-        """
-        Create an item using Repeat.
+        """Create an item using Repeat.
 
-        :param name: The name of the item
+        Parameters
+        ----------
+        name : str
+            The name of the item.
         """
         self.storage['item'][name] = Repeat(names.Stack(names.Slab(names.SLD(), thickness=0, interface=0)), name=str(name))
         del self.storage['item'][name].stack[0]
@@ -48,8 +56,11 @@ class Refl1dWrapper(WrapperBase):
     def update_layer(self, name: str, **kwargs):
         """Update a layer in a given item.
 
-        :param name: The layer name.
-        :param kwargs:
+        Parameters
+        ----------
+        name : str
+            The layer name.
+        **kwargs :
         """
         kwargs_no_magnetism = {k: v for k, v in kwargs.items() if k != 'magnetism_rhoM' and k != 'magnetism_thetaM'}
         super().update_layer(name, **kwargs_no_magnetism)
@@ -58,10 +69,14 @@ class Refl1dWrapper(WrapperBase):
             self.storage['layer'][name].magnetism = magnetism
 
     def get_layer_value(self, name: str, key: str) -> float:
-        """A function to get a given layer value
+        """A function to get a given layer value.
 
-        :param name: The layer name
-        :param key: The given value keys
+        Parameters
+        ----------
+        name : str
+            The layer name.
+        key : str
+            The given value keys.
         """
         if key in ['magnetism_rhoM', 'magnetism_thetaM']:
             return getattr(
@@ -70,78 +85,105 @@ class Refl1dWrapper(WrapperBase):
         return super().get_layer_value(name, key)
 
     def create_model(self, name: str):
-        """
-        Create a model for analysis
+        """Create a model for analysis.
 
-        :param name: Name for the model
+        Parameters
+        ----------
+        name : str
+            Name for the model.
         """
         self.storage['model'][name] = {'scale': 1, 'bkg': 0, 'items': []}
 
     def update_model(self, name: str, **kwargs):
-        """
-        Update the non-structural parameters of the model
+        """Update the non-structural parameters of the model.
 
-        :param name: Name of the model
+        Parameters
+        ----------
+        **kwargs :
+        name : str
+            Name of the model.
         """
         model = self.storage['model'][name]
         for key in kwargs.keys():
             model[key] = kwargs[key]
 
     def get_model_value(self, name: str, key: str) -> float:
-        """
-        A function to get a given model value
+        """A function to get a given model value.
 
-        :param name: Name of the model
-        :param key: The given value keys
-        :return: The desired value
+        Parameters
+        ----------
+        name : str
+            Name of the model.
+        key : str
+            The given value keys.
+
+        Returns
+        -------
+        float
+            The desired value.
         """
         model = self.storage['model'][name]
         return model[key]
 
     def assign_material_to_layer(self, material_name: str, layer_name: str):
-        """
-        Assign a material to a layer.
+        """Assign a material to a layer.
 
-        :param material_name: The material name
-        :param layer_name: The layer name
+        Parameters
+        ----------
+        material_name : str
+            The material name.
+        layer_name : str
+            The layer name.
         """
         self.storage['layer'][layer_name].material = self.storage['material'][material_name]
 
     def add_layer_to_item(self, layer_name: str, item_name: str):
-        """
-        Create a layer from the material of the same name, in a given item.
+        """Create a layer from the material of the same name, in a given item.
 
-        :param layer_name: The layer name
-        :param item_name: The item name
+        Parameters
+        ----------
+        layer_name : str
+            The layer name.
+        item_name : str
+            The item name.
         """
         item = self.storage['item'][item_name]
         item.stack.add(self.storage['layer'][layer_name])
 
     def add_item(self, item_name: str, model_name: str):
-        """
-        Add an item to the model.
+        """Add an item to the model.
 
-        :param item_name: items to add to model
-        :param model_name: name for the model
+        Parameters
+        ----------
+        item_name : str
+            Items to add to model.
+        model_name : str
+            Name for the model.
         """
         self.storage['model'][model_name]['items'].append(self.storage['item'][item_name])
 
     def remove_layer_from_item(self, layer_name: str, item_name: str):
-        """
-        Remove a layer in a given item.
+        """Remove a layer in a given item.
 
-        :param layer_name: The layer name
-        :param item_name: The item name
+        Parameters
+        ----------
+        layer_name : str
+            The layer name.
+        item_name : str
+            The item name.
         """
         layer_idx = list(self.storage['item'][item_name].stack).index(self.storage['layer'][layer_name])
         del self.storage['item'][item_name].stack[layer_idx]
 
     def remove_item(self, item_name: str, model_name: str):
-        """
-        Remove a given item.
+        """Remove a given item.
 
-        :param item_name: The item name
-        :param model_name: The model name
+        Parameters
+        ----------
+        item_name : str
+            The item name.
+        model_name : str
+            The model name.
         """
         item_idx = self.storage['model'][model_name]['items'].index(self.storage['item'][item_name])
         del self.storage['model'][model_name]['items'][item_idx]
@@ -150,9 +192,17 @@ class Refl1dWrapper(WrapperBase):
     def calculate(self, q_array: np.ndarray, model_name: str) -> np.ndarray:
         """For a given q array calculate the corresponding reflectivity.
 
-        :param q_array: array of data points to be calculated
-        :param model_name: the model name
-        :return: reflectivity calculated at q
+        Parameters
+        ----------
+        q_array : np.ndarray
+            Array of data points to be calculated.
+        model_name : str
+            The model name.
+
+        Returns
+        -------
+        np.ndarray
+            Reflectivity calculated at q.
         """
         sample = _build_sample(self.storage, model_name)
         dq_array = self._resolution_function.smearing(q_array)
@@ -197,11 +247,17 @@ class Refl1dWrapper(WrapperBase):
         return reflectivity
 
     def sld_profile(self, model_name: str) -> Tuple[np.ndarray, np.ndarray]:
-        """
-        Return the scattering length density profile.
+        """Return the scattering length density profile.
 
-        :param model_name: the model name
-        :return: z and sld(z)
+        Parameters
+        ----------
+        model_name : str
+            The model name.
+
+        Returns
+        -------
+
+            Z and sld(z).
         """
         sample = _build_sample(self.storage, model_name)
         probe = _get_probe(
@@ -216,6 +272,7 @@ class Refl1dWrapper(WrapperBase):
 
 
 def _get_oversampling_q(q_array: np.ndarray, dq_array: np.ndarray, oversampling_factor: int) -> np.ndarray:
+    """Get oversampling q."""
     argmin = np.argmin(q_array)  # index of the smallest q element
     argmax = np.argmax(q_array)  # index of the largest q element
     return np.linspace(
@@ -233,6 +290,7 @@ def _get_probe(
     oversampling_factor: int = 1,
     magnetism: bool = False,
 ) -> names.QProbe:
+    """Get probe."""
     probe = names.QProbe(
         Q=q_array,
         dQ=dq_array,
@@ -258,6 +316,7 @@ def _get_polarized_probe(
     oversampling_factor: int = 1,
     all_polarizations: bool = False,
 ) -> names.PolarizedNeutronQProbe:
+    """Get polarized probe."""
     four_probes = []
     for i in range(4):
         if i == 0 or all_polarizations:
@@ -281,6 +340,7 @@ def _get_polarized_probe(
 
 
 def _build_sample(storage: dict, model_name: str) -> names.Stack:
+    """Build sample."""
     sample = names.Stack()
     # -1 to reverse the order
     for i in storage['model'][model_name]['items'][::-1]:
