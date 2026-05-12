@@ -5,7 +5,6 @@
 Tests for Material class.
 """
 
-__author__ = 'github.com/arm61'
 __version__ = '0.0.1'
 
 from easyscience import global_object

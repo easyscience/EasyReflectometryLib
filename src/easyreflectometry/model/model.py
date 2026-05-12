@@ -3,8 +3,6 @@
 
 from __future__ import annotations
 
-__author__ = 'github.com/arm61'
-
 import copy
 from numbers import Number
 from typing import Optional

@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2026 EasyScience contributors <https://github.com/easyscience>
 # SPDX-License-Identifier: BSD-3-Clause
 
-__author__ = 'github.com/arm61'
+
 from typing import Optional
 from typing import Union
 
