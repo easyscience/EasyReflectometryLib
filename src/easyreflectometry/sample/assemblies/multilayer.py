@@ -115,7 +115,6 @@ class Multilayer(BaseAssembly):
 
     @classmethod
     def from_dict(cls, data: dict) -> Multilayer:
-        """Create a Multilayer from a dictionary.
-        """
+        """Create a Multilayer from a dictionary."""
         multilayer = super().from_dict(data)
         return multilayer

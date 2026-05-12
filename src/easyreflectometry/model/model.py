@@ -274,8 +274,7 @@ class Model(BaseObj):
 
     @classmethod
     def from_dict(cls, passed_dict: dict) -> Model:
-        """Create a Model from a dictionary.
-        """
+        """Create a Model from a dictionary."""
         # Causes circular import if imported at the top
         from easyreflectometry.calculators import CalculatorFactory
 
