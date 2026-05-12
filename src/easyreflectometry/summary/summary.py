@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2024 EasyScience contributors <https://github.com/easyscience>
+# SPDX-License-Identifier: BSD-3-Clause
+
 import matplotlib.pyplot as plt
 import numpy as np
 from easyscience import global_object
@@ -16,9 +19,11 @@ from .html_templates import HTML_TEMPLATE
 
 class Summary:
     def __init__(self, project: Project):
+        """Init function."""
         self._project = project
 
     def compile_html_summary(self, figures: bool = False) -> str:
+        """Compile html summary."""
         html = HTML_TEMPLATE
 
         html = html.replace('project_information_section', self._project_information_section())
@@ -40,11 +45,13 @@ class Summary:
         return html
 
     def save_html_summary(self, filename: str) -> None:
+        """Save html summary."""
         html = self.compile_html_summary(figures=True)
         with open(filename, 'w') as f:
             f.write(html)
 
     def save_pdf_summary(self, filename: str) -> None:
+        """Save pdf summary."""
         html = self.compile_html_summary(figures=True)
 
         with open(filename, 'w+b') as result_file:
@@ -57,6 +64,7 @@ class Summary:
                 print('An error occured when generating PDF summary!')
 
     def save_sld_plot(self, filename: str) -> None:
+        """Save sld plot."""
         fig = plt.figure()
         ax = fig.add_subplot(1, 1, 1)
 
@@ -70,6 +78,7 @@ class Summary:
         plt.close()
 
     def save_fit_experiment_plot(self, filename: str) -> None:
+        """Save fit experiment plot."""
         fig = plt.figure()
         ax = fig.add_subplot(1, 1, 1)
         legends = []
@@ -92,6 +101,7 @@ class Summary:
         plt.close()
 
     def _project_information_section(self) -> str:
+        """Project information section."""
         html_project = HTML_PROJECT_INFORMATION_TEMPLATE
 
         name = self._project._info['name']
@@ -102,6 +112,7 @@ class Summary:
         return html_project
 
     def _sample_section(self) -> str:
+        """Sample section."""
         html_parameters = []
 
         html_parameter = HTML_PARAMETER_HEADER_TEMPLATE
@@ -137,6 +148,7 @@ class Summary:
         return html_parameters_str
 
     def _experiments_section(self) -> str:
+        """Experiments section."""
         html_experiments = []
 
         for idx, experiment in self._project.experiments.items():
@@ -163,6 +175,7 @@ class Summary:
         return html_experiments_str
 
     def _refinement_section(self) -> str:
+        """Refinement section."""
         html_refinement = HTML_REFINEMENT_TEMPLATE
 
         # Get parameters directly from the model
@@ -186,6 +199,7 @@ class Summary:
         return html_refinement
 
     def _figures_section(self) -> None:
+        """Figures section."""
         html_figures = HTML_FIGURES_TEMPLATE
         path_sld = self._project.path / 'sld_plot.jpg'
         path_fit_experiment = self._project.path / 'fit_experiment_plot.jpg'

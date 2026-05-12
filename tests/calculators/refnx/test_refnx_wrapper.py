@@ -1,10 +1,9 @@
+# SPDX-FileCopyrightText: 2026 EasyScience contributors <https://github.com/easyscience>
+# SPDX-License-Identifier: BSD-3-Clause
+
 """
 Tests for Refnx wrapper.
 """
-
-__author__ = 'github.com/arm61'
-__version__ = '0.0.1'
-
 
 import unittest
 
@@ -290,7 +289,7 @@ class TestRefnx(unittest.TestCase):
         assert_almost_equal(p.sld_profile('MyModel')[1][0], 0)
         assert_almost_equal(p.sld_profile('MyModel')[1][-1], 4)
 
-    ### Tests from https://github.com/reflectivity/analysis/tree/master/validation/test/unpolarised
+    # Tests from https://github.com/reflectivity/analysis/tree/master/validation/test/unpolarised
     def test_calculate_github_test0(self):
         p = RefnxWrapper()
         p.create_material('Material1')
@@ -327,15 +326,13 @@ class TestRefnx(unittest.TestCase):
         p.add_item('Item4', 'MyModel')
         p.set_resolution_function(PercentageFwhm(0))
         p.update_model('MyModel', bkg=0)
-        q = np.array(
-            [
-                5.000000000000000104e-03,
-                3.717499999999999971e-02,
-                5.449999999999999983e-02,
-                1.005349999999999994e-01,
-                2.955650000000000222e-01,
-            ]
-        )
+        q = np.array([
+            5.000000000000000104e-03,
+            3.717499999999999971e-02,
+            5.449999999999999983e-02,
+            1.005349999999999994e-01,
+            2.955650000000000222e-01,
+        ])
         expected = [
             9.665000503913141472e-01,
             3.486325360684768590e-04,
@@ -365,15 +362,13 @@ class TestRefnx(unittest.TestCase):
         p.add_item('Item2', 'MyModel')
         p.set_resolution_function(PercentageFwhm(0))
         p.update_model('MyModel', bkg=0)
-        q = np.array(
-            [
-                5.000000000000000104e-03,
-                7.564500000000000390e-02,
-                1.433050000000000157e-01,
-                2.368350000000000177e-01,
-                5.920499999999999652e-01,
-            ]
-        )
+        q = np.array([
+            5.000000000000000104e-03,
+            7.564500000000000390e-02,
+            1.433050000000000157e-01,
+            2.368350000000000177e-01,
+            5.920499999999999652e-01,
+        ])
         expected = [
             1.000000000000000222e00,
             1.964576414578978456e-04,

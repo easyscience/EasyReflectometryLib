@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 EasyScience contributors <https://github.com/easyscience>
+# SPDX-License-Identifier: BSD-3-Clause
+
 import numpy as np
 from easyscience.variable import Parameter
 
@@ -9,10 +12,12 @@ SCALE_LIMITS = (0.0, 10.0)
 def apply_default_limits(parameter: Parameter, kind: str) -> None:
     """Apply default min/max to a parameter if current bounds are infinite.
 
-    :param parameter: The parameter to adjust.
-    :type parameter: Parameter
-    :param kind: One of 'thickness', 'roughness', 'sld', 'isld', 'scale'.
-    :type kind: str
+    Parameters
+    ----------
+    parameter : Parameter
+        The parameter to adjust.
+    kind : str
+        One of 'thickness', 'roughness', 'sld', 'isld', 'scale'.
     """
     if not parameter.independent:
         return

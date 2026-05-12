@@ -2,32 +2,40 @@
 
 ## Project Overview
 
-EasyReflectometryLib is a reflectometry Python package built on the EasyScience framework. It provides tools for reflectometry analysis and modeling.
+EasyReflectometryLib is a reflectometry Python package built on the
+EasyScience framework. It provides tools for reflectometry analysis and
+modeling.
 
 ## Development Environment
 
 - **Python Versions**: 3.11, 3.12
-- **Supported Platforms**: Linux (ubuntu-latest), macOS (macos-latest), Windows (windows-latest)
+- **Supported Platforms**: Linux (ubuntu-latest), macOS (macos-latest),
+  Windows (windows-latest)
 - **Package Manager**: pip
 - **Build System**: hatchling with setuptools-git-versioning
 
 ## Code Style and Formatting
 
 ### Ruff Configuration
-- Use **Ruff** for linting and formatting (configured in `pyproject.toml`)
+
+- Use **Ruff** for linting and formatting (configured in
+  `pyproject.toml`)
 - Maximum line length: 127 characters
 - Quote style: single quotes for strings
 - Import style: force single-line imports
 - To fix issues automatically: `python -m ruff . --fix`
 
 ### Code Quality Standards
+
 - Follow PEP 8 guidelines
 - Use type hints where appropriate
 - Write clear, self-documenting code with meaningful variable names
 - Maintain consistency with existing code patterns in the repository
 
 ### Linting Rules
+
 The project uses Ruff with the following rule sets:
+
 - `E9`, `F63`, `F7`, `F82`: Critical flake8 rules
 - `E`: pycodestyle errors
 - `F`: Pyflakes
@@ -35,6 +43,7 @@ The project uses Ruff with the following rule sets:
 - `S`: flake8-bandit (security checks)
 
 Special notes:
+
 - Asserts are allowed in test files (`*test_*.py`)
 - Init module imports are ignored
 - Exclude `docs` directory from linting
@@ -42,12 +51,14 @@ Special notes:
 ## Testing
 
 ### Test Framework
+
 - Use **pytest** for all tests
 - Test coverage should be tracked with **pytest-cov**
 - Aim for comprehensive test coverage
 - Tests are located in the `tests/` directory
 
 ### Running Tests
+
 ```bash
 # Install dev dependencies
 pip install -e '.[dev]'
@@ -61,6 +72,7 @@ tox
 ```
 
 ### Test Guidelines
+
 - Write unit tests for all new functionality
 - Include tests when fixing bugs to prevent regression
 - Test files should match the pattern `test_*.py`
@@ -77,11 +89,14 @@ tox
 ## Documentation
 
 ### Docstring Style
+
 - Include docstrings for all public modules, classes, and functions
-- Use **Sphinx/reStructuredText style** docstrings (`:param`, `:type`, `:return`, `:rtype`)
+- Use **Sphinx/reStructuredText style** docstrings (`:param`, `:type`,
+  `:return`, `:rtype`)
 - Use clear, concise descriptions
 - Document parameters, return values, and exceptions
 - Example format:
+
   ```python
   """
   Brief description of the function.
@@ -94,6 +109,7 @@ tox
   ```
 
 ### Documentation Build
+
 - Documentation is built using Sphinx (version 8.1.3)
 - Source files are in the `docs/` directory
 - Use `myst_parser` (MyST parser) for Markdown support
@@ -102,6 +118,7 @@ tox
 ## Dependencies
 
 ### Core Dependencies
+
 - easyscience (EasyScience framework)
 - scipp (Scientific computing)
 - refnx, refl1d (Reflectometry calculations)
@@ -109,6 +126,7 @@ tox
 - bumps (Optimization)
 
 ### Adding New Dependencies
+
 - Only add dependencies when absolutely necessary
 - Add to appropriate section in `pyproject.toml`:
   - `dependencies` for core runtime dependencies
@@ -119,13 +137,16 @@ tox
 ## Git and Version Control
 
 ### Commit Messages
+
 - Write clear, descriptive commit messages
 - Use present tense ("Add feature" not "Added feature")
 - Reference issue numbers when applicable
 
 ### Branch Workflow
+
 - Create feature branches from the main branch
-- Use descriptive branch names (e.g., `feature/add-new-calculator`, `bugfix/fix-reflection-calculation`)
+- Use descriptive branch names (e.g., `feature/add-new-calculator`,
+  `bugfix/fix-reflection-calculation`)
 - Keep changes focused and atomic
 
 ## Pull Request Guidelines
@@ -157,17 +178,24 @@ docs/                      # Documentation source
 
 ## Best Practices
 
-1. **Minimal Changes**: Make the smallest possible changes to accomplish the task
-2. **Don't Break Existing Code**: Maintain backward compatibility unless explicitly required
-3. **Test Before Committing**: Always run tests and linting before pushing
-4. **Follow Existing Patterns**: Look at similar code in the repository for guidance
-5. **Ask When Uncertain**: If unsure about an approach, ask for clarification
+1. **Minimal Changes**: Make the smallest possible changes to accomplish
+   the task
+2. **Don't Break Existing Code**: Maintain backward compatibility unless
+   explicitly required
+3. **Test Before Committing**: Always run tests and linting before
+   pushing
+4. **Follow Existing Patterns**: Look at similar code in the repository
+   for guidance
+5. **Ask When Uncertain**: If unsure about an approach, ask for
+   clarification
 
 ## CI/CD Pipeline
 
 The project uses GitHub Actions for continuous integration:
+
 - **Code Consistency**: Runs Ruff linting on all pushes and PRs
-- **Code Testing**: Runs pytest across multiple Python versions and platforms
+- **Code Testing**: Runs pytest across multiple Python versions and
+  platforms
 - **Package Testing**: Validates package building and installation
 - **Coverage**: Uploads test coverage to Codecov
 
@@ -177,5 +205,6 @@ All CI checks must pass before merging PRs.
 
 - The project is part of the EasyScience ecosystem
 - Built on top of established reflectometry libraries (refnx, refl1d)
-- Focuses on providing a user-friendly interface for reflectometry analysis
+- Focuses on providing a user-friendly interface for reflectometry
+  analysis
 - Maintains compatibility with multiple calculator backends

@@ -1,4 +1,6 @@
-__author__ = 'github.com/arm61'
+# SPDX-FileCopyrightText: 2026 EasyScience contributors <https://github.com/easyscience>
+# SPDX-License-Identifier: BSD-3-Clause
+
 
 import matplotlib.pyplot as plt
 import scipp as sc
@@ -8,10 +10,12 @@ color_cycle = plt.rcParams['axes.prop_cycle'].by_key()['color']
 
 
 def plot(data: sc.DataGroup) -> None:
-    """
-    A general plotting function for easyreflectometry.
+    """A general plotting function for easyreflectometry.
 
-    :param data: the DataGroup to be plotted.
+    Parameters
+    ----------
+    data : sc.DataGroup
+        The DataGroup to be plotted.
     """
     if len([i for i in list(data.keys()) if 'SLD' in i]) == 0:
         plot_sld = False
@@ -41,7 +45,14 @@ def plot(data: sc.DataGroup) -> None:
             )
             plot_model_data.data *= sc.scalar(10.0**i, unit=plot_model_data.unit)
             plot_model_data.coords[f'Qz_{refl_num}'].variances = None
-            sc.plot(plot_model_data, ax=ax1, norm='log', linestyle='--', color=color_cycle[i], marker='')
+            sc.plot(
+                plot_model_data,
+                ax=ax1,
+                norm='log',
+                linestyle='--',
+                color=color_cycle[i],
+                marker='',
+            )
         except KeyError:
             pass
     ax1.autoscale(True)

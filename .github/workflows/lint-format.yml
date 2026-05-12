@@ -1,0 +1,124 @@
+# The workflow checks
+#  - the validity of pyproject.toml,
+#  - the presence and correctness of SPDX license headers,
+#  - linting and formatting of Python code,
+#  - linting and formatting of docstrings in Python code,
+#  - formatting of non-Python files (like markdown and toml).
+#  - linting of Python code in Jupyter notebooks (for library template).
+#
+# A summary of the checks is added to the GitHub Actions summary.
+
+name: Lint and format checks
+
+on:
+  # Trigger the workflow on push
+  push:
+    branches-ignore: [master, main] # Already verified in PR
+    # Do not run this workflow on creating a new tag starting with
+    # 'v', e.g. 'v1.0.3' (see publish-pypi.yml)
+    tags-ignore: ['v*']
+  # Trigger the workflow on pull request
+  pull_request:
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# Allow only one concurrent workflow, skipping runs queued between the run
+# in-progress and latest queued. And cancel in-progress runs.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+# Set the environment variables to be used in all jobs defined in this workflow
+env:
+  CI_BRANCH: ${{ github.head_ref || github.ref_name }}
+
+jobs:
+  lint-format:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up pixi
+        uses: ./.github/actions/setup-pixi
+
+      - name: Run post-install developer steps
+        run: pixi run post-install
+
+      - name: Check validity of pyproject.toml
+        id: pyproject
+        continue-on-error: true
+        shell: bash
+        run: pixi run pyproject-check
+
+      - name: Check SPDX license headers
+        id: license_headers
+        continue-on-error: true
+        shell: bash
+        run: pixi run license-check
+
+      - name: Check linting of Python code
+        id: py_lint
+        continue-on-error: true
+        shell: bash
+        run: pixi run py-lint-check
+
+      - name: Check formatting of Python code
+        id: py_format
+        continue-on-error: true
+        shell: bash
+        run: pixi run py-format-check
+
+      - name: Check linting of docstrings in Python code
+        id: docstring_lint
+        continue-on-error: true
+        shell: bash
+        run: pixi run docstring-lint-check
+
+      - name: Check formatting of non-Python files (md, toml, etc.)
+        id: nonpy_format
+        continue-on-error: true
+        shell: bash
+        run: pixi run nonpy-format-check
+
+      - name: Check linting of Python code in Jupyter notebooks (ipynb)
+        id: notebook_lint
+        continue-on-error: true
+        shell: bash
+        run: pixi run notebook-lint-check
+
+      # Add summary
+      - name: Add quality checks summary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "## 🧪 Checks Summary"
+            echo ""
+            echo "| Check | Status |"
+            echo "|-------|--------|"
+            echo "| pyproject.toml   | ${{ steps.pyproject.outcome == 'success' && '✅' || '❌' }} |"
+            echo "| license headers  | ${{ steps.license_headers.outcome == 'success' && '✅'  || '❌' }} |"
+            echo "| py lint          | ${{ steps.py_lint.outcome == 'success' && '✅' || '❌' }} |"
+            echo "| py format        | ${{ steps.py_format.outcome == 'success' && '✅' || '❌' }} |"
+            echo "| docstring lint   | ${{ steps.docstring_lint.outcome == 'success' && '✅' || '❌' }} |"
+            echo "| nonpy format     | ${{ steps.nonpy_format.outcome == 'success' && '✅' || '❌' }} |"
+            echo "| notebooks lint   | ${{ steps.notebook_lint.outcome == 'success' && '✅' || '❌' }} |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # Fail job if any check failed
+      - name: Fail job if any check failed
+        if: |
+          steps.pyproject.outcome == 'failure'
+          || steps.license_headers.outcome == 'failure'
+          || steps.py_lint.outcome == 'failure'
+          || steps.py_format.outcome == 'failure'
+          || steps.docstring_lint.outcome == 'failure'
+          || steps.nonpy_format.outcome == 'failure'
+          || steps.notebook_lint.outcome == 'failure'
+        shell: bash
+        run: exit 1

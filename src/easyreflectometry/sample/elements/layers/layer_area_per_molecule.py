@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 EasyScience contributors <https://github.com/easyscience>
+# SPDX-License-Identifier: BSD-3-Clause
+
 from typing import Optional
 from typing import Union
 
@@ -50,7 +53,6 @@ DEFAULTS.update(LAYER_DEFAULTS)
 class LayerAreaPerMolecule(Layer):
     """The `LayerAreaPerMolecule` class allows a layer to be defined in terms of some
     molecular formula an area per molecule, and a solvent.
-
     """
 
     # Added in __init__
@@ -78,14 +80,26 @@ class LayerAreaPerMolecule(Layer):
     ):
         """Constructor.
 
-        :param molecular_formula: Formula for the molecule in the layer.
-        :param thickness: Layer thickness in Angstrom.
-        :param solvent: Solvent containing the molecule.
-        :param solvent_fraction: Fraction of solvent in layer. Fx solvation or surface coverage.
-        :param area_per_molecule: Area per molecule in the layer
-        :param roughness: Upper roughness on the layer in Angstrom.
-        :param name: Name of the layer, defaults to "EasyLayerAreaPerMolecule"
-        :param interface: Interface object, defaults to `None`
+        Parameters
+        ----------
+        unique_name : Optional[str], optional
+            By default, None.
+        molecular_formula : Union[str, None], optional
+            Formula for the molecule in the layer. By default, None.
+        thickness : Union[Parameter, float, None], optional
+            Layer thickness in Angstrom. By default, None.
+        solvent : Union[Material, None], optional
+            Solvent containing the molecule. By default, None.
+        solvent_fraction : Union[Parameter, float, None], optional
+            Fraction of solvent in layer. Fx solvation or surface coverage. By default, None.
+        area_per_molecule : Union[Parameter, float, None], optional
+            Area per molecule in the layer. By default, None.
+        roughness : Union[Parameter, float, None], optional
+            Upper roughness on the layer in Angstrom. By default, None.
+        name : str, optional
+            Name of the layer. By default, 'EasyLayerAreaPerMolecule'.
+        interface :
+            Interface object. By default, None.
         """
         if unique_name is None:
             unique_name = global_object.generate_unique_name(self.__class__.__name__)
@@ -190,7 +204,10 @@ class LayerAreaPerMolecule(Layer):
     def area_per_molecule(self, new_area_per_molecule: float) -> None:
         """Set the area per molecule.
 
-        :param new_area_per_molecule: New area per molecule.
+        Parameters
+        ----------
+        new_area_per_molecule : float
+            New area per molecule.
         """
         if new_area_per_molecule < 0:
             raise ValueError('new_area_per_molecule must be greater than 0.0.')
@@ -210,7 +227,10 @@ class LayerAreaPerMolecule(Layer):
     def solvent(self, new_solvent: Material) -> None:
         """Set the solvent material.
 
-        :param new_solvent: New solvent material.
+        Parameters
+        ----------
+        new_solvent : Material
+            New solvent material.
         """
         self.material.solvent = new_solvent
 
@@ -222,6 +242,7 @@ class LayerAreaPerMolecule(Layer):
     @property
     def solvent_fraction(self) -> float:
         """Get the fraction of the layer occupied by the solvent.
+
         This could be a result of either water solvating the molecule, or incomplete surface coverage of the molecules.
         """
         return self.material.solvent_fraction
@@ -229,9 +250,13 @@ class LayerAreaPerMolecule(Layer):
     @solvent_fraction.setter
     def solvent_fraction(self, solvent_fraction: float) -> None:
         """Set the fraction of the layer occupied by the solvent.
+
         This could be a result of either water solvating the molecule, or incomplete surface coverage of the molecules.
 
-        :param solvent_fraction: Fraction of layer described by the solvent.
+        Parameters
+        ----------
+        solvent_fraction : float
+            Fraction of layer described by the solvent.
         """
         self.material.solvent_fraction = solvent_fraction
 
@@ -244,7 +269,10 @@ class LayerAreaPerMolecule(Layer):
     def molecular_formula(self, formula_string: str) -> None:
         """Set the formula of the molecule in the material.
 
-        :param formula_string: String that defines the molecular formula.
+        Parameters
+        ----------
+        formula_string : str
+            String that defines the molecular formula.
         """
         self._molecular_formula = formula_string
         scattering_length = neutron_scattering_length(formula_string)
@@ -257,7 +285,10 @@ class LayerAreaPerMolecule(Layer):
 
     @property
     def _dict_repr(self) -> dict[str, str]:
-        """Dictionary representation of the `area_per_molecule` object. Produces a simple dictionary"""
+        """Dictionary representation of the `area_per_molecule` object.
+
+        Produces a simple dictionary.
+        """
         dict_repr = super()._dict_repr
         dict_repr['molecular_formula'] = self._molecular_formula
         dict_repr['area_per_molecule'] = f'{self.area_per_molecule:.2f} {self._area_per_molecule.unit}'
@@ -265,9 +296,13 @@ class LayerAreaPerMolecule(Layer):
 
     def as_dict(self, skip: Optional[list[str]] = None) -> dict[str, str]:
         """Produces a cleaned dict using a custom as_dict method to skip necessary things.
+
         The resulting dict matches the parameters in __init__
 
-        :param skip: List of keys to skip, defaults to `None`.
+        Parameters
+        ----------
+        skip : Optional[list[str]], optional
+            List of keys to skip. By default, None.
         """
         this_dict = super().as_dict(skip=skip)
         this_dict['solvent_fraction'] = self.material._fraction.as_dict(skip=skip)

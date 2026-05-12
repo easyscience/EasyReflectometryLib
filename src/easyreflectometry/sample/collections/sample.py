@@ -1,6 +1,7 @@
-from __future__ import annotations
+# SPDX-FileCopyrightText: 2024 EasyScience contributors <https://github.com/easyscience>
+# SPDX-License-Identifier: BSD-3-Clause
 
-__author__ = 'github.com/arm61'
+from __future__ import annotations
 
 from typing import List
 from typing import Optional
@@ -15,7 +16,7 @@ from .base_collection import BaseCollection
 
 # Needs to be a function, elements are added to the global_object.map
 def DEFAULT_ELEMENTS(interface):
-    """:meta private:"""
+    """:meta private:."""
     return (
         Multilayer(interface=interface),
         Multilayer(interface=interface),
@@ -36,9 +37,20 @@ class Sample(BaseCollection):
     ):
         """Constructor.
 
-        :param args: The assemblies in the sample.
-        :param name: Name of the sample, defaults to 'EasySample'.
-        :param interface: Calculator interface, defaults to `None`.
+        Parameters
+        ----------
+        **kwargs :
+        populate_if_none : bool, optional
+            By default, True.
+        unique_name : Optional[str], optional
+            By default, None.
+        *assemblies : Optional[List[BaseAssembly]]
+        args :
+            The assemblies in the sample.
+        name : str, optional
+            Name of the sample. By default, 'EasySample'.
+        interface :
+            Calculator interface. By default, None.
         """
         if not assemblies:
             if populate_if_none:
@@ -54,7 +66,10 @@ class Sample(BaseCollection):
     def add_assembly(self, assembly: Optional[BaseAssembly] = None):
         """Add an assembly to the sample.
 
-        :param assembly: Assembly to add.
+        Parameters
+        ----------
+        assembly : Optional[BaseAssembly], optional
+            Assembly to add. By default, None.
         """
         if assembly is None:
             assembly = Multilayer(
@@ -66,7 +81,11 @@ class Sample(BaseCollection):
     def duplicate_assembly(self, index: int):
         """Add an assembly to the sample.
 
-        :param assembly: Assembly to add.
+        Parameters
+        ----------
+        index : int
+        assembly :
+            Assembly to add.
         """
         to_be_duplicated = self[index]
         if isinstance(to_be_duplicated, Multilayer):
@@ -81,21 +100,30 @@ class Sample(BaseCollection):
     def move_up(self, index: int):
         """Move the assembly at the given index up in the sample.
 
-        :param index: Index of the assembly to move up.
+        Parameters
+        ----------
+        index : int
+            Index of the assembly to move up.
         """
         super().move_up(index)
 
     def move_down(self, index: int):
         """Move the assembly at the given index down in the sample.
 
-        :param index: Index of the assembly to move down.
+        Parameters
+        ----------
+        index : int
+            Index of the assembly to move down.
         """
         super().move_down(index)
 
     def remove_assembly(self, index: int):
         """Remove the assembly at the given index from the sample.
 
-        :param index: Index of the assembly to remove.
+        Parameters
+        ----------
+        index : int
+            Index of the assembly to remove.
         """
         self.pop(index)
 
@@ -116,9 +144,13 @@ class Sample(BaseCollection):
     # Representation
     def as_dict(self, skip: Optional[List[str]] = None) -> dict:
         """Produces a cleaned dict using a custom as_dict method to skip necessary things.
+
         The resulting dict matches the parameters in __init__
 
-        :param skip: List of keys to skip, defaults to `None`.
+        Parameters
+        ----------
+        skip : Optional[List[str]], optional
+            List of keys to skip. By default, None.
         """
         this_dict = super().as_dict(skip=skip)
         this_dict['populate_if_none'] = self.populate_if_none

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 EasyScience contributors <https://github.com/easyscience>
+# SPDX-License-Identifier: BSD-3-Clause
+
 import logging
 import warnings
 
@@ -49,8 +52,7 @@ def load_data_from_orso_file(fname: str) -> sc.DataGroup:
 
 
 def load_orso_model(orso_data) -> Sample:
-    """
-    Load a model from an ORSO file and return a Sample object.
+    """Load a model from an ORSO file and return a Sample object.
 
     The ORSO file .ort contains information about the sample, saved
     as a simple "stack" string, e.g. 'air | m1 | SiO2 | Si'.
@@ -61,11 +63,20 @@ def load_orso_model(orso_data) -> Sample:
     - Middle layers -> 'Loaded layer' Multilayer assembly (parameters enabled)
     - Last layer -> Subphase assembly (thickness=0 fixed, roughness enabled)
 
-    :param orso_data: Parsed ORSO dataset list (as returned by ``orso.load_orso``).
-    :type orso_data: list
-    :return: An EasyReflectometry Sample object.
-    :rtype: Sample
-    :raises ValueError: If ORSO layers could not be resolved or fewer than 2 layers.
+    Parameters
+    ----------
+    orso_data : list
+        Parsed ORSO dataset list (as returned by ``orso.load_orso``).
+
+    Raises
+    ------
+    ValueError :
+        If ORSO layers could not be resolved or fewer than 2 layers.
+
+    Returns
+    -------
+    Sample
+        An EasyReflectometry Sample object.
     """
     # Extract stack string and layer definitions from ORSO sample model
     sample_model = orso_data[0].info.data_source.sample.model
@@ -134,7 +145,7 @@ def load_orso_model(orso_data) -> Sample:
 
 
 def _convert_orso_layer_to_erl(layer):
-    """Helper function to convert an ORSO layer to an EasyReflectometry layer"""
+    r"""Helper function to convert an ORSO layer to an EasyReflectometry laye."""
     material = layer.material
     # Prefer original_name for material name, fall back to formula if available
     m_name = layer.original_name if layer.original_name is not None else material.formula
@@ -157,7 +168,7 @@ def _get_sld_values(material, material_name):
 
     Note: ORSO stores SLD in absolute units (A^-2), but the internal representation
     uses 10^-6 A^-2. When reading directly from ORSO, we multiply by 1e6 to convert.
-    When calculating from mass density, MaterialDensity already returns the correct units.
+    When calculating from mass density, MaterialDensity already returns the correct units..
     """
     if material.sld is None and material.mass_density is not None:
         # Calculate SLD from mass density
@@ -196,10 +207,15 @@ def _get_sld_values(material, material_name):
 def load_orso_data(orso_data) -> DataSet1D:
     """Convert parsed ORSO dataset objects into a scipp DataGroup.
 
-    :param orso_data: Parsed ORSO dataset list (as returned by ``orso.load_orso``).
-    :type orso_data: list
-    :return: A scipp DataGroup with data, coords, and attrs.
-    :rtype: sc.DataGroup
+    Parameters
+    ----------
+    orso_data : list
+        Parsed ORSO dataset list (as returned by ``orso.load_orso``).
+
+    Returns
+    -------
+    sc.DataGroup
+        A scipp DataGroup with data, coords, and attrs.
     """
     data = {}
     coords = {}

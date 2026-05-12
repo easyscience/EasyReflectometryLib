@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 EasyScience contributors <https://github.com/easyscience>
+# SPDX-License-Identifier: BSD-3-Clause
+
 from easyscience import global_object
 
 from easyreflectometry.model.model import COLORS
@@ -113,7 +116,10 @@ class TestModelCollection:
         dict_repr = collection.as_dict()
 
         # Expect
-        assert dict_repr['data'][0]['resolution_function'] == {'smearing': 'PercentageFwhm', 'constant': 5.0}
+        assert dict_repr['data'][0]['resolution_function'] == {
+            'smearing': 'PercentageFwhm',
+            'constant': 5.0,
+        }
 
     def test_dict_round_trip(self):
         # When

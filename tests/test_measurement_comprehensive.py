@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 EasyScience contributors <https://github.com/easyscience>
+# SPDX-License-Identifier: BSD-3-Clause
+
 """
 Comprehensive tests for measurement and data store functionality.
 Tests for all functions in measurement.py and data_store.py modules.
@@ -113,7 +116,10 @@ class TestMeasurementFunctions:
 
         coords_key = list(result['coords'].keys())[0]
         # xe should be zeros
-        assert_array_equal(result['coords'][coords_key].variances, np.zeros_like(result['coords'][coords_key].values))
+        assert_array_equal(
+            result['coords'][coords_key].variances,
+            np.zeros_like(result['coords'][coords_key].values),
+        )
 
     def test_load_txt_with_insufficient_columns(self):
         """Test that _load_txt raises error for files with too few columns."""
@@ -159,7 +165,16 @@ class TestDataSet1DComprehensive:
         xe = [0.1, 0.1, 0.1, 0.1]
         ye = [1, 2, 3, 4]
 
-        dataset = DataSet1D(name='TestData', x=x, y=y, xe=xe, ye=ye, x_label='Q (Å⁻¹)', y_label='Reflectivity', model=None)
+        dataset = DataSet1D(
+            name='TestData',
+            x=x,
+            y=y,
+            xe=xe,
+            ye=ye,
+            x_label='Q (Å⁻¹)',
+            y_label='Reflectivity',
+            model=None,
+        )
 
         assert dataset.name == 'TestData'
         assert_array_equal(dataset.x, np.array(x))
@@ -233,7 +248,8 @@ class TestDataStoreComprehensive:
         assert store[0].name == 'item2'
 
     def test_datastore_experiments_and_simulations_filtering(self):
-        """Test experiments and simulations properties filter correctly."""
+        """Test experiments and simulations properties
+        filter correctly."""
         exp1 = DataSet1D(name='exp1', x=[1], y=[2], model=Mock())
         exp2 = DataSet1D(name='exp2', x=[3], y=[4], model=Mock())
         sim1 = DataSet1D(name='sim1', x=[5], y=[6])
@@ -264,7 +280,8 @@ class TestProjectDataComprehensive:
     """Comprehensive tests for ProjectData class."""
 
     def test_project_data_initialization(self):
-        """Test ProjectData initializes with correct default values."""
+        """Test ProjectData initializes with correct
+        default values."""
         project = ProjectData()
 
         assert project.name == 'DataStore'
@@ -274,7 +291,8 @@ class TestProjectDataComprehensive:
         assert project.sim_data.name == 'Sim Datastore'
 
     def test_project_data_with_custom_stores(self):
-        """Test ProjectData with custom experiment and simulation stores."""
+        """Test ProjectData with custom experiment and
+        simulation stores."""
         custom_exp = DataStore(name='CustomExp')
         custom_sim = DataStore(name='CustomSim')
 
@@ -303,7 +321,8 @@ class TestIntegrationScenarios:
     """Integration tests for common usage scenarios."""
 
     def test_complete_workflow_orso_file(self):
-        """Test complete workflow: load ORSO file -> create dataset -> store in project."""
+        """Test complete workflow: load ORSO file
+        -> create dataset -> store in project."""
         # Load file
         fpath = os.path.join(PATH_STATIC, 'test_example1.ort')
         dataset = load_as_dataset(fpath)
@@ -318,7 +337,8 @@ class TestIntegrationScenarios:
         assert isinstance(project.exp_data[0], DataSet1D)
 
     def test_complete_workflow_txt_file(self):
-        """Test complete workflow: load txt file -> create dataset -> store in project."""
+        """Test complete workflow: load txt file ->
+        create dataset -> store in project."""
         # Load file
         fpath = os.path.join(PATH_STATIC, 'ref_concat_1.txt')
         dataset = load_as_dataset(fpath)

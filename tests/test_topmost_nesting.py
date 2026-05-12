@@ -1,5 +1,8 @@
+# SPDX-FileCopyrightText: 2024 EasyScience contributors <https://github.com/easyscience>
+# SPDX-License-Identifier: BSD-3-Clause
+
 """
-Tests exercising the methods of the topmost classes for nested structure.
+Testing the methods of the topmost classes for nested structure.
 To ensure that the parameters are relayed.
 """
 

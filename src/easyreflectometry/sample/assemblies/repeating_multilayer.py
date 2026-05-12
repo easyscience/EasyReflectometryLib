@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 EasyScience contributors <https://github.com/easyscience>
+# SPDX-License-Identifier: BSD-3-Clause
+
 from typing import Optional
 from typing import Union
 
@@ -22,8 +25,7 @@ DEFAULTS = {
 
 
 class RepeatingMultilayer(Multilayer):
-    """
-    A repeating multi layer is build from a `Multilayer` and which it repeats
+    """A repeating multi layer is build from a `Multilayer` and which it repeats
     for a given number of times. This enables a computational efficiency in many
     reflectometry engines as the operation can be performed for a single
     `Multilayer` and cheaply combined for the appropriate number of
@@ -46,10 +48,20 @@ class RepeatingMultilayer(Multilayer):
     ):
         """Constructor.
 
-        :param layers: The layers that make up the multi-layer that will be repeated.
-        :param repetitions: Number of repetitions of the given series of layers
-        :param name: Name for the repeating multi layer, defaults to 'EasyRepeatingMultilayer'.
-        :param interface: Calculator interface, defaults to `None`.
+        Parameters
+        ----------
+        populate_if_none : bool, optional
+            By default, True.
+        unique_name : Optional[str], optional
+            By default, None.
+        layers : Union[LayerCollection, Layer, list[Layer], None], optional
+            The layers that make up the multi-layer that will be repeated. By default, None.
+        repetitions : Union[Parameter, int, None], optional
+            Number of repetitions of the given series of layers. By default, None.
+        name : str, optional
+            Name for the repeating multi layer. By default, 'EasyRepeatingMultilayer'.
+        interface :
+            Calculator interface. By default, None.
         """
         if unique_name is None:
             unique_name = global_object.generate_unique_name(self.__class__.__name__)

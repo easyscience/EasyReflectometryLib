@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 EasyScience contributors <https://github.com/easyscience>
+# SPDX-License-Identifier: BSD-3-Clause
+
 from .assemblies.base_assembly import BaseAssembly
 from .assemblies.bilayer import Bilayer
 from .assemblies.gradient_layer import GradientLayer

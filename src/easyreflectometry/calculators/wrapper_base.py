@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 EasyScience contributors <https://github.com/easyscience>
+# SPDX-License-Identifier: BSD-3-Clause
+
 from abc import abstractmethod
 
 import numpy as np
@@ -31,7 +34,10 @@ class WrapperBase:
     def create_material(self, name: str):
         """Create a material using SLD.
 
-        :param name: The name of the material
+        Parameters
+        ----------
+        name : str
+            The name of the material.
         """
         ...
 
@@ -39,7 +45,10 @@ class WrapperBase:
     def create_layer(self, name: str):
         """Create a layer using Slab.
 
-        :param name: The name of the layer
+        Parameters
+        ----------
+        name : str
+            The name of the layer.
         """
         ...
 
@@ -47,34 +56,46 @@ class WrapperBase:
     def create_item(self, name: str):
         """Create an item using Stack.
 
-        :param name: The name of the item
+        Parameters
+        ----------
+        name : str
+            The name of the item.
         """
         ...
 
     @abstractmethod
     def create_model(self, name: str):
-        """Create a model for analysis
+        """Create a model for analysis.
 
-        :param name: Name for the model
+        Parameters
+        ----------
+        name : str
+            Name for the model.
         """
         ...
 
     @abstractmethod
     def update_model(self, name: str, **kwargs):
-        """Update the non-structural parameters of the model
+        """Update the non-structural parameters of the model.
 
-        :param name: Name for the model
-        :param kwargs:
-
+        Parameters
+        ----------
+        name : str
+            Name for the model.
+        **kwargs :
         """
         ...
 
     @abstractmethod
     def get_model_value(self, name: str, key: str) -> float:
-        """A function to get a given model value
+        """A function to get a given model value.
 
-        :param name: Name for the model
-        :param key: The given value keys
+        Parameters
+        ----------
+        name : str
+            Name for the model.
+        key : str
+            The given value keys.
         """
         ...
 
@@ -82,8 +103,12 @@ class WrapperBase:
     def assign_material_to_layer(self, material_name: str, layer_name: str):
         """Assign a material to a layer.
 
-        :param material_name: The material name
-        :param layer_name: The layer name
+        Parameters
+        ----------
+        material_name : str
+            The material name.
+        layer_name : str
+            The layer name.
         """
         ...
 
@@ -91,8 +116,12 @@ class WrapperBase:
     def add_layer_to_item(self, layer_name: str, item_name: str):
         """Create a layer from the material of the same name, in a given item.
 
-        :param layer_name: The layer name
-        :param item_name: The item name
+        Parameters
+        ----------
+        layer_name : str
+            The layer name.
+        item_name : str
+            The item name.
         """
         ...
 
@@ -100,8 +129,12 @@ class WrapperBase:
     def add_item(self, item_name: str, model_name: str):
         """Add an item to the model.
 
-        :param item_name: items to add to model
-        :param model_name: Name for the model
+        Parameters
+        ----------
+        item_name : str
+            Items to add to model.
+        model_name : str
+            Name for the model.
         """
         ...
 
@@ -109,8 +142,12 @@ class WrapperBase:
     def remove_layer_from_item(self, layer_name: str, item_name: str):
         """Remove a layer in a given item.
 
-        :param layer_name: The layer name
-        :param item_name: The item name
+        Parameters
+        ----------
+        layer_name : str
+            The layer name.
+        item_name : str
+            The item name.
         """
         ...
 
@@ -118,8 +155,12 @@ class WrapperBase:
     def remove_item(self, item_name: str, model_name: str):
         """Remove a given item.
 
-        :param item_name: The item name
-        :param model_name: Name of the model
+        Parameters
+        ----------
+        item_name : str
+            The item name.
+        model_name : str
+            Name of the model.
         """
         ...
 
@@ -127,9 +168,17 @@ class WrapperBase:
     def calculate(self, q_array: np.ndarray, model_name: str) -> np.ndarray:
         """For a given q array calculate the corresponding reflectivity.
 
-        :param q_array: array of data points to be calculated
-        :param model_name: the model name
-        :return: reflectivity calculated at q
+        Parameters
+        ----------
+        q_array : np.ndarray
+            Array of data points to be calculated.
+        model_name : str
+            The model name.
+
+        Returns
+        -------
+        np.ndarray
+            Reflectivity calculated at q.
         """
         ...
 
@@ -137,15 +186,27 @@ class WrapperBase:
     def sld_profile(self, model_name: str) -> tuple[np.ndarray, np.ndarray]:
         """Return the scattering length density profile.
 
-        :param model_name: Name for the model
-        :return: z and sld(z)
+        Parameters
+        ----------
+        model_name : str
+            Name for the model.
+
+        Returns
+        -------
+        tuple[np.ndarray, np.ndarray]
+            Z and sld(z).
         """
         ...
 
     def update_material(self, name: str, **kwargs):
         """Update a material.
 
-        :param name: The name of the material
+        Parameters
+        ----------
+        name : str
+            The name of the material.
+        **kwargs :
+            Key-value pairs of attributes to update.
         """
         material = self.storage['material'][name]
         for key in kwargs.keys():
@@ -153,11 +214,19 @@ class WrapperBase:
             setattr(item, 'value', kwargs[key])
 
     def get_material_value(self, name: str, key: str) -> float:
-        """A function to get a given material value
+        """A function to get a given material value.
 
-        :param name: The material name
-        :param key: The given value keys
-        :return: The desired value
+        Parameters
+        ----------
+        name : str
+            The material name.
+        key : str
+            The given value keys.
+
+        Returns
+        -------
+        float
+            The desired value.
         """
         material = self.storage['material'][name]
         item = getattr(material, key)
@@ -166,8 +235,11 @@ class WrapperBase:
     def update_layer(self, name: str, **kwargs):
         """Update a layer in a given item.
 
-        :param name: The layer name.
-        :param kwargs:
+        Parameters
+        ----------
+        name : str
+            The layer name.
+        **kwargs :
         """
         layer = self.storage['layer'][name]
         for key in kwargs.keys():
@@ -175,10 +247,14 @@ class WrapperBase:
             setattr(ii, 'value', kwargs[key])
 
     def get_layer_value(self, name: str, key: str) -> float:
-        """A function to get a given layer value
+        """A function to get a given layer value.
 
-        :param name: The layer name
-        :param key: The given value keys
+        Parameters
+        ----------
+        name : str
+            The layer name.
+        key : str
+            The given value keys.
         """
         layer = self.storage['layer'][name]
         ii = getattr(layer, key)
@@ -187,7 +263,11 @@ class WrapperBase:
     def update_item(self, name: str, **kwargs):
         """Update a layer.
 
-        :param name: The item name
+        Parameters
+        ----------
+        **kwargs :
+        name : str
+            The item name.
         """
         item = self.storage['item'][name]
         for key in kwargs.keys():
@@ -195,11 +275,19 @@ class WrapperBase:
             setattr(ii, 'value', kwargs[key])
 
     def get_item_value(self, name: str, key: str) -> float:
-        """A function to get a given item value
+        """A function to get a given item value.
 
-        :param name: The item name
-        :param key: The given value keys
-        :return: The desired value
+        Parameters
+        ----------
+        name : str
+            The item name.
+        key : str
+            The given value keys.
+
+        Returns
+        -------
+        float
+            The desired value.
         """
         item = self.storage['item'][name]
         item = getattr(item, key)
@@ -208,18 +296,25 @@ class WrapperBase:
     def set_resolution_function(self, resolution_function: ResolutionFunction) -> None:
         """Set the resolution function for the calculator.
 
-        :param resolution_function: The resolution function
+        Parameters
+        ----------
+        resolution_function : ResolutionFunction
+            The resolution function.
         """
         self._resolution_function = resolution_function
 
     @property
     def magnetism(self) -> bool:
+        """Magnetism function."""
         return self._magnetism
 
     @magnetism.setter
     def magnetism(self, magnetism: bool) -> None:
         """Set the magnetism flag.
 
-        :param magnetism: The magnetism flag
+        Parameters
+        ----------
+        magnetism : bool
+            The magnetism flag.
         """
         self._magnetism = magnetism
