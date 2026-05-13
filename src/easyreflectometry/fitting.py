@@ -363,6 +363,7 @@ class MultiFitter:
         population: int | None = None,
         seed: int | None = None,
         objective: str | None = None,
+        initializer: str | None = None,
         progress_callback=None,
         abort_test=None,
     ) -> dict:
@@ -379,6 +380,9 @@ class MultiFitter:
         :param population: BUMPS DREAM population count for advanced users.
         :param seed: Random seed for reproducibility.
         :param objective: Zero-variance handling strategy.
+        :param initializer: DREAM population initializer. One of ``'eps'``,
+            ``'cov'``, ``'lhs'``, or ``'random'``. By default, None (BUMPS
+            uses ``'eps'``).
         :param progress_callback: Optional callback for progress updates during
             sampling.  Forwarded to the core MultiFitter.
         :return: Dictionary with keys ``'draws'``, ``'param_names'``, ``'state'``,
@@ -410,6 +414,9 @@ class MultiFitter:
             dy.append(weights)
 
         # Delegate the actual BUMPS/DREAM sampling to the core MultiFitter
+        sampler_kwargs = {}
+        if initializer is not None:
+            sampler_kwargs['init'] = initializer
         return self.easy_science_multi_fitter.sample(
             x=x,
             y=y,
@@ -420,6 +427,7 @@ class MultiFitter:
             chains=chains,
             population=population,
             seed=seed,
+            sampler_kwargs=sampler_kwargs or None,
             progress_callback=progress_callback,
             abort_test=abort_test,
         )
