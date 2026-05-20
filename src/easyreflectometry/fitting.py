@@ -364,6 +364,7 @@ class MultiFitter:
         seed: int | None = None,
         objective: str | None = None,
         initializer: str | None = None,
+        n_workers: int | None = None,
         progress_callback=None,
         abort_test=None,
     ) -> dict:
@@ -383,8 +384,15 @@ class MultiFitter:
         :param initializer: DREAM population initializer. One of ``'eps'``,
             ``'cov'``, ``'lhs'``, or ``'random'``. By default, None (BUMPS
             uses ``'eps'``).
+        :param n_workers: Number of worker processes for parallel DREAM
+            population evaluation.  ``None`` (default) and ``1`` use
+            sequential evaluation.  Values greater than ``1`` enable
+            multiprocessing; the effective pool size is capped at
+            ``min(n_workers, population)``.
         :param progress_callback: Optional callback for progress updates during
             sampling.  Forwarded to the core MultiFitter.
+        :param abort_test: Optional callback that returns ``True`` to signal
+            that sampling should be aborted.
         :return: Dictionary with keys ``'draws'``, ``'param_names'``, ``'state'``,
             and ``'logp'``.
         :raises RuntimeError: If the current minimizer is not a BUMPS instance.
@@ -428,6 +436,7 @@ class MultiFitter:
             population=population,
             seed=seed,
             sampler_kwargs=sampler_kwargs or None,
+            n_workers=n_workers,
             progress_callback=progress_callback,
             abort_test=abort_test,
         )

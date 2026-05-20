@@ -1034,3 +1034,144 @@ class TestSampleZeroVariance:
             fitter.sample(data, samples=100, burn=20, thin=2, objective='hybrid')
 
         assert len(captured['x'][0]) == 10  # all points kept (Mighell-substituted)
+
+
+class TestSampleWorkers:
+    """n_workers parameter forwarding in sample()."""
+
+    def test_default_is_none(self):
+        """When n_workers is not passed, it defaults to None (sequential)."""
+        model = Model()
+        model.interface = CalculatorFactory()
+        fitter = MultiFitter(model)
+
+        captured = {}
+
+        def _fake_sample(*, n_workers, **kwargs):
+            captured['n_workers'] = n_workers
+            return {'draws': np.ones((10, 2)), 'param_names': ['a', 'b'], 'state': None, 'logp': None}
+
+        fitter.easy_science_multi_fitter = MagicMock()
+        fitter.easy_science_multi_fitter.sample = MagicMock(side_effect=_fake_sample)
+
+        data = sc.DataGroup({
+            'coords': {'Qz_0': sc.array(dims=['Qz_0'], values=np.linspace(0.01, 0.3, 10))},
+            'data': {'R_0': sc.array(dims=['Qz_0'], values=np.ones(10), variances=np.ones(10) * 0.01)},
+        })
+
+        fitter.sample(data, samples=100, burn=20, thin=2)
+        assert captured['n_workers'] is None
+
+    def test_explicit_none(self):
+        """Explicit n_workers=None is forwarded as None."""
+        model = Model()
+        model.interface = CalculatorFactory()
+        fitter = MultiFitter(model)
+
+        captured = {}
+
+        def _fake_sample(*, n_workers, **kwargs):
+            captured['n_workers'] = n_workers
+            return {'draws': np.ones((10, 2)), 'param_names': ['a', 'b'], 'state': None, 'logp': None}
+
+        fitter.easy_science_multi_fitter = MagicMock()
+        fitter.easy_science_multi_fitter.sample = MagicMock(side_effect=_fake_sample)
+
+        data = sc.DataGroup({
+            'coords': {'Qz_0': sc.array(dims=['Qz_0'], values=np.linspace(0.01, 0.3, 10))},
+            'data': {'R_0': sc.array(dims=['Qz_0'], values=np.ones(10), variances=np.ones(10) * 0.01)},
+        })
+
+        fitter.sample(data, samples=100, burn=20, thin=2, n_workers=None)
+        assert captured['n_workers'] is None
+
+    def test_explicit_one(self):
+        """n_workers=1 is forwarded (sequential, same as None)."""
+        model = Model()
+        model.interface = CalculatorFactory()
+        fitter = MultiFitter(model)
+
+        captured = {}
+
+        def _fake_sample(*, n_workers, **kwargs):
+            captured['n_workers'] = n_workers
+            return {'draws': np.ones((10, 2)), 'param_names': ['a', 'b'], 'state': None, 'logp': None}
+
+        fitter.easy_science_multi_fitter = MagicMock()
+        fitter.easy_science_multi_fitter.sample = MagicMock(side_effect=_fake_sample)
+
+        data = sc.DataGroup({
+            'coords': {'Qz_0': sc.array(dims=['Qz_0'], values=np.linspace(0.01, 0.3, 10))},
+            'data': {'R_0': sc.array(dims=['Qz_0'], values=np.ones(10), variances=np.ones(10) * 0.01)},
+        })
+
+        fitter.sample(data, samples=100, burn=20, thin=2, n_workers=1)
+        assert captured['n_workers'] == 1
+
+    @pytest.mark.parametrize('workers', [2, 4, 8])
+    def test_multiple_workers_forwarded(self, workers):
+        """n_workers values greater than 1 are forwarded to core."""
+        model = Model()
+        model.interface = CalculatorFactory()
+        fitter = MultiFitter(model)
+
+        captured = {}
+
+        def _fake_sample(*, n_workers, **kwargs):
+            captured['n_workers'] = n_workers
+            return {'draws': np.ones((10, 2)), 'param_names': ['a', 'b'], 'state': None, 'logp': None}
+
+        fitter.easy_science_multi_fitter = MagicMock()
+        fitter.easy_science_multi_fitter.sample = MagicMock(side_effect=_fake_sample)
+
+        data = sc.DataGroup({
+            'coords': {'Qz_0': sc.array(dims=['Qz_0'], values=np.linspace(0.01, 0.3, 10))},
+            'data': {'R_0': sc.array(dims=['Qz_0'], values=np.ones(10), variances=np.ones(10) * 0.01)},
+        })
+
+        fitter.sample(data, samples=100, burn=20, thin=2, n_workers=workers)
+        assert captured['n_workers'] == workers
+
+    def test_with_other_params_combined(self):
+        """n_workers can be combined with all other sample() parameters."""
+        model = Model()
+        model.interface = CalculatorFactory()
+        fitter = MultiFitter(model)
+
+        captured = {}
+
+        def _fake_sample(*, samples, burn, thin, population, seed, n_workers, sampler_kwargs, **kwargs):
+            captured['samples'] = samples
+            captured['burn'] = burn
+            captured['thin'] = thin
+            captured['population'] = population
+            captured['seed'] = seed
+            captured['n_workers'] = n_workers
+            captured['sampler_kwargs'] = sampler_kwargs
+            return {'draws': np.ones((10, 2)), 'param_names': ['a', 'b'], 'state': None, 'logp': None}
+
+        fitter.easy_science_multi_fitter = MagicMock()
+        fitter.easy_science_multi_fitter.sample = MagicMock(side_effect=_fake_sample)
+
+        data = sc.DataGroup({
+            'coords': {'Qz_0': sc.array(dims=['Qz_0'], values=np.linspace(0.01, 0.3, 10))},
+            'data': {'R_0': sc.array(dims=['Qz_0'], values=np.ones(10), variances=np.ones(10) * 0.01)},
+        })
+
+        fitter.sample(
+            data,
+            samples=500,
+            burn=100,
+            thin=5,
+            population=8,
+            seed=42,
+            initializer='cov',
+            n_workers=4,
+        )
+        assert captured['samples'] == 500
+        assert captured['burn'] == 100
+        assert captured['thin'] == 5
+        assert captured['population'] == 8
+        assert captured['seed'] == 42
+        assert captured['n_workers'] == 4
+        assert captured['sampler_kwargs'] == {'init': 'cov'}
