@@ -293,6 +293,18 @@ class WrapperBase:
         item = getattr(item, key)
         return getattr(item, 'value')
 
+    def __getstate__(self) -> dict:
+        return {
+            'storage': self.storage,
+            'resolution_function': self._resolution_function,
+            'magnetism': self._magnetism,
+        }
+
+    def __setstate__(self, state: dict) -> None:
+        self.storage = state['storage']
+        self._resolution_function = state['resolution_function']
+        self._magnetism = state['magnetism']
+
     def set_resolution_function(self, resolution_function: ResolutionFunction) -> None:
         """Set the resolution function for the calculator.
 

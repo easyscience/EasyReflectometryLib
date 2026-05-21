@@ -396,7 +396,10 @@ class MultiFitter:
         :return: Dictionary with keys ``'draws'``, ``'param_names'``, ``'state'``,
             and ``'logp'``.
         :raises RuntimeError: If the current minimizer is not a BUMPS instance.
+        :raises ValueError: If ``n_workers`` is not None and less than 1.
         """
+        if n_workers is not None and n_workers < 1:
+            raise ValueError(f'n_workers must be a positive integer or None, got {n_workers}')
         obj = _validate_objective(objective) if objective is not None else self._objective
 
         refl_nums = [k[3:] for k in data['coords'].keys() if 'Qz' == k[:2]]
@@ -425,21 +428,23 @@ class MultiFitter:
         sampler_kwargs = {}
         if initializer is not None:
             sampler_kwargs['init'] = initializer
-        return self.easy_science_multi_fitter.sample(
-            x=x,
-            y=y,
-            weights=dy,
-            samples=samples,
-            burn=burn,
-            thin=thin,
-            chains=chains,
-            population=population,
-            seed=seed,
-            sampler_kwargs=sampler_kwargs or None,
-            n_workers=n_workers,
-            progress_callback=progress_callback,
-            abort_test=abort_test,
-        )
+        core_sample_kwargs = {
+            'x': x,
+            'y': y,
+            'weights': dy,
+            'samples': samples,
+            'burn': burn,
+            'thin': thin,
+            'chains': chains,
+            'population': population,
+            'seed': seed,
+            'sampler_kwargs': sampler_kwargs or None,
+            'progress_callback': progress_callback,
+            'abort_test': abort_test,
+        }
+        if n_workers is not None:
+            core_sample_kwargs['n_workers'] = n_workers
+        return self.easy_science_multi_fitter.sample(**core_sample_kwargs)
 
     @property
     def chi2(self) -> float | None:
