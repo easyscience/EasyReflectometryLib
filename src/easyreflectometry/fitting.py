@@ -372,7 +372,6 @@ class MultiFitter:
         seed: int | None = None,
         objective: str | None = None,
         initializer: str | None = None,
-        n_workers: int | None = None,
         as_object: bool = False,
         progress_callback=None,
         abort_test=None,
@@ -393,9 +392,6 @@ class MultiFitter:
         :param initializer: DREAM population initializer. One of ``'eps'``,
             ``'cov'``, ``'lhs'``, or ``'random'``. By default, None (BUMPS
             uses ``'eps'``).
-        :param n_workers: Number of worker processes for parallel DREAM
-            population evaluation. ``None`` or ``1`` means sequential;
-            values greater than ``1`` enable multiprocessing.
         :param as_object: If ``True``, return a ``PosteriorResults`` instance
             instead of a raw ``dict``. By default, ``False`` for backward
             compatibility.
@@ -443,7 +439,6 @@ class MultiFitter:
             chains=chains,
             population=population,
             seed=seed,
-            n_workers=n_workers,
             sampler_kwargs=sampler_kwargs or None,
             progress_callback=progress_callback,
             abort_test=abort_test,
@@ -459,7 +454,6 @@ class MultiFitter:
             'population': population,
             'seed': seed,
             'initializer': initializer,
-            'n_workers': n_workers,
             'objective': obj,
         }
 
