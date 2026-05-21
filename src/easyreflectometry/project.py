@@ -14,15 +14,18 @@ from typing import Union
 import numpy as np
 from easyscience import global_object
 from easyscience.fitting import AvailableMinimizers
+from easyscience.fitting import FitResults
 from easyscience.variable import Parameter
 from easyscience.variable.parameter_dependency_resolver import resolve_all_parameter_dependencies
 from scipp import DataGroup
 
+from easyreflectometry.analysis.bayesian import PosteriorResults
 from easyreflectometry.calculators import CalculatorFactory
 from easyreflectometry.data import DataSet1D
 from easyreflectometry.data import load_as_dataset
 from easyreflectometry.data.measurement import extract_orso_title
 from easyreflectometry.data.measurement import load_data_from_orso_file
+from easyreflectometry.display import ProjectDisplay
 from easyreflectometry.fitting import MultiFitter
 from easyreflectometry.limits import apply_default_limits
 from easyreflectometry.model import Model
@@ -71,6 +74,14 @@ class Project:
         self._created = False
         self._with_experiments = False
 
+        # Fit and posterior result state (owned by Project, not just fitter)
+        self._last_fit_results: list[FitResults] | None = None
+        self._last_classical_fit_metrics: list[dict] | None = None
+        self._last_posterior: PosteriorResults | None = None
+        self._last_sampler_settings: dict | None = None
+        self._last_data: DataGroup | None = None
+        self._last_analysed_data: DataGroup | None = None
+
     def reset(self):
         """Reset function."""
         del self._models
@@ -78,6 +89,15 @@ class Project:
         global_object.map._clear()
 
         self.__init__()
+
+    def _clear_result_state(self) -> None:
+        """Clear all project-owned fit and posterior state."""
+        self._last_fit_results = None
+        self._last_classical_fit_metrics = None
+        self._last_posterior = None
+        self._last_sampler_settings = None
+        self._last_data = None
+        self._last_analysed_data = None
 
     @property
     def parameters(self) -> List[Parameter]:
@@ -278,6 +298,7 @@ class Project:
         for model in self._models:
             model.interface = self._calculator
         self._sync_parameter_states()
+        self._clear_result_state()
 
     @property
     def fitter(self) -> MultiFitter:
@@ -288,6 +309,136 @@ class Project:
                 self._fitter.easy_science_multi_fitter.switch_minimizer(self._minimizer_selection)
                 self._fitter_model_index = self._current_model_index
         return self._fitter
+
+    @property
+    def display(self):
+        """Display facade for fit and posterior results.
+
+        :rtype: ProjectDisplay
+        """
+
+        return ProjectDisplay(self)
+
+    # -- fit / sample wrappers (own result state) ----------------------------
+
+    def fit(self, data=None, objective=None):
+        """Run a classical fit and store the result in project-owned state.
+
+        When *data* is ``None`` the current experiment is used.
+
+        :param data: ``DataGroup`` or ``None``.
+        :param objective: Zero-variance handling override.
+        :return: The analysed ``DataGroup``.
+        :rtype: DataGroup
+        """
+        if data is None:
+            data = self._experiment_to_data_group(self._experiments[self._current_experiment_index])
+        fitter = self.fitter
+        result = fitter.fit(data, objective=objective)
+        self._copy_fitter_state(fitter)
+        return result
+
+    def sample(
+        self,
+        data=None,
+        samples=10000,
+        burn=2000,
+        thin=10,
+        chains=None,
+        population=None,
+        seed=None,
+        objective=None,
+        initializer=None,
+        n_workers=None,
+        progress_callback=None,
+        abort_test=None,
+        as_object=False,
+    ):
+        """Run Bayesian MCMC sampling and store the result in project-owned state.
+
+        When *data* is ``None`` the current experiment is used.
+
+        :return: ``dict`` or ``PosteriorResults`` depending on *as_object*.
+        """
+        if data is None:
+            data = self._experiment_to_data_group(self._experiments[self._current_experiment_index])
+        fitter = self.fitter
+        result = fitter.sample(
+            data,
+            samples=samples,
+            burn=burn,
+            thin=thin,
+            chains=chains,
+            population=population,
+            seed=seed,
+            objective=objective,
+            initializer=initializer,
+            n_workers=n_workers,
+            progress_callback=progress_callback,
+            abort_test=abort_test,
+            as_object=as_object,
+        )
+        self._copy_fitter_state(fitter)
+        return result
+
+    def _copy_fitter_state(self, fitter: MultiFitter) -> None:
+        """Copy fit/posterior state from a fitter into project-owned storage."""
+        self._last_fit_results = fitter._fit_results
+        self._last_classical_fit_metrics = fitter._classical_fit_metrics
+        self._last_posterior = fitter._posterior_results
+        self._last_sampler_settings = fitter._last_sampler_settings
+        self._last_data = fitter._last_data
+        self._last_analysed_data = fitter._last_analysed_data
+
+    # -- experiment helpers -------------------------------------------------
+
+    def _resolve_experiment(self, expt_name: str | None = None):
+        """Look up an experiment by name, falling back to the current one.
+
+        :param expt_name: Experiment name, or ``None``.
+        :return: The matching ``DataSet1D``.
+        :rtype: DataSet1D
+        :raises KeyError: No experiment matches *expt_name*.
+        :raises ValueError: Multiple experiments share the same name.
+        """
+        if expt_name is None:
+            idx = self._current_experiment_index
+            if idx not in self._experiments:
+                raise KeyError(f'No experiment at current index {idx}')
+            return self._experiments[idx]
+
+        matches = []
+        for exp in self._experiments.values():
+            name = getattr(exp, 'name', None)
+            if name == expt_name:
+                matches.append(exp)
+
+        if len(matches) == 0:
+            available = [str(getattr(e, 'name', '?')) for e in self._experiments.values()]
+            raise KeyError(f'No experiment named {expt_name!r}. Available: {available}')
+        if len(matches) > 1:
+            raise ValueError(
+                f'Multiple experiments named {expt_name!r}. Experiment names must be unique for name-based display calls.'
+            )
+        return matches[0]
+
+    def _experiment_to_data_group(self, experiment) -> DataGroup:
+        """Convert a ``DataSet1D`` to the ``sc.DataGroup`` format expected by ``MultiFitter``.
+
+        :param experiment: A ``DataSet1D`` instance.
+        :return: A ``sc.DataGroup`` with ``Qz_0`` and ``R_0`` entries.
+        :rtype: DataGroup
+        """
+        import scipp as _sc
+
+        x_vals = np.asarray(experiment.x)
+        y_vals = np.asarray(experiment.y)
+        ye_vals = np.asarray(experiment.ye) if experiment.ye is not None else np.zeros_like(y_vals)
+
+        return _sc.DataGroup({
+            'coords': {'Qz_0': _sc.array(dims=['Qz_0'], values=x_vals)},
+            'data': {'R_0': _sc.array(dims=['Qz_0'], values=y_vals, variances=ye_vals)},
+        })
 
     @property
     def calculator(self) -> str:
@@ -308,6 +459,7 @@ class Project:
 
         self._fitter = None
         self._fitter_model_index = None
+        self._clear_result_state()
 
     @property
     def minimizer(self) -> AvailableMinimizers:
@@ -330,6 +482,7 @@ class Project:
         self._minimizer_selection = minimizer
         if self._fitter is not None:
             self._fitter.easy_science_multi_fitter.switch_minimizer(minimizer)
+        self._clear_result_state()
 
     @property
     def experiments(self) -> Dict[int, DataSet1D]:
@@ -340,6 +493,7 @@ class Project:
     def experiments(self, experiments: Dict[int, DataSet1D]) -> None:
         """Experiments function."""
         self._experiments = experiments
+        self._clear_result_state()
 
     @property
     def path_json(self):

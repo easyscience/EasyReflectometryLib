@@ -10,6 +10,7 @@ from easyscience.fitting import AvailableMinimizers
 from easyscience.fitting import FitResults
 from easyscience.fitting.multi_fitter import MultiFitter as EasyScienceMultiFitter
 
+from easyreflectometry.analysis.bayesian import PosteriorResults
 from easyreflectometry.data import DataSet1D
 from easyreflectometry.model import Model
 
@@ -192,6 +193,10 @@ class MultiFitter:
         self._fit_results: list[FitResults] | None = None
         self._classical_fit_metrics: list[dict] | None = None
         self._objective = _validate_objective(objective)
+        self._posterior_results: PosteriorResults | None = None
+        self._last_sampler_settings: dict | None = None
+        self._last_data: sc.DataGroup | None = None
+        self._last_analysed_data: sc.DataGroup | None = None
 
     def fit(self, data: sc.DataGroup, id: int = 0, objective: str | None = None) -> sc.DataGroup:
         """Perform the fitting and populate the DataGroups with the result.
@@ -288,6 +293,8 @@ class MultiFitter:
             new_data['classical_reduced_chi'] = classical_reduced_chi
             new_data['reduced_chi'] = objective_reduced_chi
             new_data['success'] = result[i].success
+        self._last_data = data
+        self._last_analysed_data = new_data
         return new_data
 
     def fit_single_data_set_1d(self, data: DataSet1D, objective: str | None = None) -> FitResults:
@@ -351,6 +358,7 @@ class MultiFitter:
                 'n_classical_points': n_classical_points,
             }
         ]
+        self._last_data = sc.DataGroup({})  # placeholder for single-dataset path
         return result
 
     def sample(
@@ -364,9 +372,11 @@ class MultiFitter:
         seed: int | None = None,
         objective: str | None = None,
         initializer: str | None = None,
+        n_workers: int | None = None,
+        as_object: bool = False,
         progress_callback=None,
         abort_test=None,
-    ) -> dict:
+    ) -> dict | PosteriorResults:
         """Run Bayesian MCMC sampling on reflectometry data using the DREAM sampler.
 
         Requires that the minimizer is a BUMPS instance (i.e. the minimizer was
@@ -383,10 +393,16 @@ class MultiFitter:
         :param initializer: DREAM population initializer. One of ``'eps'``,
             ``'cov'``, ``'lhs'``, or ``'random'``. By default, None (BUMPS
             uses ``'eps'``).
+        :param n_workers: Number of worker processes for parallel DREAM
+            population evaluation. ``None`` or ``1`` means sequential;
+            values greater than ``1`` enable multiprocessing.
+        :param as_object: If ``True``, return a ``PosteriorResults`` instance
+            instead of a raw ``dict``. By default, ``False`` for backward
+            compatibility.
         :param progress_callback: Optional callback for progress updates during
             sampling.  Forwarded to the core MultiFitter.
-        :return: Dictionary with keys ``'draws'``, ``'param_names'``, ``'state'``,
-            and ``'logp'``.
+        :return: Dictionary or ``PosteriorResults`` with keys ``'draws'``,
+            ``'param_names'``, ``'state'``, and ``'logp'``.
         :raises RuntimeError: If the current minimizer is not a BUMPS instance.
         """
         obj = _validate_objective(objective) if objective is not None else self._objective
@@ -417,7 +433,7 @@ class MultiFitter:
         sampler_kwargs = {}
         if initializer is not None:
             sampler_kwargs['init'] = initializer
-        return self.easy_science_multi_fitter.sample(
+        result = self.easy_science_multi_fitter.sample(
             x=x,
             y=y,
             weights=dy,
@@ -427,10 +443,29 @@ class MultiFitter:
             chains=chains,
             population=population,
             seed=seed,
+            n_workers=n_workers,
             sampler_kwargs=sampler_kwargs or None,
             progress_callback=progress_callback,
             abort_test=abort_test,
         )
+
+        # Store posterior and sampler settings for display methods
+        self._posterior_results = PosteriorResults.from_dict(result)
+        self._last_sampler_settings = {
+            'samples': samples,
+            'burn': burn,
+            'thin': thin,
+            'chains': chains,
+            'population': population,
+            'seed': seed,
+            'initializer': initializer,
+            'n_workers': n_workers,
+            'objective': obj,
+        }
+
+        if as_object:
+            return self._posterior_results
+        return result
 
     @property
     def chi2(self) -> float | None:
@@ -490,6 +525,16 @@ class MultiFitter:
             Minimizer to be switched to.
         """
         self.easy_science_multi_fitter.switch_minimizer(minimizer)
+
+    @property
+    def display(self):
+        """Display facade for fit and posterior results.
+
+        :rtype: FitterDisplay
+        """
+        from easyreflectometry.display import FitterDisplay
+
+        return FitterDisplay(self)
 
 
 def _flatten_list(this_list: list) -> list:

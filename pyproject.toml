@@ -69,6 +69,10 @@ dev = [
   'mkdocstrings-python',             # MkDocs: Python docstring support
   'pyyaml',                          # YAML parser
   'spdx-headers',                    # SPDX license header validation
+  'matplotlib',                      # Plotting (display layer)
+  'pandas',                          # Table rendering (display layer)
+  'rich',                            # Terminal table rendering (display layer)
+  'scipy',                           # KDE for distribution plots (display layer)
 ]
 
 bayesian = ["corner>=2.2", "arviz>=0.18"]
@@ -276,6 +280,9 @@ ignore = [
   'S101',   # https://docs.astral.sh/ruff/rules/assert/
 ]
 'docs/**' = [
+  'E402', # https://docs.astral.sh/ruff/rules/module-import-not-at-top-of-file/
+  # nbqa concatenates notebook cells into one file, so imports in
+  # cells 2+ are always "not at top of file" from ruff's perspective.
   'INP001', # https://docs.astral.sh/ruff/rules/implicit-namespace-package/
   'T201',   # https://docs.astral.sh/ruff/rules/print/
 ]

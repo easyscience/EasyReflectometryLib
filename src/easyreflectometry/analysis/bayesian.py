@@ -75,6 +75,8 @@ class PosteriorResults:
     :type logp: np.ndarray | None
     :param sampler_state: Raw sampler state object (e.g. BUMPS ``DreamState``), or ``None``.
     :type sampler_state: Any | None
+    :param chains: Optional number of chains when draws are 3D, or ``None``.
+    :type chains: int | None
     """
 
     def __init__(
@@ -83,15 +85,113 @@ class PosteriorResults:
         param_names: list[str],
         logp: np.ndarray | None = None,
         sampler_state: Any | None = None,
+        chains: int | None = None,
     ):
-        self.draws = np.asarray(draws)
+        self._draws = np.asarray(draws)
         self.param_names = list(param_names)
         self.logp = np.asarray(logp) if logp is not None else None
         self.sampler_state = sampler_state
+        self._chains = chains
+
+    # -- backward-compatible raw-access property ---------------------------------
+
+    @property
+    def draws(self) -> np.ndarray:
+        """Return the raw draws in the stored shape (2D or 3D).
+
+        Prefer ``draws_flat`` for statistical summaries and plotting.
+        """
+        return self._draws
+
+    # -- chain-aware accessors --------------------------------------------------
+
+    @property
+    def draws_flat(self) -> np.ndarray:
+        """Posterior samples flattened to ``(n_samples, n_params)``.
+
+        If the stored draws are 3D ``(n_chains, n_draws_per_chain, n_params)``
+        they are flattened to two dimensions.
+        """
+        if self._draws.ndim == 3:
+            return self._draws.reshape(-1, self._draws.shape[2])
+        return self._draws
+
+    @property
+    def draws_by_chain(self) -> np.ndarray | None:
+        """Posterior samples as ``(n_chains, n_draws_per_chain, n_params)``
+        when chains are available, otherwise ``None``.
+        """
+        if self._draws.ndim == 3:
+            return self._draws
+        return None
+
+    @property
+    def n_chains(self) -> int | None:
+        """Number of chains when available, otherwise ``None``."""
+        if self._chains is not None:
+            return self._chains
+        if self._draws.ndim == 3:
+            return self._draws.shape[0]
+        return None
+
+    @property
+    def n_draws(self) -> int:
+        """Total number of posterior samples (flattened across chains)."""
+        return self.draws_flat.shape[0]
+
+    @property
+    def n_parameters(self) -> int:
+        """Number of parameters in the posterior."""
+        return self._draws.shape[-1]
+
+    # -- serialization ----------------------------------------------------------
+
+    @classmethod
+    def from_dict(cls, d: dict) -> PosteriorResults:
+        """Construct from the dictionary returned by ``MultiFitter.sample()``.
+
+        :param d: Dictionary with keys ``'draws'``, ``'param_names'`` and
+            optional ``'logp'``, ``'state'``, ``'chains'``.
+        :type d: dict
+        :return: A new ``PosteriorResults`` instance.
+        :rtype: PosteriorResults
+        """
+        return cls(
+            draws=d['draws'],
+            param_names=d['param_names'],
+            logp=d.get('logp'),
+            sampler_state=d.get('state'),
+            chains=d.get('chains'),
+        )
+
+    def to_dict(self) -> dict:
+        """Export to a dictionary compatible with the legacy sampler output.
+
+        :return: Dictionary with keys ``'draws'``, ``'param_names'`` and
+            optional ``'logp'``, ``'state'``, ``'chains'``.
+        :rtype: dict
+        """
+        d: dict = {'draws': self._draws, 'param_names': self.param_names}
+        if self.logp is not None:
+            d['logp'] = self.logp
+        if self.sampler_state is not None:
+            d['state'] = self.sampler_state
+        if self._chains is not None:
+            d['chains'] = self._chains
+        return d
+
+    # -- repr -------------------------------------------------------------------
 
     def __repr__(self) -> str:
-        n_samples, n_params = self.draws.shape
-        return f'PosteriorResults(n_samples={n_samples}, n_params={n_params}, param_names={self.param_names})'
+        draws = self.draws_flat
+        n_samples = draws.shape[0]
+        n_params = draws.shape[1]
+        extras = ''
+        if self.n_chains is not None and self.n_chains > 1:
+            extras = f', n_chains={self.n_chains}'
+        return f'PosteriorResults(n_samples={n_samples}, n_params={n_params}{extras}, param_names={self.param_names})'
+
+    # -- analysis methods (use draws_flat) --------------------------------------
 
     def summary(self) -> str:
         """Return a formatted summary table with mean, sd, and HDI for each parameter.
@@ -99,7 +199,7 @@ class PosteriorResults:
         :return: Formatted summary table as a string.
         :rtype: str
         """
-        return posterior_summary(self.draws, self.param_names)
+        return posterior_summary(self.draws_flat, self.param_names)
 
     def corner(self, **kwargs) -> None:
         """Plot parameter correlation corner plot.
@@ -108,7 +208,7 @@ class PosteriorResults:
 
         :param kwargs: Additional keyword arguments passed to ``corner.corner``.
         """
-        plot_corner(self.draws, self.param_names, **kwargs)
+        plot_corner(self.draws_flat, self.param_names, **kwargs)
 
     def trace(self, **kwargs) -> None:
         """Plot MCMC trace plot.
@@ -117,7 +217,7 @@ class PosteriorResults:
 
         :param kwargs: Additional keyword arguments passed to ``arviz.plot_trace``.
         """
-        plot_trace(self.draws, self.param_names, **kwargs)
+        plot_trace(self.draws_flat, self.param_names, **kwargs)
 
     def credible_interval(self, alpha: float = 0.95) -> dict:
         """Compute equal-tailed credible intervals for each parameter.
@@ -127,13 +227,13 @@ class PosteriorResults:
         :return: Dictionary mapping parameter name to ``(lower, upper)``.
         :rtype: dict
         """
-        return credible_intervals(self.draws, self.param_names, alpha=alpha)
+        return credible_intervals(self.draws_flat, self.param_names, alpha=alpha)
 
     def gelman_rubin(self) -> dict | None:
         """Compute the Gelman-Rubin R-hat convergence diagnostic.
 
-        Requires the ``arviz`` library. Returns ``None`` if ``arviz`` is not
-        available.
+        Requires at least two chains and the ``arviz`` library.
+        Returns ``None`` when fewer than two chains are available.
 
         :return: Dictionary mapping parameter name to R-hat value, or ``None``.
         :rtype: dict | None
@@ -144,8 +244,10 @@ class PosteriorResults:
                 UserWarning,
             )
             return None
-        # arviz requires at least 2 chains; treat the posterior as one chain
-        data = _to_arviz_data(self.draws, self.param_names)
+        if self.n_chains is None or self.n_chains < 2:
+            return None
+        draws_for_rhat = self.draws_by_chain if self.draws_by_chain is not None else self._draws
+        data = _to_arviz_data(draws_for_rhat, self.param_names)
         rhat = _arviz.rhat(data)
         return {name: float(rhat[name].values) for name in self.param_names}
 
@@ -170,18 +272,292 @@ def posterior_summary(draws: np.ndarray, param_names: list[str]) -> str:
 
 
 def plot_corner(draws: np.ndarray, param_names: list[str], **kwargs) -> None:
-    """Plot a parameter correlation corner plot.
+    """Plot an interactive parameter correlation corner (pairs) plot.
 
-    Requires the ``corner`` library.
+    Uses Plotly when available for interactive rendering; falls back to
+    the ``corner`` library for static plots.
 
     :param draws: Posterior samples, shape ``(n_samples, n_params)``.
     :type draws: np.ndarray
     :param param_names: Parameter names (one per column).
     :type param_names: list[str]
-    :param kwargs: Additional keyword arguments passed to ``corner.corner``.
+    :param kwargs: Additional keyword arguments (forwarded to the
+        underlying plotting backend). Use ``show=False`` to build the plot
+        without displaying it.
     """
-    _require_corner()
     draws = np.asarray(draws)
+    n_params = draws.shape[1]
+    show = kwargs.pop('show', True)
+
+    if n_params < 2:
+        _plot_corner_fallback(draws, param_names, show=show, **kwargs)
+        return
+
+    # Prefer Plotly for interactive display
+    if _plot_corner_plotly(draws, param_names, show=show, **kwargs):
+        return
+
+    # Fall back to matplotlib corner library
+    _plot_corner_fallback(draws, param_names, show=show, **kwargs)
+
+
+def _plot_corner_plotly(
+    draws: np.ndarray,
+    param_names: list[str],
+    show: bool = True,
+    **kwargs,
+) -> bool:
+    """Build an interactive Plotly corner/pairs plot. Returns ``True`` on success."""
+    try:
+        from plotly.subplots import make_subplots
+    except ImportError:
+        return False
+
+    n_params = draws.shape[1]
+    labels = [str(n) for n in param_names]
+
+    # Build subplot grid
+    fig = make_subplots(
+        rows=n_params,
+        cols=n_params,
+        shared_xaxes='columns',
+        horizontal_spacing=0.03,
+        vertical_spacing=0.03,
+    )
+
+    # Compute global ranges per parameter
+    ranges = []
+    for i in range(n_params):
+        col = draws[:, i]
+        pad = (col.max() - col.min()) * 0.05
+        ranges.append((col.min() - pad, col.max() + pad))
+
+    # Compute correlation matrix for upper triangle annotations
+    corr = np.corrcoef(draws, rowvar=False)
+
+    for row in range(n_params):
+        for col_idx in range(n_params):
+            subplot_ref = (row + 1, col_idx + 1)
+
+            if row == col_idx:
+                # Diagonal: histogram
+                _add_plotly_diagonal_histogram(
+                    fig,
+                    draws[:, row],
+                    labels[row],
+                    subplot_ref,
+                    ranges[row],
+                )
+            elif row > col_idx:
+                # Lower triangle: scatter + KDE contours
+                _add_plotly_scatter_panel(
+                    fig,
+                    draws[:, col_idx],
+                    draws[:, row],
+                    subplot_ref,
+                    ranges[col_idx],
+                    ranges[row],
+                )
+            else:
+                # Upper triangle: correlation annotation
+                _add_plotly_correlation_annotation(
+                    fig,
+                    corr[row, col_idx],
+                    subplot_ref,
+                    labels[col_idx],
+                    labels[row],
+                )
+
+    # Axis labels on the outer edges only
+    for i in range(n_params):
+        fig.update_xaxes(
+            title_text=labels[i],
+            row=n_params,
+            col=i + 1,
+            title_font={'size': 11},
+        )
+        fig.update_yaxes(
+            title_text=labels[i],
+            row=i + 1,
+            col=1,
+            title_font={'size': 11},
+        )
+
+    # Hide tick labels on interior axes
+    for row in range(1, n_params + 1):
+        for col_idx in range(1, n_params + 1):
+            if row < n_params:
+                fig.update_xaxes(showticklabels=False, row=row, col=col_idx)
+            if col_idx > 1:
+                fig.update_yaxes(showticklabels=False, row=row, col=col_idx)
+
+    title = kwargs.get('title', 'Posterior Pair Plot')
+    fig.update_layout(
+        title=title,
+        height=250 * n_params,
+        width=280 * n_params,
+        showlegend=False,
+        margin={'l': 60, 'r': 20, 't': 50, 'b': 60},
+        template='plotly_white',
+    )
+
+    if show:
+        fig.show()
+    return True
+
+
+def _add_plotly_diagonal_histogram(fig, data, label, subplot_ref, x_range):
+    """Add a histogram trace to a diagonal panel."""
+    import plotly.graph_objects as go
+
+    mean_val = np.mean(data)
+    median_val = np.median(data)
+    ci_lo, ci_hi = np.percentile(data, [2.5, 97.5])
+
+    # Histogram
+    fig.add_trace(
+        go.Histogram(
+            x=data,
+            nbinsx=30,
+            marker_color='rgb(100,149,237)',
+            opacity=0.7,
+            name=label,
+            hovertemplate=f'{label}<br>value=%{{x:.4f}}<br>count=%{{y}}<extra></extra>',
+        ),
+        row=subplot_ref[0],
+        col=subplot_ref[1],
+    )
+
+    # Mean line
+    fig.add_vline(
+        x=mean_val,
+        line_dash='dash',
+        line_color='red',
+        opacity=0.5,
+        row=subplot_ref[0],
+        col=subplot_ref[1],
+    )
+    # Median line
+    fig.add_vline(
+        x=median_val,
+        line_dash='dot',
+        line_color='green',
+        opacity=0.5,
+        row=subplot_ref[0],
+        col=subplot_ref[1],
+    )
+
+    # Annotation with stats
+    fig.add_annotation(
+        x=0.98,
+        y=0.95,
+        xref=f'x{subplot_ref[1]}',
+        yref=f'y{subplot_ref[1]}',
+        text=(f'mean={mean_val:.3f}<br>median={median_val:.3f}<br>95% CI [{ci_lo:.3f}, {ci_hi:.3f}]'),
+        showarrow=False,
+        xanchor='right',
+        yanchor='top',
+        font={'size': 9, 'color': '#555555'},
+        align='right',
+    )
+
+    fig.update_xaxes(range=x_range, row=subplot_ref[0], col=subplot_ref[1])
+
+
+def _add_plotly_scatter_panel(fig, x_data, y_data, subplot_ref, x_range, y_range):
+    """Add scatter + KDE contour traces to an off-diagonal panel."""
+    import plotly.graph_objects as go
+
+    # Thin to avoid overcrowding
+    n = min(len(x_data), 2000)
+    idx = np.random.choice(len(x_data), size=n, replace=False) if len(x_data) > n else slice(None)
+    xs, ys = x_data[idx], y_data[idx]
+
+    # Scatter
+    fig.add_trace(
+        go.Scatter(
+            x=xs,
+            y=ys,
+            mode='markers',
+            marker={
+                'size': 3,
+                'color': 'rgb(100,149,237)',
+                'opacity': 0.4,
+            },
+            hovertemplate='x=%{{x:.4f}}<br>y=%{{y:.4f}}<extra></extra>',
+        ),
+        row=subplot_ref[0],
+        col=subplot_ref[1],
+    )
+
+    # KDE contour overlay when scipy is available
+    try:
+        from scipy.stats import gaussian_kde
+
+        kde = gaussian_kde(np.vstack([x_data, y_data]))
+        grid_x = np.linspace(x_range[0], x_range[1], 40)
+        grid_y = np.linspace(y_range[0], y_range[1], 40)
+        xx, yy = np.meshgrid(grid_x, grid_y)
+        positions = np.vstack([xx.ravel(), yy.ravel()])
+        zz = kde(positions).reshape(xx.shape)
+
+        fig.add_trace(
+            go.Contour(
+                x=grid_x,
+                y=grid_y,
+                z=zz,
+                contours_coloring='lines',
+                line_width=1,
+                colorscale=[[0, 'rgba(0,0,0,0)'], [1, 'rgba(50,50,50,0.5)']],
+                showscale=False,
+                hoverinfo='skip',
+            ),
+            row=subplot_ref[0],
+            col=subplot_ref[1],
+        )
+    except ImportError:
+        pass
+
+    fig.update_xaxes(range=x_range, row=subplot_ref[0], col=subplot_ref[1])
+    fig.update_yaxes(range=y_range, row=subplot_ref[0], col=subplot_ref[1])
+
+
+def _add_plotly_correlation_annotation(fig, corr_val, subplot_ref, x_label, y_label):
+    """Add a correlation coefficient annotation to an upper-triangle panel."""
+    fig.add_annotation(
+        x=0.5,
+        y=0.5,
+        xref=f'x{subplot_ref[1]}',
+        yref=f'y{subplot_ref[1]}',
+        text=f'<b>r = {corr_val:.3f}</b>',
+        showarrow=False,
+        font={
+            'size': 14,
+            'color': _correlation_color(corr_val),
+        },
+        xanchor='center',
+        yanchor='middle',
+    )
+
+
+def _correlation_color(val: float) -> str:
+    """Return a color representing correlation strength."""
+    abs_val = abs(val)
+    if abs_val > 0.7:
+        return 'rgb(180,0,0)'  # strong red
+    if abs_val > 0.4:
+        return 'rgb(100,100,100)'  # moderate grey
+    return 'rgb(180,180,180)'  # weak light grey
+
+
+def _plot_corner_fallback(
+    draws: np.ndarray,
+    param_names: list[str],
+    show: bool = True,
+    **kwargs,
+) -> None:
+    """Fall back to the matplotlib ``corner`` library."""
+    _require_corner()
     defaults = {
         'labels': param_names,
         'quantiles': [0.16, 0.5, 0.84],
@@ -190,7 +566,9 @@ def plot_corner(draws: np.ndarray, param_names: list[str], **kwargs) -> None:
         'title_kwargs': {'fontsize': 12},
     }
     defaults.update(kwargs)
-    _corner.corner(draws, **defaults)
+    fig = _corner.corner(draws, **defaults)
+    if show:
+        fig.show()
 
 
 def plot_trace(draws: np.ndarray, param_names: list[str], **kwargs) -> None:

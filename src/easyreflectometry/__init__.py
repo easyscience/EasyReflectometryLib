@@ -6,6 +6,10 @@
 from importlib import metadata
 
 from .analysis.bayesian import PosteriorResults
+from .display import FitDisplay
+from .display import FitterDisplay
+from .display import PosteriorDisplay
+from .display import ProjectDisplay
 from .project import Project
 
 try:
@@ -14,7 +18,11 @@ except metadata.PackageNotFoundError:
     __version__ = '0.0.0'
 
 __all__ = [
-    Project,
-    PosteriorResults,
+    'FitDisplay',
+    'FitterDisplay',
+    'PosteriorDisplay',
+    'PosteriorResults',
+    'Project',
+    'ProjectDisplay',
     __version__,
 ]

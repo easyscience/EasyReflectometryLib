@@ -167,7 +167,7 @@ class TestCornerPlot:
             from easyreflectometry.analysis.bayesian import plot_corner
 
             draws, param_names = sample_draws
-            plot_corner(draws, param_names)
+            plot_corner(draws, param_names, show=False)
         except ImportError:
             pytest.skip('corner library not installed')
 
