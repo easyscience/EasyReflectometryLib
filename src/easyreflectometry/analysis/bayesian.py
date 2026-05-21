@@ -428,20 +428,29 @@ def _add_plotly_diagonal_histogram(fig, data, label, subplot_ref, x_range):
         col=subplot_ref[1],
     )
 
-    # Mean line
-    fig.add_vline(
-        x=mean_val,
-        line_dash='dash',
-        line_color='red',
+    # Mean line — add_vline does not support row/col in subplot figures;
+    # use add_shape with yref='y domain' instead.
+    fig.add_shape(
+        type='line',
+        x0=mean_val,
+        x1=mean_val,
+        y0=0,
+        y1=1,
+        yref='y domain',
+        line={'dash': 'dash', 'color': 'red', 'width': 1},
         opacity=0.5,
         row=subplot_ref[0],
         col=subplot_ref[1],
     )
     # Median line
-    fig.add_vline(
-        x=median_val,
-        line_dash='dot',
-        line_color='green',
+    fig.add_shape(
+        type='line',
+        x0=median_val,
+        x1=median_val,
+        y0=0,
+        y1=1,
+        yref='y domain',
+        line={'dash': 'dot', 'color': 'green', 'width': 1},
         opacity=0.5,
         row=subplot_ref[0],
         col=subplot_ref[1],

@@ -69,13 +69,16 @@ dev = [
   'mkdocstrings-python',             # MkDocs: Python docstring support
   'pyyaml',                          # YAML parser
   'spdx-headers',                    # SPDX license header validation
-  'matplotlib',                      # Plotting (display layer)
-  'pandas',                          # Table rendering (display layer)
-  'rich',                            # Terminal table rendering (display layer)
-  'scipy',                           # KDE for distribution plots (display layer)
 ]
 
-bayesian = ["corner>=2.2", "arviz>=0.18"]
+bayesian = [
+  "corner>=2.2",
+  "arviz>=0.18",
+  "matplotlib",
+  "scipy",
+  "pandas",
+  "rich",
+]
 
 [project.urls]
 Documentation = 'https://easyscience.github.io/reflectometry-lib'

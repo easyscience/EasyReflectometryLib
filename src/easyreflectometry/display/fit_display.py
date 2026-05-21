@@ -37,7 +37,7 @@ class FitDisplay:
         return getattr(self._source, '_posterior_results', None) or getattr(self._source, '_last_posterior', None)
 
     def _get_sampler_settings(self):
-        return getattr(self._source, '_last_sampler_settings', None) or getattr(self._source, '_last_sampler_settings', None)
+        return getattr(self._source, '_last_sampler_settings', None)
 
     def _get_classical_fit_metrics(self):
         return getattr(self._source, '_classical_fit_metrics', None) or getattr(

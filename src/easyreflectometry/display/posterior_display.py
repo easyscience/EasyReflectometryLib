@@ -123,7 +123,7 @@ class PosteriorDisplay:
         for ax_idx, col_idx in enumerate(to_plot):
             ax = axes[ax_idx]
             col = draws[:, col_idx]
-            label = labels[col_idx]
+            label = labels[ax_idx]
 
             # Histogram
             ax.hist(col, bins='auto', density=True, alpha=0.6, color='tab:blue', edgecolor='white')
