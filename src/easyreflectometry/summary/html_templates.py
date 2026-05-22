@@ -123,10 +123,10 @@ HTML_REFINEMENT_TEMPLATE = """
     <td>Minimization engine</td>
     <td>minimization_engine</td>
 </tr>
-<!-- <tr> -->
-<!--     <td>Goodness-of-fit: reduced <i>&chi;</i><sup>2</sup></td> -->
-<!--     <td>goodness_of_fit</td> -->
-<!-- </tr> -->
+<tr>
+    <td>Goodness-of-fit: reduced <i>&chi;</i><sup>2</sup></td>
+    <td>goodness_of_fit</td>
+</tr>
 <tr>
     <td>No. of parameters:</td>
     <td>num_total_params</td>

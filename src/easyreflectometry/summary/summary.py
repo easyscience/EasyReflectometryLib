@@ -1,6 +1,9 @@
 # SPDX-FileCopyrightText: 2024 EasyScience contributors <https://github.com/easyscience>
 # SPDX-License-Identifier: BSD-3-Clause
 
+from html import escape
+from urllib.parse import quote
+
 import matplotlib.pyplot as plt
 import numpy as np
 from easyscience import global_object
@@ -15,6 +18,39 @@ from .html_templates import HTML_PARAMETER_TEMPLATE
 from .html_templates import HTML_PROJECT_INFORMATION_TEMPLATE
 from .html_templates import HTML_REFINEMENT_TEMPLATE
 from .html_templates import HTML_TEMPLATE
+
+_NAME_MAX_LEN = 20
+# Custom href scheme used to pass the full name to QML via TextEdit.hoveredLink.
+_TOOLTIP_SCHEME = 'nametooltip'
+
+
+def _format_error(error: float) -> str:
+    """Format a parameter error the same way the Analysis table does.
+
+    Mirrors the JS ``formatError`` in Fittables.qml:
+    2 significant figures; fall back to 1-decimal exponential for long strings.
+    Zero (no fit run yet) is shown as '0.0'.
+    """
+    if error == 0.0:
+        return '0.0'
+    s = f'{error:.2g}'
+    if len(s) <= 6:
+        return s
+    return f'{error:.1e}'
+
+
+def _truncate_name(name: str, max_len: int = _NAME_MAX_LEN) -> str:
+    """Return an HTML snippet with a truncated name and tooltip for the full text.
+
+    Browsers use the ``title`` attribute; QML reads the ``href`` via
+    ``TextEdit.hoveredLink`` and shows a native ToolTip.
+    """
+    safe = escape(name)
+    if len(name) <= max_len:
+        return safe
+    short = escape(name[:max_len].rstrip())
+    encoded = quote(name, safe='')
+    return f'<a style="color:inherit;text-decoration:none;" href="{_TOOLTIP_SCHEME}:{encoded}" title="{safe}">{short}…</a>'
 
 
 class Summary:
@@ -140,7 +176,8 @@ class Summary:
             html_parameter = html_parameter.replace('parameter_name', f'{name}')
             html_parameter = html_parameter.replace('parameter_value', f'{value}')
             html_parameter = html_parameter.replace('parameter_unit', f'{unit}')
-            html_parameter = html_parameter.replace('parameter_error', f'{error}')
+            error_str = _format_error(error)
+            html_parameter = html_parameter.replace('parameter_error', error_str)
             html_parameters.append(html_parameter)
 
         html_parameters_str = '\n'.join(html_parameters)
@@ -162,7 +199,7 @@ class Summary:
             range_max = max(experiment.y)
             range_units = 'Å⁻¹'
             html_experiment = HTML_DATA_COLLECTION_TEMPLATE
-            html_experiment = html_experiment.replace('experiment_name', f'{experiment_name}')
+            html_experiment = html_experiment.replace('experiment_name', _truncate_name(experiment_name))
             html_experiment = html_experiment.replace('range_min', f'{range_min}')
             html_experiment = html_experiment.replace('range_max', f'{range_max}')
             html_experiment = html_experiment.replace('range_units', f'{range_units}')
@@ -185,18 +222,36 @@ class Summary:
         num_free_params = sum(1 for parameter in parameters if parameter.free)
         num_fixed_params = sum(1 for parameter in parameters if not parameter.free)
         num_params = num_free_params + num_fixed_params
-        #        goodness_of_fit = self._project.status.goodnessOfFit
-        #        goodness_of_fit = goodness_of_fit.split(' → ')[-1]
         num_constraints = sum(1 for parameter in parameters if not parameter.independent)
+
+        goodness_of_fit = self._compute_goodness_of_fit()
 
         html_refinement = html_refinement.replace('calculation_engine', f'{self._project._calculator.current_interface_name}')
         html_refinement = html_refinement.replace('minimization_engine', f'{self._project.minimizer.name}')
-        #        html = html.replace('goodness_of_fit', f'{goodness_of_fit}')
+        html_refinement = html_refinement.replace('goodness_of_fit', goodness_of_fit)
         html_refinement = html_refinement.replace('num_total_params', f'{num_params}')
         html_refinement = html_refinement.replace('num_free_params', f'{num_free_params}')
         html_refinement = html_refinement.replace('num_fixed_params', f'{num_fixed_params}')
         html_refinement = html_refinement.replace('num_constriants', f'{num_constraints}')
         return html_refinement
+
+    def _compute_goodness_of_fit(self) -> str:
+        """Return reduced chi² as a formatted string, or 'N/A' if no fit has been run."""
+        last_fit_results = getattr(self._project, '_last_fit_results', None)
+        if not last_fit_results:
+            return 'N/A'
+        try:
+            if len(last_fit_results) == 1:
+                gof = float(last_fit_results[0].reduced_chi2)
+            else:
+                total_chi2 = sum(float(r.chi2) for r in last_fit_results)
+                total_points = sum(len(r.x) for r in last_fit_results)
+                n_pars = last_fit_results[0].n_pars
+                dof = total_points - n_pars
+                gof = total_chi2 / dof if dof > 0 else 0.0
+            return f'{gof:.4g}'
+        except (AttributeError, TypeError, ValueError, ZeroDivisionError):
+            return 'N/A'
 
     def _figures_section(self) -> None:
         """Figures section."""
