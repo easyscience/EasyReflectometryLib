@@ -2,6 +2,8 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 from html import escape
+from importlib.metadata import PackageNotFoundError
+from importlib.metadata import version
 from urllib.parse import quote
 
 import matplotlib.pyplot as plt
@@ -22,6 +24,36 @@ from .html_templates import HTML_TEMPLATE
 _NAME_MAX_LEN = 20
 # Custom href scheme used to pass the full name to QML via TextEdit.hoveredLink.
 _TOOLTIP_SCHEME = 'nametooltip'
+
+# URLs for known calculation engines and minimizer packages.
+_ENGINE_URLS: dict[str, str] = {
+    'refnx': 'https://refnx.readthedocs.io',
+    'refl1d': 'https://refl1d.readthedocs.io',
+    'bornagain': 'https://www.bornagainproject.org',
+    'lm': 'https://lmfit.github.io/lmfit-py/',
+    'bumps': 'https://bumps.readthedocs.io',
+    'dfo': 'https://github.com/fitbenchmarking/dfo-ls',
+}
+
+
+def _engine_link(name: str, package: str | None = None) -> str:
+    """Return an HTML hyperlink for an engine, including its version.
+
+    Falls back to plain text when no URL is known for the engine.
+    """
+    url = _ENGINE_URLS.get(name) or _ENGINE_URLS.get(package or '')
+    display = escape(name)
+    if package:
+        try:
+            ver = version(package)
+        except PackageNotFoundError:
+            ver = None
+        if ver:
+            display = f'{display} (v{ver})'
+
+    if url:
+        return f'<a href="{url}">{display}</a>'
+    return display
 
 
 def _format_value(value: float, sig_figs: int) -> str:
@@ -225,8 +257,14 @@ class Summary:
 
         goodness_of_fit = self._compute_goodness_of_fit()
 
-        html_refinement = html_refinement.replace('calculation_engine', f'{self._project._calculator.current_interface_name}')
-        html_refinement = html_refinement.replace('minimization_engine', f'{self._project.minimizer.name}')
+        html_refinement = html_refinement.replace(
+            'calculation_engine',
+            _engine_link(self._project._calculator.current_interface_name),
+        )
+        html_refinement = html_refinement.replace(
+            'minimization_engine',
+            _engine_link(self._project.minimizer.name, self._project.minimizer.package),
+        )
         html_refinement = html_refinement.replace('goodness_of_fit', goodness_of_fit)
         html_refinement = html_refinement.replace('num_total_params', f'{num_params}')
         html_refinement = html_refinement.replace('num_free_params', f'{num_free_params}')
