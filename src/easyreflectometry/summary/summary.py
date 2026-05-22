@@ -24,19 +24,18 @@ _NAME_MAX_LEN = 20
 _TOOLTIP_SCHEME = 'nametooltip'
 
 
-def _format_error(error: float) -> str:
-    """Format a parameter error the same way the Analysis table does.
+def _format_value(value: float, sig_figs: int) -> str:
+    """Format a numeric value for summary display.
 
-    Mirrors the JS ``formatError`` in Fittables.qml:
-    2 significant figures; fall back to 1-decimal exponential for long strings.
-    Zero (no fit run yet) is shown as '0.0'.
+    *sig_figs* significant figures; fall back to 1-decimal exponential when
+    the formatted string is too long.  Zero is shown as '0.0'.
     """
-    if error == 0.0:
+    if value == 0.0:
         return '0.0'
-    s = f'{error:.2g}'
-    if len(s) <= 6:
+    s = f'{value:.{sig_figs}g}'
+    if len(s) <= sig_figs + 4:
         return s
-    return f'{error:.1e}'
+    return f'{value:.1e}'
 
 
 def _truncate_name(name: str, max_len: int = _NAME_MAX_LEN) -> str:
@@ -174,9 +173,9 @@ class Summary:
 
             html_parameter = HTML_PARAMETER_TEMPLATE
             html_parameter = html_parameter.replace('parameter_name', f'{name}')
-            html_parameter = html_parameter.replace('parameter_value', f'{value}')
+            html_parameter = html_parameter.replace('parameter_value', _format_value(value, 3))
             html_parameter = html_parameter.replace('parameter_unit', f'{unit}')
-            error_str = _format_error(error)
+            error_str = _format_value(error, 2)
             html_parameter = html_parameter.replace('parameter_error', error_str)
             html_parameters.append(html_parameter)
 
@@ -200,8 +199,8 @@ class Summary:
             range_units = 'Å⁻¹'
             html_experiment = HTML_DATA_COLLECTION_TEMPLATE
             html_experiment = html_experiment.replace('experiment_name', _truncate_name(experiment_name))
-            html_experiment = html_experiment.replace('range_min', f'{range_min}')
-            html_experiment = html_experiment.replace('range_max', f'{range_max}')
+            html_experiment = html_experiment.replace('range_min', _format_value(range_min, 2))
+            html_experiment = html_experiment.replace('range_max', _format_value(range_max, 2))
             html_experiment = html_experiment.replace('range_units', f'{range_units}')
             html_experiment = html_experiment.replace('num_data_points', f'{num_data_points}')
             html_experiment = html_experiment.replace('resolution_function', f'{resolution_function}')
