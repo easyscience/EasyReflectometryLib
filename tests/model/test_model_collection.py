@@ -65,7 +65,7 @@ class TestModelCollection:
         collection.add_model()
         assert collection[1].color == COLORS[1]
 
-        collection.remove(0)
+        collection.remove_at(0)
         collection.add_model()
 
         assert collection[0].color == COLORS[1]
@@ -101,7 +101,7 @@ class TestModelCollection:
 
         # Then
         collection = ModelCollection(model_1, model_2)
-        collection.remove(0)
+        collection.remove_at(0)
 
         # Expect
         assert len(collection) == 1

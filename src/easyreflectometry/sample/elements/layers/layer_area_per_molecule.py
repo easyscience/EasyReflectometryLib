@@ -55,17 +55,6 @@ class LayerAreaPerMolecule(Layer):
     molecular formula an area per molecule, and a solvent.
     """
 
-    # Added in __init__
-    #: Real part of the scattering length.
-    _scattering_length_real: Parameter
-    #: Imaginary part of the scattering length.
-    _scattering_length_imag: Parameter
-    #: Area per molecule in the layer in Anstrom^2.
-    _area_per_molecule: Parameter
-
-    # Other typer than in __init__.super()
-    material: MaterialSolvated
-
     def __init__(
         self,
         molecular_formula: Union[str, None] = None,
@@ -113,7 +102,6 @@ class LayerAreaPerMolecule(Layer):
                 interface=interface,
             )
 
-        # Create the solvated molecule and corresponding constraints
         if molecular_formula is None:
             molecular_formula = DEFAULTS['molecular_formula']
         molecule_material = Material(
@@ -130,39 +118,40 @@ class LayerAreaPerMolecule(Layer):
             default_dict=DEFAULTS,
             unique_name_prefix=f'{unique_name}_Thickness',
         )
-        _area_per_molecule = get_as_parameter(
+        area_per_molecule_param = get_as_parameter(
             name='area_per_molecule',
             value=area_per_molecule,
             default_dict=DEFAULTS,
             unique_name_prefix=f'{unique_name}_AreaPerMolecule',
         )
-        _scattering_length_real = get_as_parameter(
+        scattering_length_real = get_as_parameter(
             name='scattering_length_real',
             value=0.0,
             default_dict=DEFAULTS['sl'],
             unique_name_prefix=f'{unique_name}_Sl',
         )
-        _scattering_length_imag = get_as_parameter(
+        scattering_length_imag = get_as_parameter(
             name='scattering_length_imag',
             value=0.0,
             default_dict=DEFAULTS['isl'],
             unique_name_prefix=f'{unique_name}_Isl',
         )
-        # Constrain the real part of the sld value for the molecule
+
+        # Constrain molecule.sld via scattering length / (thickness * area_per_molecule)
         dependency_expression = 'scattering_length / (thickness * area_per_molecule) * 1e6'
         dependency_map = {
-            'scattering_length': _scattering_length_real,
+            'scattering_length': scattering_length_real,
             'thickness': thickness,
-            'area_per_molecule': _area_per_molecule,
+            'area_per_molecule': area_per_molecule_param,
         }
         molecule_material.sld.make_dependent_on(dependency_expression=dependency_expression, dependency_map=dependency_map)
 
-        # # Constrain the real part of the sld value for the molecule
+        # Same dependency under short variable names
         dependency_expression = 'a / (b*p) * 1e6'
-        dependency_map = {'a': _scattering_length_real, 'b': thickness, 'p': _area_per_molecule}
+        dependency_map = {'a': scattering_length_real, 'b': thickness, 'p': area_per_molecule_param}
         molecule_material.sld.make_dependent_on(dependency_expression=dependency_expression, dependency_map=dependency_map)
 
-        dependency_map = {'a': _scattering_length_imag, 'b': thickness, 'p': _area_per_molecule}
+        dependency_map = {'a': scattering_length_imag, 'b': thickness, 'p': area_per_molecule_param}
         molecule_material.isld.make_dependent_on(dependency_expression=dependency_expression, dependency_map=dependency_map)
 
         solvated_molecule_material = MaterialSolvated(
@@ -178,17 +167,85 @@ class LayerAreaPerMolecule(Layer):
             roughness=roughness,
             name=name,
             unique_name=unique_name,
-            interface=interface,
+            interface=None,
         )
-        self._add_component('_scattering_length_real', _scattering_length_real)
-        self._add_component('_scattering_length_imag', _scattering_length_imag)
-        self._add_component('_area_per_molecule', _area_per_molecule)
+        self._area_per_molecule = area_per_molecule_param
+        self._scattering_length_real = scattering_length_real
+        self._scattering_length_imag = scattering_length_imag
 
         scattering_length = neutron_scattering_length(molecular_formula)
         self._scattering_length_real.value = scattering_length.real
         self._scattering_length_imag.value = scattering_length.imag
         self._molecular_formula = molecular_formula
-        self.interface = interface
+
+        if interface is not None:
+            self.interface = interface
+
+    # ----- constraint plumbing -----
+
+    def _setup_sld_constraints(self) -> None:
+        """Wire the inner molecule material's ``sld`` / ``isld`` to depend on
+        the current scattering-length, thickness, and area-per-molecule
+        parameters.
+
+        Idempotent — called once from ``__init__`` and again from
+        ``from_dict`` after the saved Parameter objects replace the
+        constructor-time temporaries.
+        """
+        molecule_material = self.material.material
+        for derived in (molecule_material.sld, molecule_material.isld):
+            if not derived.independent:
+                derived.make_independent()
+
+        dependency_expression = 'a / (b*p) * 1e6'
+        molecule_material.sld.make_dependent_on(
+            dependency_expression=dependency_expression,
+            dependency_map={
+                'a': self._scattering_length_real,
+                'b': self._thickness,
+                'p': self._area_per_molecule,
+            },
+        )
+        molecule_material.isld.make_dependent_on(
+            dependency_expression=dependency_expression,
+            dependency_map={
+                'a': self._scattering_length_imag,
+                'b': self._thickness,
+                'p': self._area_per_molecule,
+            },
+        )
+
+    # ----- deserialization -----
+
+    @classmethod
+    def from_dict(cls, obj_dict: dict) -> 'LayerAreaPerMolecule':
+        """Re-route the saved ``solvent_fraction`` Parameter and rebuild the
+        molecule-SLD constraint chain after :class:`ModelBase.from_dict`
+        swaps in the persisted Parameter objects.
+
+        `ModelBase.from_dict` writes the deserialized ``solvent_fraction``
+        Parameter to ``self._solvent_fraction`` (orphan — the live property
+        delegates to ``self.material.solvent_fraction``, which is
+        ``self.material._fraction``). It also reassigns ``self._thickness``
+        and ``self._area_per_molecule``, but the constraint graph built in
+        ``__init__`` still references the temporary Parameters created from
+        the float kwargs. We fix both here.
+        """
+        instance = super().from_dict(obj_dict)
+
+        saved_solvent_fraction = instance.__dict__.pop('_solvent_fraction', None)
+        if saved_solvent_fraction is not None:
+            mixture = instance.material
+            old = mixture._fraction
+            mixture._fraction = saved_solvent_fraction
+            try:
+                instance._global_object.map.prune(old.unique_name)
+            except (AttributeError, KeyError):
+                pass
+            mixture._materials_constraints()
+
+        instance._setup_sld_constraints()
+        return instance
 
     @property
     def area_per_molecule_parameter(self) -> Parameter:
@@ -196,22 +253,15 @@ class LayerAreaPerMolecule(Layer):
         return self._area_per_molecule
 
     @property
-    def area_per_molecule(self) -> float:
-        """Get the area per molecule."""
-        return self._area_per_molecule.value
+    def area_per_molecule(self) -> Parameter:
+        """The Parameter that controls area per molecule."""
+        return self._area_per_molecule
 
     @area_per_molecule.setter
-    def area_per_molecule(self, new_area_per_molecule: float) -> None:
-        """Set the area per molecule.
-
-        Parameters
-        ----------
-        new_area_per_molecule : float
-            New area per molecule.
-        """
-        if new_area_per_molecule < 0:
-            raise ValueError('new_area_per_molecule must be greater than 0.0.')
-        self._area_per_molecule.value = new_area_per_molecule
+    def area_per_molecule(self, value: float) -> None:
+        if value < 0:
+            raise ValueError('area_per_molecule must be greater than 0.0.')
+        self._area_per_molecule.value = value
 
     @property
     def molecule(self) -> Material:
@@ -225,40 +275,21 @@ class LayerAreaPerMolecule(Layer):
 
     @solvent.setter
     def solvent(self, new_solvent: Material) -> None:
-        """Set the solvent material.
-
-        Parameters
-        ----------
-        new_solvent : Material
-            New solvent material.
-        """
         self.material.solvent = new_solvent
 
     @property
-    def solvent_fraction_parameter(self) -> float:
+    def solvent_fraction_parameter(self) -> Parameter:
         """Get parameter for the fraction of the layer occupied by the solvent."""
         return self.material.solvent_fraction_parameter
 
     @property
-    def solvent_fraction(self) -> float:
-        """Get the fraction of the layer occupied by the solvent.
-
-        This could be a result of either water solvating the molecule, or incomplete surface coverage of the molecules.
-        """
+    def solvent_fraction(self) -> Parameter:
+        """The Parameter for the fraction of the layer occupied by the solvent."""
         return self.material.solvent_fraction
 
     @solvent_fraction.setter
-    def solvent_fraction(self, solvent_fraction: float) -> None:
-        """Set the fraction of the layer occupied by the solvent.
-
-        This could be a result of either water solvating the molecule, or incomplete surface coverage of the molecules.
-
-        Parameters
-        ----------
-        solvent_fraction : float
-            Fraction of layer described by the solvent.
-        """
-        self.material.solvent_fraction = solvent_fraction
+    def solvent_fraction(self, value: float) -> None:
+        self.material.solvent_fraction = value
 
     @property
     def molecular_formula(self) -> str:
@@ -267,16 +298,8 @@ class LayerAreaPerMolecule(Layer):
 
     @molecular_formula.setter
     def molecular_formula(self, formula_string: str) -> None:
-        """Set the formula of the molecule in the material.
-
-        Parameters
-        ----------
-        formula_string : str
-            String that defines the molecular formula.
-        """
         self._molecular_formula = formula_string
         scattering_length = neutron_scattering_length(formula_string)
-        # The molecule is also being updated through the constraints
         self._scattering_length_real.value = scattering_length.real
         self._scattering_length_imag.value = scattering_length.imag
 
@@ -285,30 +308,8 @@ class LayerAreaPerMolecule(Layer):
 
     @property
     def _dict_repr(self) -> dict[str, str]:
-        """Dictionary representation of the `area_per_molecule` object.
-
-        Produces a simple dictionary.
-        """
+        """Dictionary representation of the `area_per_molecule` object."""
         dict_repr = super()._dict_repr
         dict_repr['molecular_formula'] = self._molecular_formula
-        dict_repr['area_per_molecule'] = f'{self.area_per_molecule:.2f} {self._area_per_molecule.unit}'
+        dict_repr['area_per_molecule'] = f'{self._area_per_molecule.value:.2f} {self._area_per_molecule.unit}'
         return dict_repr
-
-    def as_dict(self, skip: Optional[list[str]] = None) -> dict[str, str]:
-        """Produces a cleaned dict using a custom as_dict method to skip necessary things.
-
-        The resulting dict matches the parameters in __init__
-
-        Parameters
-        ----------
-        skip : Optional[list[str]], optional
-            List of keys to skip. By default, None.
-        """
-        this_dict = super().as_dict(skip=skip)
-        this_dict['solvent_fraction'] = self.material._fraction.as_dict(skip=skip)
-        this_dict['area_per_molecule'] = self._area_per_molecule.as_dict(skip=skip)
-        this_dict['solvent'] = self.solvent.as_dict(skip=skip)
-        del this_dict['material']
-        del this_dict['_scattering_length_real']
-        del this_dict['_scattering_length_imag']
-        return this_dict

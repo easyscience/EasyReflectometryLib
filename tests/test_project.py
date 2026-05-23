@@ -377,11 +377,13 @@ class TestProject:
         keys.sort()
         assert keys == [
             'calculator',
+            'file_format',
             'fitter_minimizer',
             'info',
             'models',
             'with_experiments',
         ]
+        assert project_dict['file_format'] == Project.FILE_FORMAT
         assert project_dict['info'] == {
             'name': 'DefaultEasyReflectometryProject',
             'short_description': 'Reflectometry, 1D',

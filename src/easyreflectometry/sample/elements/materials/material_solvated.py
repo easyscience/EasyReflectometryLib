@@ -72,6 +72,7 @@ class MaterialSolvated(MaterialMixture):
             material_b=solvent,
             fraction=solvent_fraction,
             name=name,
+            unique_name=unique_name,
             interface=interface,
         )
         if name is None:
@@ -84,13 +85,7 @@ class MaterialSolvated(MaterialMixture):
 
     @material.setter
     def material(self, new_material: Material) -> None:
-        """Set the material.
-
-        Parameters
-        ----------
-        new_material : Material
-            Matrerial to be useed.
-        """
+        """Set the material."""
         self.material_a = new_material
 
     @property
@@ -100,13 +95,7 @@ class MaterialSolvated(MaterialMixture):
 
     @solvent.setter
     def solvent(self, new_solvent: Material) -> None:
-        """Set the solvent.
-
-        Parameters
-        ----------
-        new_solvent : Material
-            Solvent to be used.
-        """
+        """Set the solvent."""
         self.material_b = new_solvent
 
     @property
@@ -115,38 +104,57 @@ class MaterialSolvated(MaterialMixture):
         return self._fraction
 
     @property
-    def solvent_fraction(self) -> float:
-        """Get the fraction of layer described by the solvent.
+    def solvent_fraction(self) -> Parameter:
+        """The Parameter for the fraction of the layer described by the solvent.
 
-        This might be fraction of:
-        Solvation where solvent is within the layer
-        Patches of solvent in the layer where no material is present.
+        This might be the fraction of:
+        - solvation where solvent is within the layer, or
+        - patches of solvent in the layer where no material is present.
         """
-        return self.fraction
+        return self._fraction
 
     @solvent_fraction.setter
     def solvent_fraction(self, solvent_fraction: float) -> None:
-        """Set the fraction of layer covered by the material.
-
-        This might be fraction of:
-        Solvation where solvent is within the layer
-        Patches of solvent in the layer where no material is present.
-
-        Parameters
-        ----------
-        solvent_fraction : float
-            Fraction of layer described by the solvent.
-        """
-        try:
-            self.fraction = solvent_fraction
-            if solvent_fraction < 0 or solvent_fraction > 1:
-                raise ValueError('solvent_fraction must be between 0 and 1')
-        except ValueError:
+        """Set the fraction of layer covered by the material."""
+        if not isinstance(solvent_fraction, (int, float)):
             raise ValueError('solvent_fraction must be a float between 0 and 1')
+        if solvent_fraction < 0 or solvent_fraction > 1:
+            raise ValueError('solvent_fraction must be between 0 and 1')
+        self._fraction.value = solvent_fraction
 
     def _update_name(self) -> None:
         """Update name."""
         self.name = self._material_a.name + ' in ' + self._material_b.name
+
+    # ----- deserialization -----
+
+    @classmethod
+    def from_dict(cls, obj_dict: dict) -> 'MaterialSolvated':
+        """Re-route the saved ``solvent_fraction`` Parameter onto ``_fraction``.
+
+        :class:`ModelBase.from_dict` writes the saved Parameter to
+        ``_solvent_fraction`` because that's the constructor-arg name, but
+        the live `solvent_fraction` property returns ``self._fraction``
+        (the field MaterialMixture maintains). Without this override the
+        saved fit metadata (fixed/bounds/etc.) is stranded on the unused
+        ``_solvent_fraction`` attribute and the active parameter keeps the
+        defaults from `__init__`.
+
+        Also re-runs `_materials_constraints` so the parent MaterialMixture's
+        mixed `_sld` / `_isld` depend on the live `_fraction`, not the
+        temporary Parameter created from the float kwarg.
+        """
+        instance = super().from_dict(obj_dict)
+        saved = instance.__dict__.pop('_solvent_fraction', None)
+        if saved is not None:
+            old = instance._fraction
+            instance._fraction = saved
+            try:
+                instance._global_object.map.prune(old.unique_name)
+            except (AttributeError, KeyError):
+                pass
+            instance._materials_constraints()
+        return instance
 
     # Representation
     @property
@@ -161,28 +169,3 @@ class MaterialSolvated(MaterialMixture):
                 'solvent': self.solvent._dict_repr,
             }
         }
-
-    def as_dict(self, skip: Optional[list[str]] = None) -> dict[str, str]:
-        """Produces a cleaned dict using a custom as_dict method to skip necessary things.
-
-        The resulting dict matches the parameters in __init__
-
-        Parameters
-        ----------
-        skip : Optional[list[str]], optional
-            List of keys to skip. By default, None.
-        """
-        this_dict = super().as_dict(skip=skip)
-        this_dict['material'] = self.material.as_dict(skip=skip)
-        this_dict['solvent'] = self.solvent.as_dict(skip=skip)
-        this_dict['solvent_fraction'] = self._fraction.as_dict(skip=skip)
-        # Property and protected varible from material_mixture
-        del this_dict['material_a']
-        del this_dict['_material_a']
-        # Property and protected varible from material_mixture
-        del this_dict['material_b']
-        del this_dict['_material_b']
-        # Property and protected varible from material_mixture
-        del this_dict['fraction']
-        del this_dict['_fraction']
-        return this_dict

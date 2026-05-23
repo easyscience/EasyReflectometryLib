@@ -62,7 +62,13 @@ class Multilayer(BaseAssembly):
         # Else collisions might occur in global_object.map
         self.populate_if_none = False
 
-        super().__init__(name, unique_name=unique_name, layers=layers, type=type, interface=interface)
+        super().__init__(
+            name=name,
+            type=type,
+            interface=interface,
+            layers=layers,
+            unique_name=unique_name,
+        )
 
     def add_layer(self, *layers: tuple[Layer]) -> None:
         """Add a layer to the multi layer.

@@ -30,7 +30,7 @@ class MaterialCollection(BaseCollection):
         **kwargs,
     ):
         """Init function."""
-        if not materials:  # Empty tuple if no materials are provided
+        if not materials:
             if populate_if_none:
                 materials = DEFAULT_ELEMENTS(interface)
             else:
@@ -39,8 +39,9 @@ class MaterialCollection(BaseCollection):
         super().__init__(
             name,
             interface,
-            unique_name=unique_name,
             *materials,
+            unique_name=unique_name,
+            populate_if_none=False,
             **kwargs,
         )
 

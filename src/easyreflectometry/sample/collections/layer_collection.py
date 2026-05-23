@@ -15,14 +15,21 @@ class LayerCollection(BaseCollection):
         name: str = 'EasyLayerCollection',
         interface=None,
         unique_name: Optional[str] = None,
-        populate_if_none: bool = True,  # Needed to match as_dict signature from BaseCollection
+        populate_if_none: bool = True,
         **kwargs,
     ):
         """Init function."""
         if not layers:
             layers = []
 
-        super().__init__(name, interface, unique_name=unique_name, *layers, **kwargs)
+        super().__init__(
+            name,
+            interface,
+            *layers,
+            unique_name=unique_name,
+            populate_if_none=populate_if_none,
+            **kwargs,
+        )
 
     def add_layer(self, layer: Optional[Layer] = None):
         """Add a layer to the collection.

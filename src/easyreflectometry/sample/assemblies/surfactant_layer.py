@@ -57,7 +57,6 @@ class SurfactantLayer(BaseAssembly):
         interface :
             Calculator interface. By default, None.
         """
-        # We need to generate a unique name to create the nested objects
         if unique_name is None:
             unique_name = global_object.generate_unique_name(self.__class__.__name__)
 
@@ -114,11 +113,13 @@ class SurfactantLayer(BaseAssembly):
             interface=interface,
         )
 
-        self.interface = interface
         self.conformal = False
 
+        if constrain_area_per_molecule:
+            self.constrain_area_per_molecule = True
         if conformal_roughness:
             self._enable_roughness_constraints()
+            self.conformal = True
 
     @property
     def tail_layer(self) -> Optional[LayerAreaPerMolecule]:
@@ -276,20 +277,13 @@ class SurfactantLayer(BaseAssembly):
             }
         }
 
-    def as_dict(self, skip: Optional[list[str]] = None) -> dict:
-        """Produces a cleaned dict using a custom as_dict method to skip necessary things.
-
-        The resulting dict matches the parameters in __init__
-
-        Parameters
-        ----------
-        skip : Optional[list[str]], optional
-            List of keys to skip. By default, None.
+    def to_dict(self, skip: Optional[list[str]] = None) -> dict:
+        """Serialize, dropping the derived ``layers`` field (it is rebuilt
+        from ``tail_layer`` and ``head_layer`` in ``__init__``).
         """
-        this_dict = super().as_dict(skip=skip)
-        this_dict['tail_layer'] = self.tail_layer.as_dict(skip=skip)
-        this_dict['head_layer'] = self.head_layer.as_dict(skip=skip)
-        this_dict['constrain_area_per_molecule'] = self.constrain_area_per_molecule
-        this_dict['conformal_roughness'] = self.conformal_roughness
-        del this_dict['layers']
+        this_dict = super().to_dict(skip=skip)
+        this_dict.pop('layers', None)
         return this_dict
+
+    def as_dict(self, skip: Optional[list[str]] = None) -> dict:
+        return self.to_dict(skip=skip)

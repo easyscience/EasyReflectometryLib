@@ -160,7 +160,7 @@ class TestBaseCollection:
         p.append(Layer(name='layer_4'))
 
         # Then
-        p.remove(1)
+        p.remove_at(1)
 
         # Then
         assert len(p) == 3

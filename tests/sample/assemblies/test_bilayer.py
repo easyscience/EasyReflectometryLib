@@ -119,7 +119,7 @@ class TestBilayer:
 
         # Initial values should match
         assert p.front_tail_layer.thickness.value == p.back_tail_layer.thickness.value
-        assert p.front_tail_layer.area_per_molecule == p.back_tail_layer.area_per_molecule
+        assert p.front_tail_layer.area_per_molecule.value == p.back_tail_layer.area_per_molecule.value
 
         # Change front tail thickness - back tail should follow
         p.front_tail_layer.thickness.value = 20.0
@@ -128,8 +128,8 @@ class TestBilayer:
 
         # Change front tail area per molecule - back tail should follow
         p.front_tail_layer.area_per_molecule = 55.0
-        assert p.front_tail_layer.area_per_molecule == 55.0
-        assert p.back_tail_layer.area_per_molecule == 55.0
+        assert p.front_tail_layer.area_per_molecule.value == 55.0
+        assert p.back_tail_layer.area_per_molecule.value == 55.0
 
     def test_constrain_heads_enabled(self):
         """Test head thickness/area constraint when enabled."""
@@ -142,8 +142,8 @@ class TestBilayer:
 
         # Change front head area per molecule - back head should follow
         p.front_head_layer.area_per_molecule = 60.0
-        assert p.front_head_layer.area_per_molecule == 60.0
-        assert p.back_head_layer.area_per_molecule == 60.0
+        assert p.front_head_layer.area_per_molecule.value == 60.0
+        assert p.back_head_layer.area_per_molecule.value == 60.0
 
     def test_constrain_heads_disabled(self):
         """Test heads are independent when constraint disabled."""
@@ -190,8 +190,8 @@ class TestBilayer:
         p.back_head_layer.solvent_fraction = 0.5
 
         # They should remain independent
-        assert p.front_head_layer.solvent_fraction == 0.3
-        assert p.back_head_layer.solvent_fraction == 0.5
+        assert p.front_head_layer.solvent_fraction.value == 0.3
+        assert p.back_head_layer.solvent_fraction.value == 0.5
 
     def test_conformal_roughness_enabled(self):
         """Test all roughnesses are linked when conformal roughness enabled."""

@@ -41,31 +41,31 @@ class TestSurfactantLayer:
         assert p.tail_layer.molecular_formula == 'C8O10H12P'
         assert p.tail_layer.thickness.value == 12
         assert p.tail_layer.solvent.as_dict() == h2o.as_dict()
-        assert p.tail_layer.solvent_fraction == 0.5
-        assert p.tail_layer.area_per_molecule == 50
+        assert p.tail_layer.solvent_fraction.value == 0.5
+        assert p.tail_layer.area_per_molecule.value == 50
         assert p.tail_layer.roughness.value == 2
         assert p.layers[1].name == 'A Test Head Layer'
         assert p.head_layer.name == 'A Test Head Layer'
         assert p.head_layer.molecular_formula == 'C10H24'
         assert p.head_layer.thickness.value == 10
         assert p.head_layer.solvent.as_dict() == noth2o.as_dict()
-        assert p.head_layer.solvent_fraction == 0.2
-        assert p.head_layer.area_per_molecule == 40
+        assert p.head_layer.solvent_fraction.value == 0.2
+        assert p.head_layer.area_per_molecule.value == 40
         assert p.name == 'A Test'
 
     def test_constraint_area_per_molecule(self):
         p = SurfactantLayer()
         p.tail_layer._area_per_molecule.value = 30
-        assert p.tail_layer.area_per_molecule == 30.0
-        assert p.head_layer.area_per_molecule == 48.2
+        assert p.tail_layer.area_per_molecule.value == 30.0
+        assert p.head_layer.area_per_molecule.value == 48.2
         assert p.constrain_area_per_molecule is False
         p.constrain_area_per_molecule = True
-        assert p.tail_layer.area_per_molecule == 30
-        assert p.head_layer.area_per_molecule == 30
+        assert p.tail_layer.area_per_molecule.value == 30
+        assert p.head_layer.area_per_molecule.value == 30
         assert p.constrain_area_per_molecule is True
         p.tail_layer._area_per_molecule.value = 40
-        assert p.tail_layer.area_per_molecule == 40
-        assert p.head_layer.area_per_molecule == 40
+        assert p.tail_layer.area_per_molecule.value == 40
+        assert p.head_layer.area_per_molecule.value == 40
 
     def test_conformal_roughness(self):
         p = SurfactantLayer()

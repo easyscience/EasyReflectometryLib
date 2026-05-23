@@ -143,7 +143,6 @@ class Bilayer(BaseAssembly):
             interface=interface,
         )
 
-        self.interface = interface
         self._conformal_roughness = False
         self._constrain_heads = False
         self._tail_constraints_setup = False
@@ -271,8 +270,8 @@ class Bilayer(BaseAssembly):
             molecular_formula=front_tail_layer.molecular_formula,
             thickness=front_tail_layer.thickness.value,
             solvent=solvent,
-            solvent_fraction=front_tail_layer.solvent_fraction,
-            area_per_molecule=front_tail_layer.area_per_molecule,
+            solvent_fraction=front_tail_layer.solvent_fraction.value,
+            area_per_molecule=front_tail_layer.area_per_molecule.value,
             roughness=front_tail_layer.roughness.value,
             name=front_tail_layer.name + ' Back',
             unique_name=unique_name + '_LayerAreaPerMoleculeBackTail',
@@ -534,21 +533,17 @@ class Bilayer(BaseAssembly):
             }
         }
 
-    def as_dict(self, skip: list[str] | None = None) -> dict:
-        """Produce a cleaned dict using a custom as_dict method.
+    def to_dict(self, skip: list[str] | None = None) -> dict:
+        """Serialize, dropping derived fields.
 
-        The resulting dict matches the parameters in __init__
-
-        Parameters
-        ----------
-        skip : list[str] | None, optional
-            List of keys to skip. By default, None.
+        The `back_tail_layer` and the underlying `layers` collection are
+        derived in ``__init__`` from the front head / front tail / back head
+        constructor arguments, so they are not part of the persisted state.
         """
-        this_dict = super().as_dict(skip=skip)
-        this_dict['front_head_layer'] = self.front_head_layer.as_dict(skip=skip)
-        this_dict['front_tail_layer'] = self.front_tail_layer.as_dict(skip=skip)
-        this_dict['back_head_layer'] = self.back_head_layer.as_dict(skip=skip)
-        this_dict['constrain_heads'] = self.constrain_heads
-        this_dict['conformal_roughness'] = self.conformal_roughness
-        del this_dict['layers']
+        this_dict = super().to_dict(skip=skip)
+        this_dict.pop('layers', None)
         return this_dict
+
+    def as_dict(self, skip: list[str] | None = None) -> dict:
+        """Compatibility alias for :meth:`to_dict`."""
+        return self.to_dict(skip=skip)

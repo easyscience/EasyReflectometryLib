@@ -37,10 +37,6 @@ DEFAULTS = {
 
 
 class Material(BaseCore):
-    # Added in super().__init__
-    sld: Parameter
-    isld: Parameter
-
     def __init__(
         self,
         sld: Union[Parameter, float, None] = None,
@@ -83,13 +79,28 @@ class Material(BaseCore):
         )
         apply_default_limits(isld, 'isld')
 
-        super().__init__(
-            name=name,
-            sld=sld,
-            isld=isld,
-            interface=interface,
-            unique_name=unique_name,
-        )
+        super().__init__(name=name, unique_name=unique_name)
+        self._sld = sld
+        self._isld = isld
+
+        if interface is not None:
+            self.interface = interface
+
+    @property
+    def sld(self) -> Parameter:
+        return self._sld
+
+    @sld.setter
+    def sld(self, value: float) -> None:
+        self._sld.value = value
+
+    @property
+    def isld(self) -> Parameter:
+        return self._isld
+
+    @isld.setter
+    def isld(self, value: float) -> None:
+        self._isld.value = value
 
     # Representation
     @property
@@ -97,7 +108,7 @@ class Material(BaseCore):
         """A simplified dict representation."""
         return {
             self.name: {
-                'sld': f'{self.sld.value:.3f}e-6 {self.sld.unit}',
-                'isld': f'{self.isld.value:.3f}e-6 {self.isld.unit}',
+                'sld': f'{self._sld.value:.3f}e-6 {self._sld.unit}',
+                'isld': f'{self._isld.value:.3f}e-6 {self._isld.unit}',
             }
         }
