@@ -137,22 +137,18 @@ class LayerAreaPerMolecule(Layer):
             unique_name_prefix=f'{unique_name}_Isl',
         )
 
-        # Constrain molecule.sld via scattering length / (thickness * area_per_molecule)
-        dependency_expression = 'scattering_length / (thickness * area_per_molecule) * 1e6'
-        dependency_map = {
-            'scattering_length': scattering_length_real,
-            'thickness': thickness,
-            'area_per_molecule': area_per_molecule_param,
-        }
-        molecule_material.sld.make_dependent_on(dependency_expression=dependency_expression, dependency_map=dependency_map)
-
-        # Same dependency under short variable names
+        # Constrain molecule.sld / .isld to scattering_length / (thickness * area_per_molecule).
+        # `_setup_sld_constraints` rebuilds the same expression after from_dict, so keep the
+        # variable names (`a`, `b`, `p`) consistent with that path.
         dependency_expression = 'a / (b*p) * 1e6'
-        dependency_map = {'a': scattering_length_real, 'b': thickness, 'p': area_per_molecule_param}
-        molecule_material.sld.make_dependent_on(dependency_expression=dependency_expression, dependency_map=dependency_map)
-
-        dependency_map = {'a': scattering_length_imag, 'b': thickness, 'p': area_per_molecule_param}
-        molecule_material.isld.make_dependent_on(dependency_expression=dependency_expression, dependency_map=dependency_map)
+        molecule_material.sld.make_dependent_on(
+            dependency_expression=dependency_expression,
+            dependency_map={'a': scattering_length_real, 'b': thickness, 'p': area_per_molecule_param},
+        )
+        molecule_material.isld.make_dependent_on(
+            dependency_expression=dependency_expression,
+            dependency_map={'a': scattering_length_imag, 'b': thickness, 'p': area_per_molecule_param},
+        )
 
         solvated_molecule_material = MaterialSolvated(
             material=molecule_material,
