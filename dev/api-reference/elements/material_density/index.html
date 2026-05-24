@@ -1926,10 +1926,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#easyreflectometry.sample.elements.materials.material_density.MaterialDensity.as_dict" class="md-nav__link">
+  <a href="#easyreflectometry.sample.elements.materials.material_density.MaterialDensity.from_dict" class="md-nav__link">
     <span class="md-ellipsis">
       
-        as_dict
+        from_dict
       
     </span>
   </a>
@@ -2179,10 +2179,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#easyreflectometry.sample.elements.materials.material_density.MaterialDensity.as_dict" class="md-nav__link">
+  <a href="#easyreflectometry.sample.elements.materials.material_density.MaterialDensity.from_dict" class="md-nav__link">
     <span class="md-ellipsis">
       
-        as_dict
+        from_dict
       
     </span>
   </a>
@@ -2390,11 +2390,18 @@
 <span class="normal">100</span>
 <span class="normal">101</span>
 <span class="normal">102</span>
-<span class="normal">103</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">Material</span><span class="p">(</span><span class="n">BaseCore</span><span class="p">):</span>
-    <span class="c1"># Added in super().__init__</span>
-    <span class="n">sld</span><span class="p">:</span> <span class="n">Parameter</span>
-    <span class="n">isld</span><span class="p">:</span> <span class="n">Parameter</span>
-
+<span class="normal">103</span>
+<span class="normal">104</span>
+<span class="normal">105</span>
+<span class="normal">106</span>
+<span class="normal">107</span>
+<span class="normal">108</span>
+<span class="normal">109</span>
+<span class="normal">110</span>
+<span class="normal">111</span>
+<span class="normal">112</span>
+<span class="normal">113</span>
+<span class="normal">114</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">Material</span><span class="p">(</span><span class="n">BaseCore</span><span class="p">):</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">sld</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Parameter</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -2437,13 +2444,28 @@
         <span class="p">)</span>
         <span class="n">apply_default_limits</span><span class="p">(</span><span class="n">isld</span><span class="p">,</span> <span class="s1">&#39;isld&#39;</span><span class="p">)</span>
 
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
-            <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
-            <span class="n">sld</span><span class="o">=</span><span class="n">sld</span><span class="p">,</span>
-            <span class="n">isld</span><span class="o">=</span><span class="n">isld</span><span class="p">,</span>
-            <span class="n">interface</span><span class="o">=</span><span class="n">interface</span><span class="p">,</span>
-            <span class="n">unique_name</span><span class="o">=</span><span class="n">unique_name</span><span class="p">,</span>
-        <span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">unique_name</span><span class="o">=</span><span class="n">unique_name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sld</span> <span class="o">=</span> <span class="n">sld</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_isld</span> <span class="o">=</span> <span class="n">isld</span>
+
+        <span class="k">if</span> <span class="n">interface</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">interface</span> <span class="o">=</span> <span class="n">interface</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sld</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Parameter</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sld</span>
+
+    <span class="nd">@sld</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sld</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sld</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">isld</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Parameter</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_isld</span>
+
+    <span class="nd">@isld</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">isld</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_isld</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">value</span>
 
     <span class="c1"># Representation</span>
     <span class="nd">@property</span>
@@ -2451,8 +2473,8 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;A simplified dict representation.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="p">{</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s1">&#39;sld&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sld</span><span class="o">.</span><span class="n">value</span><span class="si">:</span><span class="s1">.3f</span><span class="si">}</span><span class="s1">e-6 </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sld</span><span class="o">.</span><span class="n">unit</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
-                <span class="s1">&#39;isld&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">isld</span><span class="o">.</span><span class="n">value</span><span class="si">:</span><span class="s1">.3f</span><span class="si">}</span><span class="s1">e-6 </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">isld</span><span class="o">.</span><span class="n">unit</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;sld&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_sld</span><span class="o">.</span><span class="n">value</span><span class="si">:</span><span class="s1">.3f</span><span class="si">}</span><span class="s1">e-6 </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_sld</span><span class="o">.</span><span class="n">unit</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;isld&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_isld</span><span class="o">.</span><span class="n">value</span><span class="si">:</span><span class="s1">.3f</span><span class="si">}</span><span class="s1">e-6 </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_isld</span><span class="o">.</span><span class="n">unit</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
             <span class="p">}</span>
         <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
@@ -2599,7 +2621,11 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/easyreflectometry/sample/elements/materials/material.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">44</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">40</span>
+<span class="normal">41</span>
+<span class="normal">42</span>
+<span class="normal">43</span>
+<span class="normal">44</span>
 <span class="normal">45</span>
 <span class="normal">46</span>
 <span class="normal">47</span>
@@ -2642,12 +2668,7 @@
 <span class="normal">84</span>
 <span class="normal">85</span>
 <span class="normal">86</span>
-<span class="normal">87</span>
-<span class="normal">88</span>
-<span class="normal">89</span>
-<span class="normal">90</span>
-<span class="normal">91</span>
-<span class="normal">92</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+<span class="normal">87</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">sld</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Parameter</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">isld</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Parameter</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -2689,13 +2710,12 @@
     <span class="p">)</span>
     <span class="n">apply_default_limits</span><span class="p">(</span><span class="n">isld</span><span class="p">,</span> <span class="s1">&#39;isld&#39;</span><span class="p">)</span>
 
-    <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
-        <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
-        <span class="n">sld</span><span class="o">=</span><span class="n">sld</span><span class="p">,</span>
-        <span class="n">isld</span><span class="o">=</span><span class="n">isld</span><span class="p">,</span>
-        <span class="n">interface</span><span class="o">=</span><span class="n">interface</span><span class="p">,</span>
-        <span class="n">unique_name</span><span class="o">=</span><span class="n">unique_name</span><span class="p">,</span>
-    <span class="p">)</span>
+    <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">unique_name</span><span class="o">=</span><span class="n">unique_name</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_sld</span> <span class="o">=</span> <span class="n">sld</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_isld</span> <span class="o">=</span> <span class="n">isld</span>
+
+    <span class="k">if</span> <span class="n">interface</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">interface</span> <span class="o">=</span> <span class="n">interface</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -2873,13 +2893,46 @@
 <span class="normal">177</span>
 <span class="normal">178</span>
 <span class="normal">179</span>
-<span class="normal">180</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">MaterialDensity</span><span class="p">(</span><span class="n">Material</span><span class="p">):</span>
-    <span class="c1"># Added in __init__</span>
-    <span class="n">scattering_length_real</span><span class="p">:</span> <span class="n">Parameter</span>
-    <span class="n">scattering_length_imag</span><span class="p">:</span> <span class="n">Parameter</span>
-    <span class="n">molecular_weight</span><span class="p">:</span> <span class="n">Parameter</span>
-    <span class="n">density</span><span class="p">:</span> <span class="n">Parameter</span>
-
+<span class="normal">180</span>
+<span class="normal">181</span>
+<span class="normal">182</span>
+<span class="normal">183</span>
+<span class="normal">184</span>
+<span class="normal">185</span>
+<span class="normal">186</span>
+<span class="normal">187</span>
+<span class="normal">188</span>
+<span class="normal">189</span>
+<span class="normal">190</span>
+<span class="normal">191</span>
+<span class="normal">192</span>
+<span class="normal">193</span>
+<span class="normal">194</span>
+<span class="normal">195</span>
+<span class="normal">196</span>
+<span class="normal">197</span>
+<span class="normal">198</span>
+<span class="normal">199</span>
+<span class="normal">200</span>
+<span class="normal">201</span>
+<span class="normal">202</span>
+<span class="normal">203</span>
+<span class="normal">204</span>
+<span class="normal">205</span>
+<span class="normal">206</span>
+<span class="normal">207</span>
+<span class="normal">208</span>
+<span class="normal">209</span>
+<span class="normal">210</span>
+<span class="normal">211</span>
+<span class="normal">212</span>
+<span class="normal">213</span>
+<span class="normal">214</span>
+<span class="normal">215</span>
+<span class="normal">216</span>
+<span class="normal">217</span>
+<span class="normal">218</span>
+<span class="normal">219</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">MaterialDensity</span><span class="p">(</span><span class="n">Material</span><span class="p">):</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">chemical_structure</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -2956,14 +3009,59 @@
         <span class="n">dependency_map</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;d&#39;</span><span class="p">:</span> <span class="n">density</span><span class="p">,</span> <span class="s1">&#39;sl&#39;</span><span class="p">:</span> <span class="n">scattering_length_imag</span><span class="p">,</span> <span class="s1">&#39;mw&#39;</span><span class="p">:</span> <span class="n">mw</span><span class="p">}</span>
         <span class="n">isld</span><span class="o">.</span><span class="n">make_dependent_on</span><span class="p">(</span><span class="n">dependency_expression</span><span class="o">=</span><span class="n">dependency_expression</span><span class="p">,</span> <span class="n">dependency_map</span><span class="o">=</span><span class="n">dependency_map</span><span class="p">)</span>
 
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">sld</span><span class="p">,</span> <span class="n">isld</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">interface</span><span class="o">=</span><span class="n">interface</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">sld</span><span class="o">=</span><span class="n">sld</span><span class="p">,</span> <span class="n">isld</span><span class="o">=</span><span class="n">isld</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">unique_name</span><span class="o">=</span><span class="n">unique_name</span><span class="p">,</span> <span class="n">interface</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_add_component</span><span class="p">(</span><span class="s1">&#39;scattering_length_real&#39;</span><span class="p">,</span> <span class="n">scattering_length_real</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_add_component</span><span class="p">(</span><span class="s1">&#39;scattering_length_imag&#39;</span><span class="p">,</span> <span class="n">scattering_length_imag</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_add_component</span><span class="p">(</span><span class="s1">&#39;molecular_weight&#39;</span><span class="p">,</span> <span class="n">mw</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_add_component</span><span class="p">(</span><span class="s1">&#39;density&#39;</span><span class="p">,</span> <span class="n">density</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_scattering_length_real</span> <span class="o">=</span> <span class="n">scattering_length_real</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_scattering_length_imag</span> <span class="o">=</span> <span class="n">scattering_length_imag</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_molecular_weight</span> <span class="o">=</span> <span class="n">mw</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_density</span> <span class="o">=</span> <span class="n">density</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_chemical_structure</span> <span class="o">=</span> <span class="n">chemical_structure</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">interface</span> <span class="o">=</span> <span class="n">interface</span>
+
+        <span class="k">if</span> <span class="n">interface</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">interface</span> <span class="o">=</span> <span class="n">interface</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_setup_sld_constraints</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Wire the derived `sld` / `isld` to depend on the current density and</span>
+<span class="sd">        scattering-length Parameters.</span>
+
+<span class="sd">        Idempotent — invoked once from `__init__` and again from `from_dict`</span>
+<span class="sd">        after :class:`ModelBase` has swapped in the saved Parameter objects.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">derived</span> <span class="ow">in</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_sld</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_isld</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">derived</span><span class="o">.</span><span class="n">independent</span><span class="p">:</span>
+                <span class="n">derived</span><span class="o">.</span><span class="n">make_independent</span><span class="p">()</span>
+
+        <span class="n">dependency_expression</span> <span class="o">=</span> <span class="s1">&#39;1e-23*(0.602214076e6 * d * sl) / mw&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sld</span><span class="o">.</span><span class="n">make_dependent_on</span><span class="p">(</span>
+            <span class="n">dependency_expression</span><span class="o">=</span><span class="n">dependency_expression</span><span class="p">,</span>
+            <span class="n">dependency_map</span><span class="o">=</span><span class="p">{</span>
+                <span class="s1">&#39;d&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_density</span><span class="p">,</span>
+                <span class="s1">&#39;sl&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scattering_length_real</span><span class="p">,</span>
+                <span class="s1">&#39;mw&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_molecular_weight</span><span class="p">,</span>
+            <span class="p">},</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_isld</span><span class="o">.</span><span class="n">make_dependent_on</span><span class="p">(</span>
+            <span class="n">dependency_expression</span><span class="o">=</span><span class="n">dependency_expression</span><span class="p">,</span>
+            <span class="n">dependency_map</span><span class="o">=</span><span class="p">{</span>
+                <span class="s1">&#39;d&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_density</span><span class="p">,</span>
+                <span class="s1">&#39;sl&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scattering_length_imag</span><span class="p">,</span>
+                <span class="s1">&#39;mw&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_molecular_weight</span><span class="p">,</span>
+            <span class="p">},</span>
+        <span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_dict</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">obj_dict</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;MaterialDensity&#39;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Re-attach sld/isld dependencies after deserialization.</span>
+
+<span class="sd">        :class:`ModelBase.from_dict` re-points `self._density` at the</span>
+<span class="sd">        deserialized Parameter (because `density` is a constructor argument);</span>
+<span class="sd">        the constraint graph built in `__init__` still references the</span>
+<span class="sd">        temporary Parameter created from the float kwarg. Rebuild here so</span>
+<span class="sd">        `q.density = X` propagates to the derived SLDs.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">instance</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">obj_dict</span><span class="p">)</span>
+        <span class="n">instance</span><span class="o">.</span><span class="n">_setup_sld_constraints</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">instance</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">chemical_structure</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
@@ -2981,8 +3079,28 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_chemical_structure</span> <span class="o">=</span> <span class="n">structure_string</span>
         <span class="n">scattering_length</span> <span class="o">=</span> <span class="n">neutron_scattering_length</span><span class="p">(</span><span class="n">structure_string</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">scattering_length_real</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">scattering_length</span><span class="o">.</span><span class="n">real</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">scattering_length_imag</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">scattering_length</span><span class="o">.</span><span class="n">imag</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_scattering_length_real</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">scattering_length</span><span class="o">.</span><span class="n">real</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_scattering_length_imag</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">scattering_length</span><span class="o">.</span><span class="n">imag</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">density</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Parameter</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_density</span>
+
+    <span class="nd">@density</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">density</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_density</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">molecular_weight</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Parameter</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_molecular_weight</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">scattering_length_real</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Parameter</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scattering_length_real</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">scattering_length_imag</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Parameter</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scattering_length_imag</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_dict_repr</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
@@ -2991,26 +3109,6 @@
         <span class="n">mat_dict</span><span class="p">[</span><span class="s1">&#39;chemical_structure&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_chemical_structure</span>
         <span class="n">mat_dict</span><span class="p">[</span><span class="s1">&#39;density&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">density</span><span class="o">.</span><span class="n">value</span><span class="si">:</span><span class="s1">.2e</span><span class="si">}</span><span class="s1"> </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">density</span><span class="o">.</span><span class="n">unit</span><span class="si">}</span><span class="s1">&#39;</span>
         <span class="k">return</span> <span class="n">mat_dict</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">as_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">skip</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="p">[])</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Produces a cleaned dict using a custom as_dict method to skip necessary things.</span>
-
-<span class="sd">        The resulting dict matches the parameters in __init__</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        skip : list, optional</span>
-<span class="sd">            List of keys to skip. By default, [].</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">this_dict</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">as_dict</span><span class="p">(</span><span class="n">skip</span><span class="o">=</span><span class="n">skip</span><span class="p">)</span>
-        <span class="c1"># From Material</span>
-        <span class="k">del</span> <span class="n">this_dict</span><span class="p">[</span><span class="s1">&#39;sld&#39;</span><span class="p">]</span>
-        <span class="k">del</span> <span class="n">this_dict</span><span class="p">[</span><span class="s1">&#39;isld&#39;</span><span class="p">]</span>
-        <span class="c1"># Determined in __init__</span>
-        <span class="k">del</span> <span class="n">this_dict</span><span class="p">[</span><span class="s1">&#39;scattering_length_real&#39;</span><span class="p">]</span>
-        <span class="k">del</span> <span class="n">this_dict</span><span class="p">[</span><span class="s1">&#39;scattering_length_imag&#39;</span><span class="p">]</span>
-        <span class="k">del</span> <span class="n">this_dict</span><span class="p">[</span><span class="s1">&#39;molecular_weight&#39;</span><span class="p">]</span>
-        <span class="k">return</span> <span class="n">this_dict</span>
 </code></pre></div></td></tr></table></div>
               </details>
 
@@ -3181,7 +3279,13 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/easyreflectometry/sample/elements/materials/material_density.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 50</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 44</span>
+<span class="normal"> 45</span>
+<span class="normal"> 46</span>
+<span class="normal"> 47</span>
+<span class="normal"> 48</span>
+<span class="normal"> 49</span>
+<span class="normal"> 50</span>
 <span class="normal"> 51</span>
 <span class="normal"> 52</span>
 <span class="normal"> 53</span>
@@ -3260,11 +3364,7 @@
 <span class="normal">126</span>
 <span class="normal">127</span>
 <span class="normal">128</span>
-<span class="normal">129</span>
-<span class="normal">130</span>
-<span class="normal">131</span>
-<span class="normal">132</span>
-<span class="normal">133</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+<span class="normal">129</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">chemical_structure</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">density</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Parameter</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -3340,14 +3440,16 @@
     <span class="n">dependency_map</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;d&#39;</span><span class="p">:</span> <span class="n">density</span><span class="p">,</span> <span class="s1">&#39;sl&#39;</span><span class="p">:</span> <span class="n">scattering_length_imag</span><span class="p">,</span> <span class="s1">&#39;mw&#39;</span><span class="p">:</span> <span class="n">mw</span><span class="p">}</span>
     <span class="n">isld</span><span class="o">.</span><span class="n">make_dependent_on</span><span class="p">(</span><span class="n">dependency_expression</span><span class="o">=</span><span class="n">dependency_expression</span><span class="p">,</span> <span class="n">dependency_map</span><span class="o">=</span><span class="n">dependency_map</span><span class="p">)</span>
 
-    <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">sld</span><span class="p">,</span> <span class="n">isld</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">interface</span><span class="o">=</span><span class="n">interface</span><span class="p">)</span>
+    <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">sld</span><span class="o">=</span><span class="n">sld</span><span class="p">,</span> <span class="n">isld</span><span class="o">=</span><span class="n">isld</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">unique_name</span><span class="o">=</span><span class="n">unique_name</span><span class="p">,</span> <span class="n">interface</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
 
-    <span class="bp">self</span><span class="o">.</span><span class="n">_add_component</span><span class="p">(</span><span class="s1">&#39;scattering_length_real&#39;</span><span class="p">,</span> <span class="n">scattering_length_real</span><span class="p">)</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">_add_component</span><span class="p">(</span><span class="s1">&#39;scattering_length_imag&#39;</span><span class="p">,</span> <span class="n">scattering_length_imag</span><span class="p">)</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">_add_component</span><span class="p">(</span><span class="s1">&#39;molecular_weight&#39;</span><span class="p">,</span> <span class="n">mw</span><span class="p">)</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">_add_component</span><span class="p">(</span><span class="s1">&#39;density&#39;</span><span class="p">,</span> <span class="n">density</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_scattering_length_real</span> <span class="o">=</span> <span class="n">scattering_length_real</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_scattering_length_imag</span> <span class="o">=</span> <span class="n">scattering_length_imag</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_molecular_weight</span> <span class="o">=</span> <span class="n">mw</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_density</span> <span class="o">=</span> <span class="n">density</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_chemical_structure</span> <span class="o">=</span> <span class="n">chemical_structure</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">interface</span> <span class="o">=</span> <span class="n">interface</span>
+
+    <span class="k">if</span> <span class="n">interface</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">interface</span> <span class="o">=</span> <span class="n">interface</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -3357,58 +3459,34 @@
 <div class="doc doc-object doc-function">
 
 
-<h3 id="easyreflectometry.sample.elements.materials.material_density.MaterialDensity.as_dict" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">as_dict</span><span class="p">(</span><span class="n">skip</span><span class="o">=</span><span class="p">[])</span></code>
+<h3 id="easyreflectometry.sample.elements.materials.material_density.MaterialDensity.from_dict" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">from_dict</span><span class="p">(</span><span class="n">obj_dict</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
+  </span>
 
 </h3>
 
 
     <div class="doc doc-contents ">
 
-        <p>Produces a cleaned dict using a custom as_dict method to skip necessary things.</p>
-<p>The resulting dict matches the parameters in <strong>init</strong></p>
+        <p>Re-attach sld/isld dependencies after deserialization.</p>
+<p>:class:<code>ModelBase.from_dict</code> re-points <code>self._density</code> at the
+deserialized Parameter (because <code>density</code> is a constructor argument);
+the constraint graph built in <code>__init__</code> still references the
+temporary Parameter created from the float kwarg. Rebuild here so
+<code>q.density = X</code> propagates to the derived SLDs.</p>
 <!-- prettier-ignore-start -->
 
 <!-- prettier-ignore-end -->
-
-
-<p><span class="doc-section-title">Parameters:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Type</th>
-          <th>Description</th>
-          <th>Default</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                <code>skip</code>
-            </td>
-            <td>
-                  <code><span title="list">list</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>List of keys to skip. By default, [].</p>
-<!-- prettier-ignore-start -->
-
-<!-- prettier-ignore-end -->
-              </div>
-            </td>
-            <td>
-                  <code>[]</code>
-            </td>
-          </tr>
-      </tbody>
-    </table>
 
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/easyreflectometry/sample/elements/materials/material_density.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">162</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">160</span>
+<span class="normal">161</span>
+<span class="normal">162</span>
 <span class="normal">163</span>
 <span class="normal">164</span>
 <span class="normal">165</span>
@@ -3418,33 +3496,19 @@
 <span class="normal">169</span>
 <span class="normal">170</span>
 <span class="normal">171</span>
-<span class="normal">172</span>
-<span class="normal">173</span>
-<span class="normal">174</span>
-<span class="normal">175</span>
-<span class="normal">176</span>
-<span class="normal">177</span>
-<span class="normal">178</span>
-<span class="normal">179</span>
-<span class="normal">180</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">as_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">skip</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="p">[])</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Produces a cleaned dict using a custom as_dict method to skip necessary things.</span>
+<span class="normal">172</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">from_dict</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">obj_dict</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;MaterialDensity&#39;</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Re-attach sld/isld dependencies after deserialization.</span>
 
-<span class="sd">    The resulting dict matches the parameters in __init__</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    skip : list, optional</span>
-<span class="sd">        List of keys to skip. By default, [].</span>
+<span class="sd">    :class:`ModelBase.from_dict` re-points `self._density` at the</span>
+<span class="sd">    deserialized Parameter (because `density` is a constructor argument);</span>
+<span class="sd">    the constraint graph built in `__init__` still references the</span>
+<span class="sd">    temporary Parameter created from the float kwarg. Rebuild here so</span>
+<span class="sd">    `q.density = X` propagates to the derived SLDs.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">this_dict</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">as_dict</span><span class="p">(</span><span class="n">skip</span><span class="o">=</span><span class="n">skip</span><span class="p">)</span>
-    <span class="c1"># From Material</span>
-    <span class="k">del</span> <span class="n">this_dict</span><span class="p">[</span><span class="s1">&#39;sld&#39;</span><span class="p">]</span>
-    <span class="k">del</span> <span class="n">this_dict</span><span class="p">[</span><span class="s1">&#39;isld&#39;</span><span class="p">]</span>
-    <span class="c1"># Determined in __init__</span>
-    <span class="k">del</span> <span class="n">this_dict</span><span class="p">[</span><span class="s1">&#39;scattering_length_real&#39;</span><span class="p">]</span>
-    <span class="k">del</span> <span class="n">this_dict</span><span class="p">[</span><span class="s1">&#39;scattering_length_imag&#39;</span><span class="p">]</span>
-    <span class="k">del</span> <span class="n">this_dict</span><span class="p">[</span><span class="s1">&#39;molecular_weight&#39;</span><span class="p">]</span>
-    <span class="k">return</span> <span class="n">this_dict</span>
+    <span class="n">instance</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">obj_dict</span><span class="p">)</span>
+    <span class="n">instance</span><span class="o">.</span><span class="n">_setup_sld_constraints</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">instance</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>

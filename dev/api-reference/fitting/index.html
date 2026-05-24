@@ -1495,28 +1495,6 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#easyreflectometry.fitting.Model.resolution_function" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        resolution_function
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#easyreflectometry.fitting.Model.interface" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        interface
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#easyreflectometry.fitting.Model.is_default" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1528,10 +1506,32 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#easyreflectometry.fitting.Model.resolution_function" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        resolution_function
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#easyreflectometry.fitting.Model.__init__" class="md-nav__link">
     <span class="md-ellipsis">
       
         __init__
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#easyreflectometry.fitting.Model.interface" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        interface
       
     </span>
   </a>
@@ -1572,10 +1572,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#easyreflectometry.fitting.Model.__repr__" class="md-nav__link">
+  <a href="#easyreflectometry.fitting.Model.to_dict" class="md-nav__link">
     <span class="md-ellipsis">
       
-        __repr__
+        to_dict
       
     </span>
   </a>
@@ -2533,28 +2533,6 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#easyreflectometry.fitting.Model.resolution_function" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        resolution_function
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#easyreflectometry.fitting.Model.interface" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        interface
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#easyreflectometry.fitting.Model.is_default" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2566,10 +2544,32 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#easyreflectometry.fitting.Model.resolution_function" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        resolution_function
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#easyreflectometry.fitting.Model.__init__" class="md-nav__link">
     <span class="md-ellipsis">
       
         __init__
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#easyreflectometry.fitting.Model.interface" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        interface
       
     </span>
   </a>
@@ -2610,10 +2610,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#easyreflectometry.fitting.Model.__repr__" class="md-nav__link">
+  <a href="#easyreflectometry.fitting.Model.to_dict" class="md-nav__link">
     <span class="md-ellipsis">
       
-        __repr__
+        to_dict
       
     </span>
   </a>
@@ -3418,7 +3418,7 @@
 
     <div class="doc doc-contents ">
             <p class="doc doc-class-bases">
-              Bases: <code><span title="easyscience.ObjBase">BaseObj</span></code></p>
+              Bases: <code><a class="autorefs autorefs-internal" title="&lt;code&gt;BaseCore&lt;/code&gt; (&lt;code&gt;easyreflectometry.sample.base_core.BaseCore&lt;/code&gt;)" href="../model/#easyreflectometry.model.model.BaseCore">BaseCore</a></code></p>
 
 
 
@@ -3437,7 +3437,8 @@
 
               <details class="mkdocstrings-source">
                 <summary>Source code in <code>src/easyreflectometry/model/model.py</code></summary>
-                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 61</span>
+                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 60</span>
+<span class="normal"> 61</span>
 <span class="normal"> 62</span>
 <span class="normal"> 63</span>
 <span class="normal"> 64</span>
@@ -3670,17 +3671,17 @@
 <span class="normal">291</span>
 <span class="normal">292</span>
 <span class="normal">293</span>
-<span class="normal">294</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseObj</span><span class="p">):</span>
+<span class="normal">294</span>
+<span class="normal">295</span>
+<span class="normal">296</span>
+<span class="normal">297</span>
+<span class="normal">298</span>
+<span class="normal">299</span>
+<span class="normal">300</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseCore</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Model is the class that represents the experiment.</span>
 
 <span class="sd">    It is used to store the information about the experiment and to perform the calculations.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="c1"># Added in super().__init__</span>
-    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">sample</span><span class="p">:</span> <span class="n">Sample</span>
-    <span class="n">scale</span><span class="p">:</span> <span class="n">Parameter</span>
-    <span class="n">background</span><span class="p">:</span> <span class="n">Parameter</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -3727,18 +3728,45 @@
         <span class="n">background</span> <span class="o">=</span> <span class="n">get_as_parameter</span><span class="p">(</span><span class="s1">&#39;background&#39;</span><span class="p">,</span> <span class="n">background</span><span class="p">,</span> <span class="n">DEFAULTS</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">color</span> <span class="o">=</span> <span class="n">color</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_is_default</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_resolution_function</span> <span class="o">=</span> <span class="n">resolution_function</span>
 
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
-            <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
-            <span class="n">unique_name</span><span class="o">=</span><span class="n">unique_name</span><span class="p">,</span>
-            <span class="n">sample</span><span class="o">=</span><span class="n">sample</span><span class="p">,</span>
-            <span class="n">scale</span><span class="o">=</span><span class="n">scale</span><span class="p">,</span>
-            <span class="n">background</span><span class="o">=</span><span class="n">background</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">resolution_function</span> <span class="o">=</span> <span class="n">resolution_function</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">unique_name</span><span class="o">=</span><span class="n">unique_name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sample</span> <span class="o">=</span> <span class="n">sample</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_scale</span> <span class="o">=</span> <span class="n">scale</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_background</span> <span class="o">=</span> <span class="n">background</span>
 
-        <span class="c1"># Must be set after resolution function</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">interface</span> <span class="o">=</span> <span class="n">interface</span>
+        <span class="c1"># Set interface last — propagates to children via BaseCore.generate_bindings</span>
+        <span class="c1"># and then sets the resolution function on the calculator (see setter).</span>
+        <span class="k">if</span> <span class="n">interface</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">interface</span> <span class="o">=</span> <span class="n">interface</span>
+
+    <span class="c1"># ----- @property accessors for serialization round-trip -----</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sample</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Sample</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sample</span>
+
+    <span class="nd">@sample</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Sample</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sample</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">scale</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Parameter</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scale</span>
+
+    <span class="nd">@scale</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">scale</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_scale</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">background</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Parameter</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_background</span>
+
+    <span class="nd">@background</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">background</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_background</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="c1"># ----- assembly management -----</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">add_assemblies</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">assemblies</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">BaseAssembly</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Add assemblies to the model sample.</span>
@@ -3795,14 +3823,10 @@
 
     <span class="nd">@is_default</span><span class="o">.</span><span class="n">setter</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">is_default</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set whether this model is a default placeholder.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        value : bool</span>
-<span class="sd">            True if the model is a default placeholder.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set whether this model is a default placeholder.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_is_default</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="c1"># ----- resolution function -----</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">resolution_function</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ResolutionFunction</span><span class="p">:</span>
@@ -3816,21 +3840,20 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">interface</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">interface</span><span class="p">()</span><span class="o">.</span><span class="n">set_resolution_function</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_resolution_function</span><span class="p">)</span>
 
-    <span class="nd">@property</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">interface</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the current interface of the object.&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interface</span>
+    <span class="c1"># ----- interface (override BaseCore&#39;s to add resolution-function side effect) -----</span>
 
-    <span class="nd">@interface</span><span class="o">.</span><span class="n">setter</span>
+    <span class="nd">@BaseCore</span><span class="o">.</span><span class="n">interface</span><span class="o">.</span><span class="n">setter</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">interface</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_interface</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the interface for the model.&quot;&quot;&quot;</span>
-        <span class="c1"># From super class</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_interface</span> <span class="o">=</span> <span class="n">new_interface</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the interface; runs `generate_bindings` and then refreshes the</span>
+<span class="sd">        calculator&#39;s resolution function.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Call BaseCore.interface.setter for the binding propagation.</span>
+        <span class="n">BaseCore</span><span class="o">.</span><span class="n">interface</span><span class="o">.</span><span class="n">fset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_interface</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">new_interface</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">generate_bindings</span><span class="p">()</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_interface</span><span class="p">()</span><span class="o">.</span><span class="n">set_resolution_function</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_resolution_function</span><span class="p">)</span>
+            <span class="n">new_interface</span><span class="p">()</span><span class="o">.</span><span class="n">set_resolution_function</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_resolution_function</span><span class="p">)</span>
 
-    <span class="c1"># Representation</span>
+    <span class="c1"># ----- representation -----</span>
+
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_dict_repr</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;A simplified dict representation.&quot;&quot;&quot;</span>
@@ -3850,24 +3873,15 @@
             <span class="p">}</span>
         <span class="p">}</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;String representation of the layer.&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">yaml_dump</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dict_repr</span><span class="p">)</span>
+    <span class="c1"># ----- serialization (custom because resolution_function + interface need special handling) -----</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">as_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">skip</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Produces a cleaned dict using a custom as_dict method to skip necessary things.</span>
-
-<span class="sd">        The resulting dict matches the parameters in __init__</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        skip : Optional[list[str]], optional</span>
-<span class="sd">            List of keys to skip. By default, None.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">skip</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Serialize the model, encoding the resolution function and interface name.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">skip</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">skip</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="n">skip</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="s1">&#39;sample&#39;</span><span class="p">,</span> <span class="s1">&#39;resolution_function&#39;</span><span class="p">,</span> <span class="s1">&#39;interface&#39;</span><span class="p">])</span>
-        <span class="n">this_dict</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">as_dict</span><span class="p">(</span><span class="n">skip</span><span class="o">=</span><span class="n">skip</span><span class="p">)</span>
+        <span class="c1"># Sample/resolution_function/interface get bespoke encoding below.</span>
+        <span class="n">skip_for_super</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">skip</span><span class="p">)</span> <span class="o">+</span> <span class="p">[</span><span class="s1">&#39;sample&#39;</span><span class="p">,</span> <span class="s1">&#39;resolution_function&#39;</span><span class="p">,</span> <span class="s1">&#39;interface&#39;</span><span class="p">]</span>
+        <span class="n">this_dict</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(</span><span class="n">skip</span><span class="o">=</span><span class="n">skip_for_super</span><span class="p">)</span>
         <span class="n">this_dict</span><span class="p">[</span><span class="s1">&#39;sample&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample</span><span class="o">.</span><span class="n">as_dict</span><span class="p">(</span><span class="n">skip</span><span class="o">=</span><span class="n">skip</span><span class="p">)</span>
         <span class="n">this_dict</span><span class="p">[</span><span class="s1">&#39;resolution_function&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">resolution_function</span><span class="o">.</span><span class="n">as_dict</span><span class="p">(</span><span class="n">skip</span><span class="o">=</span><span class="n">skip</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">interface</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -3876,23 +3890,23 @@
             <span class="n">this_dict</span><span class="p">[</span><span class="s1">&#39;interface&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">interface</span><span class="p">()</span><span class="o">.</span><span class="n">name</span>
         <span class="k">return</span> <span class="n">this_dict</span>
 
+    <span class="k">def</span><span class="w"> </span><span class="nf">as_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">skip</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compatibility alias for :meth:`to_dict`.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(</span><span class="n">skip</span><span class="o">=</span><span class="n">skip</span><span class="p">)</span>
+
     <span class="k">def</span><span class="w"> </span><span class="nf">as_orso</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert the model to a dictionary suitable for ORSO.&quot;&quot;&quot;</span>
-        <span class="n">this_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">as_dict</span><span class="p">()</span>
-
-        <span class="k">return</span> <span class="n">this_dict</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">as_dict</span><span class="p">()</span>
 
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">from_dict</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">passed_dict</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Model</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a Model from a dictionary.&quot;&quot;&quot;</span>
-        <span class="c1"># Causes circular import if imported at the top</span>
+        <span class="c1"># Circular import if hoisted to module-top.</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">easyreflectometry.calculators</span><span class="w"> </span><span class="kn">import</span> <span class="n">CalculatorFactory</span>
 
         <span class="n">this_dict</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">passed_dict</span><span class="p">)</span>
-        <span class="n">resolution_function</span> <span class="o">=</span> <span class="n">ResolutionFunction</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">this_dict</span><span class="p">[</span><span class="s1">&#39;resolution_function&#39;</span><span class="p">])</span>
-        <span class="k">del</span> <span class="n">this_dict</span><span class="p">[</span><span class="s1">&#39;resolution_function&#39;</span><span class="p">]</span>
-        <span class="n">interface_name</span> <span class="o">=</span> <span class="n">this_dict</span><span class="p">[</span><span class="s1">&#39;interface&#39;</span><span class="p">]</span>
-        <span class="k">del</span> <span class="n">this_dict</span><span class="p">[</span><span class="s1">&#39;interface&#39;</span><span class="p">]</span>
+        <span class="n">resolution_function</span> <span class="o">=</span> <span class="n">ResolutionFunction</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">this_dict</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;resolution_function&#39;</span><span class="p">))</span>
+        <span class="n">interface_name</span> <span class="o">=</span> <span class="n">this_dict</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;interface&#39;</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">interface_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">interface</span> <span class="o">=</span> <span class="n">CalculatorFactory</span><span class="p">()</span>
             <span class="n">interface</span><span class="o">.</span><span class="n">switch</span><span class="p">(</span><span class="n">interface_name</span><span class="p">)</span>
@@ -3921,58 +3935,6 @@
 
 
 
-<h3 id="easyreflectometry.fitting.Model.resolution_function" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">resolution_function</span></code>
-
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-property"><code>property</code></small>
-      <small class="doc doc-label doc-label-writable"><code>writable</code></small>
-  </span>
-
-</h3>
-
-
-    <div class="doc doc-contents ">
-
-        <p>Return the resolution function.</p>
-<!-- prettier-ignore-start -->
-
-<!-- prettier-ignore-end -->
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-attribute">
-
-
-
-<h3 id="easyreflectometry.fitting.Model.interface" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">interface</span></code>
-
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-property"><code>property</code></small>
-      <small class="doc doc-label doc-label-writable"><code>writable</code></small>
-  </span>
-
-</h3>
-
-
-    <div class="doc doc-contents ">
-
-        <p>Get the current interface of the object.</p>
-<!-- prettier-ignore-start -->
-
-<!-- prettier-ignore-end -->
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-attribute">
-
-
-
 <h3 id="easyreflectometry.fitting.Model.is_default" class="doc doc-heading">
             <code class="highlight language-python"><span class="n">is_default</span></code>
 
@@ -3987,6 +3949,32 @@
     <div class="doc doc-contents ">
 
         <p>Whether this model was created as a default placeholder.</p>
+<!-- prettier-ignore-start -->
+
+<!-- prettier-ignore-end -->
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="easyreflectometry.fitting.Model.resolution_function" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">resolution_function</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+      <small class="doc doc-label doc-label-writable"><code>writable</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Return the resolution function.</p>
 <!-- prettier-ignore-start -->
 
 <!-- prettier-ignore-end -->
@@ -4187,7 +4175,14 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/easyreflectometry/model/model.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 73</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 66</span>
+<span class="normal"> 67</span>
+<span class="normal"> 68</span>
+<span class="normal"> 69</span>
+<span class="normal"> 70</span>
+<span class="normal"> 71</span>
+<span class="normal"> 72</span>
+<span class="normal"> 73</span>
 <span class="normal"> 74</span>
 <span class="normal"> 75</span>
 <span class="normal"> 76</span>
@@ -4235,15 +4230,7 @@
 <span class="normal">118</span>
 <span class="normal">119</span>
 <span class="normal">120</span>
-<span class="normal">121</span>
-<span class="normal">122</span>
-<span class="normal">123</span>
-<span class="normal">124</span>
-<span class="normal">125</span>
-<span class="normal">126</span>
-<span class="normal">127</span>
-<span class="normal">128</span>
-<span class="normal">129</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+<span class="normal">121</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">sample</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Sample</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">scale</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Parameter</span><span class="p">,</span> <span class="n">Number</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -4288,18 +4275,60 @@
     <span class="n">background</span> <span class="o">=</span> <span class="n">get_as_parameter</span><span class="p">(</span><span class="s1">&#39;background&#39;</span><span class="p">,</span> <span class="n">background</span><span class="p">,</span> <span class="n">DEFAULTS</span><span class="p">)</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">color</span> <span class="o">=</span> <span class="n">color</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_is_default</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_resolution_function</span> <span class="o">=</span> <span class="n">resolution_function</span>
 
-    <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
-        <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
-        <span class="n">unique_name</span><span class="o">=</span><span class="n">unique_name</span><span class="p">,</span>
-        <span class="n">sample</span><span class="o">=</span><span class="n">sample</span><span class="p">,</span>
-        <span class="n">scale</span><span class="o">=</span><span class="n">scale</span><span class="p">,</span>
-        <span class="n">background</span><span class="o">=</span><span class="n">background</span><span class="p">,</span>
-    <span class="p">)</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">resolution_function</span> <span class="o">=</span> <span class="n">resolution_function</span>
+    <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">unique_name</span><span class="o">=</span><span class="n">unique_name</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_sample</span> <span class="o">=</span> <span class="n">sample</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_scale</span> <span class="o">=</span> <span class="n">scale</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_background</span> <span class="o">=</span> <span class="n">background</span>
 
-    <span class="c1"># Must be set after resolution function</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">interface</span> <span class="o">=</span> <span class="n">interface</span>
+    <span class="c1"># Set interface last — propagates to children via BaseCore.generate_bindings</span>
+    <span class="c1"># and then sets the resolution function on the calculator (see setter).</span>
+    <span class="k">if</span> <span class="n">interface</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">interface</span> <span class="o">=</span> <span class="n">interface</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="easyreflectometry.fitting.Model.interface" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">interface</span><span class="p">(</span><span class="n">new_interface</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Set the interface; runs <code>generate_bindings</code> and then refreshes the
+calculator's resolution function.</p>
+<!-- prettier-ignore-start -->
+
+<!-- prettier-ignore-end -->
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>src/easyreflectometry/model/model.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">225</span>
+<span class="normal">226</span>
+<span class="normal">227</span>
+<span class="normal">228</span>
+<span class="normal">229</span>
+<span class="normal">230</span>
+<span class="normal">231</span>
+<span class="normal">232</span>
+<span class="normal">233</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@BaseCore</span><span class="o">.</span><span class="n">interface</span><span class="o">.</span><span class="n">setter</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">interface</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_interface</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Set the interface; runs `generate_bindings` and then refreshes the</span>
+<span class="sd">    calculator&#39;s resolution function.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Call BaseCore.interface.setter for the binding propagation.</span>
+    <span class="n">BaseCore</span><span class="o">.</span><span class="n">interface</span><span class="o">.</span><span class="n">fset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_interface</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">new_interface</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">new_interface</span><span class="p">()</span><span class="o">.</span><span class="n">set_resolution_function</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_resolution_function</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -4359,26 +4388,26 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/easyreflectometry/model/model.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">131</span>
-<span class="normal">132</span>
-<span class="normal">133</span>
-<span class="normal">134</span>
-<span class="normal">135</span>
-<span class="normal">136</span>
-<span class="normal">137</span>
-<span class="normal">138</span>
-<span class="normal">139</span>
-<span class="normal">140</span>
-<span class="normal">141</span>
-<span class="normal">142</span>
-<span class="normal">143</span>
-<span class="normal">144</span>
-<span class="normal">145</span>
-<span class="normal">146</span>
-<span class="normal">147</span>
-<span class="normal">148</span>
-<span class="normal">149</span>
-<span class="normal">150</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">add_assemblies</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">assemblies</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">BaseAssembly</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">151</span>
+<span class="normal">152</span>
+<span class="normal">153</span>
+<span class="normal">154</span>
+<span class="normal">155</span>
+<span class="normal">156</span>
+<span class="normal">157</span>
+<span class="normal">158</span>
+<span class="normal">159</span>
+<span class="normal">160</span>
+<span class="normal">161</span>
+<span class="normal">162</span>
+<span class="normal">163</span>
+<span class="normal">164</span>
+<span class="normal">165</span>
+<span class="normal">166</span>
+<span class="normal">167</span>
+<span class="normal">168</span>
+<span class="normal">169</span>
+<span class="normal">170</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">add_assemblies</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">assemblies</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">BaseAssembly</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Add assemblies to the model sample.</span>
 
 <span class="sd">    Parameters</span>
@@ -4472,18 +4501,18 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/easyreflectometry/model/model.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">152</span>
-<span class="normal">153</span>
-<span class="normal">154</span>
-<span class="normal">155</span>
-<span class="normal">156</span>
-<span class="normal">157</span>
-<span class="normal">158</span>
-<span class="normal">159</span>
-<span class="normal">160</span>
-<span class="normal">161</span>
-<span class="normal">162</span>
-<span class="normal">163</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">duplicate_assembly</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">172</span>
+<span class="normal">173</span>
+<span class="normal">174</span>
+<span class="normal">175</span>
+<span class="normal">176</span>
+<span class="normal">177</span>
+<span class="normal">178</span>
+<span class="normal">179</span>
+<span class="normal">180</span>
+<span class="normal">181</span>
+<span class="normal">182</span>
+<span class="normal">183</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">duplicate_assembly</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Duplicate a given item or layer in a sample.</span>
 
 <span class="sd">    Parameters</span>
@@ -4569,19 +4598,19 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/easyreflectometry/model/model.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">165</span>
-<span class="normal">166</span>
-<span class="normal">167</span>
-<span class="normal">168</span>
-<span class="normal">169</span>
-<span class="normal">170</span>
-<span class="normal">171</span>
-<span class="normal">172</span>
-<span class="normal">173</span>
-<span class="normal">174</span>
-<span class="normal">175</span>
-<span class="normal">176</span>
-<span class="normal">177</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">remove_assembly</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">185</span>
+<span class="normal">186</span>
+<span class="normal">187</span>
+<span class="normal">188</span>
+<span class="normal">189</span>
+<span class="normal">190</span>
+<span class="normal">191</span>
+<span class="normal">192</span>
+<span class="normal">193</span>
+<span class="normal">194</span>
+<span class="normal">195</span>
+<span class="normal">196</span>
+<span class="normal">197</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">remove_assembly</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Remove an assembly from the model.</span>
 
 <span class="sd">    Parameters</span>
@@ -4603,15 +4632,15 @@
 <div class="doc doc-object doc-function">
 
 
-<h3 id="easyreflectometry.fitting.Model.__repr__" class="doc doc-heading">
-            <code class="highlight language-python"><span class="fm">__repr__</span><span class="p">()</span></code>
+<h3 id="easyreflectometry.fitting.Model.to_dict" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">to_dict</span><span class="p">(</span><span class="n">skip</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
 
 </h3>
 
 
     <div class="doc doc-contents ">
 
-        <p>String representation of the layer.</p>
+        <p>Serialize the model, encoding the resolution function and interface name.</p>
 <!-- prettier-ignore-start -->
 
 <!-- prettier-ignore-end -->
@@ -4619,11 +4648,33 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/easyreflectometry/model/model.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">241</span>
-<span class="normal">242</span>
-<span class="normal">243</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;String representation of the layer.&quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="n">yaml_dump</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dict_repr</span><span class="p">)</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">258</span>
+<span class="normal">259</span>
+<span class="normal">260</span>
+<span class="normal">261</span>
+<span class="normal">262</span>
+<span class="normal">263</span>
+<span class="normal">264</span>
+<span class="normal">265</span>
+<span class="normal">266</span>
+<span class="normal">267</span>
+<span class="normal">268</span>
+<span class="normal">269</span>
+<span class="normal">270</span>
+<span class="normal">271</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">skip</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Serialize the model, encoding the resolution function and interface name.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">skip</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">skip</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1"># Sample/resolution_function/interface get bespoke encoding below.</span>
+    <span class="n">skip_for_super</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">skip</span><span class="p">)</span> <span class="o">+</span> <span class="p">[</span><span class="s1">&#39;sample&#39;</span><span class="p">,</span> <span class="s1">&#39;resolution_function&#39;</span><span class="p">,</span> <span class="s1">&#39;interface&#39;</span><span class="p">]</span>
+    <span class="n">this_dict</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(</span><span class="n">skip</span><span class="o">=</span><span class="n">skip_for_super</span><span class="p">)</span>
+    <span class="n">this_dict</span><span class="p">[</span><span class="s1">&#39;sample&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample</span><span class="o">.</span><span class="n">as_dict</span><span class="p">(</span><span class="n">skip</span><span class="o">=</span><span class="n">skip</span><span class="p">)</span>
+    <span class="n">this_dict</span><span class="p">[</span><span class="s1">&#39;resolution_function&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">resolution_function</span><span class="o">.</span><span class="n">as_dict</span><span class="p">(</span><span class="n">skip</span><span class="o">=</span><span class="n">skip</span><span class="p">)</span>
+    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">interface</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">this_dict</span><span class="p">[</span><span class="s1">&#39;interface&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">this_dict</span><span class="p">[</span><span class="s1">&#39;interface&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">interface</span><span class="p">()</span><span class="o">.</span><span class="n">name</span>
+    <span class="k">return</span> <span class="n">this_dict</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -4641,90 +4692,19 @@
 
     <div class="doc doc-contents ">
 
-        <p>Produces a cleaned dict using a custom as_dict method to skip necessary things.</p>
-<p>The resulting dict matches the parameters in <strong>init</strong></p>
+        <p>Compatibility alias for :meth:<code>to_dict</code>.</p>
 <!-- prettier-ignore-start -->
 
 <!-- prettier-ignore-end -->
-
-
-<p><span class="doc-section-title">Parameters:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Type</th>
-          <th>Description</th>
-          <th>Default</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                <code>skip</code>
-            </td>
-            <td>
-                  <code><span title="typing.Optional">Optional</span>[<span title="list">list</span>[<span title="str">str</span>]]</code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>List of keys to skip. By default, None.</p>
-<!-- prettier-ignore-start -->
-
-<!-- prettier-ignore-end -->
-              </div>
-            </td>
-            <td>
-                  <code>None</code>
-            </td>
-          </tr>
-      </tbody>
-    </table>
 
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/easyreflectometry/model/model.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">245</span>
-<span class="normal">246</span>
-<span class="normal">247</span>
-<span class="normal">248</span>
-<span class="normal">249</span>
-<span class="normal">250</span>
-<span class="normal">251</span>
-<span class="normal">252</span>
-<span class="normal">253</span>
-<span class="normal">254</span>
-<span class="normal">255</span>
-<span class="normal">256</span>
-<span class="normal">257</span>
-<span class="normal">258</span>
-<span class="normal">259</span>
-<span class="normal">260</span>
-<span class="normal">261</span>
-<span class="normal">262</span>
-<span class="normal">263</span>
-<span class="normal">264</span>
-<span class="normal">265</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">as_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">skip</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Produces a cleaned dict using a custom as_dict method to skip necessary things.</span>
-
-<span class="sd">    The resulting dict matches the parameters in __init__</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    skip : Optional[list[str]], optional</span>
-<span class="sd">        List of keys to skip. By default, None.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="n">skip</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">skip</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="n">skip</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="s1">&#39;sample&#39;</span><span class="p">,</span> <span class="s1">&#39;resolution_function&#39;</span><span class="p">,</span> <span class="s1">&#39;interface&#39;</span><span class="p">])</span>
-    <span class="n">this_dict</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">as_dict</span><span class="p">(</span><span class="n">skip</span><span class="o">=</span><span class="n">skip</span><span class="p">)</span>
-    <span class="n">this_dict</span><span class="p">[</span><span class="s1">&#39;sample&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample</span><span class="o">.</span><span class="n">as_dict</span><span class="p">(</span><span class="n">skip</span><span class="o">=</span><span class="n">skip</span><span class="p">)</span>
-    <span class="n">this_dict</span><span class="p">[</span><span class="s1">&#39;resolution_function&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">resolution_function</span><span class="o">.</span><span class="n">as_dict</span><span class="p">(</span><span class="n">skip</span><span class="o">=</span><span class="n">skip</span><span class="p">)</span>
-    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">interface</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">this_dict</span><span class="p">[</span><span class="s1">&#39;interface&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">this_dict</span><span class="p">[</span><span class="s1">&#39;interface&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">interface</span><span class="p">()</span><span class="o">.</span><span class="n">name</span>
-    <span class="k">return</span> <span class="n">this_dict</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">273</span>
+<span class="normal">274</span>
+<span class="normal">275</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">as_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">skip</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compatibility alias for :meth:`to_dict`.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(</span><span class="n">skip</span><span class="o">=</span><span class="n">skip</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -4750,15 +4730,11 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/easyreflectometry/model/model.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">267</span>
-<span class="normal">268</span>
-<span class="normal">269</span>
-<span class="normal">270</span>
-<span class="normal">271</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">as_orso</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">277</span>
+<span class="normal">278</span>
+<span class="normal">279</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">as_orso</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert the model to a dictionary suitable for ORSO.&quot;&quot;&quot;</span>
-    <span class="n">this_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">as_dict</span><span class="p">()</span>
-
-    <span class="k">return</span> <span class="n">this_dict</span>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">as_dict</span><span class="p">()</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -4788,15 +4764,7 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/easyreflectometry/model/model.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">273</span>
-<span class="normal">274</span>
-<span class="normal">275</span>
-<span class="normal">276</span>
-<span class="normal">277</span>
-<span class="normal">278</span>
-<span class="normal">279</span>
-<span class="normal">280</span>
-<span class="normal">281</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">281</span>
 <span class="normal">282</span>
 <span class="normal">283</span>
 <span class="normal">284</span>
@@ -4809,17 +4777,21 @@
 <span class="normal">291</span>
 <span class="normal">292</span>
 <span class="normal">293</span>
-<span class="normal">294</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="normal">294</span>
+<span class="normal">295</span>
+<span class="normal">296</span>
+<span class="normal">297</span>
+<span class="normal">298</span>
+<span class="normal">299</span>
+<span class="normal">300</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">from_dict</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">passed_dict</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Model</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Create a Model from a dictionary.&quot;&quot;&quot;</span>
-    <span class="c1"># Causes circular import if imported at the top</span>
+    <span class="c1"># Circular import if hoisted to module-top.</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">easyreflectometry.calculators</span><span class="w"> </span><span class="kn">import</span> <span class="n">CalculatorFactory</span>
 
     <span class="n">this_dict</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">passed_dict</span><span class="p">)</span>
-    <span class="n">resolution_function</span> <span class="o">=</span> <span class="n">ResolutionFunction</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">this_dict</span><span class="p">[</span><span class="s1">&#39;resolution_function&#39;</span><span class="p">])</span>
-    <span class="k">del</span> <span class="n">this_dict</span><span class="p">[</span><span class="s1">&#39;resolution_function&#39;</span><span class="p">]</span>
-    <span class="n">interface_name</span> <span class="o">=</span> <span class="n">this_dict</span><span class="p">[</span><span class="s1">&#39;interface&#39;</span><span class="p">]</span>
-    <span class="k">del</span> <span class="n">this_dict</span><span class="p">[</span><span class="s1">&#39;interface&#39;</span><span class="p">]</span>
+    <span class="n">resolution_function</span> <span class="o">=</span> <span class="n">ResolutionFunction</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">this_dict</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;resolution_function&#39;</span><span class="p">))</span>
+    <span class="n">interface_name</span> <span class="o">=</span> <span class="n">this_dict</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;interface&#39;</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">interface_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">interface</span> <span class="o">=</span> <span class="n">CalculatorFactory</span><span class="p">()</span>
         <span class="n">interface</span><span class="o">.</span><span class="n">switch</span><span class="p">(</span><span class="n">interface_name</span><span class="p">)</span>

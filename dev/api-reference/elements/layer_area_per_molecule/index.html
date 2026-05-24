@@ -1849,10 +1849,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#easyreflectometry.sample.elements.layers.layer_area_per_molecule.MaterialSolvated.as_dict" class="md-nav__link">
+  <a href="#easyreflectometry.sample.elements.layers.layer_area_per_molecule.MaterialSolvated.from_dict" class="md-nav__link">
     <span class="md-ellipsis">
       
-        as_dict
+        from_dict
       
     </span>
   </a>
@@ -2004,10 +2004,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#easyreflectometry.sample.elements.layers.layer_area_per_molecule.LayerAreaPerMolecule.as_dict" class="md-nav__link">
+  <a href="#easyreflectometry.sample.elements.layers.layer_area_per_molecule.LayerAreaPerMolecule.from_dict" class="md-nav__link">
     <span class="md-ellipsis">
       
-        as_dict
+        from_dict
       
     </span>
   </a>
@@ -2422,10 +2422,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#easyreflectometry.sample.elements.layers.layer_area_per_molecule.MaterialSolvated.as_dict" class="md-nav__link">
+  <a href="#easyreflectometry.sample.elements.layers.layer_area_per_molecule.MaterialSolvated.from_dict" class="md-nav__link">
     <span class="md-ellipsis">
       
-        as_dict
+        from_dict
       
     </span>
   </a>
@@ -2577,10 +2577,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#easyreflectometry.sample.elements.layers.layer_area_per_molecule.LayerAreaPerMolecule.as_dict" class="md-nav__link">
+  <a href="#easyreflectometry.sample.elements.layers.layer_area_per_molecule.LayerAreaPerMolecule.from_dict" class="md-nav__link">
     <span class="md-ellipsis">
       
-        as_dict
+        from_dict
       
     </span>
   </a>
@@ -2808,11 +2808,18 @@
 <span class="normal">100</span>
 <span class="normal">101</span>
 <span class="normal">102</span>
-<span class="normal">103</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">Material</span><span class="p">(</span><span class="n">BaseCore</span><span class="p">):</span>
-    <span class="c1"># Added in super().__init__</span>
-    <span class="n">sld</span><span class="p">:</span> <span class="n">Parameter</span>
-    <span class="n">isld</span><span class="p">:</span> <span class="n">Parameter</span>
-
+<span class="normal">103</span>
+<span class="normal">104</span>
+<span class="normal">105</span>
+<span class="normal">106</span>
+<span class="normal">107</span>
+<span class="normal">108</span>
+<span class="normal">109</span>
+<span class="normal">110</span>
+<span class="normal">111</span>
+<span class="normal">112</span>
+<span class="normal">113</span>
+<span class="normal">114</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">Material</span><span class="p">(</span><span class="n">BaseCore</span><span class="p">):</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">sld</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Parameter</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -2855,13 +2862,28 @@
         <span class="p">)</span>
         <span class="n">apply_default_limits</span><span class="p">(</span><span class="n">isld</span><span class="p">,</span> <span class="s1">&#39;isld&#39;</span><span class="p">)</span>
 
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
-            <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
-            <span class="n">sld</span><span class="o">=</span><span class="n">sld</span><span class="p">,</span>
-            <span class="n">isld</span><span class="o">=</span><span class="n">isld</span><span class="p">,</span>
-            <span class="n">interface</span><span class="o">=</span><span class="n">interface</span><span class="p">,</span>
-            <span class="n">unique_name</span><span class="o">=</span><span class="n">unique_name</span><span class="p">,</span>
-        <span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">unique_name</span><span class="o">=</span><span class="n">unique_name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sld</span> <span class="o">=</span> <span class="n">sld</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_isld</span> <span class="o">=</span> <span class="n">isld</span>
+
+        <span class="k">if</span> <span class="n">interface</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">interface</span> <span class="o">=</span> <span class="n">interface</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sld</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Parameter</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sld</span>
+
+    <span class="nd">@sld</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sld</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sld</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">isld</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Parameter</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_isld</span>
+
+    <span class="nd">@isld</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">isld</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_isld</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">value</span>
 
     <span class="c1"># Representation</span>
     <span class="nd">@property</span>
@@ -2869,8 +2891,8 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;A simplified dict representation.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="p">{</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s1">&#39;sld&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sld</span><span class="o">.</span><span class="n">value</span><span class="si">:</span><span class="s1">.3f</span><span class="si">}</span><span class="s1">e-6 </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sld</span><span class="o">.</span><span class="n">unit</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
-                <span class="s1">&#39;isld&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">isld</span><span class="o">.</span><span class="n">value</span><span class="si">:</span><span class="s1">.3f</span><span class="si">}</span><span class="s1">e-6 </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">isld</span><span class="o">.</span><span class="n">unit</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;sld&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_sld</span><span class="o">.</span><span class="n">value</span><span class="si">:</span><span class="s1">.3f</span><span class="si">}</span><span class="s1">e-6 </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_sld</span><span class="o">.</span><span class="n">unit</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;isld&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_isld</span><span class="o">.</span><span class="n">value</span><span class="si">:</span><span class="s1">.3f</span><span class="si">}</span><span class="s1">e-6 </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_isld</span><span class="o">.</span><span class="n">unit</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
             <span class="p">}</span>
         <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
@@ -3017,7 +3039,11 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/easyreflectometry/sample/elements/materials/material.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">44</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">40</span>
+<span class="normal">41</span>
+<span class="normal">42</span>
+<span class="normal">43</span>
+<span class="normal">44</span>
 <span class="normal">45</span>
 <span class="normal">46</span>
 <span class="normal">47</span>
@@ -3060,12 +3086,7 @@
 <span class="normal">84</span>
 <span class="normal">85</span>
 <span class="normal">86</span>
-<span class="normal">87</span>
-<span class="normal">88</span>
-<span class="normal">89</span>
-<span class="normal">90</span>
-<span class="normal">91</span>
-<span class="normal">92</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+<span class="normal">87</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">sld</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Parameter</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">isld</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Parameter</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -3107,13 +3128,12 @@
     <span class="p">)</span>
     <span class="n">apply_default_limits</span><span class="p">(</span><span class="n">isld</span><span class="p">,</span> <span class="s1">&#39;isld&#39;</span><span class="p">)</span>
 
-    <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
-        <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
-        <span class="n">sld</span><span class="o">=</span><span class="n">sld</span><span class="p">,</span>
-        <span class="n">isld</span><span class="o">=</span><span class="n">isld</span><span class="p">,</span>
-        <span class="n">interface</span><span class="o">=</span><span class="n">interface</span><span class="p">,</span>
-        <span class="n">unique_name</span><span class="o">=</span><span class="n">unique_name</span><span class="p">,</span>
-    <span class="p">)</span>
+    <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">unique_name</span><span class="o">=</span><span class="n">unique_name</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_sld</span> <span class="o">=</span> <span class="n">sld</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_isld</span> <span class="o">=</span> <span class="n">isld</span>
+
+    <span class="k">if</span> <span class="n">interface</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">interface</span> <span class="o">=</span> <span class="n">interface</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -3298,24 +3318,7 @@
 <span class="normal">168</span>
 <span class="normal">169</span>
 <span class="normal">170</span>
-<span class="normal">171</span>
-<span class="normal">172</span>
-<span class="normal">173</span>
-<span class="normal">174</span>
-<span class="normal">175</span>
-<span class="normal">176</span>
-<span class="normal">177</span>
-<span class="normal">178</span>
-<span class="normal">179</span>
-<span class="normal">180</span>
-<span class="normal">181</span>
-<span class="normal">182</span>
-<span class="normal">183</span>
-<span class="normal">184</span>
-<span class="normal">185</span>
-<span class="normal">186</span>
-<span class="normal">187</span>
-<span class="normal">188</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">MaterialSolvated</span><span class="p">(</span><span class="n">MaterialMixture</span><span class="p">):</span>
+<span class="normal">171</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">MaterialSolvated</span><span class="p">(</span><span class="n">MaterialMixture</span><span class="p">):</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">material</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Material</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -3363,6 +3366,7 @@
             <span class="n">material_b</span><span class="o">=</span><span class="n">solvent</span><span class="p">,</span>
             <span class="n">fraction</span><span class="o">=</span><span class="n">solvent_fraction</span><span class="p">,</span>
             <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
+            <span class="n">unique_name</span><span class="o">=</span><span class="n">unique_name</span><span class="p">,</span>
             <span class="n">interface</span><span class="o">=</span><span class="n">interface</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -3375,13 +3379,7 @@
 
     <span class="nd">@material</span><span class="o">.</span><span class="n">setter</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">material</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_material</span><span class="p">:</span> <span class="n">Material</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the material.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        new_material : Material</span>
-<span class="sd">            Matrerial to be useed.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the material.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">material_a</span> <span class="o">=</span> <span class="n">new_material</span>
 
     <span class="nd">@property</span>
@@ -3391,13 +3389,7 @@
 
     <span class="nd">@solvent</span><span class="o">.</span><span class="n">setter</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">solvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_solvent</span><span class="p">:</span> <span class="n">Material</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the solvent.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        new_solvent : Material</span>
-<span class="sd">            Solvent to be used.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the solvent.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">material_b</span> <span class="o">=</span> <span class="n">new_solvent</span>
 
     <span class="nd">@property</span>
@@ -3406,38 +3398,57 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fraction</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">solvent_fraction</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the fraction of layer described by the solvent.</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">solvent_fraction</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Parameter</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The Parameter for the fraction of the layer described by the solvent.</span>
 
-<span class="sd">        This might be fraction of:</span>
-<span class="sd">        Solvation where solvent is within the layer</span>
-<span class="sd">        Patches of solvent in the layer where no material is present.</span>
+<span class="sd">        This might be the fraction of:</span>
+<span class="sd">        - solvation where solvent is within the layer, or</span>
+<span class="sd">        - patches of solvent in the layer where no material is present.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">fraction</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fraction</span>
 
     <span class="nd">@solvent_fraction</span><span class="o">.</span><span class="n">setter</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">solvent_fraction</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">solvent_fraction</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the fraction of layer covered by the material.</span>
-
-<span class="sd">        This might be fraction of:</span>
-<span class="sd">        Solvation where solvent is within the layer</span>
-<span class="sd">        Patches of solvent in the layer where no material is present.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        solvent_fraction : float</span>
-<span class="sd">            Fraction of layer described by the solvent.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">fraction</span> <span class="o">=</span> <span class="n">solvent_fraction</span>
-            <span class="k">if</span> <span class="n">solvent_fraction</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">solvent_fraction</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;solvent_fraction must be between 0 and 1&#39;</span><span class="p">)</span>
-        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the fraction of layer covered by the material.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">solvent_fraction</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">)):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;solvent_fraction must be a float between 0 and 1&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">solvent_fraction</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">solvent_fraction</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;solvent_fraction must be between 0 and 1&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_fraction</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">solvent_fraction</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_update_name</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Update name.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_material_a</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s1">&#39; in &#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_material_b</span><span class="o">.</span><span class="n">name</span>
+
+    <span class="c1"># ----- deserialization -----</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_dict</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">obj_dict</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;MaterialSolvated&#39;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Re-route the saved ``solvent_fraction`` Parameter onto ``_fraction``.</span>
+
+<span class="sd">        :class:`ModelBase.from_dict` writes the saved Parameter to</span>
+<span class="sd">        ``_solvent_fraction`` because that&#39;s the constructor-arg name, but</span>
+<span class="sd">        the live `solvent_fraction` property returns ``self._fraction``</span>
+<span class="sd">        (the field MaterialMixture maintains). Without this override the</span>
+<span class="sd">        saved fit metadata (fixed/bounds/etc.) is stranded on the unused</span>
+<span class="sd">        ``_solvent_fraction`` attribute and the active parameter keeps the</span>
+<span class="sd">        defaults from `__init__`.</span>
+
+<span class="sd">        Also re-runs `_materials_constraints` so the parent MaterialMixture&#39;s</span>
+<span class="sd">        mixed `_sld` / `_isld` depend on the live `_fraction`, not the</span>
+<span class="sd">        temporary Parameter created from the float kwarg.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">instance</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">obj_dict</span><span class="p">)</span>
+        <span class="n">saved</span> <span class="o">=</span> <span class="n">instance</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;_solvent_fraction&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">saved</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">old</span> <span class="o">=</span> <span class="n">instance</span><span class="o">.</span><span class="n">_fraction</span>
+            <span class="n">instance</span><span class="o">.</span><span class="n">_fraction</span> <span class="o">=</span> <span class="n">saved</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">instance</span><span class="o">.</span><span class="n">_global_object</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">prune</span><span class="p">(</span><span class="n">old</span><span class="o">.</span><span class="n">unique_name</span><span class="p">)</span>
+            <span class="k">except</span> <span class="p">(</span><span class="ne">AttributeError</span><span class="p">,</span> <span class="ne">KeyError</span><span class="p">):</span>
+                <span class="k">pass</span>
+            <span class="n">instance</span><span class="o">.</span><span class="n">_materials_constraints</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">instance</span>
 
     <span class="c1"># Representation</span>
     <span class="nd">@property</span>
@@ -3452,31 +3463,6 @@
                 <span class="s1">&#39;solvent&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">solvent</span><span class="o">.</span><span class="n">_dict_repr</span><span class="p">,</span>
             <span class="p">}</span>
         <span class="p">}</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">as_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">skip</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Produces a cleaned dict using a custom as_dict method to skip necessary things.</span>
-
-<span class="sd">        The resulting dict matches the parameters in __init__</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        skip : Optional[list[str]], optional</span>
-<span class="sd">            List of keys to skip. By default, None.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">this_dict</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">as_dict</span><span class="p">(</span><span class="n">skip</span><span class="o">=</span><span class="n">skip</span><span class="p">)</span>
-        <span class="n">this_dict</span><span class="p">[</span><span class="s1">&#39;material&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">material</span><span class="o">.</span><span class="n">as_dict</span><span class="p">(</span><span class="n">skip</span><span class="o">=</span><span class="n">skip</span><span class="p">)</span>
-        <span class="n">this_dict</span><span class="p">[</span><span class="s1">&#39;solvent&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">solvent</span><span class="o">.</span><span class="n">as_dict</span><span class="p">(</span><span class="n">skip</span><span class="o">=</span><span class="n">skip</span><span class="p">)</span>
-        <span class="n">this_dict</span><span class="p">[</span><span class="s1">&#39;solvent_fraction&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fraction</span><span class="o">.</span><span class="n">as_dict</span><span class="p">(</span><span class="n">skip</span><span class="o">=</span><span class="n">skip</span><span class="p">)</span>
-        <span class="c1"># Property and protected varible from material_mixture</span>
-        <span class="k">del</span> <span class="n">this_dict</span><span class="p">[</span><span class="s1">&#39;material_a&#39;</span><span class="p">]</span>
-        <span class="k">del</span> <span class="n">this_dict</span><span class="p">[</span><span class="s1">&#39;_material_a&#39;</span><span class="p">]</span>
-        <span class="c1"># Property and protected varible from material_mixture</span>
-        <span class="k">del</span> <span class="n">this_dict</span><span class="p">[</span><span class="s1">&#39;material_b&#39;</span><span class="p">]</span>
-        <span class="k">del</span> <span class="n">this_dict</span><span class="p">[</span><span class="s1">&#39;_material_b&#39;</span><span class="p">]</span>
-        <span class="c1"># Property and protected varible from material_mixture</span>
-        <span class="k">del</span> <span class="n">this_dict</span><span class="p">[</span><span class="s1">&#39;fraction&#39;</span><span class="p">]</span>
-        <span class="k">del</span> <span class="n">this_dict</span><span class="p">[</span><span class="s1">&#39;_fraction&#39;</span><span class="p">]</span>
-        <span class="k">return</span> <span class="n">this_dict</span>
 </code></pre></div></td></tr></table></div>
               </details>
 
@@ -3584,10 +3570,10 @@
 
     <div class="doc doc-contents ">
 
-        <p>Get the fraction of layer described by the solvent.</p>
-<p>This might be fraction of:
-Solvation where solvent is within the layer
-Patches of solvent in the layer where no material is present.</p>
+        <p>The Parameter for the fraction of the layer described by the solvent.</p>
+<p>This might be the fraction of:
+- solvation where solvent is within the layer, or
+- patches of solvent in the layer where no material is present.</p>
 <!-- prettier-ignore-start -->
 
 <!-- prettier-ignore-end -->
@@ -3795,7 +3781,8 @@ Patches of solvent in the layer where no material is present.</p>
 <span class="normal">75</span>
 <span class="normal">76</span>
 <span class="normal">77</span>
-<span class="normal">78</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+<span class="normal">78</span>
+<span class="normal">79</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">material</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Material</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">solvent</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Material</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -3842,6 +3829,7 @@ Patches of solvent in the layer where no material is present.</p>
         <span class="n">material_b</span><span class="o">=</span><span class="n">solvent</span><span class="p">,</span>
         <span class="n">fraction</span><span class="o">=</span><span class="n">solvent_fraction</span><span class="p">,</span>
         <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
+        <span class="n">unique_name</span><span class="o">=</span><span class="n">unique_name</span><span class="p">,</span>
         <span class="n">interface</span><span class="o">=</span><span class="n">interface</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -3855,104 +3843,89 @@ Patches of solvent in the layer where no material is present.</p>
 <div class="doc doc-object doc-function">
 
 
-<h3 id="easyreflectometry.sample.elements.layers.layer_area_per_molecule.MaterialSolvated.as_dict" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">as_dict</span><span class="p">(</span><span class="n">skip</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+<h3 id="easyreflectometry.sample.elements.layers.layer_area_per_molecule.MaterialSolvated.from_dict" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">from_dict</span><span class="p">(</span><span class="n">obj_dict</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
+  </span>
 
 </h3>
 
 
     <div class="doc doc-contents ">
 
-        <p>Produces a cleaned dict using a custom as_dict method to skip necessary things.</p>
-<p>The resulting dict matches the parameters in <strong>init</strong></p>
+        <p>Re-route the saved <code>solvent_fraction</code> Parameter onto <code>_fraction</code>.</p>
+<p>:class:<code>ModelBase.from_dict</code> writes the saved Parameter to
+<code>_solvent_fraction</code> because that's the constructor-arg name, but
+the live <code>solvent_fraction</code> property returns <code>self._fraction</code>
+(the field MaterialMixture maintains). Without this override the
+saved fit metadata (fixed/bounds/etc.) is stranded on the unused
+<code>_solvent_fraction</code> attribute and the active parameter keeps the
+defaults from <code>__init__</code>.</p>
+<p>Also re-runs <code>_materials_constraints</code> so the parent MaterialMixture's
+mixed <code>_sld</code> / <code>_isld</code> depend on the live <code>_fraction</code>, not the
+temporary Parameter created from the float kwarg.</p>
 <!-- prettier-ignore-start -->
 
 <!-- prettier-ignore-end -->
-
-
-<p><span class="doc-section-title">Parameters:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Type</th>
-          <th>Description</th>
-          <th>Default</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                <code>skip</code>
-            </td>
-            <td>
-                  <code><span title="typing.Optional">Optional</span>[<span title="list">list</span>[<span title="str">str</span>]]</code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>List of keys to skip. By default, None.</p>
-<!-- prettier-ignore-start -->
-
-<!-- prettier-ignore-end -->
-              </div>
-            </td>
-            <td>
-                  <code>None</code>
-            </td>
-          </tr>
-      </tbody>
-    </table>
 
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/easyreflectometry/sample/elements/materials/material_solvated.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">165</span>
-<span class="normal">166</span>
-<span class="normal">167</span>
-<span class="normal">168</span>
-<span class="normal">169</span>
-<span class="normal">170</span>
-<span class="normal">171</span>
-<span class="normal">172</span>
-<span class="normal">173</span>
-<span class="normal">174</span>
-<span class="normal">175</span>
-<span class="normal">176</span>
-<span class="normal">177</span>
-<span class="normal">178</span>
-<span class="normal">179</span>
-<span class="normal">180</span>
-<span class="normal">181</span>
-<span class="normal">182</span>
-<span class="normal">183</span>
-<span class="normal">184</span>
-<span class="normal">185</span>
-<span class="normal">186</span>
-<span class="normal">187</span>
-<span class="normal">188</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">as_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">skip</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Produces a cleaned dict using a custom as_dict method to skip necessary things.</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">131</span>
+<span class="normal">132</span>
+<span class="normal">133</span>
+<span class="normal">134</span>
+<span class="normal">135</span>
+<span class="normal">136</span>
+<span class="normal">137</span>
+<span class="normal">138</span>
+<span class="normal">139</span>
+<span class="normal">140</span>
+<span class="normal">141</span>
+<span class="normal">142</span>
+<span class="normal">143</span>
+<span class="normal">144</span>
+<span class="normal">145</span>
+<span class="normal">146</span>
+<span class="normal">147</span>
+<span class="normal">148</span>
+<span class="normal">149</span>
+<span class="normal">150</span>
+<span class="normal">151</span>
+<span class="normal">152</span>
+<span class="normal">153</span>
+<span class="normal">154</span>
+<span class="normal">155</span>
+<span class="normal">156</span>
+<span class="normal">157</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">from_dict</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">obj_dict</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;MaterialSolvated&#39;</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Re-route the saved ``solvent_fraction`` Parameter onto ``_fraction``.</span>
 
-<span class="sd">    The resulting dict matches the parameters in __init__</span>
+<span class="sd">    :class:`ModelBase.from_dict` writes the saved Parameter to</span>
+<span class="sd">    ``_solvent_fraction`` because that&#39;s the constructor-arg name, but</span>
+<span class="sd">    the live `solvent_fraction` property returns ``self._fraction``</span>
+<span class="sd">    (the field MaterialMixture maintains). Without this override the</span>
+<span class="sd">    saved fit metadata (fixed/bounds/etc.) is stranded on the unused</span>
+<span class="sd">    ``_solvent_fraction`` attribute and the active parameter keeps the</span>
+<span class="sd">    defaults from `__init__`.</span>
 
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    skip : Optional[list[str]], optional</span>
-<span class="sd">        List of keys to skip. By default, None.</span>
+<span class="sd">    Also re-runs `_materials_constraints` so the parent MaterialMixture&#39;s</span>
+<span class="sd">    mixed `_sld` / `_isld` depend on the live `_fraction`, not the</span>
+<span class="sd">    temporary Parameter created from the float kwarg.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">this_dict</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">as_dict</span><span class="p">(</span><span class="n">skip</span><span class="o">=</span><span class="n">skip</span><span class="p">)</span>
-    <span class="n">this_dict</span><span class="p">[</span><span class="s1">&#39;material&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">material</span><span class="o">.</span><span class="n">as_dict</span><span class="p">(</span><span class="n">skip</span><span class="o">=</span><span class="n">skip</span><span class="p">)</span>
-    <span class="n">this_dict</span><span class="p">[</span><span class="s1">&#39;solvent&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">solvent</span><span class="o">.</span><span class="n">as_dict</span><span class="p">(</span><span class="n">skip</span><span class="o">=</span><span class="n">skip</span><span class="p">)</span>
-    <span class="n">this_dict</span><span class="p">[</span><span class="s1">&#39;solvent_fraction&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fraction</span><span class="o">.</span><span class="n">as_dict</span><span class="p">(</span><span class="n">skip</span><span class="o">=</span><span class="n">skip</span><span class="p">)</span>
-    <span class="c1"># Property and protected varible from material_mixture</span>
-    <span class="k">del</span> <span class="n">this_dict</span><span class="p">[</span><span class="s1">&#39;material_a&#39;</span><span class="p">]</span>
-    <span class="k">del</span> <span class="n">this_dict</span><span class="p">[</span><span class="s1">&#39;_material_a&#39;</span><span class="p">]</span>
-    <span class="c1"># Property and protected varible from material_mixture</span>
-    <span class="k">del</span> <span class="n">this_dict</span><span class="p">[</span><span class="s1">&#39;material_b&#39;</span><span class="p">]</span>
-    <span class="k">del</span> <span class="n">this_dict</span><span class="p">[</span><span class="s1">&#39;_material_b&#39;</span><span class="p">]</span>
-    <span class="c1"># Property and protected varible from material_mixture</span>
-    <span class="k">del</span> <span class="n">this_dict</span><span class="p">[</span><span class="s1">&#39;fraction&#39;</span><span class="p">]</span>
-    <span class="k">del</span> <span class="n">this_dict</span><span class="p">[</span><span class="s1">&#39;_fraction&#39;</span><span class="p">]</span>
-    <span class="k">return</span> <span class="n">this_dict</span>
+    <span class="n">instance</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">obj_dict</span><span class="p">)</span>
+    <span class="n">saved</span> <span class="o">=</span> <span class="n">instance</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;_solvent_fraction&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">saved</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">old</span> <span class="o">=</span> <span class="n">instance</span><span class="o">.</span><span class="n">_fraction</span>
+        <span class="n">instance</span><span class="o">.</span><span class="n">_fraction</span> <span class="o">=</span> <span class="n">saved</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">instance</span><span class="o">.</span><span class="n">_global_object</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">prune</span><span class="p">(</span><span class="n">old</span><span class="o">.</span><span class="n">unique_name</span><span class="p">)</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">AttributeError</span><span class="p">,</span> <span class="ne">KeyError</span><span class="p">):</span>
+            <span class="k">pass</span>
+        <span class="n">instance</span><span class="o">.</span><span class="n">_materials_constraints</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">instance</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -4083,15 +4056,22 @@ Patches of solvent in the layer where no material is present.</p>
 <span class="normal">126</span>
 <span class="normal">127</span>
 <span class="normal">128</span>
-<span class="normal">129</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">Layer</span><span class="p">(</span><span class="n">BaseCore</span><span class="p">):</span>
-    <span class="c1"># Added in super().__init__</span>
-    <span class="c1">#: Material that makes up the layer.</span>
-    <span class="n">material</span><span class="p">:</span> <span class="n">Material</span>
-    <span class="c1">#: Thickness of the layer in Angstrom.</span>
-    <span class="n">thickness</span><span class="p">:</span> <span class="n">Parameter</span>
-    <span class="c1">#: Roughness of the layer in Angstrom.</span>
-    <span class="n">roughness</span><span class="p">:</span> <span class="n">Parameter</span>
-
+<span class="normal">129</span>
+<span class="normal">130</span>
+<span class="normal">131</span>
+<span class="normal">132</span>
+<span class="normal">133</span>
+<span class="normal">134</span>
+<span class="normal">135</span>
+<span class="normal">136</span>
+<span class="normal">137</span>
+<span class="normal">138</span>
+<span class="normal">139</span>
+<span class="normal">140</span>
+<span class="normal">141</span>
+<span class="normal">142</span>
+<span class="normal">143</span>
+<span class="normal">144</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">Layer</span><span class="p">(</span><span class="n">BaseCore</span><span class="p">):</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">material</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Material</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -4142,14 +4122,37 @@ Patches of solvent in the layer where no material is present.</p>
         <span class="p">)</span>
         <span class="n">roughness</span><span class="o">.</span><span class="n">default_limits_pending</span> <span class="o">=</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">roughness_value</span><span class="p">,</span> <span class="n">Parameter</span><span class="p">)</span>
 
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
-            <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
-            <span class="n">interface</span><span class="o">=</span><span class="n">interface</span><span class="p">,</span>
-            <span class="n">material</span><span class="o">=</span><span class="n">material</span><span class="p">,</span>
-            <span class="n">thickness</span><span class="o">=</span><span class="n">thickness</span><span class="p">,</span>
-            <span class="n">roughness</span><span class="o">=</span><span class="n">roughness</span><span class="p">,</span>
-            <span class="n">unique_name</span><span class="o">=</span><span class="n">unique_name</span><span class="p">,</span>
-        <span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">unique_name</span><span class="o">=</span><span class="n">unique_name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_material</span> <span class="o">=</span> <span class="n">material</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_thickness</span> <span class="o">=</span> <span class="n">thickness</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_roughness</span> <span class="o">=</span> <span class="n">roughness</span>
+
+        <span class="k">if</span> <span class="n">interface</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">interface</span> <span class="o">=</span> <span class="n">interface</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">material</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Material</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_material</span>
+
+    <span class="nd">@material</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">material</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Material</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_material</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">thickness</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Parameter</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_thickness</span>
+
+    <span class="nd">@thickness</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">thickness</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_thickness</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">roughness</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Parameter</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_roughness</span>
+
+    <span class="nd">@roughness</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">roughness</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_roughness</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">value</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">assign_material</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">material</span><span class="p">:</span> <span class="n">Material</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Assign a material to the layer interface.</span>
@@ -4159,7 +4162,7 @@ Patches of solvent in the layer where no material is present.</p>
 <span class="sd">        material : Material</span>
 <span class="sd">            The material to assign to the layer.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">material</span> <span class="o">=</span> <span class="n">material</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_material</span> <span class="o">=</span> <span class="n">material</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">interface</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">interface</span><span class="p">()</span><span class="o">.</span><span class="n">assign_material_to_layer</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">material</span><span class="o">.</span><span class="n">unique_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">unique_name</span><span class="p">)</span>
 
@@ -4337,64 +4340,63 @@ Patches of solvent in the layer where no material is present.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/easyreflectometry/sample/elements/layers/layer.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 48</span>
-<span class="normal"> 49</span>
-<span class="normal"> 50</span>
-<span class="normal"> 51</span>
-<span class="normal"> 52</span>
-<span class="normal"> 53</span>
-<span class="normal"> 54</span>
-<span class="normal"> 55</span>
-<span class="normal"> 56</span>
-<span class="normal"> 57</span>
-<span class="normal"> 58</span>
-<span class="normal"> 59</span>
-<span class="normal"> 60</span>
-<span class="normal"> 61</span>
-<span class="normal"> 62</span>
-<span class="normal"> 63</span>
-<span class="normal"> 64</span>
-<span class="normal"> 65</span>
-<span class="normal"> 66</span>
-<span class="normal"> 67</span>
-<span class="normal"> 68</span>
-<span class="normal"> 69</span>
-<span class="normal"> 70</span>
-<span class="normal"> 71</span>
-<span class="normal"> 72</span>
-<span class="normal"> 73</span>
-<span class="normal"> 74</span>
-<span class="normal"> 75</span>
-<span class="normal"> 76</span>
-<span class="normal"> 77</span>
-<span class="normal"> 78</span>
-<span class="normal"> 79</span>
-<span class="normal"> 80</span>
-<span class="normal"> 81</span>
-<span class="normal"> 82</span>
-<span class="normal"> 83</span>
-<span class="normal"> 84</span>
-<span class="normal"> 85</span>
-<span class="normal"> 86</span>
-<span class="normal"> 87</span>
-<span class="normal"> 88</span>
-<span class="normal"> 89</span>
-<span class="normal"> 90</span>
-<span class="normal"> 91</span>
-<span class="normal"> 92</span>
-<span class="normal"> 93</span>
-<span class="normal"> 94</span>
-<span class="normal"> 95</span>
-<span class="normal"> 96</span>
-<span class="normal"> 97</span>
-<span class="normal"> 98</span>
-<span class="normal"> 99</span>
-<span class="normal">100</span>
-<span class="normal">101</span>
-<span class="normal">102</span>
-<span class="normal">103</span>
-<span class="normal">104</span>
-<span class="normal">105</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">40</span>
+<span class="normal">41</span>
+<span class="normal">42</span>
+<span class="normal">43</span>
+<span class="normal">44</span>
+<span class="normal">45</span>
+<span class="normal">46</span>
+<span class="normal">47</span>
+<span class="normal">48</span>
+<span class="normal">49</span>
+<span class="normal">50</span>
+<span class="normal">51</span>
+<span class="normal">52</span>
+<span class="normal">53</span>
+<span class="normal">54</span>
+<span class="normal">55</span>
+<span class="normal">56</span>
+<span class="normal">57</span>
+<span class="normal">58</span>
+<span class="normal">59</span>
+<span class="normal">60</span>
+<span class="normal">61</span>
+<span class="normal">62</span>
+<span class="normal">63</span>
+<span class="normal">64</span>
+<span class="normal">65</span>
+<span class="normal">66</span>
+<span class="normal">67</span>
+<span class="normal">68</span>
+<span class="normal">69</span>
+<span class="normal">70</span>
+<span class="normal">71</span>
+<span class="normal">72</span>
+<span class="normal">73</span>
+<span class="normal">74</span>
+<span class="normal">75</span>
+<span class="normal">76</span>
+<span class="normal">77</span>
+<span class="normal">78</span>
+<span class="normal">79</span>
+<span class="normal">80</span>
+<span class="normal">81</span>
+<span class="normal">82</span>
+<span class="normal">83</span>
+<span class="normal">84</span>
+<span class="normal">85</span>
+<span class="normal">86</span>
+<span class="normal">87</span>
+<span class="normal">88</span>
+<span class="normal">89</span>
+<span class="normal">90</span>
+<span class="normal">91</span>
+<span class="normal">92</span>
+<span class="normal">93</span>
+<span class="normal">94</span>
+<span class="normal">95</span>
+<span class="normal">96</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">material</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Material</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">thickness</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Parameter</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -4444,14 +4446,13 @@ Patches of solvent in the layer where no material is present.</p>
     <span class="p">)</span>
     <span class="n">roughness</span><span class="o">.</span><span class="n">default_limits_pending</span> <span class="o">=</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">roughness_value</span><span class="p">,</span> <span class="n">Parameter</span><span class="p">)</span>
 
-    <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
-        <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
-        <span class="n">interface</span><span class="o">=</span><span class="n">interface</span><span class="p">,</span>
-        <span class="n">material</span><span class="o">=</span><span class="n">material</span><span class="p">,</span>
-        <span class="n">thickness</span><span class="o">=</span><span class="n">thickness</span><span class="p">,</span>
-        <span class="n">roughness</span><span class="o">=</span><span class="n">roughness</span><span class="p">,</span>
-        <span class="n">unique_name</span><span class="o">=</span><span class="n">unique_name</span><span class="p">,</span>
-    <span class="p">)</span>
+    <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">unique_name</span><span class="o">=</span><span class="n">unique_name</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_material</span> <span class="o">=</span> <span class="n">material</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_thickness</span> <span class="o">=</span> <span class="n">thickness</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_roughness</span> <span class="o">=</span> <span class="n">roughness</span>
+
+    <span class="k">if</span> <span class="n">interface</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">interface</span> <span class="o">=</span> <span class="n">interface</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -4511,17 +4512,17 @@ Patches of solvent in the layer where no material is present.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/easyreflectometry/sample/elements/layers/layer.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">107</span>
-<span class="normal">108</span>
-<span class="normal">109</span>
-<span class="normal">110</span>
-<span class="normal">111</span>
-<span class="normal">112</span>
-<span class="normal">113</span>
-<span class="normal">114</span>
-<span class="normal">115</span>
-<span class="normal">116</span>
-<span class="normal">117</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">assign_material</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">material</span><span class="p">:</span> <span class="n">Material</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">122</span>
+<span class="normal">123</span>
+<span class="normal">124</span>
+<span class="normal">125</span>
+<span class="normal">126</span>
+<span class="normal">127</span>
+<span class="normal">128</span>
+<span class="normal">129</span>
+<span class="normal">130</span>
+<span class="normal">131</span>
+<span class="normal">132</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">assign_material</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">material</span><span class="p">:</span> <span class="n">Material</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Assign a material to the layer interface.</span>
 
 <span class="sd">    Parameters</span>
@@ -4529,7 +4530,7 @@ Patches of solvent in the layer where no material is present.</p>
 <span class="sd">    material : Material</span>
 <span class="sd">        The material to assign to the layer.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">material</span> <span class="o">=</span> <span class="n">material</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_material</span> <span class="o">=</span> <span class="n">material</span>
     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">interface</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">interface</span><span class="p">()</span><span class="o">.</span><span class="n">assign_material_to_layer</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">material</span><span class="o">.</span><span class="n">unique_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">unique_name</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
@@ -4839,21 +4840,11 @@ molecular formula an area per molecule, and a solvent.</p>
 <span class="normal">311</span>
 <span class="normal">312</span>
 <span class="normal">313</span>
-<span class="normal">314</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">LayerAreaPerMolecule</span><span class="p">(</span><span class="n">Layer</span><span class="p">):</span>
+<span class="normal">314</span>
+<span class="normal">315</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">LayerAreaPerMolecule</span><span class="p">(</span><span class="n">Layer</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;The `LayerAreaPerMolecule` class allows a layer to be defined in terms of some</span>
 <span class="sd">    molecular formula an area per molecule, and a solvent.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="c1"># Added in __init__</span>
-    <span class="c1">#: Real part of the scattering length.</span>
-    <span class="n">_scattering_length_real</span><span class="p">:</span> <span class="n">Parameter</span>
-    <span class="c1">#: Imaginary part of the scattering length.</span>
-    <span class="n">_scattering_length_imag</span><span class="p">:</span> <span class="n">Parameter</span>
-    <span class="c1">#: Area per molecule in the layer in Anstrom^2.</span>
-    <span class="n">_area_per_molecule</span><span class="p">:</span> <span class="n">Parameter</span>
-
-    <span class="c1"># Other typer than in __init__.super()</span>
-    <span class="n">material</span><span class="p">:</span> <span class="n">MaterialSolvated</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -4902,7 +4893,6 @@ molecular formula an area per molecule, and a solvent.</p>
                 <span class="n">interface</span><span class="o">=</span><span class="n">interface</span><span class="p">,</span>
             <span class="p">)</span>
 
-        <span class="c1"># Create the solvated molecule and corresponding constraints</span>
         <span class="k">if</span> <span class="n">molecular_formula</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">molecular_formula</span> <span class="o">=</span> <span class="n">DEFAULTS</span><span class="p">[</span><span class="s1">&#39;molecular_formula&#39;</span><span class="p">]</span>
         <span class="n">molecule_material</span> <span class="o">=</span> <span class="n">Material</span><span class="p">(</span>
@@ -4919,39 +4909,40 @@ molecular formula an area per molecule, and a solvent.</p>
             <span class="n">default_dict</span><span class="o">=</span><span class="n">DEFAULTS</span><span class="p">,</span>
             <span class="n">unique_name_prefix</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">unique_name</span><span class="si">}</span><span class="s1">_Thickness&#39;</span><span class="p">,</span>
         <span class="p">)</span>
-        <span class="n">_area_per_molecule</span> <span class="o">=</span> <span class="n">get_as_parameter</span><span class="p">(</span>
+        <span class="n">area_per_molecule_param</span> <span class="o">=</span> <span class="n">get_as_parameter</span><span class="p">(</span>
             <span class="n">name</span><span class="o">=</span><span class="s1">&#39;area_per_molecule&#39;</span><span class="p">,</span>
             <span class="n">value</span><span class="o">=</span><span class="n">area_per_molecule</span><span class="p">,</span>
             <span class="n">default_dict</span><span class="o">=</span><span class="n">DEFAULTS</span><span class="p">,</span>
             <span class="n">unique_name_prefix</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">unique_name</span><span class="si">}</span><span class="s1">_AreaPerMolecule&#39;</span><span class="p">,</span>
         <span class="p">)</span>
-        <span class="n">_scattering_length_real</span> <span class="o">=</span> <span class="n">get_as_parameter</span><span class="p">(</span>
+        <span class="n">scattering_length_real</span> <span class="o">=</span> <span class="n">get_as_parameter</span><span class="p">(</span>
             <span class="n">name</span><span class="o">=</span><span class="s1">&#39;scattering_length_real&#39;</span><span class="p">,</span>
             <span class="n">value</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
             <span class="n">default_dict</span><span class="o">=</span><span class="n">DEFAULTS</span><span class="p">[</span><span class="s1">&#39;sl&#39;</span><span class="p">],</span>
             <span class="n">unique_name_prefix</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">unique_name</span><span class="si">}</span><span class="s1">_Sl&#39;</span><span class="p">,</span>
         <span class="p">)</span>
-        <span class="n">_scattering_length_imag</span> <span class="o">=</span> <span class="n">get_as_parameter</span><span class="p">(</span>
+        <span class="n">scattering_length_imag</span> <span class="o">=</span> <span class="n">get_as_parameter</span><span class="p">(</span>
             <span class="n">name</span><span class="o">=</span><span class="s1">&#39;scattering_length_imag&#39;</span><span class="p">,</span>
             <span class="n">value</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
             <span class="n">default_dict</span><span class="o">=</span><span class="n">DEFAULTS</span><span class="p">[</span><span class="s1">&#39;isl&#39;</span><span class="p">],</span>
             <span class="n">unique_name_prefix</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">unique_name</span><span class="si">}</span><span class="s1">_Isl&#39;</span><span class="p">,</span>
         <span class="p">)</span>
-        <span class="c1"># Constrain the real part of the sld value for the molecule</span>
+
+        <span class="c1"># Constrain molecule.sld via scattering length / (thickness * area_per_molecule)</span>
         <span class="n">dependency_expression</span> <span class="o">=</span> <span class="s1">&#39;scattering_length / (thickness * area_per_molecule) * 1e6&#39;</span>
         <span class="n">dependency_map</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s1">&#39;scattering_length&#39;</span><span class="p">:</span> <span class="n">_scattering_length_real</span><span class="p">,</span>
+            <span class="s1">&#39;scattering_length&#39;</span><span class="p">:</span> <span class="n">scattering_length_real</span><span class="p">,</span>
             <span class="s1">&#39;thickness&#39;</span><span class="p">:</span> <span class="n">thickness</span><span class="p">,</span>
-            <span class="s1">&#39;area_per_molecule&#39;</span><span class="p">:</span> <span class="n">_area_per_molecule</span><span class="p">,</span>
+            <span class="s1">&#39;area_per_molecule&#39;</span><span class="p">:</span> <span class="n">area_per_molecule_param</span><span class="p">,</span>
         <span class="p">}</span>
         <span class="n">molecule_material</span><span class="o">.</span><span class="n">sld</span><span class="o">.</span><span class="n">make_dependent_on</span><span class="p">(</span><span class="n">dependency_expression</span><span class="o">=</span><span class="n">dependency_expression</span><span class="p">,</span> <span class="n">dependency_map</span><span class="o">=</span><span class="n">dependency_map</span><span class="p">)</span>
 
-        <span class="c1"># # Constrain the real part of the sld value for the molecule</span>
+        <span class="c1"># Same dependency under short variable names</span>
         <span class="n">dependency_expression</span> <span class="o">=</span> <span class="s1">&#39;a / (b*p) * 1e6&#39;</span>
-        <span class="n">dependency_map</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="n">_scattering_length_real</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="n">thickness</span><span class="p">,</span> <span class="s1">&#39;p&#39;</span><span class="p">:</span> <span class="n">_area_per_molecule</span><span class="p">}</span>
+        <span class="n">dependency_map</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="n">scattering_length_real</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="n">thickness</span><span class="p">,</span> <span class="s1">&#39;p&#39;</span><span class="p">:</span> <span class="n">area_per_molecule_param</span><span class="p">}</span>
         <span class="n">molecule_material</span><span class="o">.</span><span class="n">sld</span><span class="o">.</span><span class="n">make_dependent_on</span><span class="p">(</span><span class="n">dependency_expression</span><span class="o">=</span><span class="n">dependency_expression</span><span class="p">,</span> <span class="n">dependency_map</span><span class="o">=</span><span class="n">dependency_map</span><span class="p">)</span>
 
-        <span class="n">dependency_map</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="n">_scattering_length_imag</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="n">thickness</span><span class="p">,</span> <span class="s1">&#39;p&#39;</span><span class="p">:</span> <span class="n">_area_per_molecule</span><span class="p">}</span>
+        <span class="n">dependency_map</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="n">scattering_length_imag</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="n">thickness</span><span class="p">,</span> <span class="s1">&#39;p&#39;</span><span class="p">:</span> <span class="n">area_per_molecule_param</span><span class="p">}</span>
         <span class="n">molecule_material</span><span class="o">.</span><span class="n">isld</span><span class="o">.</span><span class="n">make_dependent_on</span><span class="p">(</span><span class="n">dependency_expression</span><span class="o">=</span><span class="n">dependency_expression</span><span class="p">,</span> <span class="n">dependency_map</span><span class="o">=</span><span class="n">dependency_map</span><span class="p">)</span>
 
         <span class="n">solvated_molecule_material</span> <span class="o">=</span> <span class="n">MaterialSolvated</span><span class="p">(</span>
@@ -4967,17 +4958,85 @@ molecular formula an area per molecule, and a solvent.</p>
             <span class="n">roughness</span><span class="o">=</span><span class="n">roughness</span><span class="p">,</span>
             <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
             <span class="n">unique_name</span><span class="o">=</span><span class="n">unique_name</span><span class="p">,</span>
-            <span class="n">interface</span><span class="o">=</span><span class="n">interface</span><span class="p">,</span>
+            <span class="n">interface</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_add_component</span><span class="p">(</span><span class="s1">&#39;_scattering_length_real&#39;</span><span class="p">,</span> <span class="n">_scattering_length_real</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_add_component</span><span class="p">(</span><span class="s1">&#39;_scattering_length_imag&#39;</span><span class="p">,</span> <span class="n">_scattering_length_imag</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_add_component</span><span class="p">(</span><span class="s1">&#39;_area_per_molecule&#39;</span><span class="p">,</span> <span class="n">_area_per_molecule</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_area_per_molecule</span> <span class="o">=</span> <span class="n">area_per_molecule_param</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_scattering_length_real</span> <span class="o">=</span> <span class="n">scattering_length_real</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_scattering_length_imag</span> <span class="o">=</span> <span class="n">scattering_length_imag</span>
 
         <span class="n">scattering_length</span> <span class="o">=</span> <span class="n">neutron_scattering_length</span><span class="p">(</span><span class="n">molecular_formula</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_scattering_length_real</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">scattering_length</span><span class="o">.</span><span class="n">real</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_scattering_length_imag</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">scattering_length</span><span class="o">.</span><span class="n">imag</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_molecular_formula</span> <span class="o">=</span> <span class="n">molecular_formula</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">interface</span> <span class="o">=</span> <span class="n">interface</span>
+
+        <span class="k">if</span> <span class="n">interface</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">interface</span> <span class="o">=</span> <span class="n">interface</span>
+
+    <span class="c1"># ----- constraint plumbing -----</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_setup_sld_constraints</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Wire the inner molecule material&#39;s ``sld`` / ``isld`` to depend on</span>
+<span class="sd">        the current scattering-length, thickness, and area-per-molecule</span>
+<span class="sd">        parameters.</span>
+
+<span class="sd">        Idempotent — called once from ``__init__`` and again from</span>
+<span class="sd">        ``from_dict`` after the saved Parameter objects replace the</span>
+<span class="sd">        constructor-time temporaries.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">molecule_material</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">material</span><span class="o">.</span><span class="n">material</span>
+        <span class="k">for</span> <span class="n">derived</span> <span class="ow">in</span> <span class="p">(</span><span class="n">molecule_material</span><span class="o">.</span><span class="n">sld</span><span class="p">,</span> <span class="n">molecule_material</span><span class="o">.</span><span class="n">isld</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">derived</span><span class="o">.</span><span class="n">independent</span><span class="p">:</span>
+                <span class="n">derived</span><span class="o">.</span><span class="n">make_independent</span><span class="p">()</span>
+
+        <span class="n">dependency_expression</span> <span class="o">=</span> <span class="s1">&#39;a / (b*p) * 1e6&#39;</span>
+        <span class="n">molecule_material</span><span class="o">.</span><span class="n">sld</span><span class="o">.</span><span class="n">make_dependent_on</span><span class="p">(</span>
+            <span class="n">dependency_expression</span><span class="o">=</span><span class="n">dependency_expression</span><span class="p">,</span>
+            <span class="n">dependency_map</span><span class="o">=</span><span class="p">{</span>
+                <span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scattering_length_real</span><span class="p">,</span>
+                <span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_thickness</span><span class="p">,</span>
+                <span class="s1">&#39;p&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_area_per_molecule</span><span class="p">,</span>
+            <span class="p">},</span>
+        <span class="p">)</span>
+        <span class="n">molecule_material</span><span class="o">.</span><span class="n">isld</span><span class="o">.</span><span class="n">make_dependent_on</span><span class="p">(</span>
+            <span class="n">dependency_expression</span><span class="o">=</span><span class="n">dependency_expression</span><span class="p">,</span>
+            <span class="n">dependency_map</span><span class="o">=</span><span class="p">{</span>
+                <span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scattering_length_imag</span><span class="p">,</span>
+                <span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_thickness</span><span class="p">,</span>
+                <span class="s1">&#39;p&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_area_per_molecule</span><span class="p">,</span>
+            <span class="p">},</span>
+        <span class="p">)</span>
+
+    <span class="c1"># ----- deserialization -----</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_dict</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">obj_dict</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;LayerAreaPerMolecule&#39;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Re-route the saved ``solvent_fraction`` Parameter and rebuild the</span>
+<span class="sd">        molecule-SLD constraint chain after :class:`ModelBase.from_dict`</span>
+<span class="sd">        swaps in the persisted Parameter objects.</span>
+
+<span class="sd">        `ModelBase.from_dict` writes the deserialized ``solvent_fraction``</span>
+<span class="sd">        Parameter to ``self._solvent_fraction`` (orphan — the live property</span>
+<span class="sd">        delegates to ``self.material.solvent_fraction``, which is</span>
+<span class="sd">        ``self.material._fraction``). It also reassigns ``self._thickness``</span>
+<span class="sd">        and ``self._area_per_molecule``, but the constraint graph built in</span>
+<span class="sd">        ``__init__`` still references the temporary Parameters created from</span>
+<span class="sd">        the float kwargs. We fix both here.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">instance</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">obj_dict</span><span class="p">)</span>
+
+        <span class="n">saved_solvent_fraction</span> <span class="o">=</span> <span class="n">instance</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;_solvent_fraction&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">saved_solvent_fraction</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">mixture</span> <span class="o">=</span> <span class="n">instance</span><span class="o">.</span><span class="n">material</span>
+            <span class="n">old</span> <span class="o">=</span> <span class="n">mixture</span><span class="o">.</span><span class="n">_fraction</span>
+            <span class="n">mixture</span><span class="o">.</span><span class="n">_fraction</span> <span class="o">=</span> <span class="n">saved_solvent_fraction</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">instance</span><span class="o">.</span><span class="n">_global_object</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">prune</span><span class="p">(</span><span class="n">old</span><span class="o">.</span><span class="n">unique_name</span><span class="p">)</span>
+            <span class="k">except</span> <span class="p">(</span><span class="ne">AttributeError</span><span class="p">,</span> <span class="ne">KeyError</span><span class="p">):</span>
+                <span class="k">pass</span>
+            <span class="n">mixture</span><span class="o">.</span><span class="n">_materials_constraints</span><span class="p">()</span>
+
+        <span class="n">instance</span><span class="o">.</span><span class="n">_setup_sld_constraints</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">instance</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">area_per_molecule_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Parameter</span><span class="p">:</span>
@@ -4985,22 +5044,15 @@ molecular formula an area per molecule, and a solvent.</p>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_area_per_molecule</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">area_per_molecule</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the area per molecule.&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_area_per_molecule</span><span class="o">.</span><span class="n">value</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">area_per_molecule</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Parameter</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The Parameter that controls area per molecule.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_area_per_molecule</span>
 
     <span class="nd">@area_per_molecule</span><span class="o">.</span><span class="n">setter</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">area_per_molecule</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_area_per_molecule</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the area per molecule.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        new_area_per_molecule : float</span>
-<span class="sd">            New area per molecule.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">new_area_per_molecule</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;new_area_per_molecule must be greater than 0.0.&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_area_per_molecule</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">new_area_per_molecule</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">area_per_molecule</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">value</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;area_per_molecule must be greater than 0.0.&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_area_per_molecule</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">value</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">molecule</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Material</span><span class="p">:</span>
@@ -5014,40 +5066,21 @@ molecular formula an area per molecule, and a solvent.</p>
 
     <span class="nd">@solvent</span><span class="o">.</span><span class="n">setter</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">solvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_solvent</span><span class="p">:</span> <span class="n">Material</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the solvent material.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        new_solvent : Material</span>
-<span class="sd">            New solvent material.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">material</span><span class="o">.</span><span class="n">solvent</span> <span class="o">=</span> <span class="n">new_solvent</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">solvent_fraction_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">solvent_fraction_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Parameter</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get parameter for the fraction of the layer occupied by the solvent.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">material</span><span class="o">.</span><span class="n">solvent_fraction_parameter</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">solvent_fraction</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the fraction of the layer occupied by the solvent.</span>
-
-<span class="sd">        This could be a result of either water solvating the molecule, or incomplete surface coverage of the molecules.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">solvent_fraction</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Parameter</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The Parameter for the fraction of the layer occupied by the solvent.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">material</span><span class="o">.</span><span class="n">solvent_fraction</span>
 
     <span class="nd">@solvent_fraction</span><span class="o">.</span><span class="n">setter</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">solvent_fraction</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">solvent_fraction</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the fraction of the layer occupied by the solvent.</span>
-
-<span class="sd">        This could be a result of either water solvating the molecule, or incomplete surface coverage of the molecules.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        solvent_fraction : float</span>
-<span class="sd">            Fraction of layer described by the solvent.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">material</span><span class="o">.</span><span class="n">solvent_fraction</span> <span class="o">=</span> <span class="n">solvent_fraction</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">solvent_fraction</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">material</span><span class="o">.</span><span class="n">solvent_fraction</span> <span class="o">=</span> <span class="n">value</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">molecular_formula</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
@@ -5056,16 +5089,8 @@ molecular formula an area per molecule, and a solvent.</p>
 
     <span class="nd">@molecular_formula</span><span class="o">.</span><span class="n">setter</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">molecular_formula</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">formula_string</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the formula of the molecule in the material.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        formula_string : str</span>
-<span class="sd">            String that defines the molecular formula.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_molecular_formula</span> <span class="o">=</span> <span class="n">formula_string</span>
         <span class="n">scattering_length</span> <span class="o">=</span> <span class="n">neutron_scattering_length</span><span class="p">(</span><span class="n">formula_string</span><span class="p">)</span>
-        <span class="c1"># The molecule is also being updated through the constraints</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_scattering_length_real</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">scattering_length</span><span class="o">.</span><span class="n">real</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_scattering_length_imag</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">scattering_length</span><span class="o">.</span><span class="n">imag</span>
 
@@ -5074,33 +5099,11 @@ molecular formula an area per molecule, and a solvent.</p>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_dict_repr</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Dictionary representation of the `area_per_molecule` object.</span>
-
-<span class="sd">        Produces a simple dictionary.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Dictionary representation of the `area_per_molecule` object.&quot;&quot;&quot;</span>
         <span class="n">dict_repr</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">_dict_repr</span>
         <span class="n">dict_repr</span><span class="p">[</span><span class="s1">&#39;molecular_formula&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_molecular_formula</span>
-        <span class="n">dict_repr</span><span class="p">[</span><span class="s1">&#39;area_per_molecule&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">area_per_molecule</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1"> </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_area_per_molecule</span><span class="o">.</span><span class="n">unit</span><span class="si">}</span><span class="s1">&#39;</span>
+        <span class="n">dict_repr</span><span class="p">[</span><span class="s1">&#39;area_per_molecule&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_area_per_molecule</span><span class="o">.</span><span class="n">value</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1"> </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_area_per_molecule</span><span class="o">.</span><span class="n">unit</span><span class="si">}</span><span class="s1">&#39;</span>
         <span class="k">return</span> <span class="n">dict_repr</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">as_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">skip</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Produces a cleaned dict using a custom as_dict method to skip necessary things.</span>
-
-<span class="sd">        The resulting dict matches the parameters in __init__</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        skip : Optional[list[str]], optional</span>
-<span class="sd">            List of keys to skip. By default, None.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">this_dict</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">as_dict</span><span class="p">(</span><span class="n">skip</span><span class="o">=</span><span class="n">skip</span><span class="p">)</span>
-        <span class="n">this_dict</span><span class="p">[</span><span class="s1">&#39;solvent_fraction&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">material</span><span class="o">.</span><span class="n">_fraction</span><span class="o">.</span><span class="n">as_dict</span><span class="p">(</span><span class="n">skip</span><span class="o">=</span><span class="n">skip</span><span class="p">)</span>
-        <span class="n">this_dict</span><span class="p">[</span><span class="s1">&#39;area_per_molecule&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_area_per_molecule</span><span class="o">.</span><span class="n">as_dict</span><span class="p">(</span><span class="n">skip</span><span class="o">=</span><span class="n">skip</span><span class="p">)</span>
-        <span class="n">this_dict</span><span class="p">[</span><span class="s1">&#39;solvent&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">solvent</span><span class="o">.</span><span class="n">as_dict</span><span class="p">(</span><span class="n">skip</span><span class="o">=</span><span class="n">skip</span><span class="p">)</span>
-        <span class="k">del</span> <span class="n">this_dict</span><span class="p">[</span><span class="s1">&#39;material&#39;</span><span class="p">]</span>
-        <span class="k">del</span> <span class="n">this_dict</span><span class="p">[</span><span class="s1">&#39;_scattering_length_real&#39;</span><span class="p">]</span>
-        <span class="k">del</span> <span class="n">this_dict</span><span class="p">[</span><span class="s1">&#39;_scattering_length_imag&#39;</span><span class="p">]</span>
-        <span class="k">return</span> <span class="n">this_dict</span>
 </code></pre></div></td></tr></table></div>
               </details>
 
@@ -5156,7 +5159,7 @@ molecular formula an area per molecule, and a solvent.</p>
 
     <div class="doc doc-contents ">
 
-        <p>Get the area per molecule.</p>
+        <p>The Parameter that controls area per molecule.</p>
 <!-- prettier-ignore-start -->
 
 <!-- prettier-ignore-end -->
@@ -5258,8 +5261,7 @@ molecular formula an area per molecule, and a solvent.</p>
 
     <div class="doc doc-contents ">
 
-        <p>Get the fraction of the layer occupied by the solvent.</p>
-<p>This could be a result of either water solvating the molecule, or incomplete surface coverage of the molecules.</p>
+        <p>The Parameter for the fraction of the layer occupied by the solvent.</p>
 <!-- prettier-ignore-start -->
 
 <!-- prettier-ignore-end -->
@@ -5501,7 +5503,18 @@ molecular formula an area per molecule, and a solvent.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/easyreflectometry/sample/elements/layers/layer_area_per_molecule.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 69</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 58</span>
+<span class="normal"> 59</span>
+<span class="normal"> 60</span>
+<span class="normal"> 61</span>
+<span class="normal"> 62</span>
+<span class="normal"> 63</span>
+<span class="normal"> 64</span>
+<span class="normal"> 65</span>
+<span class="normal"> 66</span>
+<span class="normal"> 67</span>
+<span class="normal"> 68</span>
+<span class="normal"> 69</span>
 <span class="normal"> 70</span>
 <span class="normal"> 71</span>
 <span class="normal"> 72</span>
@@ -5614,16 +5627,7 @@ molecular formula an area per molecule, and a solvent.</p>
 <span class="normal">179</span>
 <span class="normal">180</span>
 <span class="normal">181</span>
-<span class="normal">182</span>
-<span class="normal">183</span>
-<span class="normal">184</span>
-<span class="normal">185</span>
-<span class="normal">186</span>
-<span class="normal">187</span>
-<span class="normal">188</span>
-<span class="normal">189</span>
-<span class="normal">190</span>
-<span class="normal">191</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+<span class="normal">182</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">molecular_formula</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">thickness</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Parameter</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -5670,7 +5674,6 @@ molecular formula an area per molecule, and a solvent.</p>
             <span class="n">interface</span><span class="o">=</span><span class="n">interface</span><span class="p">,</span>
         <span class="p">)</span>
 
-    <span class="c1"># Create the solvated molecule and corresponding constraints</span>
     <span class="k">if</span> <span class="n">molecular_formula</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">molecular_formula</span> <span class="o">=</span> <span class="n">DEFAULTS</span><span class="p">[</span><span class="s1">&#39;molecular_formula&#39;</span><span class="p">]</span>
     <span class="n">molecule_material</span> <span class="o">=</span> <span class="n">Material</span><span class="p">(</span>
@@ -5687,39 +5690,40 @@ molecular formula an area per molecule, and a solvent.</p>
         <span class="n">default_dict</span><span class="o">=</span><span class="n">DEFAULTS</span><span class="p">,</span>
         <span class="n">unique_name_prefix</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">unique_name</span><span class="si">}</span><span class="s1">_Thickness&#39;</span><span class="p">,</span>
     <span class="p">)</span>
-    <span class="n">_area_per_molecule</span> <span class="o">=</span> <span class="n">get_as_parameter</span><span class="p">(</span>
+    <span class="n">area_per_molecule_param</span> <span class="o">=</span> <span class="n">get_as_parameter</span><span class="p">(</span>
         <span class="n">name</span><span class="o">=</span><span class="s1">&#39;area_per_molecule&#39;</span><span class="p">,</span>
         <span class="n">value</span><span class="o">=</span><span class="n">area_per_molecule</span><span class="p">,</span>
         <span class="n">default_dict</span><span class="o">=</span><span class="n">DEFAULTS</span><span class="p">,</span>
         <span class="n">unique_name_prefix</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">unique_name</span><span class="si">}</span><span class="s1">_AreaPerMolecule&#39;</span><span class="p">,</span>
     <span class="p">)</span>
-    <span class="n">_scattering_length_real</span> <span class="o">=</span> <span class="n">get_as_parameter</span><span class="p">(</span>
+    <span class="n">scattering_length_real</span> <span class="o">=</span> <span class="n">get_as_parameter</span><span class="p">(</span>
         <span class="n">name</span><span class="o">=</span><span class="s1">&#39;scattering_length_real&#39;</span><span class="p">,</span>
         <span class="n">value</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
         <span class="n">default_dict</span><span class="o">=</span><span class="n">DEFAULTS</span><span class="p">[</span><span class="s1">&#39;sl&#39;</span><span class="p">],</span>
         <span class="n">unique_name_prefix</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">unique_name</span><span class="si">}</span><span class="s1">_Sl&#39;</span><span class="p">,</span>
     <span class="p">)</span>
-    <span class="n">_scattering_length_imag</span> <span class="o">=</span> <span class="n">get_as_parameter</span><span class="p">(</span>
+    <span class="n">scattering_length_imag</span> <span class="o">=</span> <span class="n">get_as_parameter</span><span class="p">(</span>
         <span class="n">name</span><span class="o">=</span><span class="s1">&#39;scattering_length_imag&#39;</span><span class="p">,</span>
         <span class="n">value</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
         <span class="n">default_dict</span><span class="o">=</span><span class="n">DEFAULTS</span><span class="p">[</span><span class="s1">&#39;isl&#39;</span><span class="p">],</span>
         <span class="n">unique_name_prefix</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">unique_name</span><span class="si">}</span><span class="s1">_Isl&#39;</span><span class="p">,</span>
     <span class="p">)</span>
-    <span class="c1"># Constrain the real part of the sld value for the molecule</span>
+
+    <span class="c1"># Constrain molecule.sld via scattering length / (thickness * area_per_molecule)</span>
     <span class="n">dependency_expression</span> <span class="o">=</span> <span class="s1">&#39;scattering_length / (thickness * area_per_molecule) * 1e6&#39;</span>
     <span class="n">dependency_map</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s1">&#39;scattering_length&#39;</span><span class="p">:</span> <span class="n">_scattering_length_real</span><span class="p">,</span>
+        <span class="s1">&#39;scattering_length&#39;</span><span class="p">:</span> <span class="n">scattering_length_real</span><span class="p">,</span>
         <span class="s1">&#39;thickness&#39;</span><span class="p">:</span> <span class="n">thickness</span><span class="p">,</span>
-        <span class="s1">&#39;area_per_molecule&#39;</span><span class="p">:</span> <span class="n">_area_per_molecule</span><span class="p">,</span>
+        <span class="s1">&#39;area_per_molecule&#39;</span><span class="p">:</span> <span class="n">area_per_molecule_param</span><span class="p">,</span>
     <span class="p">}</span>
     <span class="n">molecule_material</span><span class="o">.</span><span class="n">sld</span><span class="o">.</span><span class="n">make_dependent_on</span><span class="p">(</span><span class="n">dependency_expression</span><span class="o">=</span><span class="n">dependency_expression</span><span class="p">,</span> <span class="n">dependency_map</span><span class="o">=</span><span class="n">dependency_map</span><span class="p">)</span>
 
-    <span class="c1"># # Constrain the real part of the sld value for the molecule</span>
+    <span class="c1"># Same dependency under short variable names</span>
     <span class="n">dependency_expression</span> <span class="o">=</span> <span class="s1">&#39;a / (b*p) * 1e6&#39;</span>
-    <span class="n">dependency_map</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="n">_scattering_length_real</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="n">thickness</span><span class="p">,</span> <span class="s1">&#39;p&#39;</span><span class="p">:</span> <span class="n">_area_per_molecule</span><span class="p">}</span>
+    <span class="n">dependency_map</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="n">scattering_length_real</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="n">thickness</span><span class="p">,</span> <span class="s1">&#39;p&#39;</span><span class="p">:</span> <span class="n">area_per_molecule_param</span><span class="p">}</span>
     <span class="n">molecule_material</span><span class="o">.</span><span class="n">sld</span><span class="o">.</span><span class="n">make_dependent_on</span><span class="p">(</span><span class="n">dependency_expression</span><span class="o">=</span><span class="n">dependency_expression</span><span class="p">,</span> <span class="n">dependency_map</span><span class="o">=</span><span class="n">dependency_map</span><span class="p">)</span>
 
-    <span class="n">dependency_map</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="n">_scattering_length_imag</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="n">thickness</span><span class="p">,</span> <span class="s1">&#39;p&#39;</span><span class="p">:</span> <span class="n">_area_per_molecule</span><span class="p">}</span>
+    <span class="n">dependency_map</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="n">scattering_length_imag</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="n">thickness</span><span class="p">,</span> <span class="s1">&#39;p&#39;</span><span class="p">:</span> <span class="n">area_per_molecule_param</span><span class="p">}</span>
     <span class="n">molecule_material</span><span class="o">.</span><span class="n">isld</span><span class="o">.</span><span class="n">make_dependent_on</span><span class="p">(</span><span class="n">dependency_expression</span><span class="o">=</span><span class="n">dependency_expression</span><span class="p">,</span> <span class="n">dependency_map</span><span class="o">=</span><span class="n">dependency_map</span><span class="p">)</span>
 
     <span class="n">solvated_molecule_material</span> <span class="o">=</span> <span class="n">MaterialSolvated</span><span class="p">(</span>
@@ -5735,17 +5739,19 @@ molecular formula an area per molecule, and a solvent.</p>
         <span class="n">roughness</span><span class="o">=</span><span class="n">roughness</span><span class="p">,</span>
         <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
         <span class="n">unique_name</span><span class="o">=</span><span class="n">unique_name</span><span class="p">,</span>
-        <span class="n">interface</span><span class="o">=</span><span class="n">interface</span><span class="p">,</span>
+        <span class="n">interface</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">_add_component</span><span class="p">(</span><span class="s1">&#39;_scattering_length_real&#39;</span><span class="p">,</span> <span class="n">_scattering_length_real</span><span class="p">)</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">_add_component</span><span class="p">(</span><span class="s1">&#39;_scattering_length_imag&#39;</span><span class="p">,</span> <span class="n">_scattering_length_imag</span><span class="p">)</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">_add_component</span><span class="p">(</span><span class="s1">&#39;_area_per_molecule&#39;</span><span class="p">,</span> <span class="n">_area_per_molecule</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_area_per_molecule</span> <span class="o">=</span> <span class="n">area_per_molecule_param</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_scattering_length_real</span> <span class="o">=</span> <span class="n">scattering_length_real</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_scattering_length_imag</span> <span class="o">=</span> <span class="n">scattering_length_imag</span>
 
     <span class="n">scattering_length</span> <span class="o">=</span> <span class="n">neutron_scattering_length</span><span class="p">(</span><span class="n">molecular_formula</span><span class="p">)</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_scattering_length_real</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">scattering_length</span><span class="o">.</span><span class="n">real</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_scattering_length_imag</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">scattering_length</span><span class="o">.</span><span class="n">imag</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_molecular_formula</span> <span class="o">=</span> <span class="n">molecular_formula</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">interface</span> <span class="o">=</span> <span class="n">interface</span>
+
+    <span class="k">if</span> <span class="n">interface</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">interface</span> <span class="o">=</span> <span class="n">interface</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -5755,92 +5761,92 @@ molecular formula an area per molecule, and a solvent.</p>
 <div class="doc doc-object doc-function">
 
 
-<h3 id="easyreflectometry.sample.elements.layers.layer_area_per_molecule.LayerAreaPerMolecule.as_dict" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">as_dict</span><span class="p">(</span><span class="n">skip</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+<h3 id="easyreflectometry.sample.elements.layers.layer_area_per_molecule.LayerAreaPerMolecule.from_dict" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">from_dict</span><span class="p">(</span><span class="n">obj_dict</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
+  </span>
 
 </h3>
 
 
     <div class="doc doc-contents ">
 
-        <p>Produces a cleaned dict using a custom as_dict method to skip necessary things.</p>
-<p>The resulting dict matches the parameters in <strong>init</strong></p>
+        <p>Re-route the saved <code>solvent_fraction</code> Parameter and rebuild the
+molecule-SLD constraint chain after :class:<code>ModelBase.from_dict</code>
+swaps in the persisted Parameter objects.</p>
+<p><code>ModelBase.from_dict</code> writes the deserialized <code>solvent_fraction</code>
+Parameter to <code>self._solvent_fraction</code> (orphan — the live property
+delegates to <code>self.material.solvent_fraction</code>, which is
+<code>self.material._fraction</code>). It also reassigns <code>self._thickness</code>
+and <code>self._area_per_molecule</code>, but the constraint graph built in
+<code>__init__</code> still references the temporary Parameters created from
+the float kwargs. We fix both here.</p>
 <!-- prettier-ignore-start -->
 
 <!-- prettier-ignore-end -->
-
-
-<p><span class="doc-section-title">Parameters:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Type</th>
-          <th>Description</th>
-          <th>Default</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                <code>skip</code>
-            </td>
-            <td>
-                  <code><span title="typing.Optional">Optional</span>[<span title="list">list</span>[<span title="str">str</span>]]</code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>List of keys to skip. By default, None.</p>
-<!-- prettier-ignore-start -->
-
-<!-- prettier-ignore-end -->
-              </div>
-            </td>
-            <td>
-                  <code>None</code>
-            </td>
-          </tr>
-      </tbody>
-    </table>
 
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/easyreflectometry/sample/elements/layers/layer_area_per_molecule.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">297</span>
-<span class="normal">298</span>
-<span class="normal">299</span>
-<span class="normal">300</span>
-<span class="normal">301</span>
-<span class="normal">302</span>
-<span class="normal">303</span>
-<span class="normal">304</span>
-<span class="normal">305</span>
-<span class="normal">306</span>
-<span class="normal">307</span>
-<span class="normal">308</span>
-<span class="normal">309</span>
-<span class="normal">310</span>
-<span class="normal">311</span>
-<span class="normal">312</span>
-<span class="normal">313</span>
-<span class="normal">314</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">as_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">skip</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Produces a cleaned dict using a custom as_dict method to skip necessary things.</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">220</span>
+<span class="normal">221</span>
+<span class="normal">222</span>
+<span class="normal">223</span>
+<span class="normal">224</span>
+<span class="normal">225</span>
+<span class="normal">226</span>
+<span class="normal">227</span>
+<span class="normal">228</span>
+<span class="normal">229</span>
+<span class="normal">230</span>
+<span class="normal">231</span>
+<span class="normal">232</span>
+<span class="normal">233</span>
+<span class="normal">234</span>
+<span class="normal">235</span>
+<span class="normal">236</span>
+<span class="normal">237</span>
+<span class="normal">238</span>
+<span class="normal">239</span>
+<span class="normal">240</span>
+<span class="normal">241</span>
+<span class="normal">242</span>
+<span class="normal">243</span>
+<span class="normal">244</span>
+<span class="normal">245</span>
+<span class="normal">246</span>
+<span class="normal">247</span>
+<span class="normal">248</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">from_dict</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">obj_dict</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;LayerAreaPerMolecule&#39;</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Re-route the saved ``solvent_fraction`` Parameter and rebuild the</span>
+<span class="sd">    molecule-SLD constraint chain after :class:`ModelBase.from_dict`</span>
+<span class="sd">    swaps in the persisted Parameter objects.</span>
 
-<span class="sd">    The resulting dict matches the parameters in __init__</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    skip : Optional[list[str]], optional</span>
-<span class="sd">        List of keys to skip. By default, None.</span>
+<span class="sd">    `ModelBase.from_dict` writes the deserialized ``solvent_fraction``</span>
+<span class="sd">    Parameter to ``self._solvent_fraction`` (orphan — the live property</span>
+<span class="sd">    delegates to ``self.material.solvent_fraction``, which is</span>
+<span class="sd">    ``self.material._fraction``). It also reassigns ``self._thickness``</span>
+<span class="sd">    and ``self._area_per_molecule``, but the constraint graph built in</span>
+<span class="sd">    ``__init__`` still references the temporary Parameters created from</span>
+<span class="sd">    the float kwargs. We fix both here.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">this_dict</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">as_dict</span><span class="p">(</span><span class="n">skip</span><span class="o">=</span><span class="n">skip</span><span class="p">)</span>
-    <span class="n">this_dict</span><span class="p">[</span><span class="s1">&#39;solvent_fraction&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">material</span><span class="o">.</span><span class="n">_fraction</span><span class="o">.</span><span class="n">as_dict</span><span class="p">(</span><span class="n">skip</span><span class="o">=</span><span class="n">skip</span><span class="p">)</span>
-    <span class="n">this_dict</span><span class="p">[</span><span class="s1">&#39;area_per_molecule&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_area_per_molecule</span><span class="o">.</span><span class="n">as_dict</span><span class="p">(</span><span class="n">skip</span><span class="o">=</span><span class="n">skip</span><span class="p">)</span>
-    <span class="n">this_dict</span><span class="p">[</span><span class="s1">&#39;solvent&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">solvent</span><span class="o">.</span><span class="n">as_dict</span><span class="p">(</span><span class="n">skip</span><span class="o">=</span><span class="n">skip</span><span class="p">)</span>
-    <span class="k">del</span> <span class="n">this_dict</span><span class="p">[</span><span class="s1">&#39;material&#39;</span><span class="p">]</span>
-    <span class="k">del</span> <span class="n">this_dict</span><span class="p">[</span><span class="s1">&#39;_scattering_length_real&#39;</span><span class="p">]</span>
-    <span class="k">del</span> <span class="n">this_dict</span><span class="p">[</span><span class="s1">&#39;_scattering_length_imag&#39;</span><span class="p">]</span>
-    <span class="k">return</span> <span class="n">this_dict</span>
+    <span class="n">instance</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">obj_dict</span><span class="p">)</span>
+
+    <span class="n">saved_solvent_fraction</span> <span class="o">=</span> <span class="n">instance</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;_solvent_fraction&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">saved_solvent_fraction</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">mixture</span> <span class="o">=</span> <span class="n">instance</span><span class="o">.</span><span class="n">material</span>
+        <span class="n">old</span> <span class="o">=</span> <span class="n">mixture</span><span class="o">.</span><span class="n">_fraction</span>
+        <span class="n">mixture</span><span class="o">.</span><span class="n">_fraction</span> <span class="o">=</span> <span class="n">saved_solvent_fraction</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">instance</span><span class="o">.</span><span class="n">_global_object</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">prune</span><span class="p">(</span><span class="n">old</span><span class="o">.</span><span class="n">unique_name</span><span class="p">)</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">AttributeError</span><span class="p">,</span> <span class="ne">KeyError</span><span class="p">):</span>
+            <span class="k">pass</span>
+        <span class="n">mixture</span><span class="o">.</span><span class="n">_materials_constraints</span><span class="p">()</span>
+
+    <span class="n">instance</span><span class="o">.</span><span class="n">_setup_sld_constraints</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">instance</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>

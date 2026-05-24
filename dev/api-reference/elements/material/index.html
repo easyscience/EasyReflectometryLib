@@ -1837,10 +1837,76 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#easyreflectometry.sample.elements.materials.material.BaseCore.__init__" class="md-nav__link">
+  <a href="#easyreflectometry.sample.elements.materials.material.BaseCore.interface" class="md-nav__link">
     <span class="md-ellipsis">
       
-        __init__
+        interface
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#easyreflectometry.sample.elements.materials.material.BaseCore.name" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        name
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#easyreflectometry.sample.elements.materials.material.BaseCore.generate_bindings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        generate_bindings
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#easyreflectometry.sample.elements.materials.material.BaseCore.get_parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        get_parameters
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#easyreflectometry.sample.elements.materials.material.BaseCore.get_all_variables" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        get_all_variables
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#easyreflectometry.sample.elements.materials.material.BaseCore.to_dict" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        to_dict
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#easyreflectometry.sample.elements.materials.material.BaseCore.as_dict" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        as_dict
       
     </span>
   </a>
@@ -2107,10 +2173,76 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#easyreflectometry.sample.elements.materials.material.BaseCore.__init__" class="md-nav__link">
+  <a href="#easyreflectometry.sample.elements.materials.material.BaseCore.interface" class="md-nav__link">
     <span class="md-ellipsis">
       
-        __init__
+        interface
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#easyreflectometry.sample.elements.materials.material.BaseCore.name" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        name
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#easyreflectometry.sample.elements.materials.material.BaseCore.generate_bindings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        generate_bindings
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#easyreflectometry.sample.elements.materials.material.BaseCore.get_parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        get_parameters
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#easyreflectometry.sample.elements.materials.material.BaseCore.get_all_variables" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        get_all_variables
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#easyreflectometry.sample.elements.materials.material.BaseCore.to_dict" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        to_dict
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#easyreflectometry.sample.elements.materials.material.BaseCore.as_dict" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        as_dict
       
     </span>
   </a>
@@ -2271,9 +2403,32 @@
 
     <div class="doc doc-contents ">
             <p class="doc doc-class-bases">
-              Bases: <code><span title="easyscience.ObjBase">BaseObj</span></code></p>
+              Bases: <code><span title="easyscience.base_classes.ModelBase">ModelBase</span></code></p>
 
 
+
+        <p>Local base class for sample-tree objects (Material, Layer, assemblies).</p>
+<p>Built on top of <code>easyscience.base_classes.ModelBase</code> (the replacement for
+the deprecated <code>ObjBase</code>). On top of <code>ModelBase</code> this class adds:</p>
+<ul>
+<li>a <code>name</code> property</li>
+<li>an <code>interface</code> property whose setter propagates the calculator interface
+  to child objects and (re)generates bindings</li>
+<li>a yaml-formatted <code>__repr__</code> driven by an abstract <code>_dict_repr</code></li>
+<li>an <code>_get_linkable_attributes</code> compatibility shim used by the calculator's
+  <code>InterfaceFactoryTemplate.generate_bindings</code></li>
+<li>an <code>as_dict</code> alias for <code>to_dict</code></li>
+</ul>
+<p>Subclass <code>__init__</code> convention:
+    1. Build child Parameters / sub-objects.
+    2. Call <code>super().__init__(name=..., unique_name=...)</code>.
+    3. Assign children to backing fields (<code>self._sld = sld</code> etc.) or pass
+       them as <code>**kwargs</code> to this base class (transitional path; each
+       kwarg is stored as a plain instance attribute).
+    4. Last: <code>self.interface = interface</code> (triggers <code>generate_bindings</code>).</p>
+<!-- prettier-ignore-start -->
+
+<!-- prettier-ignore-end -->
 
 
 
@@ -2284,54 +2439,456 @@
 
               <details class="mkdocstrings-source">
                 <summary>Source code in <code>src/easyreflectometry/sample/base_core.py</code></summary>
-                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">11</span>
-<span class="normal">12</span>
-<span class="normal">13</span>
-<span class="normal">14</span>
-<span class="normal">15</span>
-<span class="normal">16</span>
-<span class="normal">17</span>
-<span class="normal">18</span>
-<span class="normal">19</span>
-<span class="normal">20</span>
-<span class="normal">21</span>
-<span class="normal">22</span>
-<span class="normal">23</span>
-<span class="normal">24</span>
-<span class="normal">25</span>
-<span class="normal">26</span>
-<span class="normal">27</span>
-<span class="normal">28</span>
-<span class="normal">29</span>
-<span class="normal">30</span>
-<span class="normal">31</span>
-<span class="normal">32</span>
-<span class="normal">33</span>
-<span class="normal">34</span>
-<span class="normal">35</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">BaseCore</span><span class="p">(</span><span class="n">BaseObj</span><span class="p">):</span>
+                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 15</span>
+<span class="normal"> 16</span>
+<span class="normal"> 17</span>
+<span class="normal"> 18</span>
+<span class="normal"> 19</span>
+<span class="normal"> 20</span>
+<span class="normal"> 21</span>
+<span class="normal"> 22</span>
+<span class="normal"> 23</span>
+<span class="normal"> 24</span>
+<span class="normal"> 25</span>
+<span class="normal"> 26</span>
+<span class="normal"> 27</span>
+<span class="normal"> 28</span>
+<span class="normal"> 29</span>
+<span class="normal"> 30</span>
+<span class="normal"> 31</span>
+<span class="normal"> 32</span>
+<span class="normal"> 33</span>
+<span class="normal"> 34</span>
+<span class="normal"> 35</span>
+<span class="normal"> 36</span>
+<span class="normal"> 37</span>
+<span class="normal"> 38</span>
+<span class="normal"> 39</span>
+<span class="normal"> 40</span>
+<span class="normal"> 41</span>
+<span class="normal"> 42</span>
+<span class="normal"> 43</span>
+<span class="normal"> 44</span>
+<span class="normal"> 45</span>
+<span class="normal"> 46</span>
+<span class="normal"> 47</span>
+<span class="normal"> 48</span>
+<span class="normal"> 49</span>
+<span class="normal"> 50</span>
+<span class="normal"> 51</span>
+<span class="normal"> 52</span>
+<span class="normal"> 53</span>
+<span class="normal"> 54</span>
+<span class="normal"> 55</span>
+<span class="normal"> 56</span>
+<span class="normal"> 57</span>
+<span class="normal"> 58</span>
+<span class="normal"> 59</span>
+<span class="normal"> 60</span>
+<span class="normal"> 61</span>
+<span class="normal"> 62</span>
+<span class="normal"> 63</span>
+<span class="normal"> 64</span>
+<span class="normal"> 65</span>
+<span class="normal"> 66</span>
+<span class="normal"> 67</span>
+<span class="normal"> 68</span>
+<span class="normal"> 69</span>
+<span class="normal"> 70</span>
+<span class="normal"> 71</span>
+<span class="normal"> 72</span>
+<span class="normal"> 73</span>
+<span class="normal"> 74</span>
+<span class="normal"> 75</span>
+<span class="normal"> 76</span>
+<span class="normal"> 77</span>
+<span class="normal"> 78</span>
+<span class="normal"> 79</span>
+<span class="normal"> 80</span>
+<span class="normal"> 81</span>
+<span class="normal"> 82</span>
+<span class="normal"> 83</span>
+<span class="normal"> 84</span>
+<span class="normal"> 85</span>
+<span class="normal"> 86</span>
+<span class="normal"> 87</span>
+<span class="normal"> 88</span>
+<span class="normal"> 89</span>
+<span class="normal"> 90</span>
+<span class="normal"> 91</span>
+<span class="normal"> 92</span>
+<span class="normal"> 93</span>
+<span class="normal"> 94</span>
+<span class="normal"> 95</span>
+<span class="normal"> 96</span>
+<span class="normal"> 97</span>
+<span class="normal"> 98</span>
+<span class="normal"> 99</span>
+<span class="normal">100</span>
+<span class="normal">101</span>
+<span class="normal">102</span>
+<span class="normal">103</span>
+<span class="normal">104</span>
+<span class="normal">105</span>
+<span class="normal">106</span>
+<span class="normal">107</span>
+<span class="normal">108</span>
+<span class="normal">109</span>
+<span class="normal">110</span>
+<span class="normal">111</span>
+<span class="normal">112</span>
+<span class="normal">113</span>
+<span class="normal">114</span>
+<span class="normal">115</span>
+<span class="normal">116</span>
+<span class="normal">117</span>
+<span class="normal">118</span>
+<span class="normal">119</span>
+<span class="normal">120</span>
+<span class="normal">121</span>
+<span class="normal">122</span>
+<span class="normal">123</span>
+<span class="normal">124</span>
+<span class="normal">125</span>
+<span class="normal">126</span>
+<span class="normal">127</span>
+<span class="normal">128</span>
+<span class="normal">129</span>
+<span class="normal">130</span>
+<span class="normal">131</span>
+<span class="normal">132</span>
+<span class="normal">133</span>
+<span class="normal">134</span>
+<span class="normal">135</span>
+<span class="normal">136</span>
+<span class="normal">137</span>
+<span class="normal">138</span>
+<span class="normal">139</span>
+<span class="normal">140</span>
+<span class="normal">141</span>
+<span class="normal">142</span>
+<span class="normal">143</span>
+<span class="normal">144</span>
+<span class="normal">145</span>
+<span class="normal">146</span>
+<span class="normal">147</span>
+<span class="normal">148</span>
+<span class="normal">149</span>
+<span class="normal">150</span>
+<span class="normal">151</span>
+<span class="normal">152</span>
+<span class="normal">153</span>
+<span class="normal">154</span>
+<span class="normal">155</span>
+<span class="normal">156</span>
+<span class="normal">157</span>
+<span class="normal">158</span>
+<span class="normal">159</span>
+<span class="normal">160</span>
+<span class="normal">161</span>
+<span class="normal">162</span>
+<span class="normal">163</span>
+<span class="normal">164</span>
+<span class="normal">165</span>
+<span class="normal">166</span>
+<span class="normal">167</span>
+<span class="normal">168</span>
+<span class="normal">169</span>
+<span class="normal">170</span>
+<span class="normal">171</span>
+<span class="normal">172</span>
+<span class="normal">173</span>
+<span class="normal">174</span>
+<span class="normal">175</span>
+<span class="normal">176</span>
+<span class="normal">177</span>
+<span class="normal">178</span>
+<span class="normal">179</span>
+<span class="normal">180</span>
+<span class="normal">181</span>
+<span class="normal">182</span>
+<span class="normal">183</span>
+<span class="normal">184</span>
+<span class="normal">185</span>
+<span class="normal">186</span>
+<span class="normal">187</span>
+<span class="normal">188</span>
+<span class="normal">189</span>
+<span class="normal">190</span>
+<span class="normal">191</span>
+<span class="normal">192</span>
+<span class="normal">193</span>
+<span class="normal">194</span>
+<span class="normal">195</span>
+<span class="normal">196</span>
+<span class="normal">197</span>
+<span class="normal">198</span>
+<span class="normal">199</span>
+<span class="normal">200</span>
+<span class="normal">201</span>
+<span class="normal">202</span>
+<span class="normal">203</span>
+<span class="normal">204</span>
+<span class="normal">205</span>
+<span class="normal">206</span>
+<span class="normal">207</span>
+<span class="normal">208</span>
+<span class="normal">209</span>
+<span class="normal">210</span>
+<span class="normal">211</span>
+<span class="normal">212</span>
+<span class="normal">213</span>
+<span class="normal">214</span>
+<span class="normal">215</span>
+<span class="normal">216</span>
+<span class="normal">217</span>
+<span class="normal">218</span>
+<span class="normal">219</span>
+<span class="normal">220</span>
+<span class="normal">221</span>
+<span class="normal">222</span>
+<span class="normal">223</span>
+<span class="normal">224</span>
+<span class="normal">225</span>
+<span class="normal">226</span>
+<span class="normal">227</span>
+<span class="normal">228</span>
+<span class="normal">229</span>
+<span class="normal">230</span>
+<span class="normal">231</span>
+<span class="normal">232</span>
+<span class="normal">233</span>
+<span class="normal">234</span>
+<span class="normal">235</span>
+<span class="normal">236</span>
+<span class="normal">237</span>
+<span class="normal">238</span>
+<span class="normal">239</span>
+<span class="normal">240</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">BaseCore</span><span class="p">(</span><span class="n">ModelBase</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Local base class for sample-tree objects (Material, Layer, assemblies).</span>
+
+<span class="sd">    Built on top of `easyscience.base_classes.ModelBase` (the replacement for</span>
+<span class="sd">    the deprecated `ObjBase`). On top of `ModelBase` this class adds:</span>
+
+<span class="sd">    - a `name` property</span>
+<span class="sd">    - an `interface` property whose setter propagates the calculator interface</span>
+<span class="sd">      to child objects and (re)generates bindings</span>
+<span class="sd">    - a yaml-formatted `__repr__` driven by an abstract `_dict_repr`</span>
+<span class="sd">    - an `_get_linkable_attributes` compatibility shim used by the calculator&#39;s</span>
+<span class="sd">      `InterfaceFactoryTemplate.generate_bindings`</span>
+<span class="sd">    - an `as_dict` alias for `to_dict`</span>
+
+<span class="sd">    Subclass `__init__` convention:</span>
+<span class="sd">        1. Build child Parameters / sub-objects.</span>
+<span class="sd">        2. Call ``super().__init__(name=..., unique_name=...)``.</span>
+<span class="sd">        3. Assign children to backing fields (``self._sld = sld`` etc.) or pass</span>
+<span class="sd">           them as ``**kwargs`` to this base class (transitional path; each</span>
+<span class="sd">           kwarg is stored as a plain instance attribute).</span>
+<span class="sd">        4. Last: ``self.interface = interface`` (triggers ``generate_bindings``).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-        <span class="n">interface</span><span class="p">,</span>
-        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+        <span class="n">interface</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">unique_name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">display_name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Init function.&quot;&quot;&quot;</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">unique_name</span><span class="o">=</span><span class="n">unique_name</span><span class="p">,</span> <span class="n">display_name</span><span class="o">=</span><span class="n">display_name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_interface</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="c1"># `user_data` is part of the legacy `BasedBase` API — a free-form dict</span>
+        <span class="c1"># callers stash arbitrary metadata in. Kept for back-compat with code</span>
+        <span class="c1"># like `Project.replace_models_from_orso` which stores the ORSO sample</span>
+        <span class="c1"># name on the model.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">user_data</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="p">{}</span>
 
-        <span class="c1"># Updates interface using property in base object</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">interface</span> <span class="o">=</span> <span class="n">interface</span>
+        <span class="c1"># Transitional path: subclasses still pass parameter / child objects via</span>
+        <span class="c1"># **kwargs (legacy `ObjBase` accepted them and stashed in `_kwargs`).</span>
+        <span class="c1"># Here we simply store each one as a plain instance attribute so</span>
+        <span class="c1"># `obj.&lt;key&gt;` keeps working. Step 2 of the migration replaces this with</span>
+        <span class="c1"># explicit assignments in each subclass.</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
 
+        <span class="c1"># Assign interface LAST so children exist when generate_bindings runs.</span>
+        <span class="k">if</span> <span class="n">interface</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">interface</span> <span class="o">=</span> <span class="n">interface</span>
+
+    <span class="c1"># ----- name -----</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Common (display-friendly) name.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name</span>
+
+    <span class="nd">@name</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_name</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="c1"># ----- interface -----</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">interface</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The calculator interface attached to this object (may be None).&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interface</span>
+
+    <span class="nd">@interface</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">interface</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_interface</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_interface</span> <span class="o">=</span> <span class="n">new_interface</span>
+        <span class="k">if</span> <span class="n">new_interface</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">generate_bindings</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">generate_bindings</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Propagate the interface to child objects, then bind via the calculator.</span>
+
+<span class="sd">        We propagate to any child whose class advertises an ``interface`` property</span>
+<span class="sd">        with a setter. That includes both the new `BaseCore`-based children and</span>
+<span class="sd">        legacy `BasedBase`-derived collections (which extend `SerializerComponent`,</span>
+<span class="sd">        not `NewBase`).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interface</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s1">&#39;Interface error for generating bindings. `interface` has to be set.&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_iter_public_children</span><span class="p">():</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_has_interface_setter</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">attr</span><span class="p">)):</span>
+                <span class="n">attr</span><span class="o">.</span><span class="n">interface</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interface</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_interface</span><span class="o">.</span><span class="n">generate_bindings</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_iter_public_children</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Yield public child objects from both class-level (dir) and instance-level (__dict__) attrs.</span>
+
+<span class="sd">        `NewBase.__dir__` exposes only class attributes, which means plain instance</span>
+<span class="sd">        attributes (the transitional `setattr(self, key, value)` path in</span>
+<span class="sd">        `__init__`) are invisible to a pure `dir()` scan. To bridge both worlds —</span>
+<span class="sd">        legacy subclasses that still use plain attrs, and migrated subclasses that</span>
+<span class="sd">        expose children via `@property` accessors — this helper unions the two.</span>
+<span class="sd">        Once all subclasses migrate to `@property`-backed children with `_field`</span>
+<span class="sd">        backing storage, the `__dict__` branch becomes a no-op (private names are</span>
+<span class="sd">        skipped).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">seen_ids</span> <span class="o">=</span> <span class="p">{</span><span class="nb">id</span><span class="p">(</span><span class="bp">self</span><span class="p">)}</span>
+        <span class="c1"># Class-level (properties, methods named like sld/isld/material).</span>
+        <span class="k">for</span> <span class="n">attr_name</span> <span class="ow">in</span> <span class="nb">dir</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">attr_name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">attr_name</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;interface&#39;</span><span class="p">,</span> <span class="s1">&#39;name&#39;</span><span class="p">):</span>
+                <span class="k">continue</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">attr</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr_name</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+                <span class="c1"># A subclass @property may legitimately raise AttributeError</span>
+                <span class="c1"># mid-construction (the `_field` backing isn&#39;t set yet); skip</span>
+                <span class="c1"># those entries silently. Other exceptions should propagate.</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="n">attr</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">id</span><span class="p">(</span><span class="n">attr</span><span class="p">)</span> <span class="ow">in</span> <span class="n">seen_ids</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">seen_ids</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="nb">id</span><span class="p">(</span><span class="n">attr</span><span class="p">))</span>
+            <span class="k">yield</span> <span class="n">attr</span>
+        <span class="c1"># Instance-level (plain attrs set via the transitional kwargs path).</span>
+        <span class="k">for</span> <span class="n">attr_name</span><span class="p">,</span> <span class="n">attr</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
+            <span class="k">if</span> <span class="n">attr_name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">attr_name</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;interface&#39;</span><span class="p">,</span> <span class="s1">&#39;name&#39;</span><span class="p">):</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="n">attr</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">id</span><span class="p">(</span><span class="n">attr</span><span class="p">)</span> <span class="ow">in</span> <span class="n">seen_ids</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">seen_ids</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="nb">id</span><span class="p">(</span><span class="n">attr</span><span class="p">))</span>
+            <span class="k">yield</span> <span class="n">attr</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_has_interface_setter</span><span class="p">(</span><span class="n">obj_type</span><span class="p">:</span> <span class="nb">type</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">klass</span> <span class="ow">in</span> <span class="n">obj_type</span><span class="o">.</span><span class="vm">__mro__</span><span class="p">:</span>
+            <span class="n">prop</span> <span class="o">=</span> <span class="n">klass</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;interface&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">prop</span><span class="p">,</span> <span class="nb">property</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">prop</span><span class="o">.</span><span class="n">fset</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="c1"># ----- compatibility shims -----</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_linkable_attributes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Used by `easyscience.fitting.calculators.interface_factory.generate_bindings`.</span>
+
+<span class="sd">        Returns the same set as :meth:`get_all_variables` (the modern API on</span>
+<span class="sd">        :class:`ModelBase`). Kept under the legacy name because the calculator</span>
+<span class="sd">        in `easyscience` core has not yet been updated.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_all_variables</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compatibility shim for legacy callers; prefer :meth:`get_all_parameters`.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_all_parameters</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_add_component</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">component</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compatibility shim for legacy `ObjBase._add_component`.</span>
+
+<span class="sd">        Legacy callers (e.g. `LayerAreaPerMolecule`) used this to register an</span>
+<span class="sd">        additional child after `super().__init__`. In the new world the</span>
+<span class="sd">        equivalent is simply setting an attribute; we do that here so the</span>
+<span class="sd">        existing call sites keep working until Step 2 removes them.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">component</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_all_variables</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Discover Parameters/Descriptors across both class-level and instance-level attrs.</span>
+
+<span class="sd">        `ModelBase.get_all_variables` walks `dir(self)`, which `NewBase` restricts</span>
+<span class="sd">        to class attributes only. During the transition some subclasses still</span>
+<span class="sd">        store child Parameters as plain instance attributes (see the kwargs path</span>
+<span class="sd">        in :meth:`__init__`); those are invisible to `dir()`. We therefore also</span>
+<span class="sd">        scan `self.__dict__` for `DescriptorBase` instances and for child</span>
+<span class="sd">        ModelBase objects whose own `get_all_variables` we recurse into.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">easyscience.variable.descriptor_base</span><span class="w"> </span><span class="kn">import</span> <span class="n">DescriptorBase</span>
+
+        <span class="n">out</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">seen_param_ids</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_iter_public_children</span><span class="p">():</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">attr</span><span class="p">,</span> <span class="n">DescriptorBase</span><span class="p">):</span>
+                <span class="k">if</span> <span class="nb">id</span><span class="p">(</span><span class="n">attr</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">seen_param_ids</span><span class="p">:</span>
+                    <span class="n">seen_param_ids</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="nb">id</span><span class="p">(</span><span class="n">attr</span><span class="p">))</span>
+                    <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">attr</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">attr</span><span class="p">,</span> <span class="s1">&#39;get_all_variables&#39;</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">attr</span><span class="o">.</span><span class="n">get_all_variables</span><span class="p">():</span>
+                    <span class="k">if</span> <span class="nb">id</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">seen_param_ids</span><span class="p">:</span>
+                        <span class="n">seen_param_ids</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="nb">id</span><span class="p">(</span><span class="n">v</span><span class="p">))</span>
+                        <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">out</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">skip</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Serialize, skipping the calculator interface and unique_name by default.</span>
+
+<span class="sd">        The calculator (`CalculatorFactory`) is not serializable and is not part</span>
+<span class="sd">        of the model&#39;s persistent state — round-trip code that needs it back</span>
+<span class="sd">        reattaches it after `from_dict`. The legacy `ObjBase`-based pipeline</span>
+<span class="sd">        achieved the same by never including `interface` in its `_kwargs`</span>
+<span class="sd">        encoding; we replicate that here.</span>
+
+<span class="sd">        `unique_name` is also stripped by default, matching the legacy</span>
+<span class="sd">        `BasedBase.as_dict` contract. The installed `SerializerBase` does *not*</span>
+<span class="sd">        propagate per-object `_default_unique_name` to nested children — if</span>
+<span class="sd">        we leave it in, child Parameters end up with explicit unique_names in</span>
+<span class="sd">        the dict (e.g. `Parameter_0`) that subsequently collide on reload when</span>
+<span class="sd">        the global counter restarts from 0.</span>
+
+<span class="sd">        Pass a *copy* of `skip` to super since `NewBase.to_dict` mutates the</span>
+<span class="sd">        list (appends `unique_name` / `display_name` if those are default).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">skip</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">skip</span> <span class="ow">or</span> <span class="p">[])</span>
+        <span class="k">if</span> <span class="s1">&#39;interface&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">skip</span><span class="p">:</span>
+            <span class="n">skip</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;interface&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s1">&#39;unique_name&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">skip</span><span class="p">:</span>
+            <span class="n">skip</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;unique_name&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(</span><span class="n">skip</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="n">skip</span><span class="p">))</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">as_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">skip</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compatibility alias for :meth:`to_dict`.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(</span><span class="n">skip</span><span class="o">=</span><span class="n">skip</span><span class="p">)</span>
+
+    <span class="c1"># ----- repr -----</span>
+
+    <span class="nd">@property</span>
     <span class="nd">@abstractmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">_dict_repr</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span> <span class="o">...</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_dict_repr</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span> <span class="o">...</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;String representation of the layer.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        str</span>
-<span class="sd">            A string representation of the layer.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Yaml-formatted multi-line string built from :attr:`_dict_repr`.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">yaml_dump</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dict_repr</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
               </details>
@@ -2346,21 +2903,77 @@
 
 
 
+<div class="doc doc-object doc-attribute">
 
 
 
-<div class="doc doc-object doc-function">
+<h3 id="easyreflectometry.sample.elements.materials.material.BaseCore.interface" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">interface</span></code>
 
-
-<h3 id="easyreflectometry.sample.elements.materials.material.BaseCore.__init__" class="doc doc-heading">
-            <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">interface</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+      <small class="doc doc-label doc-label-writable"><code>writable</code></small>
+  </span>
 
 </h3>
 
 
     <div class="doc doc-contents ">
 
-        <p>Init function.</p>
+        <p>The calculator interface attached to this object (may be None).</p>
+<!-- prettier-ignore-start -->
+
+<!-- prettier-ignore-end -->
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="easyreflectometry.sample.elements.materials.material.BaseCore.name" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">name</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+      <small class="doc doc-label doc-label-writable"><code>writable</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Common (display-friendly) name.</p>
+<!-- prettier-ignore-start -->
+
+<!-- prettier-ignore-end -->
+
+    </div>
+
+</div>
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="easyreflectometry.sample.elements.materials.material.BaseCore.generate_bindings" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">generate_bindings</span><span class="p">()</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Propagate the interface to child objects, then bind via the calculator.</p>
+<p>We propagate to any child whose class advertises an <code>interface</code> property
+with a setter. That includes both the new <code>BaseCore</code>-based children and
+legacy <code>BasedBase</code>-derived collections (which extend <code>SerializerComponent</code>,
+not <code>NewBase</code>).</p>
 <!-- prettier-ignore-start -->
 
 <!-- prettier-ignore-end -->
@@ -2368,27 +2981,260 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/easyreflectometry/sample/base_core.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">12</span>
-<span class="normal">13</span>
-<span class="normal">14</span>
-<span class="normal">15</span>
-<span class="normal">16</span>
-<span class="normal">17</span>
-<span class="normal">18</span>
-<span class="normal">19</span>
-<span class="normal">20</span>
-<span class="normal">21</span>
-<span class="normal">22</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
-    <span class="bp">self</span><span class="p">,</span>
-    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-    <span class="n">interface</span><span class="p">,</span>
-    <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
-<span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Init function.&quot;&quot;&quot;</span>
-    <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 91</span>
+<span class="normal"> 92</span>
+<span class="normal"> 93</span>
+<span class="normal"> 94</span>
+<span class="normal"> 95</span>
+<span class="normal"> 96</span>
+<span class="normal"> 97</span>
+<span class="normal"> 98</span>
+<span class="normal"> 99</span>
+<span class="normal">100</span>
+<span class="normal">101</span>
+<span class="normal">102</span>
+<span class="normal">103</span>
+<span class="normal">104</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">generate_bindings</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Propagate the interface to child objects, then bind via the calculator.</span>
 
-    <span class="c1"># Updates interface using property in base object</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">interface</span> <span class="o">=</span> <span class="n">interface</span>
+<span class="sd">    We propagate to any child whose class advertises an ``interface`` property</span>
+<span class="sd">    with a setter. That includes both the new `BaseCore`-based children and</span>
+<span class="sd">    legacy `BasedBase`-derived collections (which extend `SerializerComponent`,</span>
+<span class="sd">    not `NewBase`).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interface</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s1">&#39;Interface error for generating bindings. `interface` has to be set.&#39;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_iter_public_children</span><span class="p">():</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_has_interface_setter</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">attr</span><span class="p">)):</span>
+            <span class="n">attr</span><span class="o">.</span><span class="n">interface</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interface</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_interface</span><span class="o">.</span><span class="n">generate_bindings</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="easyreflectometry.sample.elements.materials.material.BaseCore.get_parameters" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">get_parameters</span><span class="p">()</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Compatibility shim for legacy callers; prefer :meth:<code>get_all_parameters</code>.</p>
+<!-- prettier-ignore-start -->
+
+<!-- prettier-ignore-end -->
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>src/easyreflectometry/sample/base_core.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">162</span>
+<span class="normal">163</span>
+<span class="normal">164</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compatibility shim for legacy callers; prefer :meth:`get_all_parameters`.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_all_parameters</span><span class="p">()</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="easyreflectometry.sample.elements.materials.material.BaseCore.get_all_variables" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">get_all_variables</span><span class="p">()</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Discover Parameters/Descriptors across both class-level and instance-level attrs.</p>
+<p><code>ModelBase.get_all_variables</code> walks <code>dir(self)</code>, which <code>NewBase</code> restricts
+to class attributes only. During the transition some subclasses still
+store child Parameters as plain instance attributes (see the kwargs path
+in :meth:<code>__init__</code>); those are invisible to <code>dir()</code>. We therefore also
+scan <code>self.__dict__</code> for <code>DescriptorBase</code> instances and for child
+ModelBase objects whose own <code>get_all_variables</code> we recurse into.</p>
+<!-- prettier-ignore-start -->
+
+<!-- prettier-ignore-end -->
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>src/easyreflectometry/sample/base_core.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">176</span>
+<span class="normal">177</span>
+<span class="normal">178</span>
+<span class="normal">179</span>
+<span class="normal">180</span>
+<span class="normal">181</span>
+<span class="normal">182</span>
+<span class="normal">183</span>
+<span class="normal">184</span>
+<span class="normal">185</span>
+<span class="normal">186</span>
+<span class="normal">187</span>
+<span class="normal">188</span>
+<span class="normal">189</span>
+<span class="normal">190</span>
+<span class="normal">191</span>
+<span class="normal">192</span>
+<span class="normal">193</span>
+<span class="normal">194</span>
+<span class="normal">195</span>
+<span class="normal">196</span>
+<span class="normal">197</span>
+<span class="normal">198</span>
+<span class="normal">199</span>
+<span class="normal">200</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_all_variables</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Discover Parameters/Descriptors across both class-level and instance-level attrs.</span>
+
+<span class="sd">    `ModelBase.get_all_variables` walks `dir(self)`, which `NewBase` restricts</span>
+<span class="sd">    to class attributes only. During the transition some subclasses still</span>
+<span class="sd">    store child Parameters as plain instance attributes (see the kwargs path</span>
+<span class="sd">    in :meth:`__init__`); those are invisible to `dir()`. We therefore also</span>
+<span class="sd">    scan `self.__dict__` for `DescriptorBase` instances and for child</span>
+<span class="sd">    ModelBase objects whose own `get_all_variables` we recurse into.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">easyscience.variable.descriptor_base</span><span class="w"> </span><span class="kn">import</span> <span class="n">DescriptorBase</span>
+
+    <span class="n">out</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">seen_param_ids</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_iter_public_children</span><span class="p">():</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">attr</span><span class="p">,</span> <span class="n">DescriptorBase</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">id</span><span class="p">(</span><span class="n">attr</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">seen_param_ids</span><span class="p">:</span>
+                <span class="n">seen_param_ids</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="nb">id</span><span class="p">(</span><span class="n">attr</span><span class="p">))</span>
+                <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">attr</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">attr</span><span class="p">,</span> <span class="s1">&#39;get_all_variables&#39;</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">attr</span><span class="o">.</span><span class="n">get_all_variables</span><span class="p">():</span>
+                <span class="k">if</span> <span class="nb">id</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">seen_param_ids</span><span class="p">:</span>
+                    <span class="n">seen_param_ids</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="nb">id</span><span class="p">(</span><span class="n">v</span><span class="p">))</span>
+                    <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">out</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="easyreflectometry.sample.elements.materials.material.BaseCore.to_dict" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">to_dict</span><span class="p">(</span><span class="n">skip</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Serialize, skipping the calculator interface and unique_name by default.</p>
+<p>The calculator (<code>CalculatorFactory</code>) is not serializable and is not part
+of the model's persistent state — round-trip code that needs it back
+reattaches it after <code>from_dict</code>. The legacy <code>ObjBase</code>-based pipeline
+achieved the same by never including <code>interface</code> in its <code>_kwargs</code>
+encoding; we replicate that here.</p>
+<p><code>unique_name</code> is also stripped by default, matching the legacy
+<code>BasedBase.as_dict</code> contract. The installed <code>SerializerBase</code> does <em>not</em>
+propagate per-object <code>_default_unique_name</code> to nested children — if
+we leave it in, child Parameters end up with explicit unique_names in
+the dict (e.g. <code>Parameter_0</code>) that subsequently collide on reload when
+the global counter restarts from 0.</p>
+<p>Pass a <em>copy</em> of <code>skip</code> to super since <code>NewBase.to_dict</code> mutates the
+list (appends <code>unique_name</code> / <code>display_name</code> if those are default).</p>
+<!-- prettier-ignore-start -->
+
+<!-- prettier-ignore-end -->
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>src/easyreflectometry/sample/base_core.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">202</span>
+<span class="normal">203</span>
+<span class="normal">204</span>
+<span class="normal">205</span>
+<span class="normal">206</span>
+<span class="normal">207</span>
+<span class="normal">208</span>
+<span class="normal">209</span>
+<span class="normal">210</span>
+<span class="normal">211</span>
+<span class="normal">212</span>
+<span class="normal">213</span>
+<span class="normal">214</span>
+<span class="normal">215</span>
+<span class="normal">216</span>
+<span class="normal">217</span>
+<span class="normal">218</span>
+<span class="normal">219</span>
+<span class="normal">220</span>
+<span class="normal">221</span>
+<span class="normal">222</span>
+<span class="normal">223</span>
+<span class="normal">224</span>
+<span class="normal">225</span>
+<span class="normal">226</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">skip</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Serialize, skipping the calculator interface and unique_name by default.</span>
+
+<span class="sd">    The calculator (`CalculatorFactory`) is not serializable and is not part</span>
+<span class="sd">    of the model&#39;s persistent state — round-trip code that needs it back</span>
+<span class="sd">    reattaches it after `from_dict`. The legacy `ObjBase`-based pipeline</span>
+<span class="sd">    achieved the same by never including `interface` in its `_kwargs`</span>
+<span class="sd">    encoding; we replicate that here.</span>
+
+<span class="sd">    `unique_name` is also stripped by default, matching the legacy</span>
+<span class="sd">    `BasedBase.as_dict` contract. The installed `SerializerBase` does *not*</span>
+<span class="sd">    propagate per-object `_default_unique_name` to nested children — if</span>
+<span class="sd">    we leave it in, child Parameters end up with explicit unique_names in</span>
+<span class="sd">    the dict (e.g. `Parameter_0`) that subsequently collide on reload when</span>
+<span class="sd">    the global counter restarts from 0.</span>
+
+<span class="sd">    Pass a *copy* of `skip` to super since `NewBase.to_dict` mutates the</span>
+<span class="sd">    list (appends `unique_name` / `display_name` if those are default).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">skip</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">skip</span> <span class="ow">or</span> <span class="p">[])</span>
+    <span class="k">if</span> <span class="s1">&#39;interface&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">skip</span><span class="p">:</span>
+        <span class="n">skip</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;interface&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s1">&#39;unique_name&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">skip</span><span class="p">:</span>
+        <span class="n">skip</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;unique_name&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(</span><span class="n">skip</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="n">skip</span><span class="p">))</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="easyreflectometry.sample.elements.materials.material.BaseCore.as_dict" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">as_dict</span><span class="p">(</span><span class="n">skip</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Compatibility alias for :meth:<code>to_dict</code>.</p>
+<!-- prettier-ignore-start -->
+
+<!-- prettier-ignore-end -->
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>src/easyreflectometry/sample/base_core.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">228</span>
+<span class="normal">229</span>
+<span class="normal">230</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">as_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">skip</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compatibility alias for :meth:`to_dict`.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(</span><span class="n">skip</span><span class="o">=</span><span class="n">skip</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -2406,56 +3252,18 @@
 
     <div class="doc doc-contents ">
 
-        <p>String representation of the layer.</p>
+        <p>Yaml-formatted multi-line string built from :attr:<code>_dict_repr</code>.</p>
 <!-- prettier-ignore-start -->
 
 <!-- prettier-ignore-end -->
-
-
-    <p><span class="doc-section-title">Returns:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Type</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                  <code><span title="str">str</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>A string representation of the layer.</p>
-<!-- prettier-ignore-start -->
-
-<!-- prettier-ignore-end -->
-              </div>
-            </td>
-          </tr>
-      </tbody>
-    </table>
 
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/easyreflectometry/sample/base_core.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">27</span>
-<span class="normal">28</span>
-<span class="normal">29</span>
-<span class="normal">30</span>
-<span class="normal">31</span>
-<span class="normal">32</span>
-<span class="normal">33</span>
-<span class="normal">34</span>
-<span class="normal">35</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;String representation of the layer.</span>
-
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    str</span>
-<span class="sd">        A string representation of the layer.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">238</span>
+<span class="normal">239</span>
+<span class="normal">240</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Yaml-formatted multi-line string built from :attr:`_dict_repr`.&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">yaml_dump</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dict_repr</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -2561,11 +3369,18 @@
 <span class="normal">100</span>
 <span class="normal">101</span>
 <span class="normal">102</span>
-<span class="normal">103</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">Material</span><span class="p">(</span><span class="n">BaseCore</span><span class="p">):</span>
-    <span class="c1"># Added in super().__init__</span>
-    <span class="n">sld</span><span class="p">:</span> <span class="n">Parameter</span>
-    <span class="n">isld</span><span class="p">:</span> <span class="n">Parameter</span>
-
+<span class="normal">103</span>
+<span class="normal">104</span>
+<span class="normal">105</span>
+<span class="normal">106</span>
+<span class="normal">107</span>
+<span class="normal">108</span>
+<span class="normal">109</span>
+<span class="normal">110</span>
+<span class="normal">111</span>
+<span class="normal">112</span>
+<span class="normal">113</span>
+<span class="normal">114</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">Material</span><span class="p">(</span><span class="n">BaseCore</span><span class="p">):</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">sld</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Parameter</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -2608,13 +3423,28 @@
         <span class="p">)</span>
         <span class="n">apply_default_limits</span><span class="p">(</span><span class="n">isld</span><span class="p">,</span> <span class="s1">&#39;isld&#39;</span><span class="p">)</span>
 
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
-            <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
-            <span class="n">sld</span><span class="o">=</span><span class="n">sld</span><span class="p">,</span>
-            <span class="n">isld</span><span class="o">=</span><span class="n">isld</span><span class="p">,</span>
-            <span class="n">interface</span><span class="o">=</span><span class="n">interface</span><span class="p">,</span>
-            <span class="n">unique_name</span><span class="o">=</span><span class="n">unique_name</span><span class="p">,</span>
-        <span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">unique_name</span><span class="o">=</span><span class="n">unique_name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sld</span> <span class="o">=</span> <span class="n">sld</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_isld</span> <span class="o">=</span> <span class="n">isld</span>
+
+        <span class="k">if</span> <span class="n">interface</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">interface</span> <span class="o">=</span> <span class="n">interface</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sld</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Parameter</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sld</span>
+
+    <span class="nd">@sld</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sld</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sld</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">isld</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Parameter</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_isld</span>
+
+    <span class="nd">@isld</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">isld</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_isld</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">value</span>
 
     <span class="c1"># Representation</span>
     <span class="nd">@property</span>
@@ -2622,8 +3452,8 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;A simplified dict representation.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="p">{</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s1">&#39;sld&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sld</span><span class="o">.</span><span class="n">value</span><span class="si">:</span><span class="s1">.3f</span><span class="si">}</span><span class="s1">e-6 </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sld</span><span class="o">.</span><span class="n">unit</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
-                <span class="s1">&#39;isld&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">isld</span><span class="o">.</span><span class="n">value</span><span class="si">:</span><span class="s1">.3f</span><span class="si">}</span><span class="s1">e-6 </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">isld</span><span class="o">.</span><span class="n">unit</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;sld&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_sld</span><span class="o">.</span><span class="n">value</span><span class="si">:</span><span class="s1">.3f</span><span class="si">}</span><span class="s1">e-6 </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_sld</span><span class="o">.</span><span class="n">unit</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;isld&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_isld</span><span class="o">.</span><span class="n">value</span><span class="si">:</span><span class="s1">.3f</span><span class="si">}</span><span class="s1">e-6 </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_isld</span><span class="o">.</span><span class="n">unit</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
             <span class="p">}</span>
         <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
@@ -2770,7 +3600,11 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/easyreflectometry/sample/elements/materials/material.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">44</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">40</span>
+<span class="normal">41</span>
+<span class="normal">42</span>
+<span class="normal">43</span>
+<span class="normal">44</span>
 <span class="normal">45</span>
 <span class="normal">46</span>
 <span class="normal">47</span>
@@ -2813,12 +3647,7 @@
 <span class="normal">84</span>
 <span class="normal">85</span>
 <span class="normal">86</span>
-<span class="normal">87</span>
-<span class="normal">88</span>
-<span class="normal">89</span>
-<span class="normal">90</span>
-<span class="normal">91</span>
-<span class="normal">92</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+<span class="normal">87</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">sld</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Parameter</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">isld</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Parameter</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -2860,13 +3689,12 @@
     <span class="p">)</span>
     <span class="n">apply_default_limits</span><span class="p">(</span><span class="n">isld</span><span class="p">,</span> <span class="s1">&#39;isld&#39;</span><span class="p">)</span>
 
-    <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
-        <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
-        <span class="n">sld</span><span class="o">=</span><span class="n">sld</span><span class="p">,</span>
-        <span class="n">isld</span><span class="o">=</span><span class="n">isld</span><span class="p">,</span>
-        <span class="n">interface</span><span class="o">=</span><span class="n">interface</span><span class="p">,</span>
-        <span class="n">unique_name</span><span class="o">=</span><span class="n">unique_name</span><span class="p">,</span>
-    <span class="p">)</span>
+    <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">unique_name</span><span class="o">=</span><span class="n">unique_name</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_sld</span> <span class="o">=</span> <span class="n">sld</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_isld</span> <span class="o">=</span> <span class="n">isld</span>
+
+    <span class="k">if</span> <span class="n">interface</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">interface</span> <span class="o">=</span> <span class="n">interface</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>

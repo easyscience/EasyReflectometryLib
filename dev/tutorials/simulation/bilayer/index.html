@@ -3641,12 +3641,12 @@ print(f'Bilayer layers: {len(bilayer.layers)}')</div>
 <div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Access key structural parameters</span>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Head thickness: </span><span class="si">{</span><span class="n">bilayer</span><span class="o">.</span><span class="n">front_head_layer</span><span class="o">.</span><span class="n">thickness</span><span class="o">.</span><span class="n">value</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1"> Å'</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Tail thickness: </span><span class="si">{</span><span class="n">bilayer</span><span class="o">.</span><span class="n">front_tail_layer</span><span class="o">.</span><span class="n">thickness</span><span class="o">.</span><span class="n">value</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1"> Å'</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Area per molecule: </span><span class="si">{</span><span class="n">bilayer</span><span class="o">.</span><span class="n">front_head_layer</span><span class="o">.</span><span class="n">area_per_molecule</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1"> Å²'</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Area per molecule: </span><span class="si">{</span><span class="n">bilayer</span><span class="o">.</span><span class="n">front_head_layer</span><span class="o">.</span><span class="n">area_per_molecule</span><span class="o">.</span><span class="n">value</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1"> Å²'</span><span class="p">)</span>
 </pre></div>
 <div class="clipboard-copy-txt" id="cell-7"># Access key structural parameters
 print(f'Head thickness: {bilayer.front_head_layer.thickness.value:.2f} Å')
 print(f'Tail thickness: {bilayer.front_tail_layer.thickness.value:.2f} Å')
-print(f'Area per molecule: {bilayer.front_head_layer.area_per_molecule:.2f} Å²')</div>
+print(f'Area per molecule: {bilayer.front_head_layer.area_per_molecule.value:.2f} Å²')</div>
 </div>
 </div>
 </div>
@@ -3699,25 +3699,25 @@ Area per molecule: 48.20 Å²
 </div>
 <div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Head layers share thickness and area per molecule via constrain_heads=True,</span>
 <span class="c1"># but solvent fraction is independent and can be set separately for each side.</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Front head solvent fraction: </span><span class="si">{</span><span class="n">bilayer</span><span class="o">.</span><span class="n">front_head_layer</span><span class="o">.</span><span class="n">solvent_fraction</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Back head solvent fraction:  </span><span class="si">{</span><span class="n">bilayer</span><span class="o">.</span><span class="n">back_head_layer</span><span class="o">.</span><span class="n">solvent_fraction</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Front head solvent fraction: </span><span class="si">{</span><span class="n">bilayer</span><span class="o">.</span><span class="n">front_head_layer</span><span class="o">.</span><span class="n">solvent_fraction</span><span class="o">.</span><span class="n">value</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Back head solvent fraction:  </span><span class="si">{</span><span class="n">bilayer</span><span class="o">.</span><span class="n">back_head_layer</span><span class="o">.</span><span class="n">solvent_fraction</span><span class="o">.</span><span class="n">value</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
 
 <span class="c1"># We can set them independently</span>
 <span class="n">bilayer</span><span class="o">.</span><span class="n">back_head_layer</span><span class="o">.</span><span class="n">solvent_fraction</span> <span class="o">=</span> <span class="mf">0.5</span>
 <span class="nb">print</span><span class="p">(</span><span class="s1">'</span><span class="se">\n</span><span class="s1">After setting back head solvent fraction to 0.5:'</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Front head solvent fraction: </span><span class="si">{</span><span class="n">bilayer</span><span class="o">.</span><span class="n">front_head_layer</span><span class="o">.</span><span class="n">solvent_fraction</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Back head solvent fraction:  </span><span class="si">{</span><span class="n">bilayer</span><span class="o">.</span><span class="n">back_head_layer</span><span class="o">.</span><span class="n">solvent_fraction</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Front head solvent fraction: </span><span class="si">{</span><span class="n">bilayer</span><span class="o">.</span><span class="n">front_head_layer</span><span class="o">.</span><span class="n">solvent_fraction</span><span class="o">.</span><span class="n">value</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Back head solvent fraction:  </span><span class="si">{</span><span class="n">bilayer</span><span class="o">.</span><span class="n">back_head_layer</span><span class="o">.</span><span class="n">solvent_fraction</span><span class="o">.</span><span class="n">value</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
 </pre></div>
 <div class="clipboard-copy-txt" id="cell-8"># Head layers share thickness and area per molecule via constrain_heads=True,
 # but solvent fraction is independent and can be set separately for each side.
-print(f'Front head solvent fraction: {bilayer.front_head_layer.solvent_fraction:.2f}')
-print(f'Back head solvent fraction:  {bilayer.back_head_layer.solvent_fraction:.2f}')
+print(f'Front head solvent fraction: {bilayer.front_head_layer.solvent_fraction.value:.2f}')
+print(f'Back head solvent fraction:  {bilayer.back_head_layer.solvent_fraction.value:.2f}')
 
 # We can set them independently
 bilayer.back_head_layer.solvent_fraction = 0.5
 print('\nAfter setting back head solvent fraction to 0.5:')
-print(f'Front head solvent fraction: {bilayer.front_head_layer.solvent_fraction:.2f}')
-print(f'Back head solvent fraction:  {bilayer.back_head_layer.solvent_fraction:.2f}')</div>
+print(f'Front head solvent fraction: {bilayer.front_head_layer.solvent_fraction.value:.2f}')
+print(f'Back head solvent fraction:  {bilayer.back_head_layer.solvent_fraction.value:.2f}')</div>
 </div>
 </div>
 </div>
