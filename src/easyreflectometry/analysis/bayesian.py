@@ -825,20 +825,267 @@ def _plot_corner_fallback(
         fig.show()
 
 
-def plot_trace(draws: np.ndarray, param_names: list[str], **kwargs) -> None:
-    """Plot MCMC trace plot.
+def plot_trace(
+    draws: np.ndarray,
+    param_names: list[str],
+    return_figure: bool = False,
+    **kwargs,
+):
+    """Plot MCMC chain trace plot.
 
-    Requires the ``arviz`` library.
+    Uses Plotly when available (interactive, with KDE panel); falls back to
+    the ``arviz`` library for a static plot.
 
-    :param draws: Posterior samples, shape ``(n_samples, n_params)``.
+    :param draws: Posterior samples, shape ``(n_samples, n_params)`` or
+        ``(n_chains, n_draws, n_params)``.
     :type draws: np.ndarray
     :param param_names: Parameter names (one per column).
     :type param_names: list[str]
-    :param kwargs: Additional keyword arguments passed to ``arviz.plot_trace``.
+    :param return_figure: When ``True``, return the Plotly ``Figure`` object
+        instead of displaying it.  Returns ``None`` when Plotly is unavailable.
+    :type return_figure: bool
+    :param kwargs: Forwarded to the underlying backend.
+    :return: Plotly Figure when ``return_figure=True`` and Plotly is available,
+        otherwise ``None``.
     """
-    _require_arviz()
-    idata = _to_arviz_data(draws, param_names)
-    _arviz.plot_trace(idata, var_names=param_names, **kwargs)
+    draws = np.asarray(draws)
+    if draws.ndim == 2:
+        draws = draws[np.newaxis, ...]  # (1, n_draws, n_params)
+    show = kwargs.pop('show', not return_figure)
+
+    result = _plot_trace_plotly(draws, param_names, show=show, return_figure=return_figure, **kwargs)
+    if result is not False:
+        return result if return_figure else None
+
+    # Fallback to arviz
+    if _HAS_ARVIZ:
+        flat = draws.reshape(-1, draws.shape[-1])
+        idata = _to_arviz_data(flat, param_names)
+        _arviz.plot_trace(idata, var_names=param_names, **kwargs)
+    else:
+        warnings.warn(
+            'Neither Plotly nor arviz is available for trace plots. '
+            'Install one with ``pip install plotly`` or ``pip install arviz``.',
+            UserWarning,
+        )
+    return None
+
+
+# ---------------------------------------------------------------------------
+# Chain color palette (distinguishable, works on white background)
+# ---------------------------------------------------------------------------
+_CHAIN_COLORS = [
+    'rgb(100,149,237)',  # cornflower blue
+    'rgb(255,127,80)',  # coral
+    'rgb(60,179,113)',  # medium sea green
+    'rgb(218,112,214)',  # orchid
+    'rgb(255,165,0)',  # orange
+    'rgb(95,158,160)',  # cadet blue
+    'rgb(220,20,60)',  # crimson
+    'rgb(107,142,35)',  # olive drab
+]
+
+
+def _split_rhat(chain_data: np.ndarray) -> float | None:
+    """Compute split-chain R-hat for a single parameter.
+
+    Each chain is split in half, doubling the number of chains, which makes
+    the diagnostic sensitive to within-chain non-stationarity.
+
+    :param chain_data: Shape ``(n_chains, n_draws)``.
+    :return: R-hat value, or ``None`` when fewer than 2 draws remain.
+    """
+    n_chains, n_draws = chain_data.shape
+    half = n_draws // 2
+    if half < 2:
+        return None
+    splits = np.concatenate([chain_data[:, :half], chain_data[:, half : 2 * half]], axis=0)
+    n_split_chains, m = splits.shape
+    chain_means = splits.mean(axis=1)
+    # grand_mean = chain_means.mean()
+    b_var = m * float(np.var(chain_means, ddof=1))
+    w_var = float(np.mean(np.var(splits, axis=1, ddof=1)))
+    if w_var <= 0:
+        return None
+    var_plus = (m - 1) / m * w_var + b_var / m
+    return float(np.sqrt(var_plus / w_var))
+
+
+def _plot_trace_plotly(
+    draws: np.ndarray,
+    param_names: list[str],
+    show: bool = True,
+    return_figure: bool = False,
+    **kwargs,
+):
+    """Build an interactive Plotly trace + KDE figure.
+
+    Each row shows one parameter: the left panel (72 %) is the MCMC trace
+    coloured by chain; the right panel (28 %) is a normalized posterior KDE.
+    Mean and 95 % CI are overlaid on the trace as a dashed line and a shaded
+    band.  Split-chain R-hat is annotated on the KDE panel when ≥ 2 chains
+    are present.
+
+    Returns the ``Figure`` when ``return_figure=True``, ``True`` on success,
+    or ``False`` when Plotly is unavailable.
+    """
+    try:
+        import plotly.graph_objects as go
+        from plotly.subplots import make_subplots
+    except ImportError:
+        return False
+
+    n_chains, n_draws, n_params = draws.shape
+    x_draw = np.arange(n_draws)
+    v_space = max(0.04, min(0.12, 0.50 / max(n_params, 1)))
+
+    fig = make_subplots(
+        rows=n_params,
+        cols=2,
+        column_widths=[0.72, 0.28],
+        shared_yaxes='rows',
+        horizontal_spacing=0.015,
+        vertical_spacing=v_space,
+    )
+
+    for p, name in enumerate(param_names[:n_params]):
+        row = p + 1
+        all_samples = draws[:, :, p].reshape(-1)
+        mean_val = float(np.mean(all_samples))
+        ci_lo, ci_hi = np.percentile(all_samples, [2.5, 97.5])
+
+        # -- 95 % CI band (drawn before trace lines so it sits behind them) --
+        fig.add_shape(
+            type='rect',
+            x0=0,
+            x1=int(n_draws - 1),
+            y0=ci_lo,
+            y1=ci_hi,
+            fillcolor='rgba(100,149,237,0.08)',
+            line={'width': 0},
+            row=row,
+            col=1,
+        )
+
+        # -- Mean reference line --
+        fig.add_shape(
+            type='line',
+            x0=0,
+            x1=int(n_draws - 1),
+            y0=mean_val,
+            y1=mean_val,
+            line={'color': 'rgb(200,50,50)', 'width': 1.5, 'dash': 'dash'},
+            opacity=0.85,
+            row=row,
+            col=1,
+        )
+
+        # -- Per-chain trace lines --
+        for c in range(n_chains):
+            color = _CHAIN_COLORS[c % len(_CHAIN_COLORS)]
+            chain_data = draws[c, :, p]
+            label = f'chain {c + 1}' if n_chains > 1 else name
+            fig.add_trace(
+                go.Scatter(
+                    x=x_draw,
+                    y=chain_data,
+                    mode='lines',
+                    line={'color': color, 'width': 0.9},
+                    opacity=0.80,
+                    showlegend=False,
+                    hovertemplate=f'draw=%{{x}}<br>{name}=%{{y:.4f}}<extra>{label}</extra>',
+                ),
+                row=row,
+                col=1,
+            )
+
+        # -- KDE panel --
+        try:
+            from scipy.stats import gaussian_kde
+
+            pad = max((ci_hi - ci_lo) * 0.5, 1e-9)
+            y_grid = np.linspace(ci_lo - pad, ci_hi + pad, 300)
+            density = gaussian_kde(all_samples)(y_grid)
+            density = density / density.max()  # normalize to [0, 1]
+
+            fig.add_trace(
+                go.Scatter(
+                    x=density,
+                    y=y_grid,
+                    mode='lines',
+                    fill='tozerox',
+                    fillcolor='rgba(100,149,237,0.18)',
+                    line={'color': 'rgb(100,149,237)', 'width': 1.8},
+                    showlegend=False,
+                    hoverinfo='skip',
+                ),
+                row=row,
+                col=2,
+            )
+        except ImportError:
+            pass
+
+        # -- Split-chain R-hat annotation (only for ≥ 2 chains) --
+        if n_chains >= 2:
+            rhat = _split_rhat(draws[:, :, p])
+            if rhat is not None:
+                color = 'rgb(220,50,50)' if rhat > 1.05 else 'rgb(220,140,0)' if rhat > 1.01 else 'rgb(50,160,50)'
+                fig.add_annotation(
+                    x=0.97,
+                    y=0.97,
+                    xref='x domain',
+                    yref='y domain',
+                    text=f'<b>R̂={rhat:.3f}</b>',
+                    showarrow=False,
+                    xanchor='right',
+                    yanchor='top',
+                    font={'size': 10, 'color': color},
+                    bgcolor='rgba(255,255,255,0.7)',
+                    bordercolor=color,
+                    borderwidth=1,
+                    row=row,
+                    col=2,
+                )
+
+        # -- Axis formatting --
+        fig.update_yaxes(
+            title_text=name,
+            title_font={'size': 10},
+            tickfont={'size': 9},
+            row=row,
+            col=1,
+        )
+        if row < n_params:
+            fig.update_xaxes(showticklabels=False, row=row, col=1)
+        fig.update_xaxes(
+            showticklabels=False,
+            showgrid=False,
+            zeroline=True,
+            zerolinecolor='rgb(210,210,210)',
+            zerolinewidth=1,
+            row=row,
+            col=2,
+        )
+        fig.update_yaxes(showticklabels=False, row=row, col=2)
+
+    fig.update_xaxes(title_text='Draw', title_font={'size': 10}, row=n_params, col=1)
+
+    chain_label = f' — {n_chains} chains' if n_chains > 1 else ''
+    title_text = kwargs.get('title', f'MCMC Chain Traces{chain_label}')
+    fig.update_layout(
+        title={'text': title_text, 'font': {'size': 14}},
+        height=max(300, 190 * n_params),
+        showlegend=False,
+        template='plotly_white',
+        margin={'l': 80, 'r': 20, 't': 60, 'b': 60},
+        plot_bgcolor='rgba(248,249,252,1)',
+    )
+
+    if return_figure:
+        return fig
+    if show:
+        fig.show()
+    return True
 
 
 def credible_intervals(
