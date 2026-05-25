@@ -77,7 +77,7 @@ def test_pairs_selects_parameters_and_calls_corner(monkeypatch):
 
     called = {}
 
-    def fake_plot_corner(draws, names):
+    def fake_plot_corner(draws, names, **kwargs):
         called['shape'] = draws.shape
         called['names'] = names
 
@@ -100,15 +100,20 @@ def test_distribution_prints_message_for_missing_parameter(capsys):
 
 
 def test_distribution_plots_single_parameter(monkeypatch):
-    import matplotlib.pyplot as plt
+    import easyreflectometry.analysis.bayesian as bayesian
 
-    monkeypatch.setattr(plt, 'show', lambda: None)
+    called = {}
+
+    def fake_plot_distribution(draws, names, **kwargs):
+        called['shape'] = draws.shape
+        called['names'] = names
+
+    monkeypatch.setattr(bayesian, 'plot_distribution', fake_plot_distribution)
     display = PosteriorDisplay(SimpleNamespace(_posterior_results=FakePosterior()))
 
     display.distribution('thickness')
 
-    assert plt.get_fignums()
-    plt.close('all')
+    assert called == {'shape': (4, 1), 'names': ['thickness']}
 
 
 def test_reflectivity_requires_data_or_q_values():

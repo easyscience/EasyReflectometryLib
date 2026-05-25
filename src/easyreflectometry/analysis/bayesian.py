@@ -271,7 +271,12 @@ def posterior_summary(draws: np.ndarray, param_names: list[str]) -> str:
     return '\n'.join(lines)
 
 
-def plot_corner(draws: np.ndarray, param_names: list[str], **kwargs) -> None:
+def plot_corner(
+    draws: np.ndarray,
+    param_names: list[str],
+    return_figure: bool = False,
+    **kwargs,
+):
     """Plot an interactive parameter correlation corner (pairs) plot.
 
     Uses Plotly when available for interactive rendering; falls back to
@@ -281,33 +286,47 @@ def plot_corner(draws: np.ndarray, param_names: list[str], **kwargs) -> None:
     :type draws: np.ndarray
     :param param_names: Parameter names (one per column).
     :type param_names: list[str]
+    :param return_figure: When ``True``, return the Plotly ``Figure`` object
+        instead of displaying it.  Returns ``None`` when Plotly is unavailable.
+    :type return_figure: bool
     :param kwargs: Additional keyword arguments (forwarded to the
         underlying plotting backend). Use ``show=False`` to build the plot
         without displaying it.
+    :return: Plotly Figure when ``return_figure=True`` and Plotly is available,
+        otherwise ``None``.
     """
     draws = np.asarray(draws)
+    if draws.ndim == 3:
+        draws = draws.reshape(-1, draws.shape[-1])
     n_params = draws.shape[1]
-    show = kwargs.pop('show', True)
+    show = kwargs.pop('show', not return_figure)
 
     if n_params < 2:
         _plot_corner_fallback(draws, param_names, show=show, **kwargs)
-        return
+        return None
 
     # Prefer Plotly for interactive display
-    if _plot_corner_plotly(draws, param_names, show=show, **kwargs):
-        return
+    result = _plot_corner_plotly(draws, param_names, show=show, return_figure=return_figure, **kwargs)
+    if result is not False:
+        return result if return_figure else None
 
     # Fall back to matplotlib corner library
     _plot_corner_fallback(draws, param_names, show=show, **kwargs)
+    return None
 
 
 def _plot_corner_plotly(
     draws: np.ndarray,
     param_names: list[str],
     show: bool = True,
+    return_figure: bool = False,
     **kwargs,
-) -> bool:
-    """Build an interactive Plotly corner/pairs plot. Returns ``True`` on success."""
+):
+    """Build an interactive Plotly corner/pairs plot.
+
+    Returns the ``Figure`` when ``return_figure=True``, ``True`` on success
+    with display, or ``False`` when Plotly is unavailable.
+    """
     try:
         from plotly.subplots import make_subplots
     except ImportError:
@@ -401,9 +420,235 @@ def _plot_corner_plotly(
         template='plotly_white',
     )
 
+    if return_figure:
+        return fig
     if show:
         fig.show()
     return True
+
+
+def plot_distribution(
+    draws: np.ndarray,
+    param_names: list[str],
+    return_figure: bool = False,
+    **kwargs,
+):
+    """Plot one-dimensional marginal posterior distributions.
+
+    Uses Plotly when available for interactive rendering; falls back to
+    matplotlib + KDE.
+
+    :param draws: Posterior samples, shape ``(n_samples, n_params)``.
+    :type draws: np.ndarray
+    :param param_names: Parameter names (one per column).
+    :type param_names: list[str]
+    :param return_figure: When ``True``, return the Plotly ``Figure`` object
+        instead of displaying it.  Returns ``None`` when Plotly is unavailable.
+    :type return_figure: bool
+    :param kwargs: Forwarded to the underlying backend.
+    :return: Plotly Figure when ``return_figure=True`` and Plotly is available,
+        otherwise ``None``.
+    """
+    draws = np.asarray(draws)
+    if draws.ndim == 3:
+        draws = draws.reshape(-1, draws.shape[-1])
+    show = kwargs.pop('show', not return_figure)
+
+    result = _plot_distribution_plotly(draws, param_names, show=show, return_figure=return_figure, **kwargs)
+    if result is not False:
+        return result if return_figure else None
+
+    _plot_distribution_fallback(draws, param_names, show=show, **kwargs)
+    return None
+
+
+def _plot_distribution_plotly(
+    draws: np.ndarray,
+    param_names: list[str],
+    show: bool = True,
+    return_figure: bool = False,
+    **kwargs,
+):
+    """Build a Plotly figure of 1-D marginal histograms + KDE.
+
+    Returns the ``Figure`` when ``return_figure=True``, ``True`` on success, or
+    ``False`` when Plotly is unavailable.
+    """
+    try:
+        import plotly.graph_objects as go
+        from plotly.subplots import make_subplots
+    except ImportError:
+        return False
+
+    n = draws.shape[1]
+    cols = min(3, n)
+    rows = max(1, (n + cols - 1) // cols)
+
+    fig = make_subplots(
+        rows=rows,
+        cols=cols,
+        subplot_titles=list(param_names[:n]),
+        horizontal_spacing=0.10,
+        vertical_spacing=0.20,
+    )
+
+    # Shrink the auto-generated subplot title annotations so they fit in each cell
+    for ann in fig.layout.annotations:
+        ann.font = {'size': 11}
+
+    for i, name in enumerate(param_names[:n]):
+        row = i // cols + 1
+        col_idx = i % cols + 1
+        data = draws[:, i]
+
+        mean_val = np.mean(data)
+        median_val = np.median(data)
+        ci_lo, ci_hi = np.percentile(data, [2.5, 97.5])
+
+        counts, edges = np.histogram(data, bins=30, density=True)
+        centers = 0.5 * (edges[:-1] + edges[1:])
+        bar_width = float(edges[1] - edges[0]) * 0.9
+
+        hover = (
+            f'{name}<br>'
+            f'value=%{{x:.4f}}<br>'
+            f'density=%{{y:.4f}}<br>'
+            f'mean={mean_val:.4f}<br>'
+            f'median={median_val:.4f}<br>'
+            f'95% CI [{ci_lo:.4f}, {ci_hi:.4f}]'
+            f'<extra></extra>'
+        )
+
+        fig.add_trace(
+            go.Bar(
+                x=centers,
+                y=counts,
+                width=bar_width,
+                marker_color='rgb(100,149,237)',
+                opacity=0.7,
+                showlegend=False,
+                hovertemplate=hover,
+            ),
+            row=row,
+            col=col_idx,
+        )
+
+        try:
+            from scipy.stats import gaussian_kde
+
+            kde = gaussian_kde(data)
+            x_kde = np.linspace(data.min(), data.max(), 200)
+            fig.add_trace(
+                go.Scatter(
+                    x=x_kde,
+                    y=kde(x_kde),
+                    mode='lines',
+                    line={'color': 'rgb(220,80,40)', 'width': 2},
+                    showlegend=False,
+                    hoverinfo='skip',
+                ),
+                row=row,
+                col=col_idx,
+            )
+        except ImportError:
+            pass
+
+        fig.add_shape(
+            type='line',
+            x0=mean_val,
+            x1=mean_val,
+            y0=0,
+            y1=1,
+            yref='y domain',
+            line={'dash': 'dash', 'color': 'red', 'width': 1.5},
+            opacity=0.7,
+            row=row,
+            col=col_idx,
+        )
+        fig.add_shape(
+            type='line',
+            x0=median_val,
+            x1=median_val,
+            y0=0,
+            y1=1,
+            yref='y domain',
+            line={'dash': 'dot', 'color': 'green', 'width': 1.5},
+            opacity=0.7,
+            row=row,
+            col=col_idx,
+        )
+
+    # Hide unused subplot panels
+    for i in range(n, rows * cols):
+        row = i // cols + 1
+        col_idx = i % cols + 1
+        fig.update_xaxes(visible=False, row=row, col=col_idx)
+        fig.update_yaxes(visible=False, row=row, col=col_idx)
+
+    title = kwargs.get('title', 'Marginal Posterior Distributions')
+    fig.update_layout(
+        title=title,
+        height=max(320, 300 * rows),
+        showlegend=False,
+        margin={'l': 60, 'r': 20, 't': 80, 'b': 60},
+        template='plotly_white',
+    )
+
+    if return_figure:
+        return fig
+    if show:
+        fig.show()
+    return True
+
+
+def _plot_distribution_fallback(
+    draws: np.ndarray,
+    param_names: list[str],
+    show: bool = True,
+    **kwargs,
+) -> None:
+    """Fall back to matplotlib for 1-D marginal distributions."""
+    try:
+        import matplotlib.pyplot as plt
+    except ImportError:
+        warnings.warn('Neither Plotly nor matplotlib is available for distribution plots.', UserWarning)
+        return
+
+    n = draws.shape[1]
+    cols = min(3, n)
+    rows = max(1, (n + cols - 1) // cols)
+    fig, axes = plt.subplots(rows, cols, figsize=(4 * cols, 3 * rows), squeeze=False)
+    axes = axes.flatten()
+
+    for i, name in enumerate(param_names[:n]):
+        ax = axes[i]
+        data = draws[:, i]
+
+        ax.hist(data, bins='auto', density=True, alpha=0.6, color='tab:blue', edgecolor='white')
+        try:
+            from scipy.stats import gaussian_kde
+
+            kde = gaussian_kde(data)
+            x_range = np.linspace(data.min(), data.max(), 200)
+            ax.plot(x_range, kde(x_range), color='tab:orange', linewidth=2)
+        except ImportError:
+            pass
+
+        mean_v = data.mean()
+        median_v = float(np.median(data))
+        ci_lo, ci_hi = np.percentile(data, [2.5, 97.5])
+        ax.axvline(mean_v, color='red', linestyle='--', alpha=0.7, label=f'mean={mean_v:.3f}')
+        ax.axvline(median_v, color='green', linestyle=':', alpha=0.7, label=f'median={median_v:.3f}')
+        ax.axvspan(ci_lo, ci_hi, alpha=0.15, color='gray')
+        ax.set_title(name)
+        ax.legend(fontsize='small')
+
+    for i in range(n, len(axes)):
+        axes[i].set_visible(False)
+
+    fig.tight_layout()
+    if show:
+        plt.show()
 
 
 def _add_plotly_diagonal_histogram(fig, data, label, subplot_ref, x_range):

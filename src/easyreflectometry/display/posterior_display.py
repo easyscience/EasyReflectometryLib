@@ -52,18 +52,22 @@ class PosteriorDisplay:
         threshold: float | None = None,
         max_parameters: int = 6,
         style: str = 'auto',
-    ) -> None:
+        return_figure: bool = False,
+    ):
         """Plot posterior pair relationships (corner plot).
 
-        Uses the ``corner`` library when available.  Parameters are
-        auto-selected by strongest off-diagonal correlation when not
-        explicitly supplied.
+        Uses Plotly when available.  Parameters are auto-selected by
+        strongest off-diagonal correlation when not explicitly supplied.
 
         :param parameters: Parameter names to include, or ``None`` for
             auto-selection.
         :param threshold: Minimum absolute correlation for inclusion.
         :param max_parameters: Maximum number of parameters to include.
         :param style: ``'auto'``, ``'fast'``, or ``'full'``.
+        :param return_figure: When ``True``, return the Plotly ``Figure``
+            instead of displaying it.
+        :return: Plotly Figure when ``return_figure=True`` and Plotly is
+            available, otherwise ``None``.
         """
         posterior = self._get_posterior()
         draws = posterior.draws_flat
@@ -75,87 +79,53 @@ class PosteriorDisplay:
         idx = [param_names.index(p) for p in parameters if p in param_names]
         if not idx:
             print('No parameters to plot.')
-            return
+            return None
 
         from easyreflectometry.analysis.bayesian import plot_corner
 
-        plot_corner(draws[:, idx], [param_names[i] for i in idx])
+        return plot_corner(
+            draws[:, idx],
+            [param_names[i] for i in idx],
+            return_figure=return_figure,
+        )
 
-    def distribution(self, param: object | None = None) -> None:
+    def distribution(
+        self,
+        param: object | None = None,
+        return_figure: bool = False,
+    ):
         """Plot one-dimensional marginal posterior distributions.
 
-        When *param* is ``None``, iterates over all posterior parameters.
+        When *param* is ``None``, plots all posterior parameters.
         When *param* is supplied, resolves it to a posterior column and
         plots a single distribution.
 
         :param param: A parameter name (``str``), a ``Parameter`` object,
             or ``None`` to plot all posterior parameters.
+        :param return_figure: When ``True``, return the Plotly ``Figure``
+            instead of displaying it.
+        :return: Plotly Figure when ``return_figure=True`` and Plotly is
+            available, otherwise ``None``.
         """
         posterior = self._get_posterior()
         draws = posterior.draws_flat
         param_names = posterior.param_names
 
-        # Resolve which parameters to plot
         if param is None:
-            to_plot = list(range(len(param_names)))
+            sel_draws = draws
             labels = param_names
         else:
             name = _resolve_param_name(param, param_names)
             if name is None:
                 print(f'Parameter {param!r} not found in posterior parameters: {param_names}')
-                return
+                return None
             idx = param_names.index(name)
-            to_plot = [idx]
+            sel_draws = draws[:, [idx]]
             labels = [name]
 
-        try:
-            import matplotlib.pyplot as plt
-        except ImportError:
-            print('matplotlib is required for distribution plots.')
-            return
+        from easyreflectometry.analysis.bayesian import plot_distribution
 
-        n = len(to_plot)
-        cols = min(3, n)
-        rows = max(1, (n + cols - 1) // cols)
-        fig, axes = plt.subplots(rows, cols, figsize=(4 * cols, 3 * rows), squeeze=False)
-        axes = axes.flatten()
-
-        for ax_idx, col_idx in enumerate(to_plot):
-            ax = axes[ax_idx]
-            col = draws[:, col_idx]
-            label = labels[ax_idx]
-
-            # Histogram
-            ax.hist(col, bins='auto', density=True, alpha=0.6, color='tab:blue', edgecolor='white')
-
-            # KDE when SciPy is available
-            try:
-                from scipy.stats import gaussian_kde
-
-                kde = gaussian_kde(col)
-                x_range = np.linspace(col.min(), col.max(), 200)
-                ax.plot(x_range, kde(x_range), color='tab:orange', linewidth=2)
-            except ImportError:
-                pass
-
-            # Summary markers
-            mean = col.mean()
-            median = np.median(col)
-            ci_lo, ci_hi = np.percentile(col, [2.5, 97.5])
-
-            ax.axvline(mean, color='red', linestyle='--', alpha=0.7, label=f'mean={mean:.3f}')
-            ax.axvline(median, color='green', linestyle=':', alpha=0.7, label=f'median={median:.3f}')
-            ax.axvspan(ci_lo, ci_hi, alpha=0.15, color='gray', label=f'95% CI [{ci_lo:.3f}, {ci_hi:.3f}]')
-
-            ax.set_title(label)
-            ax.legend(fontsize='small', loc='upper right')
-
-        # Hide unused axes
-        for ax_idx in range(n, len(axes)):
-            axes[ax_idx].set_visible(False)
-
-        fig.tight_layout()
-        plt.show()
+        return plot_distribution(sel_draws, labels, return_figure=return_figure)
 
     def reflectivity(
         self,
