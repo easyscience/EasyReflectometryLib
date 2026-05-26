@@ -42,6 +42,37 @@ def _require_arviz():
         )
 
 
+def _wrap_pair_label(name: str, max_len: int = 16) -> str:
+    """Insert ``<br>`` line breaks so long parameter labels don't overlap.
+
+    Dotted names (e.g. ``layer1.thickness``) break on dots; plain names
+    word-wrap on spaces at roughly *max_len* characters per line.
+    """
+    name = name.strip()
+    if not name:
+        return name
+    if '.' in name:
+        parts = [p.strip() for p in name.split('.') if p.strip()]
+        if parts:
+            return '<br>'.join([*(f'{p}.' for p in parts[:-1]), parts[-1]])
+    if len(name) <= max_len:
+        return name
+    words = name.split()
+    if len(words) == 1:
+        return name
+    lines: list[str] = []
+    current = ''
+    for word in words:
+        if current and len(current) + 1 + len(word) > max_len:
+            lines.append(current)
+            current = word
+        else:
+            current = f'{current} {word}' if current else word
+    if current:
+        lines.append(current)
+    return '<br>'.join(lines)
+
+
 def _to_arviz_data(draws: np.ndarray, param_names: list[str]):
     """Convert posterior draws to an arviz InferenceData object.
 
@@ -169,19 +200,156 @@ def posterior_summary(draws: np.ndarray, param_names: list[str]) -> str:
     return '\n'.join(lines)
 
 
-def plot_corner(draws: np.ndarray, param_names: list[str], **kwargs) -> None:
+def plot_corner(draws: np.ndarray, param_names: list[str], return_figure: bool = False, **kwargs) -> Any:
     """Plot a parameter correlation corner plot.
 
-    Requires the ``corner`` library.
+    When *return_figure* is ``True`` a Plotly ``Figure`` is returned (requires
+    ``plotly``).  Otherwise the ``corner`` library renders to the active
+    matplotlib figure.
 
     :param draws: Posterior samples, shape ``(n_samples, n_params)``.
     :type draws: np.ndarray
     :param param_names: Parameter names (one per column).
     :type param_names: list[str]
-    :param kwargs: Additional keyword arguments passed to ``corner.corner``.
+    :param return_figure: Return a Plotly Figure instead of rendering inline.
+    :type return_figure: bool
+    :param kwargs: Additional keyword arguments passed to ``corner.corner``
+        when *return_figure* is ``False``.
+    :return: Plotly Figure when *return_figure* is ``True``, otherwise ``None``.
     """
-    _require_corner()
     draws = np.asarray(draws)
+    n_params = len(param_names)
+
+    if return_figure:
+        try:
+            import plotly.graph_objects as go
+            from plotly.subplots import make_subplots
+        except ImportError:
+            return None
+
+        # Colours mirror easydiffraction's posterior pair plot palette.
+        marginal_fill = 'rgba(44, 160, 44, 0.22)'
+        marginal_line = 'rgb(44, 160, 44)'
+        scatter_color = 'rgba(140, 140, 140, 0.45)'
+        contour_colorscale = [
+            [0.0, 'rgba(183, 203, 255, 0.94)'],
+            [0.35, 'rgba(183, 203, 255, 0.94)'],
+            [0.35, 'rgba(138, 169, 252, 0.95)'],
+            [0.60, 'rgba(138, 169, 252, 0.95)'],
+            [0.60, 'rgba(96, 131, 242, 0.96)'],
+            [0.82, 'rgba(96, 131, 242, 0.96)'],
+            [0.82, 'rgba(58, 86, 224, 0.98)'],
+            [1.0, 'rgba(58, 86, 224, 0.98)'],
+        ]
+
+        wrapped_labels = [_wrap_pair_label(name) for name in param_names]
+
+        n_samples = draws.shape[0]
+        if n_samples > 1500:
+            stride = max(1, n_samples // 1500)
+            scatter_draws = draws[::stride]
+        else:
+            scatter_draws = draws
+
+        fig = make_subplots(
+            rows=n_params,
+            cols=n_params,
+            horizontal_spacing=0.02,
+            vertical_spacing=0.02,
+        )
+
+        # Track which trace types have already been added to the legend.
+        legend_shown = {'marginal': False, 'scatter': False, 'contour': False}
+
+        for row in range(n_params):
+            for col in range(n_params):
+                r, c = row + 1, col + 1
+                if col > row:
+                    fig.update_xaxes(visible=False, row=r, col=c)
+                    fig.update_yaxes(visible=False, row=r, col=c)
+                    continue
+                if col == row:
+                    fig.add_trace(
+                        go.Histogram(
+                            x=draws[:, row],
+                            nbinsx=40,
+                            histnorm='probability density',
+                            marker=dict(color=marginal_fill, line=dict(color=marginal_line, width=1)),
+                            name='Marginal density',
+                            legendgroup='marginal',
+                            showlegend=not legend_shown['marginal'],
+                            hoverinfo='skip',
+                        ),
+                        row=r,
+                        col=c,
+                    )
+                    legend_shown['marginal'] = True
+                else:
+                    fig.add_trace(
+                        go.Scatter(
+                            x=scatter_draws[:, col],
+                            y=scatter_draws[:, row],
+                            mode='markers',
+                            marker=dict(size=3, color=scatter_color),
+                            name='Posterior samples',
+                            legendgroup='scatter',
+                            showlegend=not legend_shown['scatter'],
+                            hoverinfo='skip',
+                        ),
+                        row=r,
+                        col=c,
+                    )
+                    legend_shown['scatter'] = True
+                    fig.add_trace(
+                        go.Histogram2dContour(
+                            x=draws[:, col],
+                            y=draws[:, row],
+                            ncontours=6,
+                            colorscale=contour_colorscale,
+                            showscale=False,
+                            contours=dict(coloring='lines', showlines=True),
+                            line=dict(width=1.2),
+                            name='Posterior contours',
+                            legendgroup='contour',
+                            showlegend=not legend_shown['contour'],
+                            hoverinfo='skip',
+                        ),
+                        row=r,
+                        col=c,
+                    )
+                    legend_shown['contour'] = True
+
+        # Axis labels: outer edges only (bottom row x-axes, leftmost column y-axes,
+        # including the top-left diagonal cell so its parameter is identifiable).
+        for i, label in enumerate(wrapped_labels):
+            fig.update_xaxes(title_text=label, title_font=dict(size=10), row=n_params, col=i + 1)
+            fig.update_yaxes(title_text=label, title_font=dict(size=10), row=i + 1, col=1)
+        # Diagonal y-axes are probability density — hide their tick labels (except the
+        # top-left, where ticks would be the only cue about the density scale).
+        for i in range(1, n_params):
+            fig.update_yaxes(showticklabels=False, row=i + 1, col=i + 1)
+
+        fig.update_layout(
+            height=max(450, 180 * n_params),
+            width=max(550, 180 * n_params + 140),
+            showlegend=True,
+            legend=dict(
+                orientation='v',
+                yanchor='top',
+                y=1.0,
+                xanchor='left',
+                x=1.02,
+                font=dict(size=11),
+                itemsizing='constant',
+            ),
+            plot_bgcolor='white',
+            margin=dict(l=80, r=160, t=30, b=60),
+        )
+        fig.update_xaxes(showgrid=False, zeroline=False, ticks='outside')
+        fig.update_yaxes(showgrid=False, zeroline=False, ticks='outside')
+        return fig
+
+    _require_corner()
     defaults = {
         'labels': param_names,
         'quantiles': [0.16, 0.5, 0.84],
@@ -191,22 +359,148 @@ def plot_corner(draws: np.ndarray, param_names: list[str], **kwargs) -> None:
     }
     defaults.update(kwargs)
     _corner.corner(draws, **defaults)
+    return None
 
 
-def plot_trace(draws: np.ndarray, param_names: list[str], **kwargs) -> None:
+def plot_trace(draws: np.ndarray, param_names: list[str], return_figure: bool = False, **kwargs) -> Any:
     """Plot MCMC trace plot.
 
-    Requires the ``arviz`` library.
+    When *return_figure* is ``True`` a Plotly ``Figure`` is returned instead of
+    being displayed inline; the caller is responsible for rendering it.  This
+    requires the ``plotly`` package.
+
+    :param draws: Posterior samples, shape ``(n_chains, n_draws, n_params)`` or
+        ``(n_draws, n_params)``.
+    :type draws: np.ndarray
+    :param param_names: Parameter names (one per column).
+    :type param_names: list[str]
+    :param return_figure: Return a Plotly Figure instead of rendering inline.
+    :type return_figure: bool
+    :param kwargs: Additional keyword arguments passed to ``arviz.plot_trace``
+        when *return_figure* is ``False``.
+    :return: Plotly Figure when *return_figure* is ``True``, otherwise ``None``.
+    """
+    draws = np.asarray(draws)
+    if draws.ndim == 2:
+        draws = draws[np.newaxis, ...]  # (1, n_draws, n_params)
+    # draws shape: (n_chains, n_draws, n_params)
+
+    if return_figure:
+        try:
+            import plotly.graph_objects as go
+            from plotly.subplots import make_subplots
+        except ImportError:
+            return None
+
+        n_params = len(param_names)
+        n_chains = draws.shape[0]
+        fig = make_subplots(
+            rows=n_params,
+            cols=2,
+            column_widths=[0.6, 0.4],
+        )
+        colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728']
+        for i, name in enumerate(param_names):
+            row = i + 1
+            show_legend = i == 0
+            for c in range(n_chains):
+                chain_draws = draws[c, :, i]
+                color = colors[c % len(colors)]
+                fig.add_trace(
+                    go.Scatter(
+                        y=chain_draws,
+                        mode='lines',
+                        line=dict(color=color, width=1),
+                        name=f'chain {c}',
+                        legendgroup=f'chain {c}',
+                        showlegend=show_legend,
+                    ),
+                    row=row,
+                    col=1,
+                )
+                fig.add_trace(
+                    go.Histogram(
+                        x=chain_draws,
+                        marker_color=color,
+                        opacity=0.6,
+                        name=f'chain {c}',
+                        legendgroup=f'chain {c}',
+                        showlegend=show_legend,
+                        nbinsx=40,
+                    ),
+                    row=row,
+                    col=2,
+                )
+            fig.update_yaxes(title_text=name, title_font=dict(size=10), row=row, col=1)
+            fig.update_xaxes(title_text=name, title_font=dict(size=10), row=row, col=2)
+            fig.update_yaxes(title_text='Count', title_font=dict(size=10), row=row, col=2)
+        fig.update_xaxes(title_text='Draw index', title_font=dict(size=10), row=n_params, col=1)
+        fig.update_layout(
+            height=max(300, 200 * n_params),
+            barmode='overlay',
+            legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='right', x=1, font=dict(size=10)),
+        )
+        return fig
+
+    _require_arviz()
+    idata = _to_arviz_data(draws, param_names)
+    _arviz.plot_trace(idata, var_names=param_names, **kwargs)
+    return None
+
+
+def plot_distribution(draws: np.ndarray, param_names: list[str], return_figure: bool = False, **kwargs) -> Any:
+    """Plot marginal posterior distributions for each parameter.
+
+    When *return_figure* is ``True`` a Plotly ``Figure`` is returned.
 
     :param draws: Posterior samples, shape ``(n_samples, n_params)``.
     :type draws: np.ndarray
     :param param_names: Parameter names (one per column).
     :type param_names: list[str]
-    :param kwargs: Additional keyword arguments passed to ``arviz.plot_trace``.
+    :param return_figure: Return a Plotly Figure instead of rendering inline.
+    :type return_figure: bool
+    :param kwargs: Additional keyword arguments (currently unused).
+    :return: Plotly Figure when *return_figure* is ``True``, otherwise ``None``.
     """
-    _require_arviz()
-    idata = _to_arviz_data(draws, param_names)
-    _arviz.plot_trace(idata, var_names=param_names, **kwargs)
+    draws = np.asarray(draws)
+    if draws.ndim == 3:
+        draws = draws.reshape(-1, draws.shape[-1])
+    # draws shape: (n_samples, n_params)
+
+    if return_figure:
+        try:
+            import plotly.graph_objects as go
+            from plotly.subplots import make_subplots
+        except ImportError:
+            return None
+
+        n_params = len(param_names)
+        n_cols = min(3, n_params)
+        n_rows = (n_params + n_cols - 1) // n_cols
+        fig = make_subplots(rows=n_rows, cols=n_cols)
+        for i, name in enumerate(param_names):
+            row = i // n_cols + 1
+            col = i % n_cols + 1
+            fig.add_trace(
+                go.Histogram(
+                    x=draws[:, i],
+                    name=name,
+                    marker_color='#1f77b4',
+                    nbinsx=40,
+                    showlegend=False,
+                ),
+                row=row,
+                col=col,
+            )
+            fig.update_xaxes(title_text=name, title_font=dict(size=11), row=row, col=col)
+            fig.update_yaxes(title_text='Count', title_font=dict(size=11), row=row, col=col)
+        fig.update_layout(
+            height=max(300, 250 * n_rows),
+            showlegend=False,
+        )
+        return fig
+
+    return None
 
 
 def credible_intervals(
