@@ -30,6 +30,17 @@ class TestPosteriorSummary:
         assert 'mean' in result
         assert 'sd' in result
 
+    def test_header_uses_quantile_labels(self, sample_draws):
+        """The header should label the columns as equal-tailed quantiles, not HDI."""
+        from easyreflectometry.analysis.bayesian import posterior_summary
+
+        draws, param_names = sample_draws
+        result = posterior_summary(draws, param_names)
+        header = result.splitlines()[0]
+        assert 'q2.5%' in header
+        assert 'q97.5%' in header
+        assert 'hdi' not in header.lower()
+
     def test_contains_param_names(self, sample_draws):
         from easyreflectometry.analysis.bayesian import posterior_summary
 
@@ -239,3 +250,97 @@ class TestApplyDraw:
         _apply_draw(model, draws, param_names, row=1)
         assert param_a.value == 260.0
         assert param_b.value == 2.1
+
+
+class TestGelmanRubinRequiresMultipleChains:
+    def test_raises_on_2d_draws(self, sample_draws):
+        """R-hat is undefined for a single chain; ``gelman_rubin`` must reject 2-D input."""
+        pytest.importorskip('arviz')
+        from easyreflectometry.analysis.bayesian import PosteriorResults
+
+        draws, param_names = sample_draws  # shape (n_samples, n_params)
+        pr = PosteriorResults(draws, param_names)
+        with pytest.raises(ValueError, match='at least 2 chains'):
+            pr.gelman_rubin()
+
+    def test_raises_on_single_chain_3d(self, sample_draws):
+        """Even with an explicit chain axis, n_chains == 1 must raise."""
+        pytest.importorskip('arviz')
+        from easyreflectometry.analysis.bayesian import PosteriorResults
+
+        draws, param_names = sample_draws
+        single_chain = draws[np.newaxis, ...]  # (1, n_draws, n_params)
+        pr = PosteriorResults(single_chain, param_names)
+        with pytest.raises(ValueError, match='at least 2 chains'):
+            pr.gelman_rubin()
+
+    def test_accepts_multi_chain(self, sample_draws):
+        """With n_chains >= 2 the diagnostic should return a numeric dict."""
+        pytest.importorskip('arviz')
+        from easyreflectometry.analysis.bayesian import PosteriorResults
+
+        draws, param_names = sample_draws
+        # Stack two independent draws as two chains.
+        rng = np.random.default_rng(7)
+        second = np.column_stack([
+            rng.normal(loc=250, scale=10, size=draws.shape[0]),
+            rng.normal(loc=2.0, scale=0.2, size=draws.shape[0]),
+        ])
+        multi = np.stack([draws, second], axis=0)  # (2, n_draws, n_params)
+        pr = PosteriorResults(multi, param_names)
+        result = pr.gelman_rubin()
+        assert isinstance(result, dict)
+        for name in param_names:
+            assert name in result
+            assert np.isfinite(result[name])
+
+
+class TestPlotFigureFallbackWarnings:
+    """When ``return_figure=True`` and plotly is missing, the helpers must warn."""
+
+    def test_plot_trace_warns_without_plotly(self, sample_draws, monkeypatch):
+        import builtins
+
+        from easyreflectometry.analysis.bayesian import plot_trace
+
+        real_import = builtins.__import__
+
+        def _fake_import(name, *args, **kwargs):
+            if name.startswith('plotly'):
+                raise ImportError('plotly disabled for test')
+            return real_import(name, *args, **kwargs)
+
+        monkeypatch.setattr(builtins, '__import__', _fake_import)
+
+        draws, param_names = sample_draws
+        with pytest.warns(UserWarning, match='plotly'):
+            result = plot_trace(draws, param_names, return_figure=True)
+        assert result is None
+
+    def test_plot_distribution_warns_without_plotly(self, sample_draws, monkeypatch):
+        import builtins
+
+        from easyreflectometry.analysis.bayesian import plot_distribution
+
+        real_import = builtins.__import__
+
+        def _fake_import(name, *args, **kwargs):
+            if name.startswith('plotly'):
+                raise ImportError('plotly disabled for test')
+            return real_import(name, *args, **kwargs)
+
+        monkeypatch.setattr(builtins, '__import__', _fake_import)
+
+        draws, param_names = sample_draws
+        with pytest.warns(UserWarning, match='plotly'):
+            result = plot_distribution(draws, param_names, return_figure=True)
+        assert result is None
+
+
+class TestPlotDistributionExported:
+    def test_in_analysis_namespace(self):
+        """``plot_distribution`` should be importable from the analysis package."""
+        from easyreflectometry import analysis
+
+        assert hasattr(analysis, 'plot_distribution')
+        assert 'plot_distribution' in analysis.__all__

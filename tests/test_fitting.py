@@ -824,6 +824,33 @@ class TestSampleRequiresBumpsEngine:
         with pytest.raises(RuntimeError, match='Bayesian sampling requires a BUMPS minimizer'):
             fitter.sample(data)
 
+    def test_wrapper_check_runs_before_core_sample(self):
+        """The wrapper-level guard must fire before delegating to the core sampler.
+
+        Replace the core ``sample`` with a sentinel that would record any call;
+        the guard should raise without invoking it.
+        """
+        model = Model()
+        model.interface = CalculatorFactory()
+        fitter = MultiFitter(model)  # default minimizer is LMFit, not BUMPS
+
+        core_called = {'count': 0}
+
+        def _should_not_be_called(**_kwargs):
+            core_called['count'] += 1
+            return {'draws': np.empty((0, 0)), 'param_names': [], 'state': None, 'logp': None}
+
+        fitter.easy_science_multi_fitter.sample = _should_not_be_called
+
+        data = sc.DataGroup({
+            'coords': {'Qz_0': sc.array(dims=['Qz_0'], values=np.linspace(0.01, 0.3, 10))},
+            'data': {'R_0': sc.array(dims=['Qz_0'], values=np.ones(10), variances=np.ones(10) * 0.01)},
+        })
+
+        with pytest.raises(RuntimeError, match='Bayesian sampling requires a BUMPS minimizer'):
+            fitter.sample(data)
+        assert core_called['count'] == 0
+
 
 class TestSampleBasic:
     """Basic sample() dispatch and return-value forwarding."""
@@ -837,6 +864,7 @@ class TestSampleBasic:
         # Mock the core MultiFitter.sample to return a known dict
         fake_result = {'draws': np.ones((10, 2)), 'param_names': ['a', 'b'], 'state': None, 'logp': None}
         fitter.easy_science_multi_fitter = MagicMock()
+        fitter.easy_science_multi_fitter.minimizer.package = 'bumps'
         fitter.easy_science_multi_fitter.sample = MagicMock(return_value=fake_result)
 
         data = sc.DataGroup({
@@ -865,6 +893,7 @@ class TestSampleBasic:
             return {'draws': np.ones((10, 2)), 'param_names': ['a', 'b'], 'state': None, 'logp': None}
 
         fitter.easy_science_multi_fitter = MagicMock()
+        fitter.easy_science_multi_fitter.minimizer.package = 'bumps'
         fitter.easy_science_multi_fitter.sample = MagicMock(side_effect=_fake_sample)
 
         data = sc.DataGroup({
@@ -893,6 +922,7 @@ class TestSampleBasic:
             return {'draws': np.ones((10, 2)), 'param_names': ['a', 'b'], 'state': None, 'logp': None}
 
         fitter.easy_science_multi_fitter = MagicMock()
+        fitter.easy_science_multi_fitter.minimizer.package = 'bumps'
         fitter.easy_science_multi_fitter.sample = MagicMock(side_effect=_fake_sample)
 
         data = sc.DataGroup({
@@ -920,6 +950,7 @@ class TestSampleInitializer:
             return {'draws': np.ones((10, 2)), 'param_names': ['a', 'b'], 'state': None, 'logp': None}
 
         fitter.easy_science_multi_fitter = MagicMock()
+        fitter.easy_science_multi_fitter.minimizer.package = 'bumps'
         fitter.easy_science_multi_fitter.sample = MagicMock(side_effect=_fake_sample)
 
         data = sc.DataGroup({
@@ -943,6 +974,7 @@ class TestSampleInitializer:
             return {'draws': np.ones((10, 2)), 'param_names': ['a', 'b'], 'state': None, 'logp': None}
 
         fitter.easy_science_multi_fitter = MagicMock()
+        fitter.easy_science_multi_fitter.minimizer.package = 'bumps'
         fitter.easy_science_multi_fitter.sample = MagicMock(side_effect=_fake_sample)
 
         data = sc.DataGroup({
@@ -975,6 +1007,7 @@ class TestSampleZeroVariance:
             return {'draws': np.ones((10, 2)), 'param_names': ['a', 'b'], 'state': None, 'logp': None}
 
         fitter.easy_science_multi_fitter = MagicMock()
+        fitter.easy_science_multi_fitter.minimizer.package = 'bumps'
         fitter.easy_science_multi_fitter.sample = MagicMock(side_effect=_fake_sample)
 
         qz = np.linspace(0.01, 0.3, 10)
@@ -1016,6 +1049,7 @@ class TestSampleZeroVariance:
             return {'draws': np.ones((10, 2)), 'param_names': ['a', 'b'], 'state': None, 'logp': None}
 
         fitter.easy_science_multi_fitter = MagicMock()
+        fitter.easy_science_multi_fitter.minimizer.package = 'bumps'
         fitter.easy_science_multi_fitter.sample = MagicMock(side_effect=_fake_sample)
 
         qz = np.linspace(0.01, 0.3, 10)

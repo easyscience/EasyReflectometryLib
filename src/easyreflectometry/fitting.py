@@ -3,6 +3,8 @@
 
 
 import warnings
+from typing import Any
+from typing import Callable
 
 import numpy as np
 import scipp as sc
@@ -364,8 +366,8 @@ class MultiFitter:
         seed: int | None = None,
         objective: str | None = None,
         initializer: str | None = None,
-        progress_callback=None,
-        abort_test=None,
+        progress_callback: Callable[..., Any] | None = None,
+        abort_test: Callable[[], bool] | None = None,
     ) -> dict:
         """Run Bayesian MCMC sampling on reflectometry data using the DREAM sampler.
 
@@ -389,9 +391,16 @@ class MultiFitter:
             and ``'logp'``.
         :raises RuntimeError: If the current minimizer is not a BUMPS instance.
         """
+        minimizer = self.easy_science_multi_fitter.minimizer
+        if not (hasattr(minimizer, 'package') and minimizer.package == 'bumps'):
+            raise RuntimeError(
+                'Bayesian sampling requires a BUMPS minimizer. '
+                'Use ``fitter.switch_minimizer(AvailableMinimizers.Bumps)`` first.'
+            )
+
         obj = _validate_objective(objective) if objective is not None else self._objective
 
-        refl_nums = [k[3:] for k in data['coords'].keys() if 'Qz' == k[:2]]
+        refl_nums = [k[3:] for k in data['coords'].keys() if k.startswith('Qz_')]
         x = []
         y = []
         dy = []

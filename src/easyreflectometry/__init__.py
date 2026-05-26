@@ -14,7 +14,7 @@ except metadata.PackageNotFoundError:
     __version__ = '0.0.0'
 
 __all__ = [
-    Project,
-    PosteriorResults,
-    __version__,
+    'Project',
+    'PosteriorResults',
+    '__version__',
 ]

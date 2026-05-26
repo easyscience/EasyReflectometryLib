@@ -19,11 +19,7 @@ except ImportError:
 
 def _require_arviz():
     if not _HAS_ARVIZ:
-        raise ImportError(
-            'The ``arviz`` library is required for trace plots and R-hat. '
-            'Install it with ``pip install arviz`` or '
-            '``pip install easyreflectometry[bayesian]``.'
-        )
+        raise ImportError('The ``arviz`` library is required for trace plots and R-hat. Install it with ``pip install arviz``.')
 
 
 def _require_plotly():
@@ -31,9 +27,7 @@ def _require_plotly():
         import plotly  # noqa: F401
     except ImportError as exc:
         raise ImportError(
-            'The ``plotly`` library is required for posterior plots. '
-            'Install it with ``pip install plotly`` or '
-            '``pip install easyreflectometry[bayesian]``.'
+            'The ``plotly`` library is required for posterior plots. Install it with ``pip install plotly``.'
         ) from exc
 
 
@@ -120,7 +114,7 @@ class PosteriorResults:
         return f'PosteriorResults(n_samples={n_samples}, n_params={n_params}, param_names={self.param_names})'
 
     def summary(self) -> str:
-        """Return a formatted summary table with mean, sd, and HDI for each parameter.
+        """Return a formatted summary table with mean, sd, and equal-tailed 95% credible interval for each parameter.
 
         :return: Formatted summary table as a string.
         :rtype: str
@@ -158,11 +152,15 @@ class PosteriorResults:
     def gelman_rubin(self) -> dict | None:
         """Compute the Gelman-Rubin R-hat convergence diagnostic.
 
-        Requires the ``arviz`` library. Returns ``None`` if ``arviz`` is not
-        available.
+        Requires the ``arviz`` library and posterior draws with at least
+        two chains, i.e. shape ``(n_chains, n_draws, n_params)`` with
+        ``n_chains >= 2``. R-hat is undefined for a single chain.
 
-        :return: Dictionary mapping parameter name to R-hat value, or ``None``.
+        :return: Dictionary mapping parameter name to R-hat value, or ``None``
+            if ``arviz`` is not available.
         :rtype: dict | None
+        :raises ValueError: If ``self.draws`` does not contain at least two
+            chains.
         """
         if not _HAS_ARVIZ:
             warnings.warn(
@@ -170,14 +168,23 @@ class PosteriorResults:
                 UserWarning,
             )
             return None
-        # arviz requires at least 2 chains; treat the posterior as one chain
+        if self.draws.ndim < 3 or self.draws.shape[0] < 2:
+            raise ValueError(
+                'Gelman-Rubin R-hat requires posterior draws with at least 2 chains '
+                '(shape ``(n_chains, n_draws, n_params)`` with ``n_chains >= 2``).'
+            )
         data = _to_arviz_data(self.draws, self.param_names)
         rhat = _arviz.rhat(data)
         return {name: float(rhat[name].values) for name in self.param_names}
 
 
 def posterior_summary(draws: np.ndarray, param_names: list[str]) -> str:
-    """Return a formatted summary table with mean, sd, and HDI for each parameter.
+    """Return a formatted summary table with mean, sd, and the equal-tailed
+    2.5%/97.5% posterior quantiles for each parameter.
+
+    The reported interval is the equal-tailed 95% credible interval; it is
+    not a highest-density interval (HDI) and the two coincide only for
+    symmetric unimodal posteriors.
 
     :param draws: Posterior samples, shape ``(n_samples, n_params)``.
     :type draws: np.ndarray
@@ -187,7 +194,7 @@ def posterior_summary(draws: np.ndarray, param_names: list[str]) -> str:
     :rtype: str
     """
     draws = np.asarray(draws)
-    lines = [f'{"parameter":<30s} {"mean":>10s} {"sd":>10s} {"hdi_2.5%":>10s} {"hdi_97.5%":>10s}']
+    lines = [f'{"parameter":<30s} {"mean":>10s} {"sd":>10s} {"q2.5%":>10s} {"q97.5%":>10s}']
     for i, name in enumerate(param_names):
         col = draws[:, i]
         lo, hi = np.percentile(col, [2.5, 97.5])
@@ -366,6 +373,11 @@ def plot_trace(draws: np.ndarray, param_names: list[str], return_figure: bool = 
             import plotly.graph_objects as go
             from plotly.subplots import make_subplots
         except ImportError:
+            warnings.warn(
+                'The ``plotly`` library is required to build the trace figure. Install it with ``pip install plotly``.',
+                UserWarning,
+                stacklevel=2,
+            )
             return None
 
         n_params = len(param_names)
@@ -448,6 +460,11 @@ def plot_distribution(draws: np.ndarray, param_names: list[str], return_figure: 
             import plotly.graph_objects as go
             from plotly.subplots import make_subplots
         except ImportError:
+            warnings.warn(
+                'The ``plotly`` library is required to build the distribution figure. Install it with ``pip install plotly``.',
+                UserWarning,
+                stacklevel=2,
+            )
             return None
 
         n_params = len(param_names)

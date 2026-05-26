@@ -5,6 +5,7 @@
 from easyreflectometry.analysis.bayesian import PosteriorResults
 from easyreflectometry.analysis.bayesian import credible_intervals
 from easyreflectometry.analysis.bayesian import plot_corner
+from easyreflectometry.analysis.bayesian import plot_distribution
 from easyreflectometry.analysis.bayesian import plot_trace
 from easyreflectometry.analysis.bayesian import posterior_predictive_reflectivity
 from easyreflectometry.analysis.bayesian import posterior_predictive_sld_profile
@@ -13,6 +14,7 @@ from easyreflectometry.analysis.bayesian import posterior_summary
 __all__ = [
     'PosteriorResults',
     'plot_corner',
+    'plot_distribution',
     'plot_trace',
     'posterior_summary',
     'credible_intervals',
