@@ -72,7 +72,7 @@ def _to_arviz_data(draws: np.ndarray, param_names: list[str]):
     :type param_names: list[str]
     :return: arviz InferenceData object.
     """
-    draws = np.asarray(draws)
+    draws = np.asarray(draws, dtype=np.float64)
     if draws.ndim == 2:
         draws = draws[np.newaxis, ...]  # (1, n_samples, n_params)
 
