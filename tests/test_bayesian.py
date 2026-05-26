@@ -157,19 +157,19 @@ class TestPosteriorPredictiveSLDProfile:
 
 
 class TestCornerPlot:
-    def test_plot_corner_does_not_crash(self, sample_draws):
-        """Test that plot_corner does not crash when corner is available."""
-        import matplotlib
-
-        matplotlib.use('Agg')  # Non-interactive backend for testing
-
+    def test_plot_corner_returns_plotly_figure(self, sample_draws):
+        """plot_corner returns a Plotly Figure built from posterior draws."""
         try:
-            from easyreflectometry.analysis.bayesian import plot_corner
+            from plotly.graph_objects import Figure
 
-            draws, param_names = sample_draws
-            plot_corner(draws, param_names)
+            from easyreflectometry.analysis.bayesian import plot_corner
         except ImportError:
-            pytest.skip('corner library not installed')
+            pytest.skip('plotly not installed')
+
+        draws, param_names = sample_draws
+        fig = plot_corner(draws, param_names)
+        assert isinstance(fig, Figure)
+        assert len(fig.data) > 0
 
 
 class TestSaveRestoreParameterState:

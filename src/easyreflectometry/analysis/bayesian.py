@@ -10,27 +10,11 @@ from typing import Any
 import numpy as np
 
 try:
-    import corner as _corner
-
-    _HAS_CORNER = True
-except ImportError:
-    _HAS_CORNER = False
-
-try:
     import arviz as _arviz
 
     _HAS_ARVIZ = True
 except ImportError:
     _HAS_ARVIZ = False
-
-
-def _require_corner():
-    if not _HAS_CORNER:
-        raise ImportError(
-            'The ``corner`` library is required for corner plots. '
-            'Install it with ``pip install corner`` or '
-            '``pip install easyreflectometry[bayesian]``.'
-        )
 
 
 def _require_arviz():
@@ -40,6 +24,17 @@ def _require_arviz():
             'Install it with ``pip install arviz`` or '
             '``pip install easyreflectometry[bayesian]``.'
         )
+
+
+def _require_plotly():
+    try:
+        import plotly  # noqa: F401
+    except ImportError as exc:
+        raise ImportError(
+            'The ``plotly`` library is required for posterior plots. '
+            'Install it with ``pip install plotly`` or '
+            '``pip install easyreflectometry[bayesian]``.'
+        ) from exc
 
 
 def _wrap_pair_label(name: str, max_len: int = 16) -> str:
@@ -132,14 +127,14 @@ class PosteriorResults:
         """
         return posterior_summary(self.draws, self.param_names)
 
-    def corner(self, **kwargs) -> None:
-        """Plot parameter correlation corner plot.
+    def corner(self) -> Any:
+        """Return the parameter-correlation corner plot as a Plotly Figure.
 
-        Requires the ``corner`` library.
+        Requires the ``plotly`` library.
 
-        :param kwargs: Additional keyword arguments passed to ``corner.corner``.
+        :return: Plotly Figure.
         """
-        plot_corner(self.draws, self.param_names, **kwargs)
+        return plot_corner(self.draws, self.param_names)
 
     def trace(self, **kwargs) -> None:
         """Plot MCMC trace plot.
@@ -200,166 +195,147 @@ def posterior_summary(draws: np.ndarray, param_names: list[str]) -> str:
     return '\n'.join(lines)
 
 
-def plot_corner(draws: np.ndarray, param_names: list[str], return_figure: bool = False, **kwargs) -> Any:
-    """Plot a parameter correlation corner plot.
+def plot_corner(draws: np.ndarray, param_names: list[str]) -> Any:
+    """Build a parameter-correlation corner plot as a Plotly Figure.
 
-    When *return_figure* is ``True`` a Plotly ``Figure`` is returned (requires
-    ``plotly``).  Otherwise the ``corner`` library renders to the active
-    matplotlib figure.
+    Marginal densities on the diagonal, posterior scatter and 2-D contour
+    overlay on the lower triangle, hidden upper triangle.  Requires
+    ``plotly``.
 
     :param draws: Posterior samples, shape ``(n_samples, n_params)``.
     :type draws: np.ndarray
     :param param_names: Parameter names (one per column).
     :type param_names: list[str]
-    :param return_figure: Return a Plotly Figure instead of rendering inline.
-    :type return_figure: bool
-    :param kwargs: Additional keyword arguments passed to ``corner.corner``
-        when *return_figure* is ``False``.
-    :return: Plotly Figure when *return_figure* is ``True``, otherwise ``None``.
+    :return: Plotly Figure.
     """
+    _require_plotly()
+    import plotly.graph_objects as go
+    from plotly.subplots import make_subplots
+
     draws = np.asarray(draws)
     n_params = len(param_names)
 
-    if return_figure:
-        try:
-            import plotly.graph_objects as go
-            from plotly.subplots import make_subplots
-        except ImportError:
-            return None
+    # Colours mirror easydiffraction's posterior pair plot palette.
+    marginal_fill = 'rgba(44, 160, 44, 0.22)'
+    marginal_line = 'rgb(44, 160, 44)'
+    scatter_color = 'rgba(140, 140, 140, 0.45)'
+    contour_colorscale = [
+        [0.0, 'rgba(183, 203, 255, 0.94)'],
+        [0.35, 'rgba(183, 203, 255, 0.94)'],
+        [0.35, 'rgba(138, 169, 252, 0.95)'],
+        [0.60, 'rgba(138, 169, 252, 0.95)'],
+        [0.60, 'rgba(96, 131, 242, 0.96)'],
+        [0.82, 'rgba(96, 131, 242, 0.96)'],
+        [0.82, 'rgba(58, 86, 224, 0.98)'],
+        [1.0, 'rgba(58, 86, 224, 0.98)'],
+    ]
 
-        # Colours mirror easydiffraction's posterior pair plot palette.
-        marginal_fill = 'rgba(44, 160, 44, 0.22)'
-        marginal_line = 'rgb(44, 160, 44)'
-        scatter_color = 'rgba(140, 140, 140, 0.45)'
-        contour_colorscale = [
-            [0.0, 'rgba(183, 203, 255, 0.94)'],
-            [0.35, 'rgba(183, 203, 255, 0.94)'],
-            [0.35, 'rgba(138, 169, 252, 0.95)'],
-            [0.60, 'rgba(138, 169, 252, 0.95)'],
-            [0.60, 'rgba(96, 131, 242, 0.96)'],
-            [0.82, 'rgba(96, 131, 242, 0.96)'],
-            [0.82, 'rgba(58, 86, 224, 0.98)'],
-            [1.0, 'rgba(58, 86, 224, 0.98)'],
-        ]
+    wrapped_labels = [_wrap_pair_label(name) for name in param_names]
 
-        wrapped_labels = [_wrap_pair_label(name) for name in param_names]
+    n_samples = draws.shape[0]
+    if n_samples > 1500:
+        stride = max(1, n_samples // 1500)
+        scatter_draws = draws[::stride]
+    else:
+        scatter_draws = draws
 
-        n_samples = draws.shape[0]
-        if n_samples > 1500:
-            stride = max(1, n_samples // 1500)
-            scatter_draws = draws[::stride]
-        else:
-            scatter_draws = draws
+    fig = make_subplots(
+        rows=n_params,
+        cols=n_params,
+        horizontal_spacing=0.02,
+        vertical_spacing=0.02,
+    )
 
-        fig = make_subplots(
-            rows=n_params,
-            cols=n_params,
-            horizontal_spacing=0.02,
-            vertical_spacing=0.02,
-        )
+    # Track which trace types have already been added to the legend.
+    legend_shown = {'marginal': False, 'scatter': False, 'contour': False}
 
-        # Track which trace types have already been added to the legend.
-        legend_shown = {'marginal': False, 'scatter': False, 'contour': False}
+    for row in range(n_params):
+        for col in range(n_params):
+            r, c = row + 1, col + 1
+            if col > row:
+                fig.update_xaxes(visible=False, row=r, col=c)
+                fig.update_yaxes(visible=False, row=r, col=c)
+                continue
+            if col == row:
+                fig.add_trace(
+                    go.Histogram(
+                        x=draws[:, row],
+                        nbinsx=40,
+                        histnorm='probability density',
+                        marker=dict(color=marginal_fill, line=dict(color=marginal_line, width=1)),
+                        name='Marginal density',
+                        legendgroup='marginal',
+                        showlegend=not legend_shown['marginal'],
+                        hoverinfo='skip',
+                    ),
+                    row=r,
+                    col=c,
+                )
+                legend_shown['marginal'] = True
+            else:
+                fig.add_trace(
+                    go.Scatter(
+                        x=scatter_draws[:, col],
+                        y=scatter_draws[:, row],
+                        mode='markers',
+                        marker=dict(size=3, color=scatter_color),
+                        name='Posterior samples',
+                        legendgroup='scatter',
+                        showlegend=not legend_shown['scatter'],
+                        hoverinfo='skip',
+                    ),
+                    row=r,
+                    col=c,
+                )
+                legend_shown['scatter'] = True
+                fig.add_trace(
+                    go.Histogram2dContour(
+                        x=draws[:, col],
+                        y=draws[:, row],
+                        ncontours=6,
+                        colorscale=contour_colorscale,
+                        showscale=False,
+                        contours=dict(coloring='lines', showlines=True),
+                        line=dict(width=1.2),
+                        name='Posterior contours',
+                        legendgroup='contour',
+                        showlegend=not legend_shown['contour'],
+                        hoverinfo='skip',
+                    ),
+                    row=r,
+                    col=c,
+                )
+                legend_shown['contour'] = True
 
-        for row in range(n_params):
-            for col in range(n_params):
-                r, c = row + 1, col + 1
-                if col > row:
-                    fig.update_xaxes(visible=False, row=r, col=c)
-                    fig.update_yaxes(visible=False, row=r, col=c)
-                    continue
-                if col == row:
-                    fig.add_trace(
-                        go.Histogram(
-                            x=draws[:, row],
-                            nbinsx=40,
-                            histnorm='probability density',
-                            marker=dict(color=marginal_fill, line=dict(color=marginal_line, width=1)),
-                            name='Marginal density',
-                            legendgroup='marginal',
-                            showlegend=not legend_shown['marginal'],
-                            hoverinfo='skip',
-                        ),
-                        row=r,
-                        col=c,
-                    )
-                    legend_shown['marginal'] = True
-                else:
-                    fig.add_trace(
-                        go.Scatter(
-                            x=scatter_draws[:, col],
-                            y=scatter_draws[:, row],
-                            mode='markers',
-                            marker=dict(size=3, color=scatter_color),
-                            name='Posterior samples',
-                            legendgroup='scatter',
-                            showlegend=not legend_shown['scatter'],
-                            hoverinfo='skip',
-                        ),
-                        row=r,
-                        col=c,
-                    )
-                    legend_shown['scatter'] = True
-                    fig.add_trace(
-                        go.Histogram2dContour(
-                            x=draws[:, col],
-                            y=draws[:, row],
-                            ncontours=6,
-                            colorscale=contour_colorscale,
-                            showscale=False,
-                            contours=dict(coloring='lines', showlines=True),
-                            line=dict(width=1.2),
-                            name='Posterior contours',
-                            legendgroup='contour',
-                            showlegend=not legend_shown['contour'],
-                            hoverinfo='skip',
-                        ),
-                        row=r,
-                        col=c,
-                    )
-                    legend_shown['contour'] = True
+    # Axis labels: outer edges only (bottom row x-axes, leftmost column y-axes,
+    # including the top-left diagonal cell so its parameter is identifiable).
+    for i, label in enumerate(wrapped_labels):
+        fig.update_xaxes(title_text=label, title_font=dict(size=10), row=n_params, col=i + 1)
+        fig.update_yaxes(title_text=label, title_font=dict(size=10), row=i + 1, col=1)
+    # Diagonal y-axes are probability density — hide their tick labels (except the
+    # top-left, where ticks would be the only cue about the density scale).
+    for i in range(1, n_params):
+        fig.update_yaxes(showticklabels=False, row=i + 1, col=i + 1)
 
-        # Axis labels: outer edges only (bottom row x-axes, leftmost column y-axes,
-        # including the top-left diagonal cell so its parameter is identifiable).
-        for i, label in enumerate(wrapped_labels):
-            fig.update_xaxes(title_text=label, title_font=dict(size=10), row=n_params, col=i + 1)
-            fig.update_yaxes(title_text=label, title_font=dict(size=10), row=i + 1, col=1)
-        # Diagonal y-axes are probability density — hide their tick labels (except the
-        # top-left, where ticks would be the only cue about the density scale).
-        for i in range(1, n_params):
-            fig.update_yaxes(showticklabels=False, row=i + 1, col=i + 1)
-
-        fig.update_layout(
-            height=max(450, 180 * n_params),
-            width=max(550, 180 * n_params + 140),
-            showlegend=True,
-            legend=dict(
-                orientation='v',
-                yanchor='top',
-                y=1.0,
-                xanchor='left',
-                x=1.02,
-                font=dict(size=11),
-                itemsizing='constant',
-            ),
-            plot_bgcolor='white',
-            margin=dict(l=80, r=160, t=30, b=60),
-        )
-        fig.update_xaxes(showgrid=False, zeroline=False, ticks='outside')
-        fig.update_yaxes(showgrid=False, zeroline=False, ticks='outside')
-        return fig
-
-    _require_corner()
-    defaults = {
-        'labels': param_names,
-        'quantiles': [0.16, 0.5, 0.84],
-        'show_titles': True,
-        'title_fmt': '.3f',
-        'title_kwargs': {'fontsize': 12},
-    }
-    defaults.update(kwargs)
-    _corner.corner(draws, **defaults)
-    return None
+    fig.update_layout(
+        height=max(450, 180 * n_params),
+        width=max(550, 180 * n_params + 140),
+        showlegend=True,
+        legend=dict(
+            orientation='v',
+            yanchor='top',
+            y=1.0,
+            xanchor='left',
+            x=1.02,
+            font=dict(size=11),
+            itemsizing='constant',
+        ),
+        plot_bgcolor='white',
+        margin=dict(l=80, r=160, t=30, b=60),
+    )
+    fig.update_xaxes(showgrid=False, zeroline=False, ticks='outside')
+    fig.update_yaxes(showgrid=False, zeroline=False, ticks='outside')
+    return fig
 
 
 def plot_trace(draws: np.ndarray, param_names: list[str], return_figure: bool = False, **kwargs) -> Any:
