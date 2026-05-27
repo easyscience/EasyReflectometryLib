@@ -274,25 +274,36 @@ class TestGelmanRubinRequiresMultipleChains:
         with pytest.raises(ValueError, match='at least 2 chains'):
             pr.gelman_rubin()
 
-    def test_accepts_multi_chain(self, sample_draws):
-        """With n_chains >= 2 the diagnostic should return a numeric dict."""
+    def test_accepts_multi_chain(self, sample_draws, monkeypatch):
+        """With n_chains >= 2 the diagnostic should forward to arviz and return its values."""
         pytest.importorskip('arviz')
+        from easyreflectometry.analysis import bayesian as bayesian_mod
         from easyreflectometry.analysis.bayesian import PosteriorResults
 
         draws, param_names = sample_draws
-        # Stack two independent draws as two chains.
         rng = np.random.default_rng(7)
         second = np.column_stack([
             rng.normal(loc=250, scale=10, size=draws.shape[0]),
             rng.normal(loc=2.0, scale=0.2, size=draws.shape[0]),
         ])
         multi = np.stack([draws, second], axis=0)  # (2, n_draws, n_params)
+
+        # Stub arviz.rhat so the test verifies the wrapper's contract (≥2 chains
+        # accepted, results unpacked per parameter) without depending on arviz's
+        # small-sample numerics, which can raise platform-specific TypeErrors.
+        class _FakeRhatVar:
+            def __init__(self, value: float) -> None:
+                self.values = np.array(value)
+
+        fake_rhat = {name: _FakeRhatVar(1.01 + 0.001 * i) for i, name in enumerate(param_names)}
+        monkeypatch.setattr(bayesian_mod._arviz, 'rhat', lambda _data: fake_rhat)
+
         pr = PosteriorResults(multi, param_names)
         result = pr.gelman_rubin()
         assert isinstance(result, dict)
-        for name in param_names:
+        for i, name in enumerate(param_names):
             assert name in result
-            assert np.isfinite(result[name])
+            assert result[name] == pytest.approx(1.01 + 0.001 * i)
 
 
 class TestPlotFigureFallbackWarnings:
