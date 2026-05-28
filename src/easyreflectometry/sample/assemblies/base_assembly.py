@@ -1,7 +1,6 @@
 # SPDX-FileCopyrightText: 2026 EasyScience contributors <https://github.com/easyscience>
 # SPDX-License-Identifier: BSD-3-Clause
 
-from typing import Any
 from typing import Optional
 
 from ..base_core import BaseCore
@@ -17,27 +16,32 @@ class BaseAssembly(BaseCore):
     its index number depends on the number of finite layers in the system, but it might be accessed at index -1.
     """
 
-    # Added in super().__init__
-    #: Name of the assembly.
-    name: str
-    #: Layers in the assembly.
-    layers: LayerCollection
-    #: Interface to the calculator.
-    interface: Any
-
     def __init__(
         self,
         name: str,
         type: str,
         interface,
-        **layers: LayerCollection,
+        layers: LayerCollection,
+        unique_name: Optional[str] = None,
     ):
-        super().__init__(name=name, interface=interface, **layers)
+        super().__init__(name=name, unique_name=unique_name)
+        self._layers = layers
 
         # Type is needed when fitting in easyscience
         self._type = type
         self._roughness_constraints_setup = False
         self._thickness_constraints_setup = False
+
+        if interface is not None:
+            self.interface = interface
+
+    @property
+    def layers(self) -> LayerCollection:
+        return self._layers
+
+    @layers.setter
+    def layers(self, value: LayerCollection) -> None:
+        self._layers = value
 
     @property
     def type(self) -> str:

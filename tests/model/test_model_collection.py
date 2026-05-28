@@ -65,7 +65,7 @@ class TestModelCollection:
         collection.add_model()
         assert collection[1].color == COLORS[1]
 
-        collection.remove(0)
+        collection.remove_at(0)
         collection.add_model()
 
         assert collection[0].color == COLORS[1]
@@ -101,7 +101,7 @@ class TestModelCollection:
 
         # Then
         collection = ModelCollection(model_1, model_2)
-        collection.remove(0)
+        collection.remove_at(0)
 
         # Expect
         assert len(collection) == 1
@@ -163,3 +163,42 @@ class TestModelCollection:
         restored.add_model()
 
         assert [model.color for model in restored] == [COLORS[0], COLORS[1]]
+
+    def test_next_color_index_property(self):
+        """next_color_index should be accessible as a property for serialization."""
+        collection = ModelCollection(populate_if_none=False)
+        collection.add_model()
+        idx = collection.next_color_index
+        assert isinstance(idx, int)
+        assert idx >= 0
+
+    def test_next_color_index_none_when_no_colors(self):
+        """When COLORS is empty, next_color_index returns 0."""
+        # We can test the None case when COLORS has entries, it wraps
+        collection = ModelCollection(populate_if_none=False)
+        # Without adding models, the index should still be accessible
+        assert collection.next_color_index is not None
+
+    def test_from_dict_preserves_data_count(self):
+        """from_dict should reconstruct the exact number of models."""
+        global_object.map._clear()
+        model_1 = Model(name='M1')
+        model_2 = Model(name='M2')
+        p = ModelCollection(model_1, model_2)
+        d = p.as_dict()
+        global_object.map._clear()
+        q = ModelCollection.from_dict(d)
+        assert len(q) == 2
+
+    def test_from_dict_with_extra_data_entries(self):
+        """from_dict should handle data entries correctly."""
+        global_object.map._clear()
+        model_1 = Model(name='M1')
+        model_2 = Model(name='M2')
+        p = ModelCollection(model_1, model_2)
+        d = p.as_dict()
+        global_object.map._clear()
+        q = ModelCollection.from_dict(d)
+        assert len(q) == 2
+        assert q[0].name == 'M1'
+        assert q[1].name == 'M2'

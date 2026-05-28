@@ -1,6 +1,11 @@
 # SPDX-FileCopyrightText: 2024 EasyScience contributors <https://github.com/easyscience>
 # SPDX-License-Identifier: BSD-3-Clause
 
+from html import escape
+from importlib.metadata import PackageNotFoundError
+from importlib.metadata import version
+from urllib.parse import quote
+
 import matplotlib.pyplot as plt
 import numpy as np
 from easyscience import global_object
@@ -15,6 +20,68 @@ from .html_templates import HTML_PARAMETER_TEMPLATE
 from .html_templates import HTML_PROJECT_INFORMATION_TEMPLATE
 from .html_templates import HTML_REFINEMENT_TEMPLATE
 from .html_templates import HTML_TEMPLATE
+
+_NAME_MAX_LEN = 20
+# Custom href scheme used to pass the full name to QML via TextEdit.hoveredLink.
+_TOOLTIP_SCHEME = 'nametooltip'
+
+# URLs for known calculation engines and minimizer packages.
+_ENGINE_URLS: dict[str, str] = {
+    'refnx': 'https://refnx.readthedocs.io',
+    'refl1d': 'https://refl1d.readthedocs.io',
+    'bornagain': 'https://www.bornagainproject.org',
+    'lm': 'https://lmfit.github.io/lmfit-py/',
+    'bumps': 'https://bumps.readthedocs.io',
+    'dfo': 'https://github.com/fitbenchmarking/dfo-ls',
+}
+
+
+def _engine_link(name: str, package: str | None = None) -> str:
+    """Return an HTML hyperlink for an engine, including its version.
+
+    Falls back to plain text when no URL is known for the engine.
+    """
+    url = _ENGINE_URLS.get(name) or _ENGINE_URLS.get(package or '')
+    display = escape(name)
+    if package:
+        try:
+            ver = version(package)
+        except PackageNotFoundError:
+            ver = None
+        if ver:
+            display = f'{display} (v{ver})'
+
+    if url:
+        return f'<a href="{url}">{display}</a>'
+    return display
+
+
+def _format_value(value: float, sig_figs: int) -> str:
+    """Format a numeric value for summary display.
+
+    *sig_figs* significant figures; fall back to 1-decimal exponential when
+    the formatted string is too long.  Zero is shown as '0.0'.
+    """
+    if value == 0.0:
+        return '0.0'
+    s = f'{value:.{sig_figs}g}'
+    if len(s) <= sig_figs + 4:
+        return s
+    return f'{value:.1e}'
+
+
+def _truncate_name(name: str, max_len: int = _NAME_MAX_LEN) -> str:
+    """Return an HTML snippet with a truncated name and tooltip for the full text.
+
+    Browsers use the ``title`` attribute; QML reads the ``href`` via
+    ``TextEdit.hoveredLink`` and shows a native ToolTip.
+    """
+    safe = escape(name)
+    if len(name) <= max_len:
+        return safe
+    short = escape(name[:max_len].rstrip())
+    encoded = quote(name, safe='')
+    return f'<a style="color:inherit;text-decoration:none;" href="{_TOOLTIP_SCHEME}:{encoded}" title="{safe}">{short}…</a>'
 
 
 class Summary:
@@ -124,7 +191,7 @@ class Summary:
 
         # Get parameters directly from the model instead of using project.parameters
         model = self._project._models[self._project.current_model_index]
-        parameters = model.get_parameters()
+        parameters = model.get_all_parameters()
 
         for parameter in parameters:
             path = global_object.map.find_path(model.unique_name, parameter.unique_name)
@@ -138,9 +205,10 @@ class Summary:
 
             html_parameter = HTML_PARAMETER_TEMPLATE
             html_parameter = html_parameter.replace('parameter_name', f'{name}')
-            html_parameter = html_parameter.replace('parameter_value', f'{value}')
+            html_parameter = html_parameter.replace('parameter_value', _format_value(value, 3))
             html_parameter = html_parameter.replace('parameter_unit', f'{unit}')
-            html_parameter = html_parameter.replace('parameter_error', f'{error}')
+            error_str = _format_value(error, 2)
+            html_parameter = html_parameter.replace('parameter_error', error_str)
             html_parameters.append(html_parameter)
 
         html_parameters_str = '\n'.join(html_parameters)
@@ -162,9 +230,9 @@ class Summary:
             range_max = max(experiment.y)
             range_units = 'Å⁻¹'
             html_experiment = HTML_DATA_COLLECTION_TEMPLATE
-            html_experiment = html_experiment.replace('experiment_name', f'{experiment_name}')
-            html_experiment = html_experiment.replace('range_min', f'{range_min}')
-            html_experiment = html_experiment.replace('range_max', f'{range_max}')
+            html_experiment = html_experiment.replace('experiment_name', _truncate_name(experiment_name))
+            html_experiment = html_experiment.replace('range_min', _format_value(range_min, 2))
+            html_experiment = html_experiment.replace('range_max', _format_value(range_max, 2))
             html_experiment = html_experiment.replace('range_units', f'{range_units}')
             html_experiment = html_experiment.replace('num_data_points', f'{num_data_points}')
             html_experiment = html_experiment.replace('resolution_function', f'{resolution_function}')
@@ -180,23 +248,47 @@ class Summary:
 
         # Get parameters directly from the model
         model = self._project._models[self._project.current_model_index]
-        parameters = model.get_parameters()
+        parameters = model.get_all_parameters()
 
         num_free_params = sum(1 for parameter in parameters if parameter.free)
         num_fixed_params = sum(1 for parameter in parameters if not parameter.free)
         num_params = num_free_params + num_fixed_params
-        #        goodness_of_fit = self._project.status.goodnessOfFit
-        #        goodness_of_fit = goodness_of_fit.split(' → ')[-1]
         num_constraints = sum(1 for parameter in parameters if not parameter.independent)
 
-        html_refinement = html_refinement.replace('calculation_engine', f'{self._project._calculator.current_interface_name}')
-        html_refinement = html_refinement.replace('minimization_engine', f'{self._project.minimizer.name}')
-        #        html = html.replace('goodness_of_fit', f'{goodness_of_fit}')
+        goodness_of_fit = self._compute_goodness_of_fit()
+
+        html_refinement = html_refinement.replace(
+            'calculation_engine',
+            _engine_link(self._project._calculator.current_interface_name),
+        )
+        html_refinement = html_refinement.replace(
+            'minimization_engine',
+            _engine_link(self._project.minimizer.name, self._project.minimizer.package),
+        )
+        html_refinement = html_refinement.replace('goodness_of_fit', goodness_of_fit)
         html_refinement = html_refinement.replace('num_total_params', f'{num_params}')
         html_refinement = html_refinement.replace('num_free_params', f'{num_free_params}')
         html_refinement = html_refinement.replace('num_fixed_params', f'{num_fixed_params}')
         html_refinement = html_refinement.replace('num_constriants', f'{num_constraints}')
         return html_refinement
+
+    def _compute_goodness_of_fit(self) -> str:
+        """Return reduced chi² as a formatted string, or 'N/A' if no fit has been run."""
+        last_fit_results = getattr(self._project, '_last_fit_results', None)
+        if not last_fit_results:
+            return 'N/A'
+        try:
+            if len(last_fit_results) == 1:
+                gof = float(last_fit_results[0].reduced_chi2)
+            else:
+                total_chi2 = sum(float(r.chi2) for r in last_fit_results)
+                total_points = sum(len(r.x) for r in last_fit_results)
+                n_pars = last_fit_results[0].n_pars
+                dof = total_points - n_pars
+                gof = total_chi2 / dof if dof > 0 else 0.0
+            return f'{gof:.4g}'
+        except (AttributeError, TypeError, ValueError, ZeroDivisionError):
+            return 'N/A'
 
     def _figures_section(self) -> None:
         """Figures section."""
