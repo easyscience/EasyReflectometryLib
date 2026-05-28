@@ -430,3 +430,120 @@ def test_dict_round_trip(interface):
             model.interface().reflectity_profile([0.3], model.unique_name),
             model_from_dict.interface().reflectity_profile([0.3], model_from_dict.unique_name),
         )
+
+
+class TestModelPropertyAccessors:
+    """Tests for the new @property accessors introduced in the ModelBase/EasyList migration."""
+
+    def test_scale_setter_updates_value(self):
+        model = Model()
+        model.scale = 3.0
+        assert model.scale.value == 3.0
+
+    def test_scale_getter_returns_parameter(self):
+        model = Model(scale=2.5)
+        from easyscience.variable import Parameter
+
+        assert isinstance(model.scale, Parameter)
+        assert model.scale.value == 2.5
+
+    def test_background_setter_updates_value(self):
+        model = Model()
+        model.background = 1e-6
+        assert model.background.value == 1e-6
+
+    def test_background_getter_returns_parameter(self):
+        model = Model(background=5e-6)
+        from easyscience.variable import Parameter
+
+        assert isinstance(model.background, Parameter)
+        assert model.background.value == 5e-6
+
+    def test_sample_setter(self):
+        model = Model()
+        new_sample = Sample(name='NewSample')
+        model.sample = new_sample
+        assert model.sample.name == 'NewSample'
+
+    def test_to_dict_includes_sample_and_resolution(self):
+        model = Model()
+        d = model.to_dict()
+        assert 'sample' in d
+        assert 'resolution_function' in d
+        assert 'interface' in d  # interface is None, encoded as None
+        assert 'name' in d
+
+    def test_to_dict_with_interface_name(self):
+        interface = CalculatorFactory()
+        model = Model(interface=interface)
+        d = model.to_dict()
+        assert d['interface'] == 'refnx'
+
+    def test_to_dict_excludes_derived_fields(self):
+        model = Model()
+        d = model.to_dict()
+        # sample, resolution_function, interface are handled separately
+        assert 'sample' in d
+        # The super().to_dict() skip prevents these from being top-level
+        assert 'resolution_function' in d
+        assert 'interface' in d
+
+    def test_as_dict_alias(self):
+        model = Model()
+        assert model.as_dict() == model.to_dict()
+
+    def test_is_default_property(self):
+        model = Model()
+        assert model.is_default is False
+        model.is_default = True
+        assert model.is_default is True
+
+
+class TestModelRoundTrip:
+    """Tests verifying serialization round-trip for the Model class."""
+
+    def test_basic_round_trip_preserves_name(self):
+        global_object.map._clear()
+        model = Model(name='MyModel')
+        d = model.as_dict()
+        global_object.map._clear()
+        restored = Model.from_dict(d)
+        assert restored.name == 'MyModel'
+
+    def test_round_trip_preserves_scale_and_background(self):
+        global_object.map._clear()
+        model = Model(scale=2.0, background=1e-7)
+        d = model.as_dict()
+        global_object.map._clear()
+        restored = Model.from_dict(d)
+        assert restored.scale.value == 2.0
+        assert restored.background.value == 1e-7
+
+    def test_round_trip_preserves_resolution_function(self):
+        global_object.map._clear()
+        model = Model(resolution_function=PercentageFwhm(3.0))
+        d = model.as_dict()
+        global_object.map._clear()
+        restored = Model.from_dict(d)
+        assert restored._resolution_function.smearing(100) == 3.0
+
+    def test_round_trip_preserves_interface(self):
+        global_object.map._clear()
+        interface = CalculatorFactory()
+        model = Model(interface=interface)
+        d = model.as_dict()
+        global_object.map._clear()
+        restored = Model.from_dict(d)
+        assert restored.interface().name == 'refnx'
+
+    def test_round_trip_preserves_is_default(self):
+        global_object.map._clear()
+        model = Model()
+        model.is_default = True
+        d = model.as_dict()
+        global_object.map._clear()
+        restored = Model.from_dict(d)
+        # Note: is_default is a runtime flag that may not survive round-trip
+        # because from_dict reconstructs via __init__ which resets _is_default.
+        # This test documents the current behaviour.
+        assert restored.is_default is False

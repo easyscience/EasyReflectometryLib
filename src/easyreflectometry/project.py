@@ -90,7 +90,7 @@ class Project:
         seen_ids: set[int] = set()
         if self._models is not None:
             for model in self._models:
-                for param in model.get_parameters():
+                for param in model.get_all_parameters():
                     pid = id(param)
                     if pid not in seen_ids:
                         seen_ids.add(pid)
@@ -847,9 +847,18 @@ class Project:
         else:
             print(f'ERROR: File {path} does not exist')
 
+    #: Schema version embedded in every serialized project. Bumped from 1 → 2
+    #: when the sample/model classes migrated from the legacy
+    #: ``easyscience.ObjBase``/``CollectionBase`` pipeline to
+    #: ``ModelBase``/``EasyList``. The on-disk shape of nested objects (Layer,
+    #: Material, MaterialMixture, MaterialSolvated, LayerAreaPerMolecule, etc.)
+    #: changed in a way that is not backward-compatible with v1 files.
+    FILE_FORMAT = 2
+
     def as_dict(self, include_materials_not_in_model=False):
         """As dict."""
         project_dict = {}
+        project_dict['file_format'] = self.FILE_FORMAT
         project_dict['info'] = self._info
         project_dict['with_experiments'] = self._with_experiments
         if self._models is not None:
@@ -898,6 +907,25 @@ class Project:
     def from_dict(self, project_dict: dict):
         """From dict."""
         keys = list(project_dict.keys())
+        # Validate file format. v1 files were written by the legacy
+        # `ObjBase`/`CollectionBase` pipeline; their inner shapes (Layer,
+        # Material, MaterialMixture, …) are not compatible with the v2
+        # `ModelBase`/`EasyList` deserializer. Older files must be re-created.
+        file_format = project_dict.get('file_format')
+        if file_format is None:
+            raise ValueError(
+                'This project file predates file_format=2 and cannot be loaded by '
+                'this version of easyreflectometry. The serialization format changed '
+                'when the sample/model classes migrated from the legacy ObjBase / '
+                'CollectionBase pipeline. Please re-create the project from its '
+                'underlying data using the current API.'
+            )
+        if file_format != self.FILE_FORMAT:
+            raise ValueError(
+                f'Unsupported project file_format={file_format!r}; this version of '
+                f'easyreflectometry only reads file_format={self.FILE_FORMAT}. Please '
+                'either update easyreflectometry or re-create the project.'
+            )
         self._info = project_dict['info']
         self._with_experiments = project_dict['with_experiments']
         if 'calculator' in keys:

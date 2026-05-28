@@ -3,7 +3,6 @@
 
 from __future__ import annotations
 
-from typing import List
 from typing import Optional
 from typing import Tuple
 
@@ -36,20 +35,33 @@ class ModelCollection(BaseCollection):
                 models = DEFAULT_ELEMENTS(interface)
             else:
                 models = []
-        # Needed to ensure an empty list is created when saving and instatiating the object as_dict -> from_dict
-        # Else collisions might occur in global_object.map
-        self.populate_if_none = False
+
+        # `_next_color_index` must exist before super().__init__ because each
+        # `append` during construction routes through `_append_internal` →
+        # `_advance_color_index`, which reads the attribute.
         self._next_color_index = next_color_index
 
-        super().__init__(name, interface, *models, unique_name=unique_name, **kwargs)
+        super().__init__(
+            name,
+            interface,
+            *models,
+            unique_name=unique_name,
+            populate_if_none=False,
+            **kwargs,
+        )
 
         color_count = len(COLORS)
         if color_count == 0:
             self._next_color_index = 0
-        elif self._next_color_index is None:
+        elif next_color_index is None:
             self._next_color_index = len(self) % color_count
         else:
-            self._next_color_index %= color_count
+            self._next_color_index = next_color_index % color_count
+
+    @property
+    def next_color_index(self) -> Optional[int]:
+        """Index of the next colour to assign — kept around so it round-trips."""
+        return self._next_color_index
 
     def add_model(self, model: Optional[Model] = None):
         """Add a model to the collection.
@@ -76,28 +88,24 @@ class ModelCollection(BaseCollection):
         duplicate.name = duplicate.name + ' duplicate'
         self.append(duplicate)
 
-    def as_dict(self, skip: List[str] | None = None) -> dict:
-        """As dict."""
-        this_dict = super().as_dict(skip=skip)
-        this_dict['populate_if_none'] = self.populate_if_none
-        this_dict['next_color_index'] = self._next_color_index
-        return this_dict
-
     @classmethod
     def from_dict(cls, this_dict: dict) -> ModelCollection:
         """Create an instance of a collection from a dictionary."""
-        collection_dict = this_dict.copy()
-        # We need to call from_dict on the base class to get the models
-        dict_data = collection_dict.pop('data')
+        collection_dict = dict(this_dict)
+        dict_data = collection_dict.pop('data', [])
         next_color_index = collection_dict.pop('next_color_index', None)
 
-        collection = super().from_dict(collection_dict)  # type: ModelCollection
+        # Reconstruct empty collection via EasyList.from_dict (handles
+        # protected_types and assigns name/unique_name/populate_if_none).
+        collection = super().from_dict(collection_dict)
 
+        # Append each model without advancing the colour index — the saved
+        # `next_color_index` below is the source of truth.
         for model_data in dict_data:
             collection._append_internal(Model.from_dict(model_data), advance=False)
 
-        if len(collection) != len(this_dict['data']):
-            raise ValueError(f'Expected {len(collection)} models, got {len(this_dict["data"])}')
+        if len(collection) != len(dict_data):
+            raise ValueError(f'Expected {len(dict_data)} models, got {len(collection)}')
 
         color_count = len(COLORS)
         if color_count == 0:
@@ -115,7 +123,14 @@ class ModelCollection(BaseCollection):
 
     def _append_internal(self, model: Model, advance: bool) -> None:
         """Append internal."""
-        super().append(model)
+        # Bypass our own `append` override and go straight to EasyList's
+        # `MutableSequence.append` → `insert` path. Calling `super().append`
+        # would dispatch back to `ModelCollection.append` because Python
+        # resolves `append` via MRO from MutableSequence which doesn't
+        # define it on a class higher than ModelCollection.
+        from collections.abc import MutableSequence
+
+        MutableSequence.append(self, model)
         if advance:
             self._advance_color_index()
 

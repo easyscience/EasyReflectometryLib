@@ -53,15 +53,12 @@ class GradientLayer(BaseAssembly):
 
         if front_material is None:
             front_material = Material(0.0, 0.0, 'Air')
-        self._front_material = front_material
 
         if back_material is None:
             back_material = Material(6.36, 0.0, 'D2O')
-        self._back_material = back_material
 
         if discretisation_elements < 2:
             raise ValueError('Discretisation elements must be greater than 2.')
-        self._discretisation_elements = discretisation_elements
 
         gradient_layers = _prepare_gradient_layers(
             front_material=front_material,
@@ -74,9 +71,12 @@ class GradientLayer(BaseAssembly):
             layers=gradient_layers,
             name=name,
             unique_name=unique_name,
-            interface=interface,
+            interface=None,
             type='Gradient-layer',
         )
+        self._front_material = front_material
+        self._back_material = back_material
+        self._discretisation_elements = discretisation_elements
 
         self._setup_thickness_constraints()
         self._enable_thickness_constraints()
@@ -86,6 +86,21 @@ class GradientLayer(BaseAssembly):
         # Set the thickness and roughness properties
         self.thickness = thickness
         self.roughness = roughness
+
+        if interface is not None:
+            self.interface = interface
+
+    @property
+    def front_material(self) -> Material:
+        return self._front_material
+
+    @property
+    def back_material(self) -> Material:
+        return self._back_material
+
+    @property
+    def discretisation_elements(self) -> int:
+        return self._discretisation_elements
 
     @property
     def thickness(self) -> float:
@@ -129,20 +144,30 @@ class GradientLayer(BaseAssembly):
             'front_layer': self.front_layer._dict_repr,
         }
 
-    def as_dict(self, skip: Optional[list[str]] = None) -> dict:
-        """Produces a cleaned dict using a custom as_dict method to skip necessary things.
+    def to_dict(self, skip: Optional[list[str]] = None) -> dict:
+        """Produces a cleaned dict using a custom to_dict method to skip necessary things.
 
-        The resulting dict matches the parameters in __init__
+        The resulting dict matches the parameters in __init__: layers are derived
+        in ``__init__`` from ``front_material``/``back_material``/``discretisation_elements``
+        so they are excluded from the serialized representation.
 
         Parameters
         ----------
         skip : Optional[list[str]], optional
             List of keys to skip. By default, None.
         """
-        this_dict = super().as_dict(skip=skip)
+        this_dict = super().to_dict(skip=skip)
         # Determined in __init__
-        del this_dict['layers']
+        this_dict.pop('layers', None)
+        # `thickness` / `roughness` are read-only float views; the serialized
+        # constructor args are the floats themselves.
+        this_dict['thickness'] = float(self.thickness)
+        this_dict['roughness'] = float(self.roughness)
         return this_dict
+
+    def as_dict(self, skip: Optional[list[str]] = None) -> dict:
+        """Compatibility alias for :meth:`to_dict`."""
+        return self.to_dict(skip=skip)
 
 
 def _linear_gradient(

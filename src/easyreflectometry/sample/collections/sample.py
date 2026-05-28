@@ -52,6 +52,11 @@ class Sample(BaseCollection):
         interface :
             Calculator interface. By default, None.
         """
+        # `from_dict` (via `EasyList.from_dict`) passes the items as a single
+        # list-positional arg; unpack that so validation and super() agree.
+        if len(assemblies) == 1 and isinstance(assemblies[0], list):
+            assemblies = tuple(assemblies[0])
+
         if not assemblies:
             if populate_if_none:
                 assemblies = DEFAULT_ELEMENTS(interface)
@@ -61,7 +66,14 @@ class Sample(BaseCollection):
         for assembly in assemblies:
             if not issubclass(type(assembly), BaseAssembly):
                 raise ValueError('The elements must be an Assembly.')
-        super().__init__(name, interface, unique_name=unique_name, *assemblies, **kwargs)
+        super().__init__(
+            name,
+            interface,
+            *assemblies,
+            unique_name=unique_name,
+            populate_if_none=populate_if_none,
+            **kwargs,
+        )
 
     def add_assembly(self, assembly: Optional[BaseAssembly] = None):
         """Add an assembly to the sample.
@@ -87,13 +99,19 @@ class Sample(BaseCollection):
         assembly :
             Assembly to add.
         """
+        # Order matters: RepeatingMultilayer and SurfactantLayer are subclasses of
+        # BaseAssembly but not Multilayer; however a RepeatingMultilayer IS a
+        # Multilayer, so the most-specific check must come first to avoid
+        # serialising it through the wrong `from_dict`.
         to_be_duplicated = self[index]
-        if isinstance(to_be_duplicated, Multilayer):
-            duplicate = Multilayer.from_dict(to_be_duplicated.as_dict(skip=['unique_name']))
-        elif isinstance(to_be_duplicated, RepeatingMultilayer):
+        if isinstance(to_be_duplicated, RepeatingMultilayer):
             duplicate = RepeatingMultilayer.from_dict(to_be_duplicated.as_dict(skip=['unique_name']))
         elif isinstance(to_be_duplicated, SurfactantLayer):
             duplicate = SurfactantLayer.from_dict(to_be_duplicated.as_dict(skip=['unique_name']))
+        elif isinstance(to_be_duplicated, Multilayer):
+            duplicate = Multilayer.from_dict(to_be_duplicated.as_dict(skip=['unique_name']))
+        else:
+            raise TypeError(f'Cannot duplicate assembly of type {type(to_be_duplicated).__name__}')
         duplicate.name = duplicate.name + ' duplicate'
         self.append(duplicate)
 
@@ -140,18 +158,3 @@ class Sample(BaseCollection):
             return self[-1].front_layer
         else:
             return self[-1].back_layer
-
-    # Representation
-    def as_dict(self, skip: Optional[List[str]] = None) -> dict:
-        """Produces a cleaned dict using a custom as_dict method to skip necessary things.
-
-        The resulting dict matches the parameters in __init__
-
-        Parameters
-        ----------
-        skip : Optional[List[str]], optional
-            List of keys to skip. By default, None.
-        """
-        this_dict = super().as_dict(skip=skip)
-        this_dict['populate_if_none'] = self.populate_if_none
-        return this_dict

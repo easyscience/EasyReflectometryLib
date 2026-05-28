@@ -377,11 +377,13 @@ class TestProject:
         keys.sort()
         assert keys == [
             'calculator',
+            'file_format',
             'fitter_minimizer',
             'info',
             'models',
             'with_experiments',
         ]
+        assert project_dict['file_format'] == Project.FILE_FORMAT
         assert project_dict['info'] == {
             'name': 'DefaultEasyReflectometryProject',
             'short_description': 'Reflectometry, 1D',
@@ -416,6 +418,44 @@ class TestProject:
         remove_interface(models_dict)
         remove_interface(project_dict['models'])
         assert project_dict['models'] == models_dict
+
+    def test_from_dict_missing_file_format_raises(self):
+        """Loading a dict without file_format should raise ValueError."""
+        project = Project()
+        bad_dict = {'info': {}, 'with_experiments': False, 'models': {'data': []}}
+        with pytest.raises(ValueError, match='predates file_format=2'):
+            project.from_dict(bad_dict)
+
+    def test_from_dict_wrong_file_format_raises(self):
+        """Loading a dict with an unsupported file_format should raise ValueError."""
+        project = Project()
+        bad_dict = {
+            'file_format': 99,
+            'info': {},
+            'with_experiments': False,
+            'models': {'data': []},
+        }
+        with pytest.raises(ValueError, match='Unsupported project file_format'):
+            project.from_dict(bad_dict)
+
+    def test_from_dict_correct_file_format_succeeds(self):
+        """Loading a dict with the correct file_format should work."""
+        global_object.map._clear()
+        # Build a valid project dict with at least one model
+        src_project = Project()
+        src_project._info['name'] = 'Test'
+        src_project._info['short_description'] = 'Desc'
+        src_project._info['modified'] = '01.01.2025 00:00'
+        src_project.default_model()  # ensures at least one model exists
+        src_project._with_experiments = False
+        good_dict = src_project.as_dict()
+        global_object.map._clear()
+
+        project = Project()
+        project.from_dict(good_dict)
+        assert project._info['name'] == 'Test'
+        assert project._with_experiments is False
+        assert len(project._models) >= 1
 
     def test_as_dict_materials_not_in_model(self):
         # When

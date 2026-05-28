@@ -191,7 +191,7 @@ class Summary:
 
         # Get parameters directly from the model instead of using project.parameters
         model = self._project._models[self._project.current_model_index]
-        parameters = model.get_parameters()
+        parameters = model.get_all_parameters()
 
         for parameter in parameters:
             path = global_object.map.find_path(model.unique_name, parameter.unique_name)
@@ -248,7 +248,7 @@ class Summary:
 
         # Get parameters directly from the model
         model = self._project._models[self._project.current_model_index]
-        parameters = model.get_parameters()
+        parameters = model.get_all_parameters()
 
         num_free_params = sum(1 for parameter in parameters if parameter.free)
         num_fixed_params = sum(1 for parameter in parameters if not parameter.free)
