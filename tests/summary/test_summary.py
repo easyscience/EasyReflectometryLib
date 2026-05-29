@@ -195,17 +195,34 @@ class TestSummary:
         # Expect
         assert os.path.exists(file_path)
 
-    def test_figures_section(self, project: Project) -> None:
+    def test_figures_section_static(self, project: Project) -> None:
         # When
         summary = Summary(project)
         summary.save_sld_plot = MagicMock()
         summary.save_fit_experiment_plot = MagicMock()
 
         # Then
-        html = summary._figures_section()
+        html = summary._figures_section(interactive=False)
 
         # Expect
         summary.save_sld_plot.assert_called_once()
         summary.save_fit_experiment_plot.assert_called_once()
         assert 'sld_plot' in html
         assert 'fit_experiment_plot' in html
+
+    def test_figures_section_interactive(self, project: Project) -> None:
+        # When
+        summary = Summary(project)
+        summary.save_sld_plot = MagicMock()
+        summary.save_fit_experiment_plot = MagicMock()
+
+        # Then
+        html = summary._figures_section(interactive=True)
+
+        # Expect
+        # Interactive figures must not fall back to the static image plots.
+        summary.save_sld_plot.assert_not_called()
+        summary.save_fit_experiment_plot.assert_not_called()
+        # Two interactive plotly charts with the library embedded inline once.
+        assert html.count('class="plotly-graph-div"') == 2
+        assert 'Plotly.newPlot' in html

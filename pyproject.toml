@@ -32,6 +32,7 @@ dependencies = [
   'xhtml2pdf',
   'bumps',
   'pooch',
+  'plotly',
 ]
 
 [project.optional-dependencies]

@@ -1,6 +1,9 @@
 # SPDX-FileCopyrightText: 2024 EasyScience contributors <https://github.com/easyscience>
 # SPDX-License-Identifier: BSD-3-Clause
 
+import contextlib
+import io
+import logging
 from html import escape
 from importlib.metadata import PackageNotFoundError
 from importlib.metadata import version
@@ -15,11 +18,34 @@ from easyreflectometry import Project
 
 from .html_templates import HTML_DATA_COLLECTION_TEMPLATE
 from .html_templates import HTML_FIGURES_TEMPLATE
+from .html_templates import HTML_INTERACTIVE_FIGURES_TEMPLATE
 from .html_templates import HTML_PARAMETER_HEADER_TEMPLATE
 from .html_templates import HTML_PARAMETER_TEMPLATE
 from .html_templates import HTML_PROJECT_INFORMATION_TEMPLATE
 from .html_templates import HTML_REFINEMENT_TEMPLATE
 from .html_templates import HTML_TEMPLATE
+
+
+@contextlib.contextmanager
+def _silence_pdf_converter():
+    """Silence xhtml2pdf's verbose output during PDF conversion.
+
+    xhtml2pdf emits a large amount of ``log.debug`` output (image tags, file
+    objects, column widths, parsed schemes, ...) and a few stray ``print``
+    statements while rendering. When the host application has configured logging
+    at DEBUG level this floods stdout. For the duration of the conversion we
+    raise the ``xhtml2pdf`` logger level so its debug records are dropped, and
+    redirect stdout to swallow the stray prints. Both are restored afterwards.
+    """
+    xhtml2pdf_logger = logging.getLogger('xhtml2pdf')
+    previous_level = xhtml2pdf_logger.level
+    xhtml2pdf_logger.setLevel(logging.WARNING)
+    try:
+        with contextlib.redirect_stdout(io.StringIO()):
+            yield
+    finally:
+        xhtml2pdf_logger.setLevel(previous_level)
+
 
 _NAME_MAX_LEN = 20
 # Custom href scheme used to pass the full name to QML via TextEdit.hoveredLink.
@@ -89,8 +115,19 @@ class Summary:
         """Init function."""
         self._project = project
 
-    def compile_html_summary(self, figures: bool = False) -> str:
-        """Compile html summary."""
+    def compile_html_summary(self, figures: bool = False, interactive: bool = True) -> str:
+        """Compile html summary.
+
+        Parameters
+        ----------
+        figures
+            Whether to render the figures section.
+        interactive
+            When ``True`` (the default) the figures are rendered as interactive
+            plotly charts suitable for an HTML report. Set to ``False`` to fall
+            back to static images, e.g. when the html is handed to the PDF
+            converter, which cannot run the embedded JavaScript.
+        """
         html = HTML_TEMPLATE
 
         html = html.replace('project_information_section', self._project_information_section())
@@ -105,7 +142,7 @@ class Summary:
         html = html.replace('refinement_section', self._refinement_section())
 
         if figures:
-            html = html.replace('figures_section', self._figures_section())
+            html = html.replace('figures_section', self._figures_section(interactive=interactive))
         else:
             html = html.replace('figures_section', '')
 
@@ -113,19 +150,22 @@ class Summary:
 
     def save_html_summary(self, filename: str) -> None:
         """Save html summary."""
-        html = self.compile_html_summary(figures=True)
-        with open(filename, 'w') as f:
+        html = self.compile_html_summary(figures=True, interactive=True)
+        with open(filename, 'w', encoding='utf-8') as f:
             f.write(html)
 
     def save_pdf_summary(self, filename: str) -> None:
         """Save pdf summary."""
-        html = self.compile_html_summary(figures=True)
+        # The PDF converter (xhtml2pdf) cannot execute the JavaScript that powers
+        # the interactive plotly charts, so embed static images instead.
+        html = self.compile_html_summary(figures=True, interactive=False)
 
         with open(filename, 'w+b') as result_file:
-            pisa_status = pisa.CreatePDF(
-                html,
-                dest=result_file,
-            )
+            with _silence_pdf_converter():
+                pisa_status = pisa.CreatePDF(
+                    html,
+                    dest=result_file,
+                )
 
             if pisa_status.err:
                 print('An error occured when generating PDF summary!')
@@ -290,8 +330,16 @@ class Summary:
         except (AttributeError, TypeError, ValueError, ZeroDivisionError):
             return 'N/A'
 
-    def _figures_section(self) -> None:
-        """Figures section."""
+    def _figures_section(self, interactive: bool = True) -> str:
+        """Figures section.
+
+        When *interactive* is ``True`` the figures are rendered as interactive
+        plotly charts embedded directly in the html. Otherwise static images are
+        written to disk and referenced (used for the PDF report).
+        """
+        if interactive:
+            return self._interactive_figures_section()
+
         html_figures = HTML_FIGURES_TEMPLATE
         path_sld = self._project.path / 'sld_plot.jpg'
         path_fit_experiment = self._project.path / 'fit_experiment_plot.jpg'
@@ -302,3 +350,98 @@ class Summary:
         html_figures = html_figures.replace('path_sld_plot', str(path_sld))
         html_figures = html_figures.replace('path_fit_experiment_plot', str(path_fit_experiment))
         return html_figures
+
+    def _interactive_figures_section(self) -> str:
+        """Build the interactive (plotly) figures section for the html report."""
+        import plotly.io as pio
+
+        fig_sld = self._sld_plotly_figure()
+        fig_fit_experiment = self._fit_experiment_plotly_figure()
+
+        # Embed plotly.js inline once (with the first figure) so the saved report
+        # is self-contained and renders without an internet connection.
+        sld_div = pio.to_html(
+            fig_sld,
+            include_plotlyjs=True,
+            full_html=False,
+            default_width='640px',
+            default_height='480px',
+        )
+        fit_experiment_div = pio.to_html(
+            fig_fit_experiment,
+            include_plotlyjs=False,
+            full_html=False,
+            default_width='640px',
+            default_height='480px',
+        )
+
+        html_figures = HTML_INTERACTIVE_FIGURES_TEMPLATE
+        html_figures = html_figures.replace('sld_plot_div', sld_div)
+        html_figures = html_figures.replace('fit_experiment_plot_div', fit_experiment_div)
+        return html_figures
+
+    def _sld_plotly_figure(self):
+        """Interactive SLD profile figure."""
+        import plotly.graph_objects as go
+
+        sld = self._project.sld_data_for_model_at_index(0)
+
+        fig = go.Figure()
+        fig.add_trace(
+            go.Scatter(
+                x=np.asarray(sld.x),
+                y=np.asarray(sld.y),
+                mode='lines',
+                name='SLD',
+                line={'color': 'blue'},
+            )
+        )
+        fig.update_layout(
+            xaxis_title='z (Å)',
+            yaxis_title='SLD (Å⁻²)',
+            template='simple_white',
+            margin={'l': 70, 'r': 20, 't': 30, 'b': 50},
+            legend={'x': 0.99, 'xanchor': 'right', 'y': 0.99, 'yanchor': 'top'},
+        )
+        return fig
+
+    def _fit_experiment_plotly_figure(self):
+        """Interactive reflectivity (model vs. experiment) figure."""
+        import plotly.graph_objects as go
+
+        fig = go.Figure()
+
+        model = self._project.model_data_for_model_at_index(0)
+        fig.add_trace(
+            go.Scatter(
+                x=np.asarray(model.x),
+                y=np.asarray(model.y),
+                mode='lines',
+                name='Model',
+                line={'color': 'blue'},
+            )
+        )
+
+        try:
+            experiment = self._project.experimental_data_for_model_at_index(0)
+            fig.add_trace(
+                go.Scatter(
+                    x=np.asarray(experiment.x),
+                    y=np.asarray(experiment.y),
+                    mode='markers',
+                    name='Experiment',
+                    marker={'color': 'red', 'size': 4},
+                )
+            )
+        except IndexError:
+            pass
+
+        fig.update_layout(
+            xaxis_title='Q (Å⁻¹)',
+            yaxis_title='Reflectivity',
+            yaxis_type='log',
+            template='simple_white',
+            margin={'l': 70, 'r': 20, 't': 30, 'b': 50},
+            legend={'x': 0.99, 'xanchor': 'right', 'y': 0.99, 'yanchor': 'top'},
+        )
+        return fig
