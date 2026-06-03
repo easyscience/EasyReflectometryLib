@@ -34,7 +34,7 @@ def make_pooch(base_url: str, registry: dict[str, str | None]) -> pooch.Pooch:
 @pytest.fixture(scope='module')
 def data_registry():
     return make_pooch(
-        base_url='https://pub-6c25ef91903d4301a3338bd53b370098.r2.dev',
+        base_url='https://github.com/scipp/ess/releases/download/reduced_data_nightly',
         registry={
             'amor_reduced_iofq.ort': None,
         },
