@@ -366,6 +366,7 @@ class MultiFitter:
         seed: int | None = None,
         objective: str | None = None,
         initializer: str | None = None,
+        resume_state: Any | None = None,
         progress_callback: Callable[..., Any] | None = None,
         abort_test: Callable[[], bool] | None = None,
     ) -> dict:
@@ -380,16 +381,40 @@ class MultiFitter:
         :param thin: Thinning interval.
         :param chains: User-friendly alias for BUMPS DREAM population count.
         :param population: BUMPS DREAM population count for advanced users.
-        :param seed: Random seed for reproducibility.
+        :param seed: Random seed for reproducibility. Ignored when ``resume_state``
+            is provided.
         :param objective: Zero-variance handling strategy.
         :param initializer: DREAM population initializer. One of ``'eps'``,
             ``'cov'``, ``'lhs'``, or ``'random'``. By default, None (BUMPS
-            uses ``'eps'``).
+            uses ``'eps'``).  **No effect when ``resume_state`` is provided**
+            — the population already exists in the saved state.
+        :param resume_state: A BUMPS ``MCMCDraw`` state object from a previous
+            ``sample()`` call (e.g. from :func:`load_posterior` or
+            ``PosteriorResults.sampler_state``). When provided, DREAM
+            **continues** the saved chain instead of starting cold.
+
+            **Ring-buffer contract (important!):** DREAM stores draws in a
+            fixed-size ring buffer sized to *samples*.  Resuming with
+            ``samples=N`` retains only the **last N** draws.  To extend an
+            existing chain of M draws by N without losing any::
+
+                posterior = fitter.sample(data, samples=M + N, burn=0, resume_state=old_state)
+
+            Use :func:`save_posterior` and :func:`load_posterior` to
+            persist and reload traces across sessions.
+
+            The ``chains``/``population`` and ``initializer`` parameters
+            have **no effect** when ``resume_state`` is provided.
+
+            Resuming against *different* data is undefined behaviour (the
+            chain's likelihood changes underneath it).
         :param progress_callback: Optional callback for progress updates during
             sampling.  Forwarded to the core MultiFitter.
         :return: Dictionary with keys ``'draws'``, ``'param_names'``, ``'state'``,
             and ``'logp'``.
         :raises RuntimeError: If the current minimizer is not a BUMPS instance.
+        :raises ValueError: If ``resume_state`` is incompatible with the current
+            model (parameter count, names/order, or population mismatch).
         """
         minimizer = self.easy_science_multi_fitter.minimizer
         if not (hasattr(minimizer, 'package') and minimizer.package == 'bumps'):
@@ -436,6 +461,7 @@ class MultiFitter:
             chains=chains,
             population=population,
             seed=seed,
+            resume_state=resume_state,
             sampler_kwargs=sampler_kwargs or None,
             progress_callback=progress_callback,
             abort_test=abort_test,
