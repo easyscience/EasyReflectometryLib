@@ -363,7 +363,6 @@ class MultiFitter:
         thin: int = 10,
         chains: int | None = None,
         population: int | None = None,
-        seed: int | None = None,
         objective: str | None = None,
         initializer: str | None = None,
         resume_state: Any | None = None,
@@ -381,8 +380,6 @@ class MultiFitter:
         :param thin: Thinning interval.
         :param chains: User-friendly alias for BUMPS DREAM population count.
         :param population: BUMPS DREAM population count for advanced users.
-        :param seed: Random seed for reproducibility. Ignored when ``resume_state``
-            is provided.
         :param objective: Zero-variance handling strategy.
         :param initializer: DREAM population initializer. One of ``'eps'``,
             ``'cov'``, ``'lhs'``, or ``'random'``. By default, None (BUMPS
@@ -460,7 +457,6 @@ class MultiFitter:
             thin=thin,
             chains=chains,
             population=population,
-            seed=seed,
             resume_state=resume_state,
             sampler_kwargs=sampler_kwargs or None,
             progress_callback=progress_callback,

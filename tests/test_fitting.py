@@ -876,20 +876,19 @@ class TestSampleBasic:
         assert result is fake_result
 
     def test_forwards_hyperparams_to_core(self):
-        """Samples, burn, thin, population, chains, seed are forwarded to core."""
+        """Samples, burn, thin, population, chains are forwarded to core."""
         model = Model()
         model.interface = CalculatorFactory()
         fitter = MultiFitter(model)
 
         captured = {}
 
-        def _fake_sample(*, x, y, weights, samples, burn, thin, chains, population, seed, **kwargs):
+        def _fake_sample(*, x, y, weights, samples, burn, thin, chains, population, **kwargs):
             captured['samples'] = samples
             captured['burn'] = burn
             captured['thin'] = thin
             captured['chains'] = chains
             captured['population'] = population
-            captured['seed'] = seed
             return {'draws': np.ones((10, 2)), 'param_names': ['a', 'b'], 'state': None, 'logp': None}
 
         fitter.easy_science_multi_fitter = MagicMock()
@@ -901,13 +900,12 @@ class TestSampleBasic:
             'data': {'R_0': sc.array(dims=['Qz_0'], values=np.ones(10), variances=np.ones(10) * 0.01)},
         })
 
-        fitter.sample(data, samples=500, burn=100, thin=5, population=8, seed=42)
+        fitter.sample(data, samples=500, burn=100, thin=5, population=8)
         assert captured['samples'] == 500
         assert captured['burn'] == 100
         assert captured['thin'] == 5
         assert captured['chains'] is None  # population is the canonical param
         assert captured['population'] == 8
-        assert captured['seed'] == 42
 
     def test_forwards_chains_as_population(self):
         """'chains' argument is forwarded as the 'chains' param to core (aliased to pop there)."""
