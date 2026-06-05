@@ -2,14 +2,13 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import logging
+import os
 
 import numpy as np
-
-# from dmsc_nightly.data import make_pooch
-import pooch
 import pytest
 from easyscience.fitting import AvailableMinimizers
 
+import easyreflectometry
 from easyreflectometry.calculators import CalculatorFactory
 from easyreflectometry.data import load
 from easyreflectometry.fitting import MultiFitter
@@ -20,30 +19,12 @@ from easyreflectometry.sample import Material
 from easyreflectometry.sample import Multilayer
 from easyreflectometry.sample import Sample
 
-
-def make_pooch(base_url: str, registry: dict[str, str | None]) -> pooch.Pooch:
-    """Make a Pooch object to download test data."""
-    return pooch.create(
-        path=pooch.os_cache('data'),
-        env='POOCH_DIR',
-        base_url=base_url,
-        registry=registry,
-    )
+PATH_STATIC = os.path.join(os.path.dirname(easyreflectometry.__file__), '..', '..', 'tests', '_static')
 
 
 @pytest.fixture(scope='module')
-def data_registry():
-    return make_pooch(
-        base_url='https://pub-6c25ef91903d4301a3338bd53b370098.r2.dev',
-        registry={
-            'amor_reduced_iofq.ort': None,
-        },
-    )
-
-
-@pytest.fixture(scope='module')
-def load_data(data_registry):
-    path = data_registry.fetch('amor_reduced_iofq.ort')
+def load_data():
+    path = os.path.join(PATH_STATIC, 'amor_reduced_iofq.ort')
     logging.info('Loading data from %s', path)
     data = load(path)
     return data

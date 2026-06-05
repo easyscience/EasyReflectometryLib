@@ -3,6 +3,8 @@
 
 
 import warnings
+from typing import Any
+from typing import Callable
 
 import numpy as np
 import scipp as sc
@@ -352,6 +354,87 @@ class MultiFitter:
             }
         ]
         return result
+
+    def mcmc_sample(
+        self,
+        data: sc.DataGroup,
+        samples: int = 10000,
+        burn: int = 2000,
+        thin: int = 10,
+        population: int | None = None,
+        objective: str | None = None,
+        initializer: str | None = None,
+        progress_callback: Callable[..., Any] | None = None,
+        abort_test: Callable[[], bool] | None = None,
+    ) -> dict:
+        """Run Bayesian MCMC sampling on reflectometry data using the DREAM sampler.
+
+        Requires that the minimizer is a BUMPS instance (i.e. the minimizer was
+        switched to ``AvailableMinimizers.Bumps``).
+
+        :param data: DataGroup with reflectivity data.
+        :param samples: Number of retained DREAM samples requested from BUMPS.
+        :param burn: Burn-in steps.
+        :param thin: Thinning interval.
+        :param population: BUMPS DREAM population count for advanced users.
+        :param objective: Zero-variance handling strategy.
+        :param initializer: DREAM population initializer. One of ``'eps'``,
+            ``'cov'``, ``'lhs'``, or ``'random'``. By default, None (BUMPS
+            uses ``'eps'``).
+            — the population already exists in the saved state.
+        :param progress_callback: Optional callback for progress updates during
+            sampling.  Forwarded to the core MultiFitter.
+        :return: Dictionary with keys ``'draws'``, ``'param_names'``, ``'state'``,
+            and ``'logp'``.
+        :raises RuntimeError: If the current minimizer is not a BUMPS instance.
+        """
+        minimizer = self.easy_science_multi_fitter.minimizer
+        if not (hasattr(minimizer, 'package') and minimizer.package == 'bumps'):
+            raise RuntimeError(
+                'Bayesian sampling requires a BUMPS minimizer. '
+                'Use ``fitter.switch_minimizer(AvailableMinimizers.Bumps)`` first.'
+            )
+
+        obj = _validate_objective(objective) if objective is not None else self._objective
+
+        refl_nums = [k[3:] for k in data['coords'].keys() if k.startswith('Qz_')]
+        x = []
+        y = []
+        dy = []
+
+        # Process each reflectivity dataset
+        for i in refl_nums:
+            x_vals = data['coords'][f'Qz_{i}'].values
+            y_vals = data['data'][f'R_{i}'].values
+            variances = data['data'][f'R_{i}'].variances
+
+            x_out, y_eff, weights, stats = _prepare_fit_arrays(x_vals, y_vals, variances, obj)
+
+            if stats['masked'] > 0:
+                warnings.warn(
+                    f'Masked {stats["masked"]} data point(s) in reflectivity {i} due to zero variance during sampling.',
+                    UserWarning,
+                )
+            x.append(x_out)
+            y.append(y_eff)
+            dy.append(weights)
+
+        # Delegate the actual BUMPS/DREAM sampling to the core MultiFitter
+        sampler_kwargs = {}
+        if initializer is not None:
+            sampler_kwargs['init'] = initializer
+        return self.easy_science_multi_fitter.mcmc_sample(
+            x=x,
+            y=y,
+            weights=dy,
+            samples=samples,
+            burn=burn,
+            thin=thin,
+            population=population,
+            sampler_kwargs=sampler_kwargs or None,
+            progress_callback=progress_callback,
+            abort_test=abort_test,
+        )
 
     @property
     def chi2(self) -> float | None:

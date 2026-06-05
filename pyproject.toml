@@ -23,7 +23,8 @@ classifiers = [
 ]
 requires-python = '>=3.11'
 dependencies = [
-  'easyscience',
+  'easyscience @ git+https://github.com/easyscience/corelib.git@develop',
+  # 'easyscience',
   'scipp',
   'refnx',
   'refl1d>=1.0.0',
@@ -68,6 +69,8 @@ dev = [
   'mkdocstrings-python',             # MkDocs: Python docstring support
   'pyyaml',                          # YAML parser
   'spdx-headers',                    # SPDX license header validation
+  'arviz',                           # Bayesian analysis and visualization
+  'plotly',                          # Interactive plotting
 ]
 
 [project.urls]
