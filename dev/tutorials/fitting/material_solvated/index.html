@@ -3031,15 +3031,15 @@ We use <code>pooch</code> to fetch the file from the repository.</p>
 </clipboard-copy>
 </div>
 <div class="highlight-ipynb hl-python"><pre><span></span><span class="n">file_path</span> <span class="o">=</span> <span class="n">pooch</span><span class="o">.</span><span class="n">retrieve</span><span class="p">(</span>
-    <span class="c1"># URL to one of Pooch's test files</span>
-    <span class="n">url</span><span class="o">=</span><span class="s1">'https://raw.githubusercontent.com/EasyScience/EasyReflectometryLib/master/docs/src/tutorials/fitting/example.ort'</span><span class="p">,</span>
+    <span class="c1"># Fetch test data from the easyscience/reflectometry data repository</span>
+    <span class="n">url</span><span class="o">=</span><span class="s1">'https://raw.githubusercontent.com/easyscience/reflectometry/master/data/example.ort'</span><span class="p">,</span>
     <span class="n">known_hash</span><span class="o">=</span><span class="s1">'82d0c95c069092279a799a8131ad3710335f601d9f1080754b387f42e407dfab'</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="n">data</span> <span class="o">=</span> <span class="n">load</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
 </pre></div>
 <div class="clipboard-copy-txt" id="cell-4">file_path = pooch.retrieve(
-    # URL to one of Pooch's test files
-    url='https://raw.githubusercontent.com/EasyScience/EasyReflectometryLib/master/docs/src/tutorials/fitting/example.ort',
+    # Fetch test data from the easyscience/reflectometry data repository
+    url='https://raw.githubusercontent.com/easyscience/reflectometry/master/data/example.ort',
     known_hash='82d0c95c069092279a799a8131ad3710335f601d9f1080754b387f42e407dfab',
 )
 data = load(file_path)</div>
@@ -3054,7 +3054,7 @@ data = load(file_path)</div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Downloading data from 'https://raw.githubusercontent.com/EasyScience/EasyReflectometryLib/master/docs/src/tutorials/fitting/example.ort' to file '/home/runner/.cache/pooch/ec8fae13fd7789fd387981c8373238f0-example.ort'.
+<pre>Downloading data from 'https://raw.githubusercontent.com/easyscience/reflectometry/master/data/example.ort' to file '/home/runner/.cache/pooch/895960ce242a790e65ec74296daa4568-example.ort'.
 </pre>
 </div>
 </div>
@@ -3528,7 +3528,7 @@ analysed = fitter.fit(data)</div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>/home/runner/work/reflectometry-lib/reflectometry-lib/.pixi/envs/default/lib/python3.13/site-packages/easyscience/fitting/minimizers/minimizer_lmfit.py:352: UserWarning: Invalid Input Parameters. I.e. more variables than data points given, tolerance &lt; 0.0, or no data provided. Could not estimate error-bars.
+<pre>/home/runner/work/reflectometry-lib/reflectometry-lib/.pixi/envs/default/lib/python3.13/site-packages/easyscience/fitting/minimizers/minimizer_lmfit.py:416: UserWarning: Invalid Input Parameters. I.e. more variables than data points given, tolerance &lt; 0.0, or no data provided. Could not estimate error-bars.
   warnings.warn(str(fit_results.message), UserWarning)
 </pre>
 </div>
