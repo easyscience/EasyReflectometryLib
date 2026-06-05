@@ -23,7 +23,7 @@ classifiers = [
 ]
 requires-python = '>=3.11'
 dependencies = [
-  'easyscience @ git+https://github.com/easyscience/corelib.git@bayesian',
+  'easyscience @ git+https://github.com/easyscience/corelib.git@develop',
   # 'easyscience',
   'scipp',
   'refnx',
@@ -33,6 +33,7 @@ dependencies = [
   'xhtml2pdf',
   'bumps',
   'pooch',
+  'plotly',
 ]
 
 [project.optional-dependencies]

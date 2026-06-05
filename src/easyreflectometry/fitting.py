@@ -355,15 +355,13 @@ class MultiFitter:
         ]
         return result
 
-    def sample(
+    def mcmc_sample(
         self,
         data: sc.DataGroup,
         samples: int = 10000,
         burn: int = 2000,
         thin: int = 10,
-        chains: int | None = None,
         population: int | None = None,
-        seed: int | None = None,
         objective: str | None = None,
         initializer: str | None = None,
         progress_callback: Callable[..., Any] | None = None,
@@ -378,13 +376,12 @@ class MultiFitter:
         :param samples: Number of retained DREAM samples requested from BUMPS.
         :param burn: Burn-in steps.
         :param thin: Thinning interval.
-        :param chains: User-friendly alias for BUMPS DREAM population count.
         :param population: BUMPS DREAM population count for advanced users.
-        :param seed: Random seed for reproducibility.
         :param objective: Zero-variance handling strategy.
         :param initializer: DREAM population initializer. One of ``'eps'``,
             ``'cov'``, ``'lhs'``, or ``'random'``. By default, None (BUMPS
             uses ``'eps'``).
+            — the population already exists in the saved state.
         :param progress_callback: Optional callback for progress updates during
             sampling.  Forwarded to the core MultiFitter.
         :return: Dictionary with keys ``'draws'``, ``'param_names'``, ``'state'``,
@@ -426,16 +423,14 @@ class MultiFitter:
         sampler_kwargs = {}
         if initializer is not None:
             sampler_kwargs['init'] = initializer
-        return self.easy_science_multi_fitter.sample(
+        return self.easy_science_multi_fitter.mcmc_sample(
             x=x,
             y=y,
             weights=dy,
             samples=samples,
             burn=burn,
             thin=thin,
-            chains=chains,
             population=population,
-            seed=seed,
             sampler_kwargs=sampler_kwargs or None,
             progress_callback=progress_callback,
             abort_test=abort_test,

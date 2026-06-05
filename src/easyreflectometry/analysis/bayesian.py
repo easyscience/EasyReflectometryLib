@@ -4,10 +4,13 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
 import warnings
 from typing import Any
 
 import numpy as np
+from easyscience.fitting.minimizers.minimizer_base import MINIMIZER_PARAMETER_PREFIX
 
 try:
     import arviz as _arviz
@@ -159,6 +162,16 @@ class PosteriorResults:
         :rtype: dict
         """
         return credible_intervals(self.draws, self.param_names, alpha=alpha)
+
+    def save(self, path: str) -> None:
+        """Persist this posterior trace to disk.
+
+        Convenience wrapper around :func:`save_posterior`.
+
+        :param path: File path prefix (see :func:`save_posterior`).
+        :type path: str
+        """
+        save_posterior(self, path)
 
     def gelman_rubin(self) -> dict | None:
         """Compute the Gelman-Rubin R-hat convergence diagnostic.
@@ -1231,3 +1244,133 @@ def posterior_predictive_sld_profile(
     lower = np.percentile(sld_samples, 2.5, axis=0)
     upper = np.percentile(sld_samples, 97.5, axis=0)
     return z_shared, median, lower, upper
+
+
+# ===================================================================
+# Persistence helpers — save / load a posterior trace to / from disk
+# ===================================================================
+
+_SIDECAR_SCHEMA_VERSION = 1
+
+
+def _easyreflectometry_version() -> str:
+    """Return the installed easyreflectometry version string."""
+    try:
+        from importlib.metadata import version as _v
+
+        return _v('easyreflectometry')
+    except Exception:
+        return 'unknown'
+
+
+def _data_fingerprint(
+    x_list: list[np.ndarray],
+    y_list: list[np.ndarray],
+    w_list: list[np.ndarray],
+) -> str | None:
+    """Return a SHA-256 hex digest of concatenated (x|y|weights), or None."""
+    try:
+        h = hashlib.sha256()
+        for arr in list(x_list) + list(y_list) + list(w_list):
+            h.update(np.ascontiguousarray(arr, dtype=np.float64).tobytes())
+        return h.hexdigest()
+    except Exception:
+        return None
+
+
+def save_posterior(results: 'PosteriorResults', path: str) -> None:
+    """Persist a sampling trace to disk using BUMPS' native state files.
+
+    Writes ``<path>-*.mc`` (BUMPS ``save_state`` output) plus a sidecar
+    ``<path>.params.json`` holding parameter names and metadata so that
+    :func:`load_posterior` can reconstruct a fully populated
+    :class:`PosteriorResults` without re-deriving names from the model.
+
+    Note that ``save_state`` writes **multiple** files (one per DREAM
+    component: chain, point, and stats).  The ``path`` argument is a
+    prefix; the actual files will be ``<path>-chain.mc``,
+    ``<path>-point.mc``, and ``<path>-stats.mc``.
+
+    :param results: The posterior results to persist.  Must have a
+        non-``None`` ``sampler_state``.
+    :type results: PosteriorResults
+    :param path: File path prefix.  BUMPS appends its own suffixes.
+    :type path: str
+    :raises ValueError: If ``results.sampler_state`` is ``None``.
+    :raises TypeError: If ``results.sampler_state`` is not a BUMPS
+        ``MCMCDraw`` object.
+    """
+    from bumps.dream.state import MCMCDraw
+    from bumps.dream.state import save_state
+
+    if results.sampler_state is None:
+        raise ValueError(
+            'This PosteriorResults has no sampler_state, so the chain '
+            'cannot be saved or resumed. Re-run sample() and wrap the '
+            "returned dict's 'state' value into PosteriorResults."
+        )
+    if not isinstance(results.sampler_state, MCMCDraw):
+        raise TypeError(
+            f'sampler_state must be a BUMPS MCMCDraw object, got '
+            f'{type(results.sampler_state).__name__}. Only BUMPS DREAM '
+            'traces can be persisted with save_posterior.'
+        )
+
+    save_state(results.sampler_state, path)
+
+    # Write the sidecar JSON
+    sidecar = {
+        'schema_version': _SIDECAR_SCHEMA_VERSION,
+        'param_names': results.param_names,
+        'easyreflectometry_version': _easyreflectometry_version(),
+    }
+    with open(f'{path}.params.json', 'w') as f:
+        json.dump(sidecar, f, indent=2)
+
+
+def load_posterior(path: str, skip: int = 0) -> 'PosteriorResults':
+    """Reload a trace saved by :func:`save_posterior` into a
+    :class:`PosteriorResults`.
+
+    The returned object's ``sampler_state`` can be fed back into
+    ``MultiFitter.mcmc_sample(..., resume_state=...)`` to extend the chain.
+
+    :param path: File path prefix used in :func:`save_posterior`.
+    :type path: str
+    :param skip: Discard the first ``skip`` saved generations on load,
+        forwarded to ``bumps.dream.state.load_state(path, skip=skip)``.
+        Useful for trimming additional burn-in without re-sampling.
+    :type skip: int
+    :return: A fully populated :class:`PosteriorResults`.
+    :rtype: PosteriorResults
+    """
+    from bumps.dream.state import load_state
+
+    state = load_state(path, skip=skip)
+    _draw = state.draw()
+    draws = _draw.points
+    logp = _draw.logp  # .logp is on the Draw object, NOT state.logp
+
+    # Restore param_names: prefer the sidecar; fall back to state.labels
+    param_names: list[str] | None = None
+    try:
+        with open(f'{path}.params.json', 'r') as f:
+            sidecar = json.load(f)
+        if sidecar.get('schema_version') == _SIDECAR_SCHEMA_VERSION:
+            param_names = sidecar.get('param_names')
+    except (FileNotFoundError, json.JSONDecodeError, KeyError):
+        pass
+
+    if param_names is None:
+        # Fallback: strip BUMPS 'p' prefix from state.labels
+        param_names = [
+            lbl[len(MINIMIZER_PARAMETER_PREFIX) :] if lbl.startswith(MINIMIZER_PARAMETER_PREFIX) else lbl
+            for lbl in state.labels
+        ]
+
+    return PosteriorResults(
+        draws=draws,
+        param_names=param_names,
+        logp=logp,
+        sampler_state=state,
+    )

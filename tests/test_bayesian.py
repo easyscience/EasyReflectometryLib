@@ -348,6 +348,125 @@ class TestPlotFigureFallbackWarnings:
         assert result is None
 
 
+# ===================================================================
+# Persistence helpers — save_posterior / load_posterior
+# ===================================================================
+
+
+class TestSaveLoadPosterior:
+    """Tests for ``save_posterior`` and ``load_posterior``."""
+
+    @pytest.fixture
+    def mock_posterior_results(self, sample_draws):
+        """Build a PosteriorResults with a real-looking mocked sampler_state."""
+        from unittest.mock import MagicMock
+
+        from easyreflectometry.analysis.bayesian import PosteriorResults
+
+        draws, param_names = sample_draws
+
+        # Build a mock that passes isinstance(obj, MCMCDraw) for the
+        # type guard in save_posterior.  We use a non-spec MagicMock and
+        # reassign its __class__ so isinstance succeeds.
+        import bumps.dream.state as _bds
+
+        mock_state = MagicMock()
+        mock_state.__class__ = _bds.MCMCDraw
+
+        mock_state.Nvar = draws.shape[1]
+        mock_state.Npop = 5
+        mock_state.labels = [f'p{name}' for name in param_names]
+        mock_draw = MagicMock()
+        mock_draw.points = draws
+        mock_draw.logp = np.zeros(draws.shape[0])
+        mock_state.draw.return_value = mock_draw
+
+        pr = PosteriorResults(
+            draws=draws,
+            param_names=param_names,
+            logp=np.zeros(draws.shape[0]),
+            sampler_state=mock_state,
+        )
+        return pr
+
+    def test_save_posterior_no_state_raises(self, sample_draws):
+        """PosteriorResults without sampler_state raises ValueError."""
+        from easyreflectometry.analysis.bayesian import PosteriorResults
+        from easyreflectometry.analysis.bayesian import save_posterior
+
+        draws, param_names = sample_draws
+        pr = PosteriorResults(draws, param_names)
+        with pytest.raises(ValueError, match='no sampler_state'):
+            save_posterior(pr, 'dummy')
+
+    def test_save_posterior_wrong_state_type_raises(self, sample_draws):
+        """Non-MCMCDraw sampler_state raises TypeError."""
+        from unittest.mock import MagicMock
+
+        from easyreflectometry.analysis.bayesian import PosteriorResults
+        from easyreflectometry.analysis.bayesian import save_posterior
+
+        draws, param_names = sample_draws
+        pr = PosteriorResults(draws, param_names, sampler_state=MagicMock())
+        with pytest.raises(TypeError, match='MCMCDraw'):
+            save_posterior(pr, 'dummy')
+
+    def test_save_and_load_roundtrip(self, mock_posterior_results, monkeypatch, tmp_path):
+        """Save then load, verify draws, param_names, logp, and state."""
+        from unittest.mock import MagicMock
+
+        # Mock save_state and load_state
+        import bumps.dream.state as _bds
+
+        from easyreflectometry.analysis.bayesian import load_posterior
+        from easyreflectometry.analysis.bayesian import save_posterior
+
+        saved_state_ref = mock_posterior_results.sampler_state
+        monkeypatch.setattr(_bds, 'save_state', MagicMock())
+        monkeypatch.setattr(_bds, 'load_state', MagicMock(return_value=saved_state_ref))
+
+        prefix = str(tmp_path / 'test_run')
+        save_posterior(mock_posterior_results, prefix)
+
+        # Verify save_state was called
+        _bds.save_state.assert_called_once_with(saved_state_ref, prefix)
+
+        loaded = load_posterior(prefix)
+
+        assert np.allclose(loaded.draws, mock_posterior_results.draws)
+        assert loaded.param_names == mock_posterior_results.param_names
+        assert loaded.sampler_state is saved_state_ref
+
+    def test_save_convenience_method(self, mock_posterior_results, monkeypatch, tmp_path):
+        """PosteriorResults.save() delegates to save_posterior."""
+        from unittest.mock import MagicMock
+
+        import bumps.dream.state as _bds
+
+        monkeypatch.setattr(_bds, 'save_state', MagicMock())
+
+        prefix = str(tmp_path / 'test_convenience')
+        mock_posterior_results.save(prefix)
+
+        _bds.save_state.assert_called_once_with(mock_posterior_results.sampler_state, prefix)
+
+    def test_load_posterior_skip(self, mock_posterior_results, monkeypatch, tmp_path):
+        """load_posterior with skip>0 forwards skip to load_state."""
+        from unittest.mock import MagicMock
+
+        import bumps.dream.state as _bds
+
+        from easyreflectometry.analysis.bayesian import load_posterior
+
+        monkeypatch.setattr(_bds, 'load_state', MagicMock(return_value=mock_posterior_results.sampler_state))
+        monkeypatch.setattr(_bds, 'save_state', MagicMock())
+
+        prefix = str(tmp_path / 'test_skip')
+        load_posterior(prefix, skip=5)
+
+        _bds.load_state.assert_called_once_with(prefix, skip=5)
+
+
 class TestPlotDistributionExported:
     def test_in_analysis_namespace(self):
         """``plot_distribution`` should be importable from the analysis package."""
