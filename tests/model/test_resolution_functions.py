@@ -95,11 +95,22 @@ class TestPointwise(unittest.TestCase):
         # When
         resolution_function = Pointwise(q_data_points=self.data_points)
 
-        # Then Expect
+        # Then Expect: smearing returns the resolution width sqrt(sQz) at the data
+        # points, since sQz holds the variance of Qz (consistent with LinearSpline).
+        expected_widths = np.sqrt(self.data_points[2])
         assert np.allclose(
             np.array(resolution_function.smearing()),
-            np.array([2.51664683, 2.84038734, 3.2460762, 3.6796519, 4.07869271]),
+            expected_widths,
         )
+
+    def test_smearing_interpolates_onto_q(self):
+        # When
+        resolution_function = Pointwise(q_data_points=self.data_points)
+
+        # Then Expect: requesting points between data points linearly interpolates the width.
+        widths = np.sqrt(self.data_points[2])
+        expected = np.interp([0.15, 0.25], self.data_points[0], widths)
+        assert np.allclose(resolution_function.smearing([0.15, 0.25]), expected)
 
     def test_as_dict(self):
         # When
