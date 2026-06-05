@@ -150,3 +150,13 @@ HTML_FIGURES_TEMPLATE = """
 <br>
 <img src="path_fit_experiment_plot" alt="Fit experiment plot" width="640" height="480">
 """
+
+# Interactive figures for HTML reports. The plotly ``<div>``s carry their own
+# JavaScript so the report stays interactive (zoom, pan, hover) when opened in a
+# browser. The plotly.js library is embedded inline in the first figure, which
+# keeps the saved report self-contained and working offline.
+HTML_INTERACTIVE_FIGURES_TEMPLATE = """
+sld_plot_div
+<br>
+fit_experiment_plot_div
+"""
