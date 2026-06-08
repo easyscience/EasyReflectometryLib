@@ -6,16 +6,34 @@ import warnings
 from types import SimpleNamespace
 
 import pytest
+import scipp as sc
 from orsopy.fileio import orso
 
 import easyreflectometry
 from easyreflectometry.orso_utils import LoadOrso
+from easyreflectometry.orso_utils import PolarizedData
+from easyreflectometry.orso_utils import _classify_polarization
+from easyreflectometry.orso_utils import _get_polarization
 from easyreflectometry.orso_utils import _get_sld_values
+from easyreflectometry.orso_utils import _normalize_polarization
+from easyreflectometry.orso_utils import _spin_from_data_set
 from easyreflectometry.orso_utils import load_data_from_orso_file
 from easyreflectometry.orso_utils import load_orso_data
 from easyreflectometry.orso_utils import load_orso_model
+from easyreflectometry.orso_utils import load_polarized_orso_data
 
 PATH_STATIC = os.path.join(os.path.dirname(easyreflectometry.__file__), '..', '..', 'tests', '_static')
+
+
+def _static(name):
+    return os.path.join(PATH_STATIC, name)
+
+
+def _parsed(name):
+    """Parse a fixture, suppressing orsopy's ORSOSchemaWarning for raw 'p' codes."""
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        return orso.load_orso(_static(name))
 
 
 @pytest.fixture
@@ -174,3 +192,182 @@ def test_load_orso_model_returns_none_and_warns_when_no_sample_model():
     assert result is None
     assert len(w) == 1
     assert 'does not contain a sample model definition' in str(w[0].message)
+
+
+# ---------------------------------------------------------------------------
+# Polarization helpers
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    'raw, expected',
+    [
+        (None, None),
+        ('unpolarized', 'un'),
+        ('un', 'un'),
+        ('po', 'po'),
+        ('mo', 'mo'),
+        ('p', 'p'),
+        ('m', 'm'),
+        ('pp', 'pp'),
+        ('vector', 'vector'),
+        ('o', None),  # bare 'o' is unknown, never canonicalized to 'oo'
+        ('junk', None),
+        (SimpleNamespace(value='po'), 'po'),  # enum-like
+    ],
+)
+def test_normalize_polarization(raw, expected):
+    assert _normalize_polarization(raw) == expected
+
+
+@pytest.mark.parametrize(
+    'label, expected',
+    [
+        ('spin-up', 'up'),
+        ('spin_up', 'up'),
+        ('spin down', 'down'),
+        ('up', 'up'),
+        ('down', 'down'),
+        ('+', 'up'),
+        ('-', 'down'),
+        ('spin_three', None),
+        (None, None),
+    ],
+)
+def test_spin_from_data_set(label, expected):
+    assert _spin_from_data_set(label) == expected
+
+
+def test_get_polarization_handles_missing_sections():
+    # No measurement attribute at all -> None, no exception.
+    o = SimpleNamespace(info=SimpleNamespace(data_source=SimpleNamespace()))
+    assert _get_polarization(o) is None
+    # instrument_settings present but no polarization -> None.
+    o = SimpleNamespace(
+        info=SimpleNamespace(
+            data_source=SimpleNamespace(measurement=SimpleNamespace(instrument_settings=SimpleNamespace(polarization=None)))
+        )
+    )
+    assert _get_polarization(o) is None
+
+
+# ---------------------------------------------------------------------------
+# Classification and polarization-aware loading
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    'fixture, expected',
+    [
+        ('example.ort', 'unpolarized'),
+        ('Ni_example.ort', 'unpolarized'),
+        ('NOB_reflectivity_polarized.ort', 'half_polarized'),
+        ('test_example2.ort', 'half_polarized'),
+        ('test_example3.ort', 'half_polarized'),
+    ],
+)
+def test_classify_polarization(fixture, expected):
+    assert _classify_polarization(_parsed(fixture)) == expected
+
+
+def test_unpolarized_returns_plain_datagroup():
+    result = load_polarized_orso_data(_parsed('Ni_example.ort'))
+    assert isinstance(result, sc.DataGroup)
+    assert not isinstance(result, PolarizedData)
+
+
+def test_resolved_polarized_enum_codes():
+    """NOB: po/mo enum codes, hyphen labels -> resolved up/down."""
+    result = load_polarized_orso_data(_parsed('NOB_reflectivity_polarized.ort'))
+    assert isinstance(result, PolarizedData)
+    assert result.spin_by_key == {'spin-up': 'up', 'spin-down': 'down'}
+    assert isinstance(result.raw, sc.DataGroup)
+    assert set(result.spin_channels) == {'spin-up', 'spin-down'}
+
+
+def test_resolved_polarized_raw_p_codes():
+    """Raw 'p' files resolve spin from data_set labels (p never implies up)."""
+    result = load_polarized_orso_data(_parsed('test_example2.ort'))
+    assert isinstance(result, PolarizedData)
+    assert result.spin_by_key == {'spin_up': 'up', 'spin_down': 'down'}
+
+
+def test_unresolved_third_label_falls_back_with_warning():
+    """test_example3 has an unrecognized 'spin_three' label -> fallback + warn."""
+    with pytest.warns(UserWarning, match='Could not determine the spin direction'):
+        result = load_polarized_orso_data(_parsed('test_example3.ort'))
+    assert isinstance(result, sc.DataGroup)
+    assert not isinstance(result, PolarizedData)
+    # All three datasets are preserved in the fallback group.
+    assert len(result['data']) == 3
+
+
+def test_single_channel_half_polarized_warns():
+    """test_example1: one spin-up dataset -> PolarizedData + 'no companion' warning."""
+    with pytest.warns(UserWarning, match='Only one spin direction'):
+        result = load_polarized_orso_data(_parsed('test_example1.ort'))
+    assert isinstance(result, PolarizedData)
+    assert result.spin_by_key == {'spin_up': 'up'}
+
+
+def test_contradiction_between_code_and_label_falls_back():
+    parsed = _parsed('NOB_reflectivity_polarized.ort')  # po+spin-up, mo+spin-down
+    parsed[0].info.data_set = 'spin-down'  # po now claims spin-down -> contradiction
+    parsed[1].info.data_set = 'spin-up'
+    with pytest.warns(UserWarning, match='contradict'):
+        result = load_polarized_orso_data(parsed)
+    assert isinstance(result, sc.DataGroup)
+
+
+def test_missing_data_set_falls_back_no_code_inference():
+    """po/mo without data_set must NOT infer spin from the code -> fallback."""
+    parsed = _parsed('NOB_reflectivity_polarized.ort')
+    parsed[0].info.data_set = None
+    parsed[1].info.data_set = None
+    with pytest.warns(UserWarning, match='Could not determine'):
+        result = load_polarized_orso_data(parsed)
+    assert isinstance(result, sc.DataGroup)
+
+
+def test_unsupported_state_falls_back_preserving_all_datasets():
+    parsed = _parsed('NOB_reflectivity_polarized.ort')
+    parsed[0].info.data_source.measurement.instrument_settings.polarization = 'pp'
+    parsed[1].info.data_source.measurement.instrument_settings.polarization = 'mm'
+    with pytest.warns(UserWarning, match='not yet supported'):
+        result = load_polarized_orso_data(parsed)
+    assert isinstance(result, sc.DataGroup)
+    assert len(result['data']) == 2
+
+
+def test_mixed_un_and_polarized_is_unsupported():
+    parsed = _parsed('NOB_reflectivity_polarized.ort')
+    parsed[0].info.data_source.measurement.instrument_settings.polarization = 'unpolarized'
+    assert _classify_polarization(parsed) == 'unsupported'
+    with pytest.warns(UserWarning, match='unsupported mix'):
+        result = load_polarized_orso_data(parsed)
+    assert isinstance(result, sc.DataGroup)
+
+
+def test_load_orso_data_disambiguates_duplicate_data_set_keys():
+    """Repeated data_set labels must not overwrite each other (review #5)."""
+    parsed = _parsed('NOB_reflectivity_polarized.ort')
+    parsed[0].info.data_set = 'spin-up'
+    parsed[1].info.data_set = 'spin-up'
+    data_group = load_orso_data(parsed)
+    assert set(data_group['data']) == {'R_spin-up', 'R_spin-up_1'}
+    assert set(data_group['coords']) == {'Qz_spin-up', 'Qz_spin-up_1'}
+
+
+def test_load_orso_data_tags_spin_and_polarization_in_attrs():
+    data_group = load_orso_data(_parsed('NOB_reflectivity_polarized.ort'))
+    up = data_group['attrs']['R_spin-up']
+    assert up['polarization'].value == 'half_polarized'
+    assert up['spin'].value == 'up'
+    assert data_group['attrs']['R_spin-down']['spin'].value == 'down'
+
+
+def test_loadorso_return_type_is_stable_for_polarized_file():
+    """LoadOrso must still return (Sample-or-None, sc.DataGroup), never PolarizedData."""
+    sample, data = LoadOrso(_parsed('NOB_reflectivity_polarized.ort'))
+    assert isinstance(data, sc.DataGroup)
+    assert not isinstance(data, PolarizedData)

@@ -27,6 +27,25 @@ def load(fname: Union[TextIO, str]) -> sc.DataGroup:
         return _load_txt(fname)
 
 
+def load_polarized(fname: Union[TextIO, str]):
+    """Polarization-aware load of an ORSO ``.ort`` file.
+
+    Returns a ``PolarizedData`` container for a resolved half-polarized file, or
+    a plain ``sc.DataGroup`` otherwise (unpolarized / unsupported / unresolved).
+
+    Parameters
+    ----------
+    fname : Union[TextIO, str]
+        The file to be read.
+    """
+    from orsopy.fileio import orso
+
+    from easyreflectometry.orso_utils import load_polarized_orso_data
+
+    parsed = orso.load_orso(fname)
+    return load_polarized_orso_data(parsed)
+
+
 def load_as_dataset(fname: Union[TextIO, str]) -> DataSet1D:
     """Load data from an ORSO .ort file as a DataSet1D."""
     data_group = load(fname)

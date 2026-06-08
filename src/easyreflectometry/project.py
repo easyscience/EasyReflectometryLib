@@ -53,6 +53,7 @@ class Project:
         self._materials = MaterialCollection(populate_if_none=False, unique_name='project_materials')
         self._calculator = CalculatorFactory()
         self._experiments: Dict[DataGroup] = {}
+        self._experiment_polarization = None
         self._fitter: MultiFitter = None
         self._minimizer_selection: AvailableMinimizers = DEFAULT_MINIMIZER
         self._colors: list[str] = None
@@ -371,22 +372,52 @@ class Project:
         return [material.name for material in self._materials].index('D2O')
 
     def load_orso_file(self, path: Union[Path, str]) -> None:
-        """Load an ORSO file and optionally create a model and a data from it."""
-        from easyreflectometry.orso_utils import LoadOrso
+        """Load an ORSO file and optionally create a model and a data from it.
 
-        model, data = LoadOrso(path)
+        Polarization-aware: a resolved half-polarized file stashes a
+        :class:`~easyreflectometry.orso_utils.PolarizedData` container on
+        :attr:`experiment_polarization`. An unresolved or unsupported polarized
+        file falls back to the standard multi-experiment load
+        (:meth:`load_all_experiments_from_file`), so every dataset is preserved.
+        """
+        from orsopy.fileio import orso as orso_io
+
+        from easyreflectometry.orso_utils import LoadOrso
+        from easyreflectometry.orso_utils import PolarizedData
+        from easyreflectometry.orso_utils import _classify_polarization
+        from easyreflectometry.orso_utils import load_polarized_orso_data
+
+        parsed = orso_io.load_orso(str(path))
+        model, data = LoadOrso(parsed)
         if model is not None:
             if isinstance(model, Sample):
                 model = Model(sample=model, name=model.name)
             self.models = ModelCollection([model])
         else:
             self.default_model()
+
+        self._experiment_polarization = None
+        if _classify_polarization(parsed) in ('half_polarized', 'unsupported'):
+            result = load_polarized_orso_data(parsed)
+            if isinstance(result, PolarizedData):
+                self._experiment_polarization = result
+                data = result.raw
+            else:
+                # Unresolved / unsupported polarized file: register every dataset
+                # as an independent experiment so none is lost.
+                self.load_all_experiments_from_file(path)
+                return
+
         if data is not None:
             self._experiments[0] = data
             self._experiments[0].name = 'Experiment from ORSO'
             self._experiments[0].model = self.models[0]
             self._with_experiments = True
-        pass
+
+    @property
+    def experiment_polarization(self):
+        """The :class:`PolarizedData` container for the last polarized ORSO load, or None."""
+        return self._experiment_polarization
 
     def set_sample_from_orso(self, sample: Sample) -> None:
         """Replace the current project model collection with a single model built from an ORSO-parsed sample.

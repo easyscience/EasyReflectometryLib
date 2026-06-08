@@ -3,6 +3,8 @@
 
 import logging
 import warnings
+from dataclasses import dataclass
+from typing import Optional
 
 import numpy as np
 import scipp as sc
@@ -220,29 +222,266 @@ def load_orso_data(orso_data) -> DataSet1D:
     data = {}
     coords = {}
     attrs = {}
+    # Tag the group with polarization classification and, when the file is a
+    # resolved half-polarized measurement, the per-dataset spin direction. These
+    # are in-band markers so consumers can read spin without the typed container.
+    classification = _classify_polarization(orso_data)
+    spins = _resolve_spins(orso_data) if classification == 'half_polarized' else None
+    used_names: dict = {}
     for i, o in enumerate(orso_data):
-        name = i
-        if o.info.data_set is not None:
-            name = o.info.data_set
+        base = o.info.data_set if o.info.data_set is not None else i
+        # Disambiguate repeated data_set labels so no dataset is silently
+        # overwritten (first use: <base>, repeats: <base>_1, <base>_2, ...).
+        name = _unique_name(base, used_names)
+        dim = f'{o.info.columns[0].name}_{name}'
         coords[f'Qz_{name}'] = sc.array(
-            dims=[f'{o.info.columns[0].name}_{name}'],
+            dims=[dim],
             values=o.data[:, 0],
             variances=np.square(o.data[:, 3]),
             unit=sc.Unit(o.info.columns[0].unit),
         )
         try:
             data[f'R_{name}'] = sc.array(
-                dims=[f'{o.info.columns[0].name}_{name}'],
+                dims=[dim],
                 values=o.data[:, 1],
                 variances=np.square(o.data[:, 2]),
                 unit=sc.Unit(o.info.columns[1].unit),
             )
         except TypeError:
             data[f'R_{name}'] = sc.array(
-                dims=[f'{o.info.columns[0].name}_{name}'],
+                dims=[dim],
                 values=o.data[:, 1],
                 variances=np.square(o.data[:, 2]),
             )
-        attrs[f'R_{name}'] = {'orso_header': sc.scalar(Header.asdict(o.info))}
+        dataset_attrs = {
+            'orso_header': sc.scalar(Header.asdict(o.info)),
+            'polarization': sc.scalar(classification),
+        }
+        if spins is not None:
+            dataset_attrs['spin'] = sc.scalar(spins[i])
+        attrs[f'R_{name}'] = dataset_attrs
     data_group = sc.DataGroup(data=data, coords=coords, attrs=attrs)
     return data_group
+
+
+def _unique_name(base, used_names: dict) -> str:
+    """Return a unique string key for *base*, suffixing repeats with _1, _2, ..."""
+    key = str(base)
+    count = used_names.get(key, 0)
+    used_names[key] = count + 1
+    return key if count == 0 else f'{key}_{count}'
+
+
+# ---------------------------------------------------------------------------
+# Polarization handling
+# ---------------------------------------------------------------------------
+
+# ORSO-allowed polarization states. ``p`` / ``m`` are not in this list but appear
+# in real files as a legacy polarized-presence hint (they carry no spin meaning).
+_UNPOLARIZED = {'un'}
+_HALF_POLARIZED = {'po', 'mo', 'p', 'm'}
+
+
+@dataclass
+class PolarizedData:
+    """Typed view of a resolved half-polarized ORSO load.
+
+    Attributes
+    ----------
+    polarization:
+        Canonical classification, e.g. ``'half_polarized'``.
+    spin_channels:
+        Mapping of dataset label -> single-dataset ``sc.DataGroup``.
+    spin_by_key:
+        Mapping of dataset label -> ``'up'`` / ``'down'``.
+    raw:
+        The full flat ``sc.DataGroup`` (all channels), for consumers that only
+        understand the legacy structure.
+    """
+
+    polarization: str
+    spin_channels: dict
+    spin_by_key: dict
+    raw: sc.DataGroup
+
+
+def _get_polarization(o) -> Optional[str]:
+    """Per-dataset polarization value as a raw string, or None if absent.
+
+    Tolerant of a missing ``measurement`` / ``instrument_settings`` section and
+    of the value being an orsopy enum (``.value``) or a raw string.
+    """
+    try:
+        raw = o.info.data_source.measurement.instrument_settings.polarization
+    except AttributeError:
+        return None
+    if raw is None:
+        return None
+    return raw.value if hasattr(raw, 'value') else str(raw)
+
+
+def _normalize_polarization(raw) -> Optional[str]:
+    """Normalize a polarization value to a canonical code, or None if unknown.
+
+    Allowed vocabulary: ``un po mo op om pp pm mp mm vector``. Single-letter
+    ``p`` / ``m`` are kept as legacy presence hints (never expanded to po/mo).
+    A bare ``o`` (and anything else) is unknown -> None (no invented ``oo``).
+    """
+    if raw is None:
+        return None
+    if hasattr(raw, 'value'):
+        raw = raw.value
+    code = str(raw).strip().lower()
+    if code.startswith('un'):
+        return 'un'
+    if code == 'vector':
+        return 'vector'
+    if code in {'po', 'mo', 'op', 'om', 'pp', 'pm', 'mp', 'mm'}:
+        return code
+    if code in {'p', 'm'}:
+        return code
+    return None
+
+
+def _classify_polarization(orso_data) -> str:
+    """Classify a file as 'unpolarized', 'half_polarized', or 'unsupported'."""
+    codes = []
+    for o in orso_data:
+        norm = _normalize_polarization(_get_polarization(o))
+        # Absent / unknown metadata counts as unpolarized for classification.
+        codes.append(norm if norm is not None else 'un')
+    if all(c in _UNPOLARIZED for c in codes):
+        return 'unpolarized'
+    if all(c in _HALF_POLARIZED for c in codes):
+        return 'half_polarized'
+    return 'unsupported'
+
+
+def _spin_from_data_set(label) -> Optional[str]:
+    """Map a ``data_set`` label to 'up' / 'down', or None if unrecognized."""
+    if label is None:
+        return None
+    text = str(label).strip().lower()
+    # Bare sign characters must be matched before separator normalization, which
+    # would otherwise consume the '-' used as a hyphen in e.g. 'spin-down'.
+    if text == '+':
+        return 'up'
+    if text == '-':
+        return 'down'
+    for sep in ('-', '_'):
+        text = text.replace(sep, ' ')
+    text = ' '.join(text.split())
+    if text.startswith('spin '):
+        text = text[len('spin ') :]
+    if text in {'up', 'u', 'plus'}:
+        return 'up'
+    if text in {'down', 'd', 'minus'}:
+        return 'down'
+    return None
+
+
+def _spin_from_polarization_code(code) -> Optional[str]:
+    """Expected spin implied by a polarization code (cross-check only).
+
+    Only genuine two-letter incident codes carry spin meaning. Legacy ``p`` /
+    ``m`` and everything else return None (no spin meaning).
+    """
+    if code in {'po', 'pp', 'pm'}:
+        return 'up'
+    if code in {'mo', 'mp', 'mm'}:
+        return 'down'
+    return None
+
+
+def _resolve_spins_with_reason(orso_data):
+    """Resolve a spin per dataset from ``data_set`` metadata.
+
+    Returns ``(spins, None)`` when every dataset has a recognized, unique
+    ``data_set`` spin label that does not contradict its polarization code;
+    otherwise ``(None, reason)``.
+    """
+    spins = []
+    seen = set()
+    for o in orso_data:
+        label = o.info.data_set
+        spin = _spin_from_data_set(label)
+        if spin is None:
+            return None, f'unrecognized data_set label {label!r}'
+        identity = str(label).strip().lower()
+        if identity in seen:
+            return None, f'duplicate data_set label {label!r}'
+        seen.add(identity)
+        expected = _spin_from_polarization_code(_normalize_polarization(_get_polarization(o)))
+        if expected is not None and expected != spin:
+            return None, f'polarization code contradicts data_set spin {spin!r}'
+        spins.append(spin)
+    return spins, None
+
+
+def _resolve_spins(orso_data) -> Optional[list]:
+    """Spin per dataset, or None if the assignment is not unequivocal."""
+    spins, _reason = _resolve_spins_with_reason(orso_data)
+    return spins
+
+
+def load_polarized_orso_data(orso_data):
+    """Polarization-aware load.
+
+    Returns a :class:`PolarizedData` for a resolved half-polarized file, and a
+    plain ``sc.DataGroup`` otherwise (unpolarized, unsupported, or unresolved
+    fallback). Emits a ``UserWarning`` whenever it falls back or when only a
+    single spin channel is present.
+    """
+    orso_obj = _coerce_orso_object(orso_data)
+    classification = _classify_polarization(orso_obj)
+
+    if classification == 'unpolarized':
+        return load_orso_data(orso_obj)
+
+    if classification == 'unsupported':
+        codes_present = sorted({_normalize_polarization(_get_polarization(o)) or 'unknown' for o in orso_obj})
+        unsupported_codes = [c for c in codes_present if c not in (_UNPOLARIZED | _HALF_POLARIZED)]
+        if unsupported_codes:
+            detail = f'state(s) {unsupported_codes} not yet supported'
+        else:
+            # Every code is individually supported, but the file mixes classes
+            # (e.g. unpolarized + polarized) which we cannot resolve as one set.
+            detail = f'unsupported mix of states {codes_present}'
+        warnings.warn(
+            f'ORSO polarization {detail}; loading all datasets without spin assignment.',
+            UserWarning,
+            stacklevel=2,
+        )
+        return load_orso_data(orso_obj)
+
+    # half_polarized
+    spins, reason = _resolve_spins_with_reason(orso_obj)
+    if spins is None:
+        warnings.warn(
+            f'Could not determine the spin direction for all datasets ({reason}); '
+            'loading as a standard multi-dataset experiment.',
+            UserWarning,
+            stacklevel=2,
+        )
+        return load_orso_data(orso_obj)
+
+    spin_channels = {}
+    spin_by_key = {}
+    for o, spin in zip(orso_obj, spins):
+        key = str(o.info.data_set)
+        spin_channels[key] = load_orso_data([o])
+        spin_by_key[key] = spin
+
+    if len(orso_obj) == 1:
+        warnings.warn(
+            f'Only one spin direction ({spins[0]!r}) present; no companion channel.',
+            UserWarning,
+            stacklevel=2,
+        )
+
+    return PolarizedData(
+        polarization=classification,
+        spin_channels=spin_channels,
+        spin_by_key=spin_by_key,
+        raw=load_orso_data(orso_obj),
+    )
