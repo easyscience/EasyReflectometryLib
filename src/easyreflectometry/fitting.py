@@ -353,7 +353,7 @@ class MultiFitter:
         ]
         return result
 
-    def sample(
+    def mcmc_sample(
         self,
         data: sc.DataGroup,
         samples: int = 10000,
@@ -393,8 +393,8 @@ class MultiFitter:
             sampling.  Forwarded to the core MultiFitter.
         :param abort_test: Optional callback that returns ``True`` to signal
             that sampling should be aborted.
-        :return: Dictionary with keys ``'draws'``, ``'param_names'``, ``'state'``,
-            and ``'logp'``.
+        :return: Dictionary with keys ``'draws'``, ``'param_names'``,
+            ``'internal_bumps_object'``, and ``'logp'``.
         :raises RuntimeError: If the current minimizer is not a BUMPS instance.
         :raises ValueError: If ``n_workers`` is not None and less than 1.
         """
@@ -444,7 +444,7 @@ class MultiFitter:
         }
         if n_workers is not None:
             core_sample_kwargs['n_workers'] = n_workers
-        return self.easy_science_multi_fitter.sample(**core_sample_kwargs)
+        return self.easy_science_multi_fitter.mcmc_sample(**core_sample_kwargs)
 
     @property
     def chi2(self) -> float | None:
