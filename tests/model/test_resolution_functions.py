@@ -6,6 +6,7 @@ import unittest
 import numpy as np
 
 from easyreflectometry.model.resolution_functions import DEFAULT_RESOLUTION_FWHM_PERCENTAGE
+from easyreflectometry.model.resolution_functions import SIGMA_TO_FWHM
 from easyreflectometry.model.resolution_functions import LinearSpline
 from easyreflectometry.model.resolution_functions import PercentageFwhm
 from easyreflectometry.model.resolution_functions import Pointwise
@@ -17,21 +18,22 @@ class TestPercentageFwhm(unittest.TestCase):
         # When
         resolution_function = PercentageFwhm(1.0)
 
-        # Then Expect
-        assert np.all(resolution_function.smearing([0, 2.5]) == np.array([1.0, 1.0]))
-        assert resolution_function.smearing([-100]) == np.array([1.0])
-        assert resolution_function.smearing([100]) == np.array([1.0])
+        # Then Expect: smearing() returns sigma = (constant / 100) * q / SIGMA_TO_FWHM
+        expected = (1.0 / 100.0) * np.array([0.0, 2.5]) / SIGMA_TO_FWHM
+        assert np.allclose(resolution_function.smearing([0, 2.5]), expected)
+        assert np.allclose(resolution_function.smearing([-100]), (1.0 / 100.0) * (-100.0) / SIGMA_TO_FWHM)
+        assert np.allclose(resolution_function.smearing([100]), (1.0 / 100.0) * 100.0 / SIGMA_TO_FWHM)
 
     def test_constructor_none(self):
         # When
         resolution_function = PercentageFwhm()
 
-        # Then Expect
-        assert np.all(
-            resolution_function.smearing([0, 2.5]) == [DEFAULT_RESOLUTION_FWHM_PERCENTAGE, DEFAULT_RESOLUTION_FWHM_PERCENTAGE]
-        )
-        assert resolution_function.smearing([-100]) == DEFAULT_RESOLUTION_FWHM_PERCENTAGE
-        assert resolution_function.smearing([100]) == DEFAULT_RESOLUTION_FWHM_PERCENTAGE
+        # Then Expect: defaults to DEFAULT_RESOLUTION_FWHM_PERCENTAGE, returned as sigma
+        c = DEFAULT_RESOLUTION_FWHM_PERCENTAGE
+        expected = (c / 100.0) * np.array([0.0, 2.5]) / SIGMA_TO_FWHM
+        assert np.allclose(resolution_function.smearing([0, 2.5]), expected)
+        assert np.allclose(resolution_function.smearing([-100]), (c / 100.0) * (-100.0) / SIGMA_TO_FWHM)
+        assert np.allclose(resolution_function.smearing([100]), (c / 100.0) * 100.0 / SIGMA_TO_FWHM)
 
     def test_as_dict(self):
         # When
@@ -57,10 +59,10 @@ class TestLinearSpline(unittest.TestCase):
         # When
         resolution_function = LinearSpline(q_data_points=[0, 10], fwhm_values=[5, 10])
 
-        # Then Expect
-        assert np.all(resolution_function.smearing([0, 2.5]) == np.array([5, 6.25]))
-        assert resolution_function.smearing([-100]) == np.array([5.0])
-        assert resolution_function.smearing([100]) == np.array([10.0])
+        # Then Expect: smearing() returns sigma (FWHM knots converted to sigma)
+        assert np.allclose(resolution_function.smearing([0, 2.5]), np.array([5, 6.25]) / SIGMA_TO_FWHM)
+        assert np.allclose(resolution_function.smearing([-100]), np.array([5.0]) / SIGMA_TO_FWHM)
+        assert np.allclose(resolution_function.smearing([100]), np.array([10.0]) / SIGMA_TO_FWHM)
 
     def test_as_dict(self):
         # When

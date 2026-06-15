@@ -8,6 +8,7 @@ import numpy as np
 from refnx import reflect
 
 from easyreflectometry.model import PercentageFwhm
+from easyreflectometry.model.resolution_functions import SIGMA_TO_FWHM
 
 from ..wrapper_base import WrapperBase
 
@@ -191,9 +192,12 @@ class RefnxWrapper(WrapperBase):
 
         dq_vector = self._resolution_function.smearing(q_array)
         if isinstance(self._resolution_function, PercentageFwhm):
-            # FWHM Percentage resolution is constant given as
-            # For a constant resolution percentage refnx supports to pass a scalar value rather than a vector
-            dq_vector = dq_vector[0]
+            # refnx interprets a scalar x_err as a constant dq/q (FWHM percentage),
+            # so pass the percentage directly rather than a per-point vector.
+            dq_vector = self._resolution_function.constant
+        else:
+            # smearing() returns sigma; refnx expects the FWHM at each point.
+            dq_vector = dq_vector * SIGMA_TO_FWHM
 
         return model(x=q_array, x_err=dq_vector)
 

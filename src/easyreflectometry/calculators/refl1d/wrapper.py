@@ -8,8 +8,6 @@ import numpy as np
 from refl1d import names
 from refl1d.sample.layers import Repeat
 
-from easyreflectometry.model import PercentageFwhm
-
 from ..wrapper_base import WrapperBase
 
 RESOLUTION_PADDING = 3.5
@@ -205,11 +203,8 @@ class Refl1dWrapper(WrapperBase):
             Reflectivity calculated at q.
         """
         sample = _build_sample(self.storage, model_name)
+        # smearing() returns sigma, which is exactly what refl1d's probe.dQ expects.
         dq_array = self._resolution_function.smearing(q_array)
-
-        if isinstance(self._resolution_function, PercentageFwhm):
-            # Get percentage of Q and change from sigma to FWHM
-            dq_array = dq_array * q_array / 100 / (2 * np.sqrt(2 * np.log(2)))
 
         if not self._magnetism:
             probe = _get_probe(
