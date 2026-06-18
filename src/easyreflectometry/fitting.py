@@ -10,6 +10,7 @@ import numpy as np
 import scipp as sc
 from easyscience.fitting import AvailableMinimizers
 from easyscience.fitting import FitResults
+from easyscience.fitting import Sampler
 from easyscience.fitting.multi_fitter import MultiFitter as EasyScienceMultiFitter
 
 from easyreflectometry.data import DataSet1D
@@ -419,14 +420,22 @@ class MultiFitter:
             y.append(y_eff)
             dy.append(weights)
 
-        # Delegate the actual BUMPS/DREAM sampling to the core MultiFitter
+        # Delegate the actual BUMPS/DREAM sampling to the core ``Sampler``.
+        # The core API moved from ``MultiFitter.mcmc_sample()`` to a dedicated
+        # ``Sampler`` class: construct it with the configured fitter and the
+        # bound data, then call ``sample()``. ``Sampler`` handles the
+        # multi-dataset reshaping internally.
         sampler_kwargs = {}
         if initializer is not None:
             sampler_kwargs['init'] = initializer
-        return self.easy_science_multi_fitter.mcmc_sample(
+
+        sampler = Sampler(
+            self.easy_science_multi_fitter,
             x=x,
             y=y,
             weights=dy,
+        )
+        results = sampler.sample(
             samples=samples,
             burn=burn,
             thin=thin,
@@ -435,6 +444,12 @@ class MultiFitter:
             progress_callback=progress_callback,
             abort_test=abort_test,
         )
+        return {
+            'draws': results.draws,
+            'param_names': results.param_names,
+            'state': results.state,
+            'logp': results.logp,
+        }
 
     @property
     def chi2(self) -> float | None:

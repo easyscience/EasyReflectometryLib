@@ -4,6 +4,7 @@
 
 import os
 from unittest.mock import MagicMock
+from unittest.mock import patch
 
 import numpy as np
 import pytest
@@ -808,6 +809,44 @@ def test_fit_per_call_objective_override():
 # ---------------------------------------------------------------------------
 
 
+def _fake_sampling_results(draws=None, param_names=None, state=None, logp=None):
+    """Build a stand-in for the core ``SamplingResults`` returned by ``Sampler.sample``."""
+    res = MagicMock()
+    res.draws = np.ones((10, 2)) if draws is None else draws
+    res.param_names = ['a', 'b'] if param_names is None else param_names
+    res.state = state
+    res.logp = logp
+    return res
+
+
+def _patch_sampler(capture, results=None):
+    """Patch ``easyreflectometry.fitting.Sampler`` and capture its call args.
+
+    Records the constructor's ``(x, y, weights)`` and the ``sample()``
+    hyperparameters into the ``capture`` dict, and returns ``results`` (a
+    fake ``SamplingResults``) from ``sample()``.
+    """
+    results = results if results is not None else _fake_sampling_results()
+
+    def _ctor(fitter, *, x, y, weights, **kwargs):
+        capture['fitter'] = fitter
+        capture['x'] = x
+        capture['y'] = y
+        capture['weights'] = weights
+        capture.update(kwargs)  # e.g. sampler_kwargs if passed to the ctor
+        instance = MagicMock()
+
+        def _sample(**sample_kwargs):
+            capture.update(sample_kwargs)
+            return results
+
+        instance.sample = MagicMock(side_effect=_sample)
+        capture['instance'] = instance
+        return instance
+
+    return patch('easyreflectometry.fitting.Sampler', side_effect=_ctor)
+
+
 class TestMCMCSampleRequiresBumpsEngine:
     """mcmc_sample() must raise when the core engine is not a BUMPS instance."""
 
@@ -824,138 +863,129 @@ class TestMCMCSampleRequiresBumpsEngine:
         with pytest.raises(RuntimeError, match='Bayesian sampling requires a BUMPS minimizer'):
             fitter.mcmc_sample(data)
 
-    def test_wrapper_check_runs_before_core_mcmc_sample(self):
-        """The wrapper-level guard must fire before delegating to the core sampler.
+    def test_wrapper_check_runs_before_sampler(self):
+        """The wrapper-level guard must fire before constructing the core ``Sampler``.
 
-        Replace the core ``mcmc_sample`` with a sentinel that would record any call;
-        the guard should raise without invoking it.
+        Patch ``Sampler`` with a sentinel that would record any instantiation;
+        the guard should raise without ever building it.
         """
         model = Model()
         model.interface = CalculatorFactory()
         fitter = MultiFitter(model)  # default minimizer is LMFit, not BUMPS
 
-        core_called = {'count': 0}
-
-        def _should_not_be_called(**_kwargs):
-            core_called['count'] += 1
-            return {'draws': np.empty((0, 0)), 'param_names': [], 'state': None, 'logp': None}
-
-        fitter.easy_science_multi_fitter.mcmc_sample = _should_not_be_called
+        capture = {}
 
         data = sc.DataGroup({
             'coords': {'Qz_0': sc.array(dims=['Qz_0'], values=np.linspace(0.01, 0.3, 10))},
             'data': {'R_0': sc.array(dims=['Qz_0'], values=np.ones(10), variances=np.ones(10) * 0.01)},
         })
 
-        with pytest.raises(RuntimeError, match='Bayesian sampling requires a BUMPS minimizer'):
-            fitter.mcmc_sample(data)
-        assert core_called['count'] == 0
+        with _patch_sampler(capture) as sampler_cls:
+            with pytest.raises(RuntimeError, match='Bayesian sampling requires a BUMPS minimizer'):
+                fitter.mcmc_sample(data)
+        sampler_cls.assert_not_called()
 
 
 class TestMCMCSampleBasic:
     """Basic mcmc_sample() dispatch and return-value forwarding."""
 
-    def test_returns_core_result_dict(self):
-        """mcmc_sample() returns whatever the core MultiFitter.mcmc_sample() returns."""
+    def test_returns_result_dict_from_sampler(self):
+        """mcmc_sample() returns a dict built from the core Sampler's SamplingResults."""
         model = Model()
         model.interface = CalculatorFactory()
         fitter = MultiFitter(model)
 
-        # Mock the core MultiFitter.mcmc_sample to return a known dict
-        fake_result = {'draws': np.ones((10, 2)), 'param_names': ['a', 'b'], 'state': None, 'logp': None}
         fitter.easy_science_multi_fitter = MagicMock()
         fitter.easy_science_multi_fitter.minimizer.package = 'bumps'
-        fitter.easy_science_multi_fitter.mcmc_sample = MagicMock(return_value=fake_result)
+
+        draws = np.ones((10, 2))
+        sentinel_state = object()
+        logp = np.zeros(10)
+        results = _fake_sampling_results(draws=draws, param_names=['a', 'b'], state=sentinel_state, logp=logp)
+
+        capture = {}
 
         data = sc.DataGroup({
             'coords': {'Qz_0': sc.array(dims=['Qz_0'], values=np.linspace(0.01, 0.3, 10))},
             'data': {'R_0': sc.array(dims=['Qz_0'], values=np.ones(10), variances=np.ones(10) * 0.01)},
         })
 
-        result = fitter.mcmc_sample(data, samples=100, burn=20, thin=2, population=5)
-        assert result is fake_result
+        with _patch_sampler(capture, results=results):
+            result = fitter.mcmc_sample(data, samples=100, burn=20, thin=2, population=5)
 
-    def test_forwards_hyperparams_to_core(self):
-        """Samples, burn, thin, population, chains are forwarded to core."""
+        # The fitter passed to Sampler is the core MultiFitter
+        assert capture['fitter'] is fitter.easy_science_multi_fitter
+        assert result['draws'] is draws
+        assert result['param_names'] == ['a', 'b']
+        assert result['state'] is sentinel_state
+        assert result['logp'] is logp
+
+    def test_forwards_hyperparams_to_sampler(self):
+        """Samples, burn, thin, population are forwarded to Sampler.sample()."""
         model = Model()
         model.interface = CalculatorFactory()
         fitter = MultiFitter(model)
 
-        captured = {}
-
-        def _fake_mcmc_sample(*, x, y, weights, samples, burn, thin, population, **kwargs):
-            captured['samples'] = samples
-            captured['burn'] = burn
-            captured['thin'] = thin
-            captured['population'] = population
-            return {'draws': np.ones((10, 2)), 'param_names': ['a', 'b'], 'state': None, 'logp': None}
-
         fitter.easy_science_multi_fitter = MagicMock()
         fitter.easy_science_multi_fitter.minimizer.package = 'bumps'
-        fitter.easy_science_multi_fitter.mcmc_sample = MagicMock(side_effect=_fake_mcmc_sample)
+
+        capture = {}
 
         data = sc.DataGroup({
             'coords': {'Qz_0': sc.array(dims=['Qz_0'], values=np.linspace(0.01, 0.3, 10))},
             'data': {'R_0': sc.array(dims=['Qz_0'], values=np.ones(10), variances=np.ones(10) * 0.01)},
         })
 
-        fitter.mcmc_sample(data, samples=500, burn=100, thin=5, population=8)
-        assert captured['samples'] == 500
-        assert captured['burn'] == 100
-        assert captured['thin'] == 5
-        assert captured['population'] == 8
+        with _patch_sampler(capture):
+            fitter.mcmc_sample(data, samples=500, burn=100, thin=5, population=8)
+        assert capture['samples'] == 500
+        assert capture['burn'] == 100
+        assert capture['thin'] == 5
+        assert capture['population'] == 8
 
-    def test_forwards_population_to_core(self):
-        """'population' argument is forwarded to core."""
+    def test_forwards_population_to_sampler(self):
+        """'population' argument is forwarded to Sampler.sample()."""
         model = Model()
         model.interface = CalculatorFactory()
         fitter = MultiFitter(model)
 
-        captured = {}
-
-        def _fake_mcmc_sample(*, x, y, weights, population, **kwargs):
-            captured['population'] = population
-            return {'draws': np.ones((10, 2)), 'param_names': ['a', 'b'], 'state': None, 'logp': None}
-
         fitter.easy_science_multi_fitter = MagicMock()
         fitter.easy_science_multi_fitter.minimizer.package = 'bumps'
-        fitter.easy_science_multi_fitter.mcmc_sample = MagicMock(side_effect=_fake_mcmc_sample)
+
+        capture = {}
 
         data = sc.DataGroup({
             'coords': {'Qz_0': sc.array(dims=['Qz_0'], values=np.linspace(0.01, 0.3, 10))},
             'data': {'R_0': sc.array(dims=['Qz_0'], values=np.ones(10), variances=np.ones(10) * 0.01)},
         })
 
-        fitter.mcmc_sample(data, samples=100, burn=20, thin=2, population=6)
-        assert captured['population'] == 6
+        with _patch_sampler(capture):
+            fitter.mcmc_sample(data, samples=100, burn=20, thin=2, population=6)
+        assert capture['population'] == 6
 
 
 class TestMCMCSampleInitializer:
     """initializer parameter is forwarded via sampler_kwargs."""
 
     def test_initializer_passed_as_sampler_kwargs_init(self):
-        """initializer='lhs' should be passed as sampler_kwargs={'init': 'lhs'} to core."""
+        """initializer='lhs' should be passed as sampler_kwargs={'init': 'lhs'} to Sampler.sample()."""
         model = Model()
         model.interface = CalculatorFactory()
         fitter = MultiFitter(model)
 
-        captured = {}
-
-        def _fake_mcmc_sample(*, sampler_kwargs, **kwargs):
-            captured['sampler_kwargs'] = sampler_kwargs
-            return {'draws': np.ones((10, 2)), 'param_names': ['a', 'b'], 'state': None, 'logp': None}
-
         fitter.easy_science_multi_fitter = MagicMock()
         fitter.easy_science_multi_fitter.minimizer.package = 'bumps'
-        fitter.easy_science_multi_fitter.mcmc_sample = MagicMock(side_effect=_fake_mcmc_sample)
+
+        capture = {}
 
         data = sc.DataGroup({
             'coords': {'Qz_0': sc.array(dims=['Qz_0'], values=np.linspace(0.01, 0.3, 10))},
             'data': {'R_0': sc.array(dims=['Qz_0'], values=np.ones(10), variances=np.ones(10) * 0.01)},
         })
 
-        fitter.mcmc_sample(data, samples=100, burn=20, thin=2, initializer='lhs')
-        assert captured['sampler_kwargs'] == {'init': 'lhs'}
+        with _patch_sampler(capture):
+            fitter.mcmc_sample(data, samples=100, burn=20, thin=2, initializer='lhs')
+        assert capture['sampler_kwargs'] == {'init': 'lhs'}
 
     def test_initializer_none_omits_sampler_kwargs(self):
         """When initializer is None, sampler_kwargs should be None, not an empty dict."""
@@ -963,23 +993,19 @@ class TestMCMCSampleInitializer:
         model.interface = CalculatorFactory()
         fitter = MultiFitter(model)
 
-        captured = {}
-
-        def _fake_mcmc_sample(*, sampler_kwargs, **kwargs):
-            captured['sampler_kwargs'] = sampler_kwargs
-            return {'draws': np.ones((10, 2)), 'param_names': ['a', 'b'], 'state': None, 'logp': None}
-
         fitter.easy_science_multi_fitter = MagicMock()
         fitter.easy_science_multi_fitter.minimizer.package = 'bumps'
-        fitter.easy_science_multi_fitter.mcmc_sample = MagicMock(side_effect=_fake_mcmc_sample)
+
+        capture = {}
 
         data = sc.DataGroup({
             'coords': {'Qz_0': sc.array(dims=['Qz_0'], values=np.linspace(0.01, 0.3, 10))},
             'data': {'R_0': sc.array(dims=['Qz_0'], values=np.ones(10), variances=np.ones(10) * 0.01)},
         })
 
-        fitter.mcmc_sample(data, samples=100, burn=20, thin=2)
-        assert captured['sampler_kwargs'] is None
+        with _patch_sampler(capture):
+            fitter.mcmc_sample(data, samples=100, burn=20, thin=2)
+        assert capture['sampler_kwargs'] is None
 
 
 class TestMCMCSampleZeroVariance:
@@ -994,17 +1020,10 @@ class TestMCMCSampleZeroVariance:
         # Use legacy_mask so zero-variance points are dropped
         fitter = MultiFitter(model, objective='legacy_mask')
 
-        captured = {}
-
-        def _fake_mcmc_sample(*, x, y, weights, **kwargs):
-            captured['x'] = x
-            captured['y'] = y
-            captured['weights'] = weights
-            return {'draws': np.ones((10, 2)), 'param_names': ['a', 'b'], 'state': None, 'logp': None}
+        capture = {}
 
         fitter.easy_science_multi_fitter = MagicMock()
         fitter.easy_science_multi_fitter.minimizer.package = 'bumps'
-        fitter.easy_science_multi_fitter.mcmc_sample = MagicMock(side_effect=_fake_mcmc_sample)
 
         qz = np.linspace(0.01, 0.3, 10)
         r = np.exp(-qz * 50)
@@ -1018,12 +1037,13 @@ class TestMCMCSampleZeroVariance:
 
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter('always')
-            fitter.mcmc_sample(data, samples=100, burn=20, thin=2)
+            with _patch_sampler(capture):
+                fitter.mcmc_sample(data, samples=100, burn=20, thin=2)
 
         # legacy_mask should drop the 2 zero-variance points
-        assert len(captured['x'][0]) == 8
-        assert len(captured['y'][0]) == 8
-        assert len(captured['weights'][0]) == 8
+        assert len(capture['x'][0]) == 8
+        assert len(capture['y'][0]) == 8
+        assert len(capture['weights'][0]) == 8
 
         mask_warnings = [str(ww.message) for ww in w if 'Masked' in str(ww.message)]
         assert len(mask_warnings) == 1
@@ -1037,16 +1057,10 @@ class TestMCMCSampleZeroVariance:
         model.interface = CalculatorFactory()
         fitter = MultiFitter(model, objective='legacy_mask')  # default
 
-        captured = {}
-
-        def _fake_mcmc_sample(*, x, y, weights, **kwargs):
-            captured['x'] = x
-            captured['y'] = y
-            return {'draws': np.ones((10, 2)), 'param_names': ['a', 'b'], 'state': None, 'logp': None}
+        capture = {}
 
         fitter.easy_science_multi_fitter = MagicMock()
         fitter.easy_science_multi_fitter.minimizer.package = 'bumps'
-        fitter.easy_science_multi_fitter.mcmc_sample = MagicMock(side_effect=_fake_mcmc_sample)
 
         qz = np.linspace(0.01, 0.3, 10)
         r = np.exp(-qz * 50)
@@ -1061,6 +1075,7 @@ class TestMCMCSampleZeroVariance:
         # Override to hybrid — should keep all 10 points
         with warnings.catch_warnings(record=True):
             warnings.simplefilter('always')
-            fitter.mcmc_sample(data, samples=100, burn=20, thin=2, objective='hybrid')
+            with _patch_sampler(capture):
+                fitter.mcmc_sample(data, samples=100, burn=20, thin=2, objective='hybrid')
 
-        assert len(captured['x'][0]) == 10  # all points kept (Mighell-substituted)
+        assert len(capture['x'][0]) == 10  # all points kept (Mighell-substituted)

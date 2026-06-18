@@ -1332,8 +1332,9 @@ def load_posterior(path: str, skip: int = 0) -> 'PosteriorResults':
     """Reload a trace saved by :func:`save_posterior` into a
     :class:`PosteriorResults`.
 
-    The returned object's ``sampler_state`` can be fed back into
-    ``MultiFitter.mcmc_sample(..., resume_state=...)`` to extend the chain.
+    The returned object's ``sampler_state`` can be fed back into the core
+    ``Sampler`` (via ``Sampler.load_state(...)`` / ``Sampler.extend(...)``)
+    to extend the chain.
 
     :param path: File path prefix used in :func:`save_posterior`.
     :type path: str
