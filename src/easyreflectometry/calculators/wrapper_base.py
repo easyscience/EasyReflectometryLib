@@ -318,3 +318,23 @@ class WrapperBase:
             The magnetism flag.
         """
         self._magnetism = magnetism
+
+    @property
+    def include_magnetism(self) -> bool:
+        """Whether magnetism is included by this engine."""
+        return self._magnetism
+
+    @include_magnetism.setter
+    def include_magnetism(self, magnetism: bool) -> None:
+        """Set the magnetism flag.
+
+        Engine wrappers that do not support magnetism override this setter to
+        raise ``NotImplementedError`` so the guard is enforced through the
+        public ``CalculatorBase.include_magnetism`` API (see issue #372).
+
+        Parameters
+        ----------
+        magnetism : bool
+            The magnetism flag.
+        """
+        self.magnetism = magnetism

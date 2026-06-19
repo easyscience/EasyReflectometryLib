@@ -9,7 +9,7 @@ from easyscience import global_object
 from easyscience.variable import Parameter
 
 from easyreflectometry.special.calculations import density_to_sld
-from easyreflectometry.special.calculations import molecular_weight
+from easyreflectometry.special.calculations import molecular_weight as compute_molecular_weight
 from easyreflectometry.special.calculations import neutron_scattering_length
 from easyreflectometry.utils import get_as_parameter
 
@@ -81,7 +81,7 @@ class MaterialDensity(Material):
 
         mw = get_as_parameter(
             name='molecular_weight',
-            value=molecular_weight(chemical_structure),
+            value=compute_molecular_weight(chemical_structure),
             default_dict=DEFAULTS,
             unique_name_prefix=f'{unique_name}_Mw',
         )
@@ -187,6 +187,10 @@ class MaterialDensity(Material):
         """
         self._chemical_structure = structure_string
         scattering_length = neutron_scattering_length(structure_string)
+        # Update the molar mass alongside the scattering length, otherwise the
+        # derived SLD (d * b * N_A / M) mixes the new element's scattering length
+        # with the previous element's molar mass (see issue #369).
+        self._molecular_weight.value = compute_molecular_weight(structure_string)
         self._scattering_length_real.value = scattering_length.real
         self._scattering_length_imag.value = scattering_length.imag
 

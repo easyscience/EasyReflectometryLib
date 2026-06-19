@@ -4,7 +4,8 @@
 from typing import Optional
 
 from easyscience import global_object
-from numpy import arange
+from easyscience.variable import Parameter
+from numpy import linspace
 
 from ..collections.layer_collection import LayerCollection
 from ..elements.layers.layer import Layer
@@ -175,14 +176,38 @@ def _linear_gradient(
     back_value: float,
     discretisation_elements: int,
 ) -> list[float]:
-    """Linear gradient."""
-    discrete_step = (back_value - front_value) / discretisation_elements
-    if discrete_step != 0:
-        # Both front and back values are included
-        gradient = arange(front_value, back_value + discrete_step, discrete_step)
-    else:
-        gradient = [front_value] * discretisation_elements
-    return gradient
+    """Linear gradient of ``discretisation_elements`` values.
+
+    Both the front and back values are included as the first and last
+    elements respectively (see issue #373 — the previous implementation left
+    the last sublayer one step short of the back value).
+    """
+    return list(linspace(front_value, back_value, discretisation_elements))
+
+
+def _gradient_fraction(index: int, discretisation_elements: int) -> float:
+    """Interpolation fraction (0 at the front, 1 at the back) for sublayer ``index``."""
+    return index / (discretisation_elements - 1)
+
+
+def _constrain_to_endpoints(
+    derived: 'Parameter',
+    front: 'Parameter',
+    back: 'Parameter',
+    fraction: float,
+) -> None:
+    """Make ``derived`` a linear interpolation between the ``front`` and ``back`` parameters.
+
+    Wiring the sublayer SLDs to the end-material parameters (rather than
+    snapshotting their values once) means mutating or *fitting* the front/back
+    material SLDs propagates to the computed reflectivity (see issue #373).
+    """
+    if not derived.independent:
+        derived.make_independent()
+    derived.make_dependent_on(
+        dependency_expression=f'{repr(1.0 - fraction)} * front + {repr(fraction)} * back',
+        dependency_map={'front': front, 'back': back},
+    )
 
 
 def _prepare_gradient_layers(
@@ -191,7 +216,12 @@ def _prepare_gradient_layers(
     discretisation_elements: int,
     interface=None,
 ) -> LayerCollection:
-    """Prepare gradient layers."""
+    """Prepare gradient layers.
+
+    Each sublayer material's SLD/iSLD is constrained to a linear interpolation
+    between the front and back material parameters, so that fitting the end
+    materials propagates through to the sublayers.
+    """
     gradient_sld = _linear_gradient(
         front_value=front_material.sld.value,
         back_value=back_material.sld.value,
@@ -205,6 +235,9 @@ def _prepare_gradient_layers(
     gradient_layers = []
     for i in range(discretisation_elements):
         material_i = Material(gradient_sld[i], gradient_isld[i], interface=interface)
+        fraction = _gradient_fraction(i, discretisation_elements)
+        _constrain_to_endpoints(material_i.sld, front_material.sld, back_material.sld, fraction)
+        _constrain_to_endpoints(material_i.isld, front_material.isld, back_material.isld, fraction)
         layer = Layer(
             material=material_i,
             thickness=0.0,

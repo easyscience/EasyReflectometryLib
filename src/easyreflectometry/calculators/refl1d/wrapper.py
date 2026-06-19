@@ -8,6 +8,7 @@ import numpy as np
 from refl1d import names
 from refl1d.sample.layers import Repeat
 
+from easyreflectometry.model import LinearSpline
 from easyreflectometry.model import PercentageFwhm
 
 from ..wrapper_base import WrapperBase
@@ -15,6 +16,9 @@ from ..wrapper_base import WrapperBase
 RESOLUTION_PADDING = 3.5
 OVERSAMPLING_FACTOR = 21
 ALL_POLARIZATIONS = False
+# refl1d's QProbe dQ is a Gaussian sigma, whereas the resolution functions
+# express widths as FWHM. FWHM = 2*sqrt(2*ln 2) * sigma.
+FWHM_TO_SIGMA = 1 / (2 * np.sqrt(2 * np.log(2)))
 
 
 class Refl1dWrapper(WrapperBase):
@@ -65,7 +69,17 @@ class Refl1dWrapper(WrapperBase):
         kwargs_no_magnetism = {k: v for k, v in kwargs.items() if k != 'magnetism_rhoM' and k != 'magnetism_thetaM'}
         super().update_layer(name, **kwargs_no_magnetism)
         if any(item.startswith('magnetism') for item in kwargs.keys()):
-            magnetism = names.Magnetism(rhoM=kwargs['magnetism_rhoM'], thetaM=kwargs['magnetism_thetaM'])
+            # EasyScience pushes parameter updates one at a time, so a single-key
+            # update (e.g. magnetism_rhoM only) must preserve the other component
+            # by reading it from the current storage instead of assuming both keys
+            # are present (see issue #372).
+            current = self.storage['layer'][name].magnetism
+            current_rhoM = current.rhoM.value if current is not None else 0.0
+            current_thetaM = current.thetaM.value if current is not None else 0.0
+            magnetism = names.Magnetism(
+                rhoM=kwargs.get('magnetism_rhoM', current_rhoM),
+                thetaM=kwargs.get('magnetism_thetaM', current_thetaM),
+            )
             self.storage['layer'][name].magnetism = magnetism
 
     def get_layer_value(self, name: str, key: str) -> float:
@@ -208,8 +222,13 @@ class Refl1dWrapper(WrapperBase):
         dq_array = self._resolution_function.smearing(q_array)
 
         if isinstance(self._resolution_function, PercentageFwhm):
-            # Get percentage of Q and change from sigma to FWHM
-            dq_array = dq_array * q_array / 100 / (2 * np.sqrt(2 * np.log(2)))
+            # Convert the percentage FWHM of Q to an absolute sigma for refl1d.
+            dq_array = dq_array * q_array / 100 * FWHM_TO_SIGMA
+        elif isinstance(self._resolution_function, LinearSpline):
+            # LinearSpline provides per-point FWHM; refl1d's QProbe dQ is a
+            # sigma, so convert it (see issue #367). Pointwise already supplies
+            # sigma (sqrt(sQz)) and is used as-is.
+            dq_array = dq_array * FWHM_TO_SIGMA
 
         if not self._magnetism:
             probe = _get_probe(

@@ -223,15 +223,19 @@ class CalculatorBase(SerializerComponent, metaclass=ABCMeta):
     @property
     def include_magnetism(self):
         """Include magnetism."""
-        return self._wrapper.magnetism
+        return self._wrapper.include_magnetism
 
     @include_magnetism.setter
     def include_magnetism(self, magnetism: bool):
         """Set the magnetism flag for the calculator.
+
+        Routed through the wrapper's ``include_magnetism`` property so that
+        engine-specific guards (e.g. refnx, which does not support magnetism)
+        are applied rather than bypassed (see issue #372).
 
         Parameters
         ----------
         magnetism : bool
             True if the calculator should include magnetism.
         """
-        self._wrapper.magnetism = magnetism
+        self._wrapper.include_magnetism = magnetism

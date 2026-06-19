@@ -85,6 +85,21 @@ class TestRefl1d(unittest.TestCase):
         assert_almost_equal(p.storage['layer']['Si'].magnetism.thetaM.value, 10)
         assert_almost_equal(p.storage['layer']['Si'].magnetism.rhoM.value, 5)
 
+    def test_update_magnetic_layer_single_key(self):
+        # Regression for issue #372: EasyScience pushes one parameter at a time,
+        # so a single-key magnetic update must not crash and must preserve the
+        # other component's current value.
+        p = Refl1dWrapper()
+        p.magnetism = True
+        p.create_layer('Si')
+        p.update_layer('Si', magnetism_rhoM=5, magnetism_thetaM=10)
+        p.update_layer('Si', magnetism_rhoM=7)
+        assert_almost_equal(p.storage['layer']['Si'].magnetism.rhoM.value, 7)
+        assert_almost_equal(p.storage['layer']['Si'].magnetism.thetaM.value, 10)
+        p.update_layer('Si', magnetism_thetaM=12)
+        assert_almost_equal(p.storage['layer']['Si'].magnetism.rhoM.value, 7)
+        assert_almost_equal(p.storage['layer']['Si'].magnetism.thetaM.value, 12)
+
     def test_get_layer_value(self):
         p = Refl1dWrapper()
         p.create_layer('Si')

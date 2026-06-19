@@ -1064,3 +1064,86 @@ class TestMCMCSampleZeroVariance:
             fitter.mcmc_sample(data, samples=100, burn=20, thin=2, objective='hybrid')
 
         assert len(captured['x'][0]) == 10  # all points kept (Mighell-substituted)
+
+
+# ---------------------------------------------------------------------------
+# Tests pinning the weight convention (issue #370)
+#
+# `_prepare_fit_arrays` returns ``weights = 1/sigma`` and passes them to the
+# core fitter as ``weights=dy``. These tests pin, end-to-end against the real
+# minimizer, that the fitter consumes that array as ``1/sigma`` — i.e. points
+# are weighted by ``1/sigma**2`` in chi-square — which is the single most
+# load-bearing assumption in the fitting stack. They would fail if either the
+# library convention or the core fitter convention silently changed to
+# ``sigma`` or ``1/sigma**2``.
+# ---------------------------------------------------------------------------
+
+
+def _single_film_model():
+    """A simple Si / film / D2O model with every parameter fixed."""
+    si = Material(2.07, 0, 'Si')
+    film = Material(2.0, 0, 'Film')
+    d2o = Material(6.36, 0, 'D2O')
+    sample = Sample(
+        Multilayer(Layer(si, 0, 0, 'Si layer')),
+        Multilayer(Layer(film, 100, 3, 'Film layer')),
+        Multilayer(Layer(d2o, 0, 3, 'D2O subphase')),
+    )
+    model = Model(sample, 1, 0.0, PercentageFwhm(0.02), 'Film Model')
+    model.interface = CalculatorFactory()
+    for parameter in model.get_fit_parameters():
+        parameter.fixed = True
+    return model
+
+
+def test_objective_chi2_uses_inverse_sigma_convention():
+    """With all parameters fixed, the chi-square reported by the fitter must
+    equal ``sum(((y - model)/sigma)**2)`` exactly — pinning that ``weights``
+    means ``1/sigma`` (issue #370)."""
+    model = _single_film_model()
+    fitter = MultiFitter(model)
+
+    x = np.linspace(0.01, 0.3, 30)
+    model_curve = fitter._fit_func[0](x)
+    sigma = 0.05 * model_curve + 1e-7  # heteroscedastic, strictly positive
+    normalized_residuals = np.array([(-1) ** i * (0.5 + 0.1 * i) for i in range(len(x))])
+    deltas = sigma * normalized_residuals
+    y = model_curve + deltas
+
+    data = DataSet1D(name='fixed', x=x, y=y, ye=sigma**2)
+    result = fitter.fit_single_data_set_1d(data)
+
+    analytic_chi2 = float(np.sum(normalized_residuals**2))
+    assert result.chi2 == pytest.approx(analytic_chi2, rel=1e-9)
+    # Wrong conventions would land far away; assert they are excluded.
+    wrong_sigma = float(np.sum((deltas * sigma) ** 2))
+    wrong_inv_sigma_sq = float(np.sum((deltas / sigma**2) ** 2))
+    assert not np.isclose(result.chi2, wrong_sigma)
+    assert not np.isclose(result.chi2, wrong_inv_sigma_sq)
+
+
+def test_fitted_scale_matches_analytic_weighted_least_squares():
+    """Reflectivity is linear in the overall scale, so fitting only the scale
+    is a textbook weighted least-squares problem with a closed-form solution.
+    The fitted value must match the analytic WLS estimate (weights ``1/sigma**2``),
+    pinning the weight convention through the real minimizer (issue #370)."""
+    model = _single_film_model()
+    fitter = MultiFitter(model)
+
+    x = np.linspace(0.01, 0.3, 40)
+    basis = fitter._fit_func[0](x)  # model curve at scale = 1, background = 0
+    sigma = 0.03 * basis + 1e-8
+    rng = np.random.default_rng(42)
+    true_scale = 1.0
+    y = true_scale * basis + sigma * rng.standard_normal(len(x))
+
+    # Closed-form weighted least squares for the single linear coefficient.
+    weight = 1.0 / sigma**2
+    analytic_scale = np.sum(weight * y * basis) / np.sum(weight * basis * basis)
+
+    model.scale.fixed = False
+    model.scale.bounds = (0.5, 1.5)
+    data = DataSet1D(name='scale', x=x, y=y, ye=sigma**2)
+    fitter.fit_single_data_set_1d(data)
+
+    assert model.scale.value == pytest.approx(float(analytic_scale), rel=1e-6)

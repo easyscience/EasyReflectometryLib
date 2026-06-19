@@ -43,8 +43,12 @@ class TestMaterialDensity(unittest.TestCase):
         assert p.chemical_structure == 'Co'
         p.chemical_structure = 'B'
         assert p.density.value == 8.9
-        assert_almost_equal(p.sld.value, 4.82010833570636)
-        assert_almost_equal(p.isld.value, -0.19098540517806603)
+        # Changing the structure must also refresh the molar mass (issue #369);
+        # the SLD is computed with boron's b AND boron's M (10.81 g/mol), not
+        # the stale cobalt molar mass.
+        assert_almost_equal(p.molecular_weight.value, 10.81)
+        assert_almost_equal(p.sld.value, 26.277925961998147)
+        assert_almost_equal(p.isld.value, -1.0412008400037)
         assert p.chemical_structure == 'B'
 
     def test_dict_repr(self):

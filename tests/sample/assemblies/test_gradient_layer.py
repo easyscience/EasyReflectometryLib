@@ -7,6 +7,7 @@ Tests for GradientLayer class module
 
 from unittest.mock import MagicMock
 
+import numpy as np
 import pytest
 from easyscience import global_object
 from numpy.testing import assert_almost_equal
@@ -45,12 +46,26 @@ class TestGradientLayer:
         assert gradient_layer.thickness == 1.0
         assert gradient_layer.back_layer.thickness.value == 0.1
 
+        # The gradient now spans the full front-to-back range (both endpoints
+        # included), so the last sublayer matches the back material exactly.
         assert gradient_layer.front_layer.material.sld.value == 10.0
-        assert gradient_layer.layers[5].material.sld.value == 5.0
-        assert gradient_layer.back_layer.material.sld.value == 1.0
+        assert_almost_equal(gradient_layer.layers[5].material.sld.value, 4.444444444444445)
+        assert gradient_layer.back_layer.material.sld.value == 0.0
         assert gradient_layer.front_layer.material.isld.value == -10.0
-        assert gradient_layer.layers[5].material.isld.value == -5.0
-        assert gradient_layer.back_layer.material.isld.value == -1.0
+        assert_almost_equal(gradient_layer.layers[5].material.isld.value, -4.444444444444445)
+        assert gradient_layer.back_layer.material.isld.value == 0.0
+
+    def test_fitting_end_materials_propagates(self, gradient_layer: GradientLayer) -> None:
+        """Regression for issue #373: mutating (or fitting) the front/back
+        material SLDs must propagate to the discretised sublayers."""
+        # front material sld is at the upper SLD limit (10); move it down.
+        self.front.sld.value = 4.0
+        self.back.sld.value = 2.0
+        slds = [layer.material.sld.value for layer in gradient_layer.layers]
+        assert_almost_equal(slds[0], 4.0)
+        assert_almost_equal(slds[-1], 2.0)
+        # Strictly monotonic interpolation between the updated endpoints.
+        assert_almost_equal(slds[5], 4.0 + (2.0 - 4.0) * (5 / 9))
 
     def test_default(self) -> None:
         # When Then
@@ -85,7 +100,7 @@ class TestGradientLayer:
 
     def test_repr(self, gradient_layer: GradientLayer) -> None:
         # When Then Expect
-        expected_str = "thickness: 1.0\ndiscretisation_elements: 10\nback_layer:\n  '9':\n    material:\n      EasyMaterial:\n        sld: 1.000e-6 1/Å^2\n        isld: -1.000e-6 1/Å^2\n    thickness: 0.100 Å\n    roughness: 2.000 Å\nfront_layer:\n  '0':\n    material:\n      EasyMaterial:\n        sld: 10.000e-6 1/Å^2\n        isld: -10.000e-6 1/Å^2\n    thickness: 0.100 Å\n    roughness: 2.000 Å\n"  # noqa: E501
+        expected_str = "thickness: 1.0\ndiscretisation_elements: 10\nback_layer:\n  '9':\n    material:\n      EasyMaterial:\n        sld: 0.000e-6 1/Å^2\n        isld: 0.000e-6 1/Å^2\n    thickness: 0.100 Å\n    roughness: 2.000 Å\nfront_layer:\n  '0':\n    material:\n      EasyMaterial:\n        sld: 10.000e-6 1/Å^2\n        isld: -10.000e-6 1/Å^2\n    thickness: 0.100 Å\n    roughness: 2.000 Å\n"  # noqa: E501
         assert gradient_layer.__repr__() == expected_str
 
     def test_dict_round_trip(self) -> None:
@@ -143,8 +158,10 @@ def test_linear_gradient_increasing():
     # When Then
     result = _linear_gradient(front_value=1.5, back_value=2.5, discretisation_elements=10)
 
-    # Expect
-    assert_almost_equal([1.5, 1.6, 1.7, 1.8, 1.9, 2.0, 2.1, 2.2, 2.3, 2.4, 2.5], result)
+    # Expect: exactly ``discretisation_elements`` values spanning front..back
+    # inclusive (issue #373).
+    assert len(result) == 10
+    assert_almost_equal(np.linspace(1.5, 2.5, 10), result)
 
 
 def test_linear_gradient_decreasing():
@@ -152,7 +169,8 @@ def test_linear_gradient_decreasing():
     result = _linear_gradient(front_value=2.5, back_value=1.5, discretisation_elements=10)
 
     # Expect
-    assert_almost_equal([2.5, 2.4, 2.3, 2.2, 2.1, 2.0, 1.9, 1.8, 1.7, 1.6, 1.5], result)
+    assert len(result) == 10
+    assert_almost_equal(np.linspace(2.5, 1.5, 10), result)
 
 
 def test_linear_gradient_same():
@@ -169,8 +187,10 @@ def test_prepare_gradient_layers(monkeypatch):
     mock_material_2 = MagicMock()
     mock_Layer = MagicMock()
     mock_LayerCollection = MagicMock()
-    mock_Material = MagicMock(return_value='Material_from_mock')
+    sentinel_material = MagicMock(name='Material_from_mock')
+    mock_Material = MagicMock(return_value=sentinel_material)
     mock_linear_gradient = MagicMock(return_value=[1.0, 2.0, 3.0])
+    mock_constrain = MagicMock()
     monkeypatch.setattr(
         easyreflectometry.sample.assemblies.gradient_layer,
         '_linear_gradient',
@@ -179,6 +199,7 @@ def test_prepare_gradient_layers(monkeypatch):
     monkeypatch.setattr(easyreflectometry.sample.assemblies.gradient_layer, 'Layer', mock_Layer)
     monkeypatch.setattr(easyreflectometry.sample.assemblies.gradient_layer, 'Material', mock_Material)
     monkeypatch.setattr(easyreflectometry.sample.assemblies.gradient_layer, 'LayerCollection', mock_LayerCollection)
+    monkeypatch.setattr(easyreflectometry.sample.assemblies.gradient_layer, '_constrain_to_endpoints', mock_constrain)
 
     # Then
     _prepare_gradient_layers(mock_material_1, mock_material_2, 3, None)
@@ -189,7 +210,12 @@ def test_prepare_gradient_layers(monkeypatch):
     assert mock_Material.call_args_list[1][0] == (2.0, 2.0)
     assert mock_Material.call_args_list[2][0] == (3.0, 3.0)
     assert mock_Layer.call_count == 3
-    assert mock_Layer.call_args_list[0][1]['material'] == 'Material_from_mock'
+    assert mock_Layer.call_args_list[0][1]['material'] is sentinel_material
     assert mock_Layer.call_args_list[0][1]['thickness'] == 0.0
     assert mock_Layer.call_args_list[0][1]['name'] == '0'
     assert mock_Layer.call_args_list[0][1]['interface'] is None
+    # Each sublayer's sld and isld are constrained to the end-material params.
+    assert mock_constrain.call_count == 6
+    # First sublayer interpolates with fraction 0, last with fraction 1.
+    assert mock_constrain.call_args_list[0][0][-1] == 0.0
+    assert mock_constrain.call_args_list[-1][0][-1] == 1.0

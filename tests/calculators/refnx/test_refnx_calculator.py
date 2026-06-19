@@ -8,6 +8,7 @@ Tests for Refnx calculator.
 import unittest
 
 import numpy as np
+import pytest
 from numpy.testing import assert_almost_equal
 from numpy.testing import assert_equal
 
@@ -15,6 +16,15 @@ from easyreflectometry.calculators.refnx.calculator import Refnx
 
 
 class TestRefnx(unittest.TestCase):
+    def test_include_magnetism_guard(self):
+        # Regression for issue #372: enabling magnetism through the public
+        # calculator API must hit the refnx wrapper's guard, not silently set
+        # the base flag.
+        p = Refnx()
+        with pytest.raises(NotImplementedError):
+            p.include_magnetism = True
+        assert p.include_magnetism is False
+
     def test_init(self):
         p = Refnx()
         assert_equal(list(p._wrapper.storage.keys()), ['material', 'layer', 'item', 'model'])

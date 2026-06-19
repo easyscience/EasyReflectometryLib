@@ -134,6 +134,46 @@ class TestMeasurementFunctions:
         finally:
             os.unlink(temp_path)
 
+    def test_load_txt_five_columns_uses_first_four(self):
+        """Regression for issue #376: a 5-column file (q, R, sR, sQ, lambda)
+        must load using the first four columns instead of crashing on unpack."""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as f:
+            f.write('0.1 0.9 0.01 0.001 5.0\n0.2 0.5 0.02 0.002 5.0\n0.3 0.2 0.03 0.003 5.0\n')
+            temp_path = f.name
+        try:
+            result = _load_txt(temp_path)
+            coords_key = list(result['coords'].keys())[0]
+            data_key = list(result['data'].keys())[0]
+            assert_array_equal(result['coords'][coords_key].values, [0.1, 0.2, 0.3])
+            assert_array_equal(result['data'][data_key].values, [0.9, 0.5, 0.2])
+            # 4th column is dQz; its variance is the square of the column.
+            assert_array_equal(
+                result['coords'][coords_key].variances,
+                np.square([0.001, 0.002, 0.003]),
+            )
+        finally:
+            os.unlink(temp_path)
+
+    def test_merge_datagroups_same_key_concatenates(self):
+        """Regression for issue #376: merging groups that share a key must
+        concatenate them (exercises the previously-broken sc.concat path)."""
+        fpath = os.path.join(PATH_STATIC, 'ref_concat_1.txt')
+        group1 = load(fpath)
+        group2 = load(fpath)
+
+        data_key = list(group1['data'].keys())[0]
+        n_original = len(group1['data'][data_key].values)
+
+        merged = merge_datagroups(group1, group2)
+        assert len(merged['data'][data_key].values) == 2 * n_original
+
+    def test_load_warns_on_orso_fallback(self):
+        """Regression for issue #376: falling back from ORSO to plain-text
+        parsing must warn so header/metadata loss is visible."""
+        fpath = os.path.join(PATH_STATIC, 'test_example1.txt')
+        with pytest.warns(UserWarning, match='falling back to plain-text'):
+            load(fpath)
+
     def test_load_orso_with_multiple_datasets(self):
         """Test that _load_orso handles files with multiple datasets."""
         fpath = os.path.join(PATH_STATIC, 'test_example2.ort')

@@ -224,10 +224,18 @@ def load_orso_data(orso_data) -> DataSet1D:
         name = i
         if o.info.data_set is not None:
             name = o.info.data_set
+        # The resolution column (sQz) is optional in the ORSO spec; a legal
+        # 3-column file has no 4th column. Default its variance to zeros rather
+        # than raising IndexError and forcing the silent plain-text fallback
+        # (see issue #376).
+        if o.data.shape[1] > 3:
+            qz_variances = np.square(o.data[:, 3])
+        else:
+            qz_variances = np.zeros_like(o.data[:, 0])
         coords[f'Qz_{name}'] = sc.array(
             dims=[f'{o.info.columns[0].name}_{name}'],
             values=o.data[:, 0],
-            variances=np.square(o.data[:, 3]),
+            variances=qz_variances,
             unit=sc.Unit(o.info.columns[0].unit),
         )
         try:

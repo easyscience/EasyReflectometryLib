@@ -3,6 +3,7 @@
 
 
 import os
+import warnings
 from typing import TextIO
 from typing import Union
 
@@ -23,7 +24,13 @@ def load(fname: Union[TextIO, str]) -> sc.DataGroup:
     """
     try:
         return load_data_from_orso_file(fname)
-    except (IndexError, ValueError):
+    except (IndexError, ValueError) as error:
+        warnings.warn(
+            f'Could not parse {fname} as an ORSO file ({error}); falling back to plain-text '
+            'loading. Any ORSO header metadata (resolution semantics, sample model) will be lost.',
+            UserWarning,
+            stacklevel=2,
+        )
         return _load_txt(fname)
 
 
@@ -80,24 +87,27 @@ def _load_txt(fname: Union[TextIO, str]) -> sc.DataGroup:
     basename = os.path.splitext(os.path.basename(fname))[0]
 
     try:
-        # First load only the data to check column count
         data = np.loadtxt(fname, delimiter=delimiter, comments='#')
         if data.ndim == 1:
-            # Handle single row case
-            num_columns = len(data)
-        else:
-            num_columns = data.shape[1]
+            # Handle single row case: promote to a 1-row 2D array so the
+            # column handling below is uniform.
+            data = data.reshape(1, -1)
+        num_columns = data.shape[1]
 
         # Verify minimum column requirement
         if num_columns < 3:
             raise ValueError(f'File must contain at least 3 columns (found {num_columns})')
 
-        # Now unpack the data based on column count
-        if num_columns >= 4:
-            x, y, e, xe = np.loadtxt(fname, delimiter=delimiter, comments='#', unpack=True)
-        else:  # 3 columns
-            x, y, e = np.loadtxt(fname, delimiter=delimiter, comments='#', unpack=True)
-            xe = np.zeros_like(x)
+        # Columns are interpreted as (Qz, R, dR, dQz). Any extra columns
+        # (e.g. a 5th wavelength column, common in .txt exports) are ignored
+        # rather than crashing on unpack (see issue #376).
+        # NOTE: the third column is taken to be the standard deviation (sigma)
+        # of R and is squared below to obtain the variance. A file storing the
+        # variance directly would be mis-scaled.
+        x = data[:, 0]
+        y = data[:, 1]
+        e = data[:, 2]
+        xe = data[:, 3] if num_columns >= 4 else np.zeros_like(x)
 
     except (ValueError, IOError) as error:
         # Re-raise with more descriptive message
@@ -128,13 +138,13 @@ def merge_datagroups(*data_groups: sc.DataGroup) -> sc.DataGroup:
             if key not in merged_data:
                 merged_data[key] = value
             else:
-                merged_data[key] = sc.concatenate([merged_data[key], value])
+                merged_data[key] = sc.concat([merged_data[key], value], merged_data[key].dims[0])
 
         for key, value in group['coords'].items():
             if key not in merged_coords:
                 merged_coords[key] = value
             else:
-                merged_coords[key] = sc.concatenate([merged_coords[key], value])
+                merged_coords[key] = sc.concat([merged_coords[key], value], merged_coords[key].dims[0])
 
         if 'attrs' not in group:
             continue
