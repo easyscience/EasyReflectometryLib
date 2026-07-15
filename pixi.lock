@@ -8303,6 +8303,7 @@ packages:
   - bumps
   - easyscience @ git+https://github.com/easyscience/corelib@develop
   - orsopy
+  - plotly
   - pooch
   - refl1d>=1.0.0
   - refnx
