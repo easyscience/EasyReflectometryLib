@@ -19,9 +19,11 @@ class TestPercentageFwhm(unittest.TestCase):
         resolution_function = PercentageFwhm(1.0)
 
         # Then Expect: smearing() returns sigma = (constant / 100) * q / SIGMA_TO_FWHM
+        # Negative q is not asserted: sigma scales with q here, so q < 0 yields a
+        # negative width, which is meaningless. Leaving it unpinned keeps the door
+        # open to guarding with abs(q) without failing this test.
         expected = (1.0 / 100.0) * np.array([0.0, 2.5]) / SIGMA_TO_FWHM
         assert np.allclose(resolution_function.smearing([0, 2.5]), expected)
-        assert np.allclose(resolution_function.smearing([-100]), (1.0 / 100.0) * (-100.0) / SIGMA_TO_FWHM)
         assert np.allclose(resolution_function.smearing([100]), (1.0 / 100.0) * 100.0 / SIGMA_TO_FWHM)
 
     def test_constructor_none(self):
@@ -29,10 +31,10 @@ class TestPercentageFwhm(unittest.TestCase):
         resolution_function = PercentageFwhm()
 
         # Then Expect: defaults to DEFAULT_RESOLUTION_FWHM_PERCENTAGE, returned as sigma
+        # Negative q is not asserted -- see test_constructor.
         c = DEFAULT_RESOLUTION_FWHM_PERCENTAGE
         expected = (c / 100.0) * np.array([0.0, 2.5]) / SIGMA_TO_FWHM
         assert np.allclose(resolution_function.smearing([0, 2.5]), expected)
-        assert np.allclose(resolution_function.smearing([-100]), (c / 100.0) * (-100.0) / SIGMA_TO_FWHM)
         assert np.allclose(resolution_function.smearing([100]), (c / 100.0) * 100.0 / SIGMA_TO_FWHM)
 
     def test_as_dict(self):
@@ -60,6 +62,8 @@ class TestLinearSpline(unittest.TestCase):
         resolution_function = LinearSpline(q_data_points=[0, 10], fwhm_values=[5, 10])
 
         # Then Expect: smearing() returns sigma (FWHM knots converted to sigma)
+        # Unlike PercentageFwhm, q outside the knot range is meaningful here:
+        # np.interp clamps to the end knots, so the width stays positive.
         assert np.allclose(resolution_function.smearing([0, 2.5]), np.array([5, 6.25]) / SIGMA_TO_FWHM)
         assert np.allclose(resolution_function.smearing([-100]), np.array([5.0]) / SIGMA_TO_FWHM)
         assert np.allclose(resolution_function.smearing([100]), np.array([10.0]) / SIGMA_TO_FWHM)

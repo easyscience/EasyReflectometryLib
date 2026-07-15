@@ -1,5 +1,36 @@
 # Unreleased
 
+Fixed inconsistent interpretation of vector resolution functions between
+the refnx and refl1d engines (issue #367).
+
+- **Reflectivity results change for two engine / resolution
+  combinations.** `LinearSpline` on refl1d previously **over-smeared by
+  a factor of 2.355** (its FWHM widths were passed to refl1d's
+  `probe.dQ`, which expects sigma). `Pointwise` on refnx previously
+  **under-smeared by the same factor** (its sigma widths were passed to
+  refnx's `x_err`, which expects FWHM). Both are now correct. Fits and
+  simulations that used either combination will produce different —
+  previously wrong — results and should be re-run. `PercentageFwhm` on
+  either engine, `LinearSpline` on refnx, and `Pointwise` on refl1d are
+  numerically unchanged.
+- `ResolutionFunction.smearing()` now returns **sigma** (the Gaussian
+  standard deviation) for every subclass; each engine wrapper converts
+  to its backend's convention. This is a behavioural change to a public
+  method. Most visibly, `PercentageFwhm.smearing(q)` used to return the
+  _percentage_ itself (e.g. `5.0`) and now returns an absolute sigma
+  (e.g. `0.00212` at `q=0.1`); `LinearSpline.smearing(q)` returns its
+  `fwhm_values` divided by `2*sqrt(2*ln2)`. Callers relying on the old
+  values need to convert. The new `SIGMA_TO_FWHM` constant is exported
+  from `easyreflectometry.model.resolution_functions`.
+- Constructors are **unchanged**: `PercentageFwhm(5)` still means 5%
+  FWHM and `LinearSpline(q, fwhm_values)` still takes FWHM. Only the
+  `smearing()` output convention moved, so existing model-building code
+  needs no edits.
+- `PercentageFwhm.smearing(q)` given a scalar `q` now returns a 0-d
+  numpy scalar rather than a shape-`(1,)` array, matching
+  `LinearSpline`. `smearing(0.1)[0]` therefore raises `IndexError` where
+  it previously returned a value.
+
 Migrated sample / model classes off the deprecated `easyscience.ObjBase`
 and `easyscience.CollectionBase` pipeline.
 

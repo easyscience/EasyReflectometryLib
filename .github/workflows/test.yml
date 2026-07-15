@@ -293,7 +293,7 @@ jobs:
             cd easyreflectometry_py$py_ver
 
             echo "Running tests"
-            if [[ "${{ matrix.os }}" == "windows-2022" ]]; then
+            if [[ "${{ runner.os }}" == "Windows" ]]; then
               pixi run python -m pytest ../tests/integration/ --color=yes -v ${{ needs.env-prepare.outputs.pytest-marks }}
             else
               pixi run python -m pytest ../tests/integration/ --color=yes -n auto -v ${{ needs.env-prepare.outputs.pytest-marks }}
