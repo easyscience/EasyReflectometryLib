@@ -451,7 +451,7 @@ class TestRefnx(unittest.TestCase):
         p.add_item('Item3', 'MyModel')
         p.add_item('Item4', 'MyModel')
         p.update_model('MyModel', bkg=0)
-        sigma_to_fwhm = 2.355
+        sigma_to_fwhm = 2.0 * np.sqrt(2.0 * np.log(2.0))
         p.set_resolution_function(LinearSpline(test4_dat[:, 0], sigma_to_fwhm * test4_dat[:, 3]))
         assert_allclose(p.calculate(test4_dat[:, 0], 'MyModel'), test4_dat[:, 1], rtol=0.03)
 

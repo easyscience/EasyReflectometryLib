@@ -293,7 +293,9 @@ jobs:
             cd easyreflectometry_py$py_ver
 
             echo "Running tests"
-            pixi run python -m pytest ../tests/integration/ --color=yes -n auto -v ${{ needs.env-prepare.outputs.pytest-marks }}
+            # No -n auto: concurrent xdist workers race on arviz's daily-warning
+            # stamp file when they import easyreflectometry. See pixi.toml.
+            pixi run python -m pytest ../tests/integration/ --color=yes -v ${{ needs.env-prepare.outputs.pytest-marks }}
 
             echo "Exiting pixi project directory"
             cd ..

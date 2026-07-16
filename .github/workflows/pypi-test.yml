@@ -71,7 +71,9 @@ jobs:
 
       - name: Run integration tests to verify the installation
         working-directory: easyreflectometry
-        run: pixi run python -m pytest ../tests/integration/ --color=yes -n auto
+        # No -n auto: concurrent xdist workers race on arviz's daily-warning
+        # stamp file when they import easyreflectometry. See pixi.toml.
+        run: pixi run python -m pytest ../tests/integration/ --color=yes
 
   # Job 2: Build and publish dashboard (reusable workflow)
   run-reusable-workflows:
