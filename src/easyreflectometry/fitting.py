@@ -195,6 +195,7 @@ class MultiFitter:
         self._fit_results: list[FitResults] | None = None
         self._classical_fit_metrics: list[dict] | None = None
         self._objective = _validate_objective(objective)
+        self._sampler: Sampler | None = None
 
     def fit(self, data: sc.DataGroup, id: int = 0, objective: str | None = None) -> sc.DataGroup:
         """Perform the fitting and populate the DataGroups with the result.
@@ -382,12 +383,18 @@ class MultiFitter:
         :param initializer: DREAM population initializer. One of ``'eps'``,
             ``'cov'``, ``'lhs'``, or ``'random'``. By default, None (BUMPS
             uses ``'eps'``).
-            — the population already exists in the saved state.
         :param progress_callback: Optional callback for progress updates during
             sampling.  Forwarded to the core MultiFitter.
         :return: Dictionary with keys ``'draws'``, ``'param_names'``, ``'state'``,
             and ``'logp'``.
         :raises RuntimeError: If the current minimizer is not a BUMPS instance.
+
+        The underlying :class:`~easyscience.fitting.Sampler` is retained on
+        :attr:`sampler`, so the chain can be continued without re-running the
+        burn-in::
+
+            fitter.mcmc_sample(data, samples=2000, burn=500, thin=10)
+            extended = fitter.sampler.extend(additional_samples=8000, thin=10)
         """
         minimizer = self.easy_science_multi_fitter.minimizer
         if not (hasattr(minimizer, 'package') and minimizer.package == 'bumps'):
@@ -435,6 +442,8 @@ class MultiFitter:
             y=y,
             weights=dy,
         )
+        # Retained so the chain can be continued afterwards via ``self.sampler.extend()``.
+        self._sampler = sampler
         results = sampler.sample(
             samples=samples,
             burn=burn,
@@ -450,6 +459,16 @@ class MultiFitter:
             'state': results.state,
             'logp': results.logp,
         }
+
+    @property
+    def sampler(self) -> Sampler | None:
+        """The ``Sampler`` behind the most recent :meth:`mcmc_sample` call, or None.
+
+        Holds the live BUMPS chain state, so the sampling run can be continued
+        with ``fitter.sampler.extend(additional_samples=...)`` instead of
+        starting a fresh chain.
+        """
+        return self._sampler
 
     @property
     def chi2(self) -> float | None:
