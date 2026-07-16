@@ -1633,6 +1633,17 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#easyreflectometry.fitting.MultiFitter.sampler" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sampler
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#easyreflectometry.fitting.MultiFitter.chi2" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2680,6 +2691,17 @@
   
     <nav class="md-nav" aria-label="MultiFitter">
       <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#easyreflectometry.fitting.MultiFitter.sampler" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sampler
+      
+    </span>
+  </a>
+  
+</li>
         
           <li class="md-nav__item">
   <a href="#easyreflectometry.fitting.MultiFitter.chi2" class="md-nav__link">
@@ -5210,7 +5232,26 @@ calculator's resolution function.</p>
 <span class="normal">508</span>
 <span class="normal">509</span>
 <span class="normal">510</span>
-<span class="normal">511</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">MultiFitter</span><span class="p">:</span>
+<span class="normal">511</span>
+<span class="normal">512</span>
+<span class="normal">513</span>
+<span class="normal">514</span>
+<span class="normal">515</span>
+<span class="normal">516</span>
+<span class="normal">517</span>
+<span class="normal">518</span>
+<span class="normal">519</span>
+<span class="normal">520</span>
+<span class="normal">521</span>
+<span class="normal">522</span>
+<span class="normal">523</span>
+<span class="normal">524</span>
+<span class="normal">525</span>
+<span class="normal">526</span>
+<span class="normal">527</span>
+<span class="normal">528</span>
+<span class="normal">529</span>
+<span class="normal">530</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">MultiFitter</span><span class="p">:</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Model</span><span class="p">,</span> <span class="n">objective</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;hybrid&#39;</span><span class="p">):</span>
 <span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;A convenience class for the :py:class:`easyscience.Fitting.Fitting`</span>
 <span class="sd">        which will populate the :py:class:`sc.DataGroup` appropriately</span>
@@ -5244,6 +5285,7 @@ calculator's resolution function.</p>
         <span class="bp">self</span><span class="o">.</span><span class="n">_fit_results</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">FitResults</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_classical_fit_metrics</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_objective</span> <span class="o">=</span> <span class="n">_validate_objective</span><span class="p">(</span><span class="n">objective</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span><span class="p">:</span> <span class="n">Sampler</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">sc</span><span class="o">.</span><span class="n">DataGroup</span><span class="p">,</span> <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">objective</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">sc</span><span class="o">.</span><span class="n">DataGroup</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Perform the fitting and populate the DataGroups with the result.</span>
@@ -5431,12 +5473,18 @@ calculator's resolution function.</p>
 <span class="sd">        :param initializer: DREAM population initializer. One of ``&#39;eps&#39;``,</span>
 <span class="sd">            ``&#39;cov&#39;``, ``&#39;lhs&#39;``, or ``&#39;random&#39;``. By default, None (BUMPS</span>
 <span class="sd">            uses ``&#39;eps&#39;``).</span>
-<span class="sd">            — the population already exists in the saved state.</span>
 <span class="sd">        :param progress_callback: Optional callback for progress updates during</span>
 <span class="sd">            sampling.  Forwarded to the core MultiFitter.</span>
 <span class="sd">        :return: Dictionary with keys ``&#39;draws&#39;``, ``&#39;param_names&#39;``, ``&#39;state&#39;``,</span>
 <span class="sd">            and ``&#39;logp&#39;``.</span>
 <span class="sd">        :raises RuntimeError: If the current minimizer is not a BUMPS instance.</span>
+
+<span class="sd">        The underlying :class:`~easyscience.fitting.Sampler` is retained on</span>
+<span class="sd">        :attr:`sampler`, so the chain can be continued without re-running the</span>
+<span class="sd">        burn-in::</span>
+
+<span class="sd">            fitter.mcmc_sample(data, samples=2000, burn=500, thin=10)</span>
+<span class="sd">            extended = fitter.sampler.extend(additional_samples=8000, thin=10)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">minimizer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">easy_science_multi_fitter</span><span class="o">.</span><span class="n">minimizer</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">hasattr</span><span class="p">(</span><span class="n">minimizer</span><span class="p">,</span> <span class="s1">&#39;package&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">minimizer</span><span class="o">.</span><span class="n">package</span> <span class="o">==</span> <span class="s1">&#39;bumps&#39;</span><span class="p">):</span>
@@ -5484,6 +5532,8 @@ calculator's resolution function.</p>
             <span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">,</span>
             <span class="n">weights</span><span class="o">=</span><span class="n">dy</span><span class="p">,</span>
         <span class="p">)</span>
+        <span class="c1"># Retained so the chain can be continued afterwards via ``self.sampler.extend()``.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span> <span class="o">=</span> <span class="n">sampler</span>
         <span class="n">results</span> <span class="o">=</span> <span class="n">sampler</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
             <span class="n">samples</span><span class="o">=</span><span class="n">samples</span><span class="p">,</span>
             <span class="n">burn</span><span class="o">=</span><span class="n">burn</span><span class="p">,</span>
@@ -5499,6 +5549,16 @@ calculator's resolution function.</p>
             <span class="s1">&#39;state&#39;</span><span class="p">:</span> <span class="n">results</span><span class="o">.</span><span class="n">state</span><span class="p">,</span>
             <span class="s1">&#39;logp&#39;</span><span class="p">:</span> <span class="n">results</span><span class="o">.</span><span class="n">logp</span><span class="p">,</span>
         <span class="p">}</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sampler</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Sampler</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The ``Sampler`` behind the most recent :meth:`mcmc_sample` call, or None.</span>
+
+<span class="sd">        Holds the live BUMPS chain state, so the sampling run can be continued</span>
+<span class="sd">        with ``fitter.sampler.extend(additional_samples=...)`` instead of</span>
+<span class="sd">        starting a fresh chain.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">chi2</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
@@ -5570,6 +5630,34 @@ calculator's resolution function.</p>
 
 
 
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="easyreflectometry.fitting.MultiFitter.sampler" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">sampler</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>The <code>Sampler</code> behind the most recent :meth:<code>mcmc_sample</code> call, or None.</p>
+<p>Holds the live BUMPS chain state, so the sampling run can be continued
+with <code>fitter.sampler.extend(additional_samples=...)</code> instead of
+starting a fresh chain.</p>
+<!-- prettier-ignore-start -->
+
+<!-- prettier-ignore-end -->
+
+    </div>
+
+</div>
 
 <div class="doc doc-object doc-attribute">
 
@@ -5834,7 +5922,8 @@ after the fitting is performed.</p>
 <span class="normal">194</span>
 <span class="normal">195</span>
 <span class="normal">196</span>
-<span class="normal">197</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Model</span><span class="p">,</span> <span class="n">objective</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;hybrid&#39;</span><span class="p">):</span>
+<span class="normal">197</span>
+<span class="normal">198</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Model</span><span class="p">,</span> <span class="n">objective</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;hybrid&#39;</span><span class="p">):</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;A convenience class for the :py:class:`easyscience.Fitting.Fitting`</span>
 <span class="sd">    which will populate the :py:class:`sc.DataGroup` appropriately</span>
 <span class="sd">    after the fitting is performed.</span>
@@ -5867,6 +5956,7 @@ after the fitting is performed.</p>
     <span class="bp">self</span><span class="o">.</span><span class="n">_fit_results</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">FitResults</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_classical_fit_metrics</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_objective</span> <span class="o">=</span> <span class="n">_validate_objective</span><span class="p">(</span><span class="n">objective</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span><span class="p">:</span> <span class="n">Sampler</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -5991,8 +6081,7 @@ If <code>None</code>, uses the instance default set at construction. By default,
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/easyreflectometry/fitting.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">199</span>
-<span class="normal">200</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">200</span>
 <span class="normal">201</span>
 <span class="normal">202</span>
 <span class="normal">203</span>
@@ -6086,7 +6175,8 @@ If <code>None</code>, uses the instance default set at construction. By default,
 <span class="normal">291</span>
 <span class="normal">292</span>
 <span class="normal">293</span>
-<span class="normal">294</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">sc</span><span class="o">.</span><span class="n">DataGroup</span><span class="p">,</span> <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">objective</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">sc</span><span class="o">.</span><span class="n">DataGroup</span><span class="p">:</span>
+<span class="normal">294</span>
+<span class="normal">295</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">sc</span><span class="o">.</span><span class="n">DataGroup</span><span class="p">,</span> <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">objective</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">sc</span><span class="o">.</span><span class="n">DataGroup</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Perform the fitting and populate the DataGroups with the result.</span>
 
 <span class="sd">    Parameters</span>
@@ -6288,8 +6378,7 @@ If <code>None</code>, uses the instance default set at construction. By default,
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/easyreflectometry/fitting.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">296</span>
-<span class="normal">297</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">297</span>
 <span class="normal">298</span>
 <span class="normal">299</span>
 <span class="normal">300</span>
@@ -6349,7 +6438,8 @@ If <code>None</code>, uses the instance default set at construction. By default,
 <span class="normal">354</span>
 <span class="normal">355</span>
 <span class="normal">356</span>
-<span class="normal">357</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">fit_single_data_set_1d</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">DataSet1D</span><span class="p">,</span> <span class="n">objective</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FitResults</span><span class="p">:</span>
+<span class="normal">357</span>
+<span class="normal">358</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">fit_single_data_set_1d</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">DataSet1D</span><span class="p">,</span> <span class="n">objective</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FitResults</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Perform fitting on a single 1D dataset.</span>
 
 <span class="sd">    Parameters</span>
@@ -6440,12 +6530,17 @@ switched to <code>AvailableMinimizers.Bumps</code>).</p>
 :param initializer: DREAM population initializer. One of <code>'eps'</code>,
     <code>'cov'</code>, <code>'lhs'</code>, or <code>'random'</code>. By default, None (BUMPS
     uses <code>'eps'</code>).
-    — the population already exists in the saved state.
 :param progress_callback: Optional callback for progress updates during
     sampling.  Forwarded to the core MultiFitter.
 :return: Dictionary with keys <code>'draws'</code>, <code>'param_names'</code>, <code>'state'</code>,
     and <code>'logp'</code>.
 :raises RuntimeError: If the current minimizer is not a BUMPS instance.</p>
+<p>The underlying :class:<code>~easyscience.fitting.Sampler</code> is retained on
+:attr:<code>sampler</code>, so the chain can be continued without re-running the
+burn-in::</p>
+<div class="language-text highlight"><pre><span></span><code>fitter.mcmc_sample(data, samples=2000, burn=500, thin=10)
+extended = fitter.sampler.extend(additional_samples=8000, thin=10)
+</code></pre></div>
 <!-- prettier-ignore-start -->
 
 <!-- prettier-ignore-end -->
@@ -6453,8 +6548,7 @@ switched to <code>AvailableMinimizers.Bumps</code>).</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/easyreflectometry/fitting.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">359</span>
-<span class="normal">360</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">360</span>
 <span class="normal">361</span>
 <span class="normal">362</span>
 <span class="normal">363</span>
@@ -6546,7 +6640,16 @@ switched to <code>AvailableMinimizers.Bumps</code>).</p>
 <span class="normal">449</span>
 <span class="normal">450</span>
 <span class="normal">451</span>
-<span class="normal">452</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">mcmc_sample</span><span class="p">(</span>
+<span class="normal">452</span>
+<span class="normal">453</span>
+<span class="normal">454</span>
+<span class="normal">455</span>
+<span class="normal">456</span>
+<span class="normal">457</span>
+<span class="normal">458</span>
+<span class="normal">459</span>
+<span class="normal">460</span>
+<span class="normal">461</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">mcmc_sample</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">data</span><span class="p">:</span> <span class="n">sc</span><span class="o">.</span><span class="n">DataGroup</span><span class="p">,</span>
     <span class="n">samples</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10000</span><span class="p">,</span>
@@ -6572,12 +6675,18 @@ switched to <code>AvailableMinimizers.Bumps</code>).</p>
 <span class="sd">    :param initializer: DREAM population initializer. One of ``&#39;eps&#39;``,</span>
 <span class="sd">        ``&#39;cov&#39;``, ``&#39;lhs&#39;``, or ``&#39;random&#39;``. By default, None (BUMPS</span>
 <span class="sd">        uses ``&#39;eps&#39;``).</span>
-<span class="sd">        — the population already exists in the saved state.</span>
 <span class="sd">    :param progress_callback: Optional callback for progress updates during</span>
 <span class="sd">        sampling.  Forwarded to the core MultiFitter.</span>
 <span class="sd">    :return: Dictionary with keys ``&#39;draws&#39;``, ``&#39;param_names&#39;``, ``&#39;state&#39;``,</span>
 <span class="sd">        and ``&#39;logp&#39;``.</span>
 <span class="sd">    :raises RuntimeError: If the current minimizer is not a BUMPS instance.</span>
+
+<span class="sd">    The underlying :class:`~easyscience.fitting.Sampler` is retained on</span>
+<span class="sd">    :attr:`sampler`, so the chain can be continued without re-running the</span>
+<span class="sd">    burn-in::</span>
+
+<span class="sd">        fitter.mcmc_sample(data, samples=2000, burn=500, thin=10)</span>
+<span class="sd">        extended = fitter.sampler.extend(additional_samples=8000, thin=10)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">minimizer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">easy_science_multi_fitter</span><span class="o">.</span><span class="n">minimizer</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">hasattr</span><span class="p">(</span><span class="n">minimizer</span><span class="p">,</span> <span class="s1">&#39;package&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">minimizer</span><span class="o">.</span><span class="n">package</span> <span class="o">==</span> <span class="s1">&#39;bumps&#39;</span><span class="p">):</span>
@@ -6625,6 +6734,8 @@ switched to <code>AvailableMinimizers.Bumps</code>).</p>
         <span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">,</span>
         <span class="n">weights</span><span class="o">=</span><span class="n">dy</span><span class="p">,</span>
     <span class="p">)</span>
+    <span class="c1"># Retained so the chain can be continued afterwards via ``self.sampler.extend()``.</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span> <span class="o">=</span> <span class="n">sampler</span>
     <span class="n">results</span> <span class="o">=</span> <span class="n">sampler</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
         <span class="n">samples</span><span class="o">=</span><span class="n">samples</span><span class="p">,</span>
         <span class="n">burn</span><span class="o">=</span><span class="n">burn</span><span class="p">,</span>
@@ -6699,15 +6810,15 @@ switched to <code>AvailableMinimizers.Bumps</code>).</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/easyreflectometry/fitting.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">503</span>
-<span class="normal">504</span>
-<span class="normal">505</span>
-<span class="normal">506</span>
-<span class="normal">507</span>
-<span class="normal">508</span>
-<span class="normal">509</span>
-<span class="normal">510</span>
-<span class="normal">511</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">switch_minimizer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">minimizer</span><span class="p">:</span> <span class="n">AvailableMinimizers</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">522</span>
+<span class="normal">523</span>
+<span class="normal">524</span>
+<span class="normal">525</span>
+<span class="normal">526</span>
+<span class="normal">527</span>
+<span class="normal">528</span>
+<span class="normal">529</span>
+<span class="normal">530</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">switch_minimizer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">minimizer</span><span class="p">:</span> <span class="n">AvailableMinimizers</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Switch the minimizer for the fitting.</span>
 
 <span class="sd">    Parameters</span>
@@ -7401,20 +7512,20 @@ with keys 'valid', 'mighell_substituted', 'masked'.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/easyreflectometry/fitting.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">514</span>
-<span class="normal">515</span>
-<span class="normal">516</span>
-<span class="normal">517</span>
-<span class="normal">518</span>
-<span class="normal">519</span>
-<span class="normal">520</span>
-<span class="normal">521</span>
-<span class="normal">522</span>
-<span class="normal">523</span>
-<span class="normal">524</span>
-<span class="normal">525</span>
-<span class="normal">526</span>
-<span class="normal">527</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_flatten_list</span><span class="p">(</span><span class="n">this_list</span><span class="p">:</span> <span class="nb">list</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">533</span>
+<span class="normal">534</span>
+<span class="normal">535</span>
+<span class="normal">536</span>
+<span class="normal">537</span>
+<span class="normal">538</span>
+<span class="normal">539</span>
+<span class="normal">540</span>
+<span class="normal">541</span>
+<span class="normal">542</span>
+<span class="normal">543</span>
+<span class="normal">544</span>
+<span class="normal">545</span>
+<span class="normal">546</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_flatten_list</span><span class="p">(</span><span class="n">this_list</span><span class="p">:</span> <span class="nb">list</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Flatten nested lists.</span>
 
 <span class="sd">    Parameters</span>
