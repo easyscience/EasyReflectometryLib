@@ -15,8 +15,8 @@ class TestMaterialMixture:
         material_mixture = MaterialMixture()
         assert material_mixture.fraction.value == 0.5
         assert str(material_mixture._fraction.unit) == 'dimensionless'
-        assert_almost_equal(material_mixture.sld, 4.186)
-        assert_almost_equal(material_mixture.isld, 0)
+        assert_almost_equal(material_mixture.sld.value, 4.186)
+        assert_almost_equal(material_mixture.isld.value, 0)
         assert str(material_mixture._sld.unit) == '1/Å^2'
         assert str(material_mixture._isld.unit) == '1/Å^2'
 
@@ -24,12 +24,12 @@ class TestMaterialMixture:
         material_mixture = MaterialMixture()
         assert material_mixture.fraction.value == 0.5
         assert str(material_mixture._fraction.unit) == 'dimensionless'
-        assert_almost_equal(material_mixture.sld, 4.186)
-        assert_almost_equal(material_mixture.isld, 0)
+        assert_almost_equal(material_mixture.sld.value, 4.186)
+        assert_almost_equal(material_mixture.isld.value, 0)
         material_mixture.material_a.sld.value = 0
         material_mixture.material_b.isld.value = -1
-        assert_almost_equal(material_mixture.sld, 2.093)
-        assert_almost_equal(material_mixture.isld, -0.5)
+        assert_almost_equal(material_mixture.sld.value, 2.093)
+        assert_almost_equal(material_mixture.isld.value, -0.5)
         assert str(material_mixture._sld.unit) == '1/Å^2'
         assert str(material_mixture._isld.unit) == '1/Å^2'
 
@@ -38,59 +38,59 @@ class TestMaterialMixture:
         q = Material(6.908, -0.278, 'Boron')
         material_mixture = MaterialMixture(p, q, 0.2)
         assert material_mixture.fraction.value == 0.2
-        assert_almost_equal(material_mixture.sld, 4.7304)
-        assert_almost_equal(material_mixture.isld, -0.0556)
+        assert_almost_equal(material_mixture.sld.value, 4.7304)
+        assert_almost_equal(material_mixture.isld.value, -0.0556)
         material_mixture._fraction.value = 0.5
         assert material_mixture.fraction.value == 0.5
-        assert_almost_equal(material_mixture.sld, 5.54700)
-        assert_almost_equal(material_mixture.isld, -0.1390)
+        assert_almost_equal(material_mixture.sld.value, 5.54700)
+        assert_almost_equal(material_mixture.isld.value, -0.1390)
 
     def test_material_a_change(self) -> None:
         material_mixture = MaterialMixture()
         assert material_mixture.fraction.value == 0.5
         assert str(material_mixture._fraction.unit) == 'dimensionless'
-        assert_almost_equal(material_mixture.sld, 4.186)
-        assert_almost_equal(material_mixture.isld, 0)
+        assert_almost_equal(material_mixture.sld.value, 4.186)
+        assert_almost_equal(material_mixture.isld.value, 0)
         q = Material(6.908, -0.278, 'Boron')
         material_mixture.material_a = q
         assert material_mixture.fraction.value == 0.5
         assert str(material_mixture._fraction.unit) == 'dimensionless'
-        assert_almost_equal(material_mixture.sld, 5.54700)
-        assert_almost_equal(material_mixture.isld, -0.1390)
+        assert_almost_equal(material_mixture.sld.value, 5.54700)
+        assert_almost_equal(material_mixture.isld.value, -0.1390)
 
     def test_material_b_change(self) -> None:
         material_mixture = MaterialMixture()
         assert material_mixture.fraction.value == 0.5
         assert str(material_mixture._fraction.unit) == 'dimensionless'
-        assert_almost_equal(material_mixture.sld, 4.186)
-        assert_almost_equal(material_mixture.isld, 0)
+        assert_almost_equal(material_mixture.sld.value, 4.186)
+        assert_almost_equal(material_mixture.isld.value, 0)
         q = Material(6.908, -0.278, 'Boron')
         material_mixture.material_b = q
         assert material_mixture.fraction.value == 0.5
         assert str(material_mixture._fraction.unit) == 'dimensionless'
-        assert_almost_equal(material_mixture.sld, 5.54700)
-        assert_almost_equal(material_mixture.isld, -0.1390)
+        assert_almost_equal(material_mixture.sld.value, 5.54700)
+        assert_almost_equal(material_mixture.isld.value, -0.1390)
 
     def test_material_b_change_double(self) -> None:
         material_mixture = MaterialMixture()
         assert material_mixture.fraction.value == 0.5
         assert str(material_mixture._fraction.unit) == 'dimensionless'
-        assert_almost_equal(material_mixture.sld, 4.186)
-        assert_almost_equal(material_mixture.isld, 0)
+        assert_almost_equal(material_mixture.sld.value, 4.186)
+        assert_almost_equal(material_mixture.isld.value, 0)
         q = Material(6.908, -0.278, 'Boron')
         material_mixture.material_b = q
         assert material_mixture.name == 'EasyMaterial/Boron'
         assert material_mixture.fraction.value == 0.5
         assert str(material_mixture._fraction.unit) == 'dimensionless'
-        assert_almost_equal(material_mixture.sld, 5.54700)
-        assert_almost_equal(material_mixture.isld, -0.1390)
+        assert_almost_equal(material_mixture.sld.value, 5.54700)
+        assert_almost_equal(material_mixture.isld.value, -0.1390)
         r = Material(0.00, 0.00, 'ACMW')
         material_mixture.material_b = r
         assert material_mixture.name == 'EasyMaterial/ACMW'
         assert material_mixture.fraction.value == 0.5
         assert str(material_mixture._fraction.unit) == 'dimensionless'
-        assert_almost_equal(material_mixture.sld, 2.0930)
-        assert_almost_equal(material_mixture.isld, 0.0000)
+        assert_almost_equal(material_mixture.sld.value, 2.0930)
+        assert_almost_equal(material_mixture.isld.value, 0.0000)
 
     def test_from_pars(self):
         p = Material()
@@ -98,8 +98,8 @@ class TestMaterialMixture:
         material_mixture = MaterialMixture(p, q, 0.2)
         assert material_mixture.fraction.value == 0.2
         assert str(material_mixture._fraction.unit) == 'dimensionless'
-        assert_almost_equal(material_mixture.sld, 4.7304)
-        assert_almost_equal(material_mixture.isld, -0.0556)
+        assert_almost_equal(material_mixture.sld.value, 4.7304)
+        assert_almost_equal(material_mixture.isld.value, -0.0556)
         assert str(material_mixture._sld.unit) == '1/Å^2'
         assert str(material_mixture._isld.unit) == '1/Å^2'
 
@@ -158,7 +158,7 @@ class TestMaterialMixture:
         mixture = MaterialMixture(material_a, material_b, fraction=0.25, interface=interface)
 
         # 2 * 0.75 + 6 * 0.25 = 1.5 + 1.5 = 3.0
-        assert_almost_equal(mixture.sld, 3.0)
+        assert_almost_equal(mixture.sld.value, 3.0)
         wrapper_material = interface()._wrapper.storage['material'][mixture.unique_name]
         assert_almost_equal(wrapper_material.real.value, 3.0)
         assert_almost_equal(wrapper_material.imag.value, 0.0)
@@ -173,8 +173,8 @@ class TestMaterialMixture:
         global_object.map._clear()
 
         q = MaterialMixture.from_dict(p_dict)
-        assert_almost_equal(q.sld, 3.0)
+        assert_almost_equal(q.sld.value, 3.0)
 
         q.fraction = 0.8
         # 2 * 0.2 + 6 * 0.8 = 0.4 + 4.8 = 5.2
-        assert_almost_equal(q.sld, 5.2)
+        assert_almost_equal(q.sld.value, 5.2)

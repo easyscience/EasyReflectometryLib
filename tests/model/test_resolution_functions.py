@@ -38,7 +38,7 @@ class TestPercentageFwhm(unittest.TestCase):
         resolution_function = PercentageFwhm(1.0)
 
         # Then Expect
-        resolution_function.as_dict() == {'smearing': 'PercentageFwhm', 'constant': 1.0}
+        assert resolution_function.as_dict() == {'smearing': 'PercentageFwhm', 'constant': 1.0}
 
     def test_dict_round_trip(self):
         # When
@@ -67,7 +67,7 @@ class TestLinearSpline(unittest.TestCase):
         resolution_function = LinearSpline(q_data_points=[0, 10], fwhm_values=[5, 10])
 
         # Then Expect
-        resolution_function.as_dict() == {
+        assert resolution_function.as_dict() == {
             'smearing': 'LinearSpline',
             'q_data_points': [0, 10],
             'fwhm_values': [5, 10],
@@ -117,7 +117,12 @@ class TestPointwise(unittest.TestCase):
         resolution_function = Pointwise(q_data_points=self.data_points)
 
         # Then Expect
-        assert resolution_function.as_dict(), {'smearing': 'Pointwise', 'q_data_points': [0, 10]}
+        assert resolution_function.as_dict() == {
+            'smearing': 'Pointwise',
+            'q_data_points': self.data_points[0],
+            'R_data_points': self.data_points[1],
+            'sQz_data_points': self.data_points[2],
+        }
 
     def test_dict_round_trip(self):
         # When

@@ -476,7 +476,7 @@ class TestProject:
         project = Project()
         project._fitter = MagicMock()
         project._fitter.easy_science_multi_fitter = MagicMock()
-        project._fitter.easy_science_multi_fitter.minimizer = AvailableMinimizers.LMFit
+        project._fitter.easy_science_multi_fitter.minimizer.enum = AvailableMinimizers.LMFit
 
         # Then
         project_dict = project.as_dict()

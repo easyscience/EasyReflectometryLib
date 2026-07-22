@@ -494,19 +494,3 @@ class MultiFitter:
             Minimizer to be switched to.
         """
         self.easy_science_multi_fitter.switch_minimizer(minimizer)
-
-
-def _flatten_list(this_list: list) -> list:
-    """Flatten nested lists.
-
-    Parameters
-    ----------
-    this_list : list
-        List to be flattened.
-
-    Returns
-    -------
-    list
-        Flattened list.
-    """
-    return np.array([item for sublist in this_list for item in sublist])
