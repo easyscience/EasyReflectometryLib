@@ -3094,8 +3094,7 @@
 <span class="normal">241</span>
 <span class="normal">242</span>
 <span class="normal">243</span>
-<span class="normal">244</span>
-<span class="normal">245</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">MaterialMixture</span><span class="p">(</span><span class="n">BaseCore</span><span class="p">):</span>
+<span class="normal">244</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">MaterialMixture</span><span class="p">(</span><span class="n">BaseCore</span><span class="p">):</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">material_a</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Material</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -3220,17 +3219,16 @@
     <span class="c1"># ----- derived sld / isld parameters (shared shape with Material) -----</span>
     <span class="c1">#</span>
     <span class="c1"># These are *derived* via the constraints set up in `_materials_constraints`</span>
-    <span class="c1"># (not constructor arguments) so we expose them as floats to match the</span>
-    <span class="c1"># legacy MaterialMixture API. The underlying Parameter objects remain</span>
-    <span class="c1"># available as `self._sld` / `self._isld`.</span>
+    <span class="c1"># (not constructor arguments), so unlike Material there are no setters:</span>
+    <span class="c1"># their values follow the child materials and the fraction.</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">sld</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sld</span><span class="o">.</span><span class="n">value</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sld</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Parameter</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sld</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">isld</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_isld</span><span class="o">.</span><span class="n">value</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">isld</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Parameter</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_isld</span>
 
     <span class="c1"># ----- calculator binding -----</span>
 
@@ -3239,8 +3237,8 @@
 
 <span class="sd">        Override of the inherited `BaseCore._get_linkable_attributes`, which</span>
 <span class="sd">        walks `get_all_variables()` and would otherwise expose the **child**</span>
-<span class="sd">        materials&#39; sld/isld (because our own `sld` / `isld` are floats, not</span>
-<span class="sd">        Parameters). The calculator&#39;s `InterfaceFactoryTemplate.generate_bindings`</span>
+<span class="sd">        materials&#39; sld/isld alongside the mixed ones. The calculator&#39;s</span>
+<span class="sd">        `InterfaceFactoryTemplate.generate_bindings`</span>
 <span class="sd">        matches by parameter `name`; without this override it binds to</span>
 <span class="sd">        `material_a.sld` and reflectivity is computed off the wrong SLD.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -3702,7 +3700,8 @@ here points the graph at the live objects.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/easyreflectometry/sample/elements/materials/material_mixture.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">216</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">215</span>
+<span class="normal">216</span>
 <span class="normal">217</span>
 <span class="normal">218</span>
 <span class="normal">219</span>
@@ -3716,8 +3715,7 @@ here points the graph at the live objects.</p>
 <span class="normal">227</span>
 <span class="normal">228</span>
 <span class="normal">229</span>
-<span class="normal">230</span>
-<span class="normal">231</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="normal">230</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">from_dict</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">obj_dict</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;MaterialMixture&#39;</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Re-attach mixed-sld dependencies after :class:`ModelBase` swaps in</span>
 <span class="sd">    the saved ``_fraction`` Parameter.</span>
