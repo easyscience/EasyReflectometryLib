@@ -5398,8 +5398,8 @@ calculator's resolution function.</p>
 <span class="sd">            — the population already exists in the saved state.</span>
 <span class="sd">        :param progress_callback: Optional callback for progress updates during</span>
 <span class="sd">            sampling.  Forwarded to the core MultiFitter.</span>
-<span class="sd">        :return: Dictionary with keys ``&#39;draws&#39;``, ``&#39;param_names&#39;``, ``&#39;state&#39;``,</span>
-<span class="sd">            and ``&#39;logp&#39;``.</span>
+<span class="sd">        :return: Dictionary with keys ``&#39;draws&#39;``, ``&#39;param_names&#39;``,</span>
+<span class="sd">            ``&#39;internal_bumps_object&#39;``, and ``&#39;logp&#39;``.</span>
 <span class="sd">        :raises RuntimeError: If the current minimizer is not a BUMPS instance.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">minimizer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">easy_science_multi_fitter</span><span class="o">.</span><span class="n">minimizer</span>
@@ -6393,8 +6393,8 @@ switched to <code>AvailableMinimizers.Bumps</code>).</p>
     — the population already exists in the saved state.
 :param progress_callback: Optional callback for progress updates during
     sampling.  Forwarded to the core MultiFitter.
-:return: Dictionary with keys <code>'draws'</code>, <code>'param_names'</code>, <code>'state'</code>,
-    and <code>'logp'</code>.
+:return: Dictionary with keys <code>'draws'</code>, <code>'param_names'</code>,
+    <code>'internal_bumps_object'</code>, and <code>'logp'</code>.
 :raises RuntimeError: If the current minimizer is not a BUMPS instance.</p>
 <!-- prettier-ignore-start -->
 
@@ -6511,8 +6511,8 @@ switched to <code>AvailableMinimizers.Bumps</code>).</p>
 <span class="sd">        — the population already exists in the saved state.</span>
 <span class="sd">    :param progress_callback: Optional callback for progress updates during</span>
 <span class="sd">        sampling.  Forwarded to the core MultiFitter.</span>
-<span class="sd">    :return: Dictionary with keys ``&#39;draws&#39;``, ``&#39;param_names&#39;``, ``&#39;state&#39;``,</span>
-<span class="sd">        and ``&#39;logp&#39;``.</span>
+<span class="sd">    :return: Dictionary with keys ``&#39;draws&#39;``, ``&#39;param_names&#39;``,</span>
+<span class="sd">        ``&#39;internal_bumps_object&#39;``, and ``&#39;logp&#39;``.</span>
 <span class="sd">    :raises RuntimeError: If the current minimizer is not a BUMPS instance.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">minimizer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">easy_science_multi_fitter</span><span class="o">.</span><span class="n">minimizer</span>
