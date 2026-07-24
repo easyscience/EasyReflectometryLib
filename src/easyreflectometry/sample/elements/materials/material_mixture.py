@@ -152,17 +152,16 @@ class MaterialMixture(BaseCore):
     # ----- derived sld / isld parameters (shared shape with Material) -----
     #
     # These are *derived* via the constraints set up in `_materials_constraints`
-    # (not constructor arguments) so we expose them as floats to match the
-    # legacy MaterialMixture API. The underlying Parameter objects remain
-    # available as `self._sld` / `self._isld`.
+    # (not constructor arguments), so unlike Material there are no setters:
+    # their values follow the child materials and the fraction.
 
     @property
-    def sld(self) -> float:
-        return self._sld.value
+    def sld(self) -> Parameter:
+        return self._sld
 
     @property
-    def isld(self) -> float:
-        return self._isld.value
+    def isld(self) -> Parameter:
+        return self._isld
 
     # ----- calculator binding -----
 
@@ -171,8 +170,8 @@ class MaterialMixture(BaseCore):
 
         Override of the inherited `BaseCore._get_linkable_attributes`, which
         walks `get_all_variables()` and would otherwise expose the **child**
-        materials' sld/isld (because our own `sld` / `isld` are floats, not
-        Parameters). The calculator's `InterfaceFactoryTemplate.generate_bindings`
+        materials' sld/isld alongside the mixed ones. The calculator's
+        `InterfaceFactoryTemplate.generate_bindings`
         matches by parameter `name`; without this override it binds to
         `material_a.sld` and reflectivity is computed off the wrong SLD.
         """

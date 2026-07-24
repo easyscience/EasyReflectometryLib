@@ -27,7 +27,7 @@ class TestRefl1d(unittest.TestCase):
         assert_equal(p._model_link['background'], 'bkg')
         assert_equal(p.name, 'refl1d')
 
-    def test_reflectity_profile(self):
+    def test_reflectivity_profile(self):
         p = Refl1d()
         p._wrapper.create_material('Material1')
         p._wrapper.update_material('Material1', rho=0.000, irho=0.000)
@@ -63,7 +63,7 @@ class TestRefl1d(unittest.TestCase):
             1.3093e-07,
             1.0520e-07,
         ]
-        assert_almost_equal(p.reflectity_profile(q, 'MyModel'), expected, decimal=4)
+        assert_almost_equal(p.reflectivity_profile(q, 'MyModel'), expected, decimal=4)
 
     def test_calculate2(self):
         p = Refl1d()
@@ -95,7 +95,7 @@ class TestRefl1d(unittest.TestCase):
         p._wrapper.add_item('Item3', 'MyModel')
         p._wrapper.update_item('Item2', repeat=10)
         q = np.linspace(0.001, 0.3, 10)
-        actual = p.reflectity_profile(q, 'MyModel')
+        actual = p.reflectivity_profile(q, 'MyModel')
         expected = [
             9.9949e-01,
             8.7414e-03,
@@ -140,7 +140,7 @@ class TestRefl1d(unittest.TestCase):
         p._wrapper.add_item('Item2', 'MyModel')
         p._wrapper.add_item('Item3', 'MyModel')
         q = np.linspace(0.001, 0.3, 10)
-        actual = p.reflectity_profile(q, 'MyModel')
+        actual = p.reflectivity_profile(q, 'MyModel')
         expected = [
             9.99491251e-01,
             1.08413641e-02,

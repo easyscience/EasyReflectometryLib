@@ -10,6 +10,7 @@ FWHM = 2.35 * sigma [2 * np.sqrt(2 * np.log(2)) * sigma].
 
 from __future__ import annotations
 
+from abc import ABC
 from abc import abstractmethod
 from typing import List
 from typing import Optional
@@ -20,7 +21,7 @@ import numpy as np
 DEFAULT_RESOLUTION_FWHM_PERCENTAGE = 5.0
 
 
-class ResolutionFunction:
+class ResolutionFunction(ABC):
     @abstractmethod
     def smearing(self, q: Union[np.array, float]) -> np.array: ...
 

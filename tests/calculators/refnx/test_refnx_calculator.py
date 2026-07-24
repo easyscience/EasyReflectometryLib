@@ -27,7 +27,7 @@ class TestRefnx(unittest.TestCase):
         assert_equal(p._model_link['background'], 'bkg')
         assert_equal(p.name, 'refnx')
 
-    def test_reflectity_profile(self):
+    def test_reflectivity_profile(self):
         p = Refnx()
         p._wrapper.create_material('Material1')
         p._wrapper.update_material('Material1', real=0.000, imag=0.000)
@@ -62,7 +62,7 @@ class TestRefnx(unittest.TestCase):
             1.26726993e-07,
             1.01842852e-07,
         ]
-        assert_almost_equal(p.reflectity_profile(q, 'MyModel'), expected)
+        assert_almost_equal(p.reflectivity_profile(q, 'MyModel'), expected)
 
     def test_calculate2(self):
         p = Refnx()
@@ -105,7 +105,7 @@ class TestRefnx(unittest.TestCase):
             3.4981523e-07,
             2.5424356e-07,
         ]
-        assert_almost_equal(p.reflectity_profile(q, 'MyModel'), expected)
+        assert_almost_equal(p.reflectivity_profile(q, 'MyModel'), expected)
 
     def test_sld_profile(self):
         p = Refnx()
