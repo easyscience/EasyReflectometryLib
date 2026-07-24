@@ -384,8 +384,8 @@ class MultiFitter:
             — the population already exists in the saved state.
         :param progress_callback: Optional callback for progress updates during
             sampling.  Forwarded to the core MultiFitter.
-        :return: Dictionary with keys ``'draws'``, ``'param_names'``, ``'state'``,
-            and ``'logp'``.
+        :return: Dictionary with keys ``'draws'``, ``'param_names'``,
+            ``'internal_bumps_object'``, and ``'logp'``.
         :raises RuntimeError: If the current minimizer is not a BUMPS instance.
         """
         minimizer = self.easy_science_multi_fitter.minimizer
