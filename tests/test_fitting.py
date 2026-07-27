@@ -287,6 +287,46 @@ def test_reduced_chi_uses_global_dof_across_fit_results():
     assert fitter.reduced_chi == pytest.approx(expected)
 
 
+def test_record_fit_results_populates_reduced_chi():
+    """Results computed outside the fitter can be recorded so reduced_chi works.
+
+    Mirrors the app path where the threaded fit runs on the low-level
+    easy_science_multi_fitter and the high-level results must be recorded
+    explicitly (otherwise the HTML summary goodness-of-fit shows 'N/A').
+    """
+    model = Model()
+    model.interface = CalculatorFactory()
+    fitter = MultiFitter(model)
+
+    assert fitter.reduced_chi is None
+
+    fit_result = MagicMock()
+    fit_result.chi2 = 20.0
+    fit_result.x = np.arange(14)
+    fit_result.n_pars = 4
+
+    fitter.record_fit_results([fit_result])
+
+    assert fitter.reduced_chi == pytest.approx(20.0 / (14 - 4))
+
+
+def test_record_fit_results_none_clears_state():
+    model = Model()
+    model.interface = CalculatorFactory()
+    fitter = MultiFitter(model)
+
+    fit_result = MagicMock()
+    fit_result.chi2 = 20.0
+    fit_result.x = np.arange(14)
+    fit_result.n_pars = 4
+    fitter.record_fit_results([fit_result])
+
+    fitter.record_fit_results(None)
+
+    assert fitter.reduced_chi is None
+    assert fitter.chi2 is None
+
+
 def test_fit_single_data_set_1d_all_zero_variance_raises():
     """Legacy mask mode raises when all points have zero variance."""
     model = Model()
