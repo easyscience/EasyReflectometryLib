@@ -30,9 +30,13 @@ class GradientLayer(BaseAssembly):
         parameters. Fit the discrete sublayers (``layers``) directly, or rebuild
         the :class:`GradientLayer` with new end materials, to change the profile.
 
-        This limitation exists because dependent parameters bound to a
-        calculator are not refreshed by the calculator (an easyscience-core
-        constraint shared with :class:`MaterialMixture`).
+        This is a wiring gap, not a calculator limitation: the sublayer SLDs
+        are plain snapshots and no dependency expressions connect them to the
+        end materials. Since easyscience now propagates bound dependent
+        parameters to the calculator (see :class:`MaterialMixture`, whose
+        ``fraction`` drives the mixed SLD through exactly such dependencies),
+        end-material fitting can be implemented by making each sublayer SLD
+        dependent on the end-material SLDs (issue #373).
     """
 
     def __init__(
