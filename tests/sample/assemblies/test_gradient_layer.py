@@ -205,9 +205,7 @@ class TestGradientLayer:
         global_object.map._clear()
         front = Material(2.0, 0.0, 'Front')
         back = Material(6.0, 0.0, 'Back')
-        gradient = GradientLayer(
-            front_material=front, back_material=back, thickness=60.0, discretisation_elements=6, name='G'
-        )
+        gradient = GradientLayer(front_material=front, back_material=back, thickness=60.0, discretisation_elements=6, name='G')
         model = Model(interface=CalculatorFactory())
         model.add_assemblies(gradient)
         q = [0.05, 0.1, 0.2]
