@@ -11,10 +11,10 @@ Restored the measured per-point resolution on data load (issue #368).
   `PercentageFwhm(5.0)` — a temporary workaround that never got
   reverted. Fits of such data were smeared with 5% FWHM regardless of
   what the instrument delivered and should be re-run.
-- Files without q-resolution data keep the 5% FWHM default. The
-  pre-#293 fallback that built a `LinearSpline` from the *reflectivity*
-  error (`sqrt(ye)`) was not restored: a reflectivity uncertainty is not
-  a q-width, and that branch produced effectively zero smearing.
+- Files without q-resolution data keep the 5% FWHM default. The pre-#293
+  fallback that built a `LinearSpline` from the _reflectivity_ error
+  (`sqrt(ye)`) was not restored: a reflectivity uncertainty is not a
+  q-width, and that branch produced effectively zero smearing.
 - Known limitation (pre-existing): the resolution function lives on the
   model, so when several experiments share one model the last-loaded
   dataset's resolution wins.
