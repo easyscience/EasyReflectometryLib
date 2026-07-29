@@ -1,5 +1,24 @@
 # Unreleased
 
+Restored the measured per-point resolution on data load (issue #368).
+
+- Loading data through `Project` (`load_new_experiment`,
+  `load_experiment_for_model_at_index`,
+  `load_all_experiments_from_file`) again sets a `Pointwise` resolution
+  function when the file carries per-point q-resolution (an sQz column
+  in `.ort` files, or a 4th column in text files). Since PR #293 the
+  loaders discarded this data and always applied a flat
+  `PercentageFwhm(5.0)` — a temporary workaround that never got
+  reverted. Fits of such data were smeared with 5% FWHM regardless of
+  what the instrument delivered and should be re-run.
+- Files without q-resolution data keep the 5% FWHM default. The
+  pre-#293 fallback that built a `LinearSpline` from the *reflectivity*
+  error (`sqrt(ye)`) was not restored: a reflectivity uncertainty is not
+  a q-width, and that branch produced effectively zero smearing.
+- Known limitation (pre-existing): the resolution function lives on the
+  model, so when several experiments share one model the last-loaded
+  dataset's resolution wins.
+
 Fixed inconsistent interpretation of vector resolution functions between
 the refnx and refl1d engines (issue #367).
 
