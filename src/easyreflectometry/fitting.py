@@ -355,6 +355,24 @@ class MultiFitter:
         ]
         return result
 
+    def record_fit_results(self, results: list[FitResults] | None) -> None:
+        """Record fit results produced outside this fitter instance.
+
+        The application runs threaded fits directly on the lower-level
+        ``easy_science_multi_fitter`` (for progress reporting and cancellation)
+        rather than through :meth:`fit`. As a result, the high-level
+        ``_fit_results`` used by :attr:`chi2`, :attr:`reduced_chi`, and the
+        HTML summary's goodness-of-fit are never populated. Call this after such
+        a fit so those consumers reflect the latest results. Pass ``None`` to
+        clear.
+
+        :param results: The list of ``FitResults`` from the completed fit, or
+            ``None`` to reset.
+        """
+        self._fit_results = results
+        if not results:
+            self._classical_fit_metrics = None
+
     def mcmc_sample(
         self,
         data: sc.DataGroup,
