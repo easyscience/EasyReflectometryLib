@@ -28,6 +28,7 @@ from easyreflectometry.limits import apply_default_limits
 from easyreflectometry.model import Model
 from easyreflectometry.model import ModelCollection
 from easyreflectometry.model import PercentageFwhm
+from easyreflectometry.model import Pointwise
 from easyreflectometry.sample import Layer
 from easyreflectometry.sample import Material
 from easyreflectometry.sample import MaterialCollection
@@ -521,6 +522,10 @@ class Project:
     ) -> None:
         """Set the resolution function on *model* based on variance data in *experiment*.
 
+        Uses the measured per-point q-resolution (``Pointwise``) when the
+        experiment carries q-variance data (``xe``, i.e. sQz²); otherwise
+        falls back to the default 5% FWHM percentage resolution.
+
         Parameters
         ----------
         experiment : DataSet1D
@@ -528,7 +533,10 @@ class Project:
         model : Model
             The model whose resolution function is set.
         """
-        model.resolution_function = PercentageFwhm(5.0)
+        if experiment.xe is not None and np.any(experiment.xe):
+            model.resolution_function = Pointwise(q_data_points=[experiment.x, experiment.y, experiment.xe])
+        else:
+            model.resolution_function = PercentageFwhm(5.0)
 
     @staticmethod
     def _auto_set_background(experiment: DataSet1D) -> None:
