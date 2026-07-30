@@ -1079,3 +1079,190 @@ class TestMCMCSampleZeroVariance:
                 fitter.mcmc_sample(data, samples=100, burn=20, thin=2, objective='hybrid')
 
         assert len(capture['x'][0]) == 10  # all points kept (Mighell-substituted)
+
+
+class TestMCMCSampleMighellWarningsAndZeroVarianceGuard:
+    """mcmc_sample() must warn about Mighell-transformed points feeding the
+    Bayesian likelihood, and refuse data with no uncertainties at all."""
+
+    @staticmethod
+    def _make_fitter(objective='hybrid'):
+        model = Model()
+        model.interface = CalculatorFactory()
+        fitter = MultiFitter(model, objective=objective)
+        fitter.easy_science_multi_fitter = MagicMock()
+        fitter.easy_science_multi_fitter.minimizer.package = 'bumps'
+        return fitter
+
+    @staticmethod
+    def _make_data(variances):
+        qz = np.linspace(0.01, 0.3, 10)
+        r = np.exp(-qz * 50)
+        return sc.DataGroup({
+            'coords': {'Qz_0': sc.array(dims=['Qz_0'], values=qz)},
+            'data': {'R_0': sc.array(dims=['Qz_0'], values=r, variances=variances)},
+        })
+
+    def test_hybrid_partial_zero_variance_warns_mighell_substitution(self):
+        fitter = self._make_fitter()
+        variances = np.ones(10) * 0.01
+        variances[3:5] = 0.0
+        data = self._make_data(variances)
+
+        capture = {}
+        with pytest.warns(
+            UserWarning,
+            match=r'Mighell substitution to 2 zero-variance point\(s\) in reflectivity 0 during sampling',
+        ):
+            with _patch_sampler(capture):
+                fitter.mcmc_sample(data, samples=100, burn=20, thin=2)
+
+        assert len(capture['x'][0]) == 10
+
+    def test_mighell_objective_warns_transform_all_points(self):
+        fitter = self._make_fitter(objective='mighell')
+        data = self._make_data(np.ones(10) * 0.01)
+
+        capture = {}
+        with pytest.warns(
+            UserWarning,
+            match=r'Applied Mighell transform to all 10 point\(s\) in reflectivity 0 during sampling',
+        ):
+            with _patch_sampler(capture):
+                fitter.mcmc_sample(data, samples=100, burn=20, thin=2)
+
+        assert len(capture['x'][0]) == 10
+
+    def test_all_zero_variance_hybrid_raises(self):
+        fitter = self._make_fitter()
+        data = self._make_data(np.zeros(10))
+
+        capture = {}
+        with _patch_sampler(capture) as sampler_cls:
+            with pytest.raises(ValueError, match='all points have zero variance'):
+                fitter.mcmc_sample(data, samples=100, burn=20, thin=2)
+        sampler_cls.assert_not_called()
+
+    def test_all_zero_variance_legacy_mask_raises(self):
+        fitter = self._make_fitter(objective='legacy_mask')
+        data = self._make_data(np.zeros(10))
+
+        capture = {}
+        with _patch_sampler(capture) as sampler_cls:
+            with pytest.raises(ValueError, match='all points have zero variance'):
+                fitter.mcmc_sample(data, samples=100, burn=20, thin=2)
+        sampler_cls.assert_not_called()
+
+    def test_all_zero_variance_allowed_with_explicit_mighell(self):
+        """Explicitly opting in to objective='mighell' keeps working on
+        variance-free (e.g. raw count) data, with a warning."""
+        fitter = self._make_fitter(objective='mighell')
+        data = self._make_data(np.zeros(10))
+
+        capture = {}
+        with pytest.warns(UserWarning, match='not a true likelihood'):
+            with _patch_sampler(capture):
+                fitter.mcmc_sample(data, samples=100, burn=20, thin=2)
+
+        assert len(capture['x'][0]) == 10
+
+
+# ---------------------------------------------------------------------------
+# Analytic weighted-least-squares convention test (issue #370)
+# ---------------------------------------------------------------------------
+
+
+def _analytic_wls(design, y, point_weights):
+    """Solve min_beta sum_i (point_weights_i * (y_i - design_i . beta))^2.
+
+    Returns the solution and the unscaled covariance (X^T W X)^-1 of the
+    corresponding weighted least-squares problem.
+    """
+    a = design * point_weights[:, None]
+    b = y * point_weights
+    beta, *_ = np.linalg.lstsq(a, b, rcond=None)
+    covariance = np.linalg.inv(a.T @ a)
+    return beta, covariance
+
+
+@pytest.mark.parametrize('minimizer', [AvailableMinimizers.LMFit, AvailableMinimizers.Bumps])
+def test_fit_weight_convention_matches_analytic_wls(minimizer):
+    """Pin the weights = 1/sigma convention end-to-end against analytic WLS.
+
+    A reflectometry model is exactly linear in (scale, background):
+    R(q) = scale * f(q) + background, so weighted least squares has the
+    closed-form solution beta = (X^T W X)^-1 X^T W y with W = diag(1/sigma^2).
+    On heteroscedastic data the candidate weight conventions (1/sigma, sigma,
+    1/sigma^2) give measurably different solutions, so this test fails if the
+    convention between ``_prepare_fit_arrays`` and the EasyScience core
+    minimizers ever drifts. See issue #370.
+    """
+    construction_background = 1e-7
+    si = Material(2.07, 0, 'Si')
+    sio2 = Material(3.47, 0, 'SiO2')
+    d2o = Material(6.36, 0, 'D2O')
+    sample = Sample(
+        Multilayer(Layer(si, 0, 0, 'Si layer')),
+        Multilayer(Layer(sio2, 30, 3, 'SiO2 layer')),
+        Multilayer(Layer(d2o, 0, 3, 'D2O Subphase')),
+        name='WLS Structure',
+    )
+    model = Model(sample, 1.0, construction_background, PercentageFwhm(0.02), 'WLS Model')
+    model.interface = CalculatorFactory()
+    fitter = MultiFitter(model)
+    fitter.easy_science_multi_fitter.switch_minimizer(minimizer)
+
+    # Unit-scale, zero-background reflectivity curve of the fixed structure
+    q = np.linspace(0.01, 0.25, 30)
+    f = fitter._fit_func[0](q) - construction_background
+    assert np.all(f > 0)
+
+    # Deterministic heteroscedastic data that does NOT lie on the model
+    scale_true, background_true = 1.3, 4.0e-6
+    signal = scale_true * f + background_true
+    fractional_error = 0.03 + 0.02 * np.cos(40.0 * q) ** 2
+    sigma = fractional_error * signal
+    perturbation = 0.8 * np.cos(7.0 * np.arange(q.size) + 0.3)
+    y = signal + perturbation * sigma
+    variances = sigma**2
+
+    design = np.column_stack([f, np.ones_like(f)])
+    beta, covariance = _analytic_wls(design, y, 1.0 / sigma)
+    beta_if_sigma, _ = _analytic_wls(design, y, sigma)
+    beta_if_inverse_variance, _ = _analytic_wls(design, y, 1.0 / sigma**2)
+
+    # Sanity check: the conventions are distinguishable well beyond the fit tolerance
+    scale_tolerance = 1e-3
+    background_tolerance = 5e-8
+    scale_margin = min(abs(beta_if_sigma[0] - beta[0]), abs(beta_if_inverse_variance[0] - beta[0]))
+    assert scale_margin > 10 * scale_tolerance, 'test data cannot discriminate weight conventions'
+
+    model.scale.fixed = False
+    model.scale.bounds = (0.5, 3.0)
+    model.scale.value = 1.0
+    model.background.fixed = False
+    model.background.bounds = (1e-9, 1e-4)
+    model.background.value = 1e-6
+
+    data = DataSet1D(
+        name='wls_convention',
+        x=q,
+        y=y,
+        ye=variances,
+        model=model,
+        auto_background=False,
+    )
+    result = fitter.fit_single_data_set_1d(data)
+
+    assert result.success
+    assert model.scale.value == pytest.approx(beta[0], abs=scale_tolerance)
+    assert model.background.value == pytest.approx(beta[1], abs=background_tolerance)
+
+    if minimizer == AvailableMinimizers.LMFit:
+        # lmfit scales the covariance by reduced chi-square (scale_covar=True)
+        residual = y - design @ beta
+        chi2 = float(np.sum((residual / sigma) ** 2))
+        reduced_chi2 = chi2 / (q.size - 2)
+        expected_errors = np.sqrt(np.diag(covariance) * reduced_chi2)
+        assert model.scale.error == pytest.approx(expected_errors[0], rel=0.05)
+        assert model.background.error == pytest.approx(expected_errors[1], rel=0.05)

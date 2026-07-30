@@ -416,11 +416,34 @@ class MultiFitter:
             y_vals = data['data'][f'R_{i}'].values
             variances = data['data'][f'R_{i}'].variances
 
+            if obj != 'mighell' and np.all(np.asarray(variances) <= 0.0):
+                raise ValueError(
+                    f'Cannot run Bayesian sampling on reflectivity {i}: all points have zero variance. '
+                    'The likelihood is undefined without measurement uncertainties. Supply uncertainties, '
+                    "or explicitly opt in to the Mighell transform with objective='mighell' "
+                    '(a chi-square bias correction, not a true likelihood).'
+                )
+
             x_out, y_eff, weights, stats = _prepare_fit_arrays(x_vals, y_vals, variances, obj)
 
             if stats['masked'] > 0:
                 warnings.warn(
                     f'Masked {stats["masked"]} data point(s) in reflectivity {i} due to zero variance during sampling.',
+                    UserWarning,
+                )
+            if stats.get('transformed_all_points'):
+                warnings.warn(
+                    f'Applied Mighell transform to all {len(y_vals)} point(s) in reflectivity {i} during sampling. '
+                    'The Mighell transform is a chi-square bias correction, not a true likelihood; '
+                    'posterior widths may be unreliable.',
+                    UserWarning,
+                )
+            elif stats['mighell_substituted'] > 0:
+                warnings.warn(
+                    f'Applied Mighell substitution to {stats["mighell_substituted"]} '
+                    f'zero-variance point(s) in reflectivity {i} during sampling. '
+                    'The Mighell transform is a chi-square bias correction, not a true likelihood; '
+                    'posterior widths may be unreliable.',
                     UserWarning,
                 )
             x.append(x_out)
