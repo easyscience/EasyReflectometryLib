@@ -3497,7 +3497,7 @@ def plot_apply_makeup():
 <span class="n">model</span><span class="o">.</span><span class="n">resolution_function</span> <span class="o">=</span> <span class="n">PercentageFwhm</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 <span class="n">model_interface</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">interface</span><span class="p">()</span>
 <span class="n">model_interface</span><span class="o">.</span><span class="n">magnetism</span> <span class="o">=</span> <span class="kc">False</span>
-<span class="n">model_data_no_magnetism_ref1d_easy</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">interface</span><span class="p">()</span><span class="o">.</span><span class="n">reflectivity_profile</span><span class="p">(</span>
+<span class="n">model_data_no_magnetism_ref1d_easy</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">interface</span><span class="p">()</span><span class="o">.</span><span class="n">reflectity_profile</span><span class="p">(</span>
     <span class="n">model_coords</span><span class="p">,</span>
     <span class="n">model</span><span class="o">.</span><span class="n">unique_name</span><span class="p">,</span>
 <span class="p">)</span>
@@ -3525,7 +3525,7 @@ model.interface = interface
 model.resolution_function = PercentageFwhm(0)
 model_interface = model.interface()
 model_interface.magnetism = False
-model_data_no_magnetism_ref1d_easy = model.interface().reflectivity_profile(
+model_data_no_magnetism_ref1d_easy = model.interface().reflectity_profile(
     model_coords,
     model.unique_name,
 )
@@ -3586,7 +3586,7 @@ plot_apply_makeup()</div>
 <span class="n">model</span><span class="o">.</span><span class="n">interface</span> <span class="o">=</span> <span class="n">interface</span>
 <span class="n">model_interface</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">interface</span><span class="p">()</span>
 <span class="n">model_interface</span><span class="o">.</span><span class="n">include_magnetism</span> <span class="o">=</span> <span class="kc">True</span>
-<span class="n">model_data_magnetism</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">interface</span><span class="p">()</span><span class="o">.</span><span class="n">reflectivity_profile</span><span class="p">(</span>
+<span class="n">model_data_magnetism</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">interface</span><span class="p">()</span><span class="o">.</span><span class="n">reflectity_profile</span><span class="p">(</span>
     <span class="n">model_coords</span><span class="p">,</span>
     <span class="n">model</span><span class="o">.</span><span class="n">unique_name</span><span class="p">,</span>
 <span class="p">)</span>
@@ -3603,7 +3603,7 @@ plot_apply_makeup()</div>
 <span class="n">model_interface</span><span class="o">.</span><span class="n">_wrapper</span><span class="o">.</span><span class="n">update_layer</span><span class="p">(</span>
     <span class="nb">list</span><span class="p">(</span><span class="n">model_interface</span><span class="o">.</span><span class="n">_wrapper</span><span class="o">.</span><span class="n">storage</span><span class="p">[</span><span class="s1">'layer'</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">())[</span><span class="mi">2</span><span class="p">],</span> <span class="n">magnetism_rhoM</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">magnetism_thetaM</span><span class="o">=</span><span class="mi">175</span>
 <span class="p">)</span>
-<span class="n">model_data_magnetism_layer_1</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">interface</span><span class="p">()</span><span class="o">.</span><span class="n">reflectivity_profile</span><span class="p">(</span>
+<span class="n">model_data_magnetism_layer_1</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">interface</span><span class="p">()</span><span class="o">.</span><span class="n">reflectity_profile</span><span class="p">(</span>
     <span class="n">model_coords</span><span class="p">,</span>
     <span class="n">model</span><span class="o">.</span><span class="n">unique_name</span><span class="p">,</span>
 <span class="p">)</span>
@@ -3616,7 +3616,7 @@ interface.switch('refl1d')
 model.interface = interface
 model_interface = model.interface()
 model_interface.include_magnetism = True
-model_data_magnetism = model.interface().reflectivity_profile(
+model_data_magnetism = model.interface().reflectity_profile(
     model_coords,
     model.unique_name,
 )
@@ -3633,7 +3633,7 @@ model_interface._wrapper.update_layer(
 model_interface._wrapper.update_layer(
     list(model_interface._wrapper.storage['layer'].keys())[2], magnetism_rhoM=5, magnetism_thetaM=175
 )
-model_data_magnetism_layer_1 = model.interface().reflectivity_profile(
+model_data_magnetism_layer_1 = model.interface().reflectity_profile(
     model_coords,
     model.unique_name,
 )
@@ -3729,7 +3729,7 @@ plot_apply_makeup()</div>
 <span class="n">model_interface</span><span class="o">.</span><span class="n">_wrapper</span><span class="o">.</span><span class="n">update_layer</span><span class="p">(</span>
     <span class="nb">list</span><span class="p">(</span><span class="n">model_interface</span><span class="o">.</span><span class="n">_wrapper</span><span class="o">.</span><span class="n">storage</span><span class="p">[</span><span class="s1">'layer'</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">())[</span><span class="mi">2</span><span class="p">],</span> <span class="n">magnetism_rhoM</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">magnetism_thetaM</span><span class="o">=</span><span class="mi">175</span>
 <span class="p">)</span>
-<span class="n">model_data_magnetism_easy</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">interface</span><span class="p">()</span><span class="o">.</span><span class="n">reflectivity_profile</span><span class="p">(</span>
+<span class="n">model_data_magnetism_easy</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">interface</span><span class="p">()</span><span class="o">.</span><span class="n">reflectity_profile</span><span class="p">(</span>
     <span class="n">model_coords</span><span class="p">,</span>
     <span class="n">model</span><span class="o">.</span><span class="n">unique_name</span><span class="p">,</span>
 <span class="p">)</span>
@@ -3768,7 +3768,7 @@ model_interface._wrapper.update_layer(
 model_interface._wrapper.update_layer(
     list(model_interface._wrapper.storage['layer'].keys())[2], magnetism_rhoM=5, magnetism_thetaM=175
 )
-model_data_magnetism_easy = model.interface().reflectivity_profile(
+model_data_magnetism_easy = model.interface().reflectity_profile(
     model_coords,
     model.unique_name,
 )
@@ -4021,7 +4021,7 @@ plot_apply_makeup()</div>
 <span class="n">interface</span><span class="o">.</span><span class="n">switch</span><span class="p">(</span><span class="s1">'refnx'</span><span class="p">)</span>
 <span class="n">model</span><span class="o">.</span><span class="n">interface</span> <span class="o">=</span> <span class="n">interface</span>
 <span class="n">model_interface</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">interface</span><span class="p">()</span>
-<span class="n">model_data_no_magnetism_refnx</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">interface</span><span class="p">()</span><span class="o">.</span><span class="n">reflectivity_profile</span><span class="p">(</span>
+<span class="n">model_data_no_magnetism_refnx</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">interface</span><span class="p">()</span><span class="o">.</span><span class="n">reflectity_profile</span><span class="p">(</span>
     <span class="n">model_coords</span><span class="p">,</span>
     <span class="n">model</span><span class="o">.</span><span class="n">unique_name</span><span class="p">,</span>
 <span class="p">)</span>
@@ -4031,7 +4031,7 @@ plot_apply_makeup()</div>
 <span class="n">interface</span><span class="o">.</span><span class="n">switch</span><span class="p">(</span><span class="s1">'refl1d'</span><span class="p">)</span>
 <span class="n">model</span><span class="o">.</span><span class="n">interface</span> <span class="o">=</span> <span class="n">interface</span>
 <span class="n">model_interface</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">interface</span><span class="p">()</span>
-<span class="n">model_data_no_magnetism_ref1d</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">interface</span><span class="p">()</span><span class="o">.</span><span class="n">reflectivity_profile</span><span class="p">(</span>
+<span class="n">model_data_no_magnetism_ref1d</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">interface</span><span class="p">()</span><span class="o">.</span><span class="n">reflectity_profile</span><span class="p">(</span>
     <span class="n">model_coords</span><span class="p">,</span>
     <span class="n">model</span><span class="o">.</span><span class="n">unique_name</span><span class="p">,</span>
 <span class="p">)</span>
@@ -4043,7 +4043,7 @@ plot_apply_makeup()</div>
 interface.switch('refnx')
 model.interface = interface
 model_interface = model.interface()
-model_data_no_magnetism_refnx = model.interface().reflectivity_profile(
+model_data_no_magnetism_refnx = model.interface().reflectity_profile(
     model_coords,
     model.unique_name,
 )
@@ -4053,7 +4053,7 @@ plt.plot(model_coords, model_data_no_magnetism_refnx, 'k-', label=f'EasyReflecto
 interface.switch('refl1d')
 model.interface = interface
 model_interface = model.interface()
-model_data_no_magnetism_ref1d = model.interface().reflectivity_profile(
+model_data_no_magnetism_ref1d = model.interface().reflectity_profile(
     model_coords,
     model.unique_name,
 )
@@ -4112,7 +4112,7 @@ plot_apply_makeup()</div>
 <span class="n">model</span><span class="o">.</span><span class="n">interface</span> <span class="o">=</span> <span class="n">interface</span>
 <span class="n">model_interface</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">interface</span><span class="p">()</span>
 <span class="n">model_interface</span><span class="o">.</span><span class="n">magnetism</span> <span class="o">=</span> <span class="kc">True</span>
-<span class="n">model_data_magnetism</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">interface</span><span class="p">()</span><span class="o">.</span><span class="n">reflectivity_profile</span><span class="p">(</span>
+<span class="n">model_data_magnetism</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">interface</span><span class="p">()</span><span class="o">.</span><span class="n">reflectity_profile</span><span class="p">(</span>
     <span class="n">model_coords</span><span class="p">,</span>
     <span class="n">model</span><span class="o">.</span><span class="n">unique_name</span><span class="p">,</span>
 <span class="p">)</span>
@@ -4123,7 +4123,7 @@ plot_apply_makeup()</div>
 <span class="n">model</span><span class="o">.</span><span class="n">interface</span> <span class="o">=</span> <span class="n">interface</span>
 <span class="n">model_interface</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">interface</span><span class="p">()</span>
 <span class="n">model_interface</span><span class="o">.</span><span class="n">magnetism</span> <span class="o">=</span> <span class="kc">False</span>
-<span class="n">model_data_no_magnetism</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">interface</span><span class="p">()</span><span class="o">.</span><span class="n">reflectivity_profile</span><span class="p">(</span>
+<span class="n">model_data_no_magnetism</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">interface</span><span class="p">()</span><span class="o">.</span><span class="n">reflectity_profile</span><span class="p">(</span>
     <span class="n">model_coords</span><span class="p">,</span>
     <span class="n">model</span><span class="o">.</span><span class="n">unique_name</span><span class="p">,</span>
 <span class="p">)</span>
@@ -4136,7 +4136,7 @@ interface.switch('refl1d')
 model.interface = interface
 model_interface = model.interface()
 model_interface.magnetism = True
-model_data_magnetism = model.interface().reflectivity_profile(
+model_data_magnetism = model.interface().reflectity_profile(
     model_coords,
     model.unique_name,
 )
@@ -4147,7 +4147,7 @@ interface.switch('refl1d')
 model.interface = interface
 model_interface = model.interface()
 model_interface.magnetism = False
-model_data_no_magnetism = model.interface().reflectivity_profile(
+model_data_no_magnetism = model.interface().reflectity_profile(
     model_coords,
     model.unique_name,
 )
