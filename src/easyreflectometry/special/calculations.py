@@ -44,13 +44,11 @@ def neutron_scattering_length(formula: str) -> complex:
     scattering_length = 0 + 0j
     for key, value in formula_as_dict.items():
         scattering_length += pt.elements.symbol(key).neutron.b_c * value
-        # b_c_i is the imaginary (absorption) part of the bound coherent
-        # scattering length, not the incoherent scattering length.
         if pt.elements.symbol(key).neutron.b_c_i:
-            imag = pt.elements.symbol(key).neutron.b_c_i
+            inc = pt.elements.symbol(key).neutron.b_c_i
         else:
-            imag = 0
-        scattering_length += imag * 1j * value
+            inc = 0
+        scattering_length += inc * 1j * value
     return scattering_length * 1e-5
 
 
@@ -65,7 +63,7 @@ def molecular_weight(formula: str) -> float:
     Returns
     -------
     float
-        Molecular weight of the material in u (g/mol).
+        Molecular weight of the material in kilograms.
     """
     formula_as_dict = parse_formula(formula)
     mw = 0

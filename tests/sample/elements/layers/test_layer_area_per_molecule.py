@@ -27,8 +27,8 @@ class TestLayerAreaPerMolecule(unittest.TestCase):
         assert p.roughness.value == 3.3
         assert str(p.roughness.unit) == 'Å'
         assert p.roughness.fixed is True
-        assert_almost_equal(p.material.sld.value, 2.268770124481328)
-        assert_almost_equal(p.material.isld.value, 0)
+        assert_almost_equal(p.material.sld, 2.268770124481328)
+        assert_almost_equal(p.material.isld, 0)
         assert p.material.name == 'C10H18NO8P in D2O'
         assert p.solvent.sld.value == 6.36
         assert p.solvent.isld.value == 0
@@ -69,7 +69,7 @@ class TestLayerAreaPerMolecule(unittest.TestCase):
         )
         assert p.molecular_formula == 'C8O10H12P'
         assert p.area_per_molecule.value == 50
-        assert_almost_equal(p.material.sld.value, 0.31494833333333333)
+        assert_almost_equal(p.material.sld, 0.31494833333333333)
         assert p.thickness.value == 12
         assert p.roughness.value == 2
         assert p.solvent.sld.value == -0.561
@@ -77,10 +77,10 @@ class TestLayerAreaPerMolecule(unittest.TestCase):
         assert p.solvent_fraction.value == 0.5
         p.area_per_molecule = 30
         assert p.area_per_molecule.value == 30
-        assert_almost_equal(p.material.sld.value, 0.7119138888888887)
+        assert_almost_equal(p.material.sld, 0.7119138888888887)
         p.thickness.value = 10
         assert p.thickness.value == 10
-        assert_almost_equal(p.material.sld.value, 0.9103966666666665)
+        assert_almost_equal(p.material.sld, 0.9103966666666665)
 
     @unittest.skip('Instantiation of LayerAreaPerMolecule fails, despite working everywhere else.')
     def test_solvent_change(self):
@@ -97,7 +97,7 @@ class TestLayerAreaPerMolecule(unittest.TestCase):
         assert p.molecular_formula == 'C8O10H12P'
         assert p.area_per_molecule.value == 50
         print(p.material)
-        assert_almost_equal(p.material.sld.value, 0.31494833333333333)
+        assert_almost_equal(p.material.sld, 0.31494833333333333)
         assert p.thickness.value == 12
         assert p.roughness.value == 2
         assert p.solvent.sld.value == -0.561
@@ -107,7 +107,7 @@ class TestLayerAreaPerMolecule(unittest.TestCase):
         p.solvent = d2o
         assert p.molecular_formula == 'C8O10H12P'
         assert p.area_per_molecule.value == 50
-        assert_almost_equal(p.material.sld.value, 3.762948333333333)
+        assert_almost_equal(p.material.sld, 3.762948333333333)
         assert p.thickness.value == 12
         assert p.roughness.value == 2
         assert p.solvent.sld.value == 6.335
@@ -127,7 +127,7 @@ class TestLayerAreaPerMolecule(unittest.TestCase):
         )
         assert p.molecular_formula == 'C8O10H12P'
         assert p.area_per_molecule.value == 50
-        assert_almost_equal(p.material.sld.value, 0.31494833333333333)
+        assert_almost_equal(p.material.sld, 0.31494833333333333)
         assert p.thickness.value == 12
         assert p.roughness.value == 2
 
@@ -138,7 +138,7 @@ class TestLayerAreaPerMolecule(unittest.TestCase):
         p.molecular_formula = 'C8O10D12P'
         assert p.molecular_formula == 'C8O10D12P'
         assert p.area_per_molecule.value == 50
-        assert_almost_equal(p.material.sld.value, 1.3558483333333333)
+        assert_almost_equal(p.material.sld, 1.3558483333333333)
         assert p.thickness.value == 12
         assert p.roughness.value == 2
         assert p.solvent.sld.value == -0.561

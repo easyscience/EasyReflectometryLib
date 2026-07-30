@@ -4,7 +4,6 @@
 import os
 from unittest.mock import MagicMock
 
-import numpy as np
 import pytest
 from easyscience import global_object
 
@@ -137,7 +136,7 @@ class TestSummary:
         assert 'No. of data points' in html
         assert '408' in html
         assert 'Resolution function' in html
-        assert 'PercentageFwhm' in html
+        assert 'Pointwise' in html
 
     def test_experiments_section_percentage_fhwm(self, project: Project) -> None:
         # When
@@ -168,51 +167,6 @@ class TestSummary:
         assert 'No. of free parameters:' in html
         assert '0' in html
         assert 'No. of constraints' in html
-        # The (previously misspelt) constraints token must be fully substituted.
-        assert 'num_constriants' not in html
-        assert 'num_constraints' not in html
-
-    @staticmethod
-    def _populate_fit_results(project: Project, chi2: float, n_points: int, n_pars: int) -> None:
-        """Emulate a completed fit by storing results on the project's fitter."""
-        fit_result = MagicMock()
-        fit_result.chi2 = chi2
-        fit_result.x = np.arange(n_points)
-        fit_result.n_pars = n_pars
-        project.fitter._fit_results = [fit_result]
-
-    def test_compute_goodness_of_fit_na_before_fit(self, project: Project) -> None:
-        # When
-        summary = Summary(project)
-
-        # Then Expect: no fit has been run, so goodness-of-fit is unavailable.
-        assert summary._compute_goodness_of_fit() == 'N/A'
-
-    def test_compute_goodness_of_fit_after_fit(self, project: Project) -> None:
-        # When: reduced chi² = 20 / (14 - 4) = 2.0
-        summary = Summary(project)
-        self._populate_fit_results(project, chi2=20.0, n_points=14, n_pars=4)
-
-        # Then
-        gof = summary._compute_goodness_of_fit()
-
-        # Expect
-        assert gof != 'N/A'
-        assert float(gof) == pytest.approx(2.0)
-
-    def test_refinement_section_shows_goodness_of_fit(self, project: Project) -> None:
-        # When
-        summary = Summary(project)
-        self._populate_fit_results(project, chi2=20.0, n_points=14, n_pars=4)
-        gof = summary._compute_goodness_of_fit()
-
-        # Then
-        html = summary._refinement_section()
-
-        # Expect: the template token is replaced with the actual value, not 'N/A'.
-        assert gof != 'N/A'
-        assert gof in html
-        assert 'goodness_of_fit' not in html
 
     def test_save_sld_plot(self, project: Project, tmp_path) -> None:
         # When

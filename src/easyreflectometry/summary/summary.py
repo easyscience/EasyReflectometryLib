@@ -309,28 +309,26 @@ class Summary:
         html_refinement = html_refinement.replace('num_total_params', f'{num_params}')
         html_refinement = html_refinement.replace('num_free_params', f'{num_free_params}')
         html_refinement = html_refinement.replace('num_fixed_params', f'{num_fixed_params}')
-        html_refinement = html_refinement.replace('num_constraints', f'{num_constraints}')
+        html_refinement = html_refinement.replace('num_constriants', f'{num_constraints}')
         return html_refinement
 
     def _compute_goodness_of_fit(self) -> str:
-        """Return reduced chi² as a formatted string, or 'N/A' if no fit has been run.
-
-        The value is read from the project's fitter, which computes the reduced
-        chi-square directly from the raw chi-square and the global degrees of
-        freedom across every fitted dataset. Deriving it this way keeps the
-        summary independent of the per-minimizer ``reduced_chi`` / ``reduced_chi2``
-        attribute naming used by the underlying ``FitResults`` objects.
-        """
-        fitter = self._project.fitter
-        if fitter is None:
+        """Return reduced chi² as a formatted string, or 'N/A' if no fit has been run."""
+        last_fit_results = getattr(self._project, '_last_fit_results', None)
+        if not last_fit_results:
             return 'N/A'
         try:
-            gof = fitter.reduced_chi
+            if len(last_fit_results) == 1:
+                gof = float(last_fit_results[0].reduced_chi2)
+            else:
+                total_chi2 = sum(float(r.chi2) for r in last_fit_results)
+                total_points = sum(len(r.x) for r in last_fit_results)
+                n_pars = last_fit_results[0].n_pars
+                dof = total_points - n_pars
+                gof = total_chi2 / dof if dof > 0 else 0.0
+            return f'{gof:.4g}'
         except (AttributeError, TypeError, ValueError, ZeroDivisionError):
             return 'N/A'
-        if gof is None:
-            return 'N/A'
-        return f'{gof:.4g}'
 
     def _figures_section(self, interactive: bool = True) -> str:
         """Figures section.

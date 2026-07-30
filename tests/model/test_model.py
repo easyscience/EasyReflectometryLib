@@ -45,8 +45,9 @@ class TestModel(unittest.TestCase):
         assert_equal(p.background.min, 0.0)
         assert_equal(p.background.max, np.inf)
         assert_equal(p.background.fixed, True)
-        assert p._resolution_function.smearing([1]) == 5.0
-        assert p._resolution_function.smearing([100]) == 5.0
+        sigma_to_fwhm = 2.0 * np.sqrt(2.0 * np.log(2.0))
+        assert np.allclose(p._resolution_function.smearing([1]), 5.0 / 100.0 * 1.0 / sigma_to_fwhm)
+        assert np.allclose(p._resolution_function.smearing([100]), 5.0 / 100.0 * 100.0 / sigma_to_fwhm)
 
     def test_from_pars(self):
         m1 = Material(6.908, -0.278, 'Boron')
@@ -81,8 +82,9 @@ class TestModel(unittest.TestCase):
         assert_equal(mod.background.min, 0.0)
         assert_equal(mod.background.max, np.inf)
         assert_equal(mod.background.fixed, True)
-        assert mod._resolution_function.smearing([1]) == 2.0
-        assert mod._resolution_function.smearing([100]) == 2.0
+        sigma_to_fwhm = 2.0 * np.sqrt(2.0 * np.log(2.0))
+        assert np.allclose(mod._resolution_function.smearing([1]), 2.0 / 100.0 * 1.0 / sigma_to_fwhm)
+        assert np.allclose(mod._resolution_function.smearing([100]), 2.0 / 100.0 * 100.0 / sigma_to_fwhm)
 
     def test_add_assemblies(self):
         m1 = Material(6.908, -0.278, 'Boron')
@@ -427,8 +429,8 @@ def test_dict_round_trip(interface):
     if interface is not None:
         assert model.interface().name == model_from_dict.interface().name
         assert_almost_equal(
-            model.interface().reflectivity_profile([0.3], model.unique_name),
-            model_from_dict.interface().reflectivity_profile([0.3], model_from_dict.unique_name),
+            model.interface().reflectity_profile([0.3], model.unique_name),
+            model_from_dict.interface().reflectity_profile([0.3], model_from_dict.unique_name),
         )
 
 
@@ -525,7 +527,8 @@ class TestModelRoundTrip:
         d = model.as_dict()
         global_object.map._clear()
         restored = Model.from_dict(d)
-        assert restored._resolution_function.smearing(100) == 3.0
+        sigma_to_fwhm = 2.0 * np.sqrt(2.0 * np.log(2.0))
+        assert np.allclose(restored._resolution_function.smearing(100), 3.0 / 100.0 * 100.0 / sigma_to_fwhm)
 
     def test_round_trip_preserves_interface(self):
         global_object.map._clear()

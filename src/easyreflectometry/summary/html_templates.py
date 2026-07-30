@@ -141,7 +141,7 @@ HTML_REFINEMENT_TEMPLATE = """
 </tr>
 <tr>
     <td>No. of constraints</td>
-    <td>num_constraints</td>
+    <td>num_constriants</td>
 </tr>
 """
 

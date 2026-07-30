@@ -6,11 +6,18 @@ When a percentage is provided we assume that the resolution is a
 Gaussian distribution with a FWHM of the percentage of the q value.
 To convert from a sigma value to a FWHM value we use the formula
 FWHM = 2.35 * sigma [2 * np.sqrt(2 * np.log(2)) * sigma].
+
+The :meth:`ResolutionFunction.smearing` contract returns **sigma**
+(the standard deviation of the Gaussian resolution) for every resolution
+type.  This matches the ``sQz`` convention used by data reduction and the
+natural output of :class:`Pointwise`.  Each calculation engine wrapper is
+responsible for converting sigma to the width convention of its backend
+(FWHM for refnx, sigma for refl1d), so that vector resolutions are
+interpreted consistently across engines (see GitHub issue #367).
 """
 
 from __future__ import annotations
 
-from abc import ABC
 from abc import abstractmethod
 from typing import List
 from typing import Optional
@@ -20,10 +27,15 @@ import numpy as np
 
 DEFAULT_RESOLUTION_FWHM_PERCENTAGE = 5.0
 
+# Conversion factor between sigma and FWHM for a Gaussian: FWHM = SIGMA_TO_FWHM * sigma.
+SIGMA_TO_FWHM = 2 * np.sqrt(2 * np.log(2))
 
-class ResolutionFunction(ABC):
+
+class ResolutionFunction:
     @abstractmethod
-    def smearing(self, q: Union[np.array, float]) -> np.array: ...
+    def smearing(self, q: Union[np.array, float]) -> np.array:
+        """Return the resolution as sigma (standard deviation) at each ``q``."""
+        ...
 
     @abstractmethod
     def as_dict(self, skip: Optional[List[str]] = None) -> dict: ...
@@ -52,8 +64,14 @@ class PercentageFwhm(ResolutionFunction):
         self.constant = constant
 
     def smearing(self, q: Union[np.array, float]) -> np.array:
-        """Smearing function."""
-        return np.ones(np.array(q).size) * self.constant
+        """Return per-point sigma values from the constant FWHM percentage.
+
+        ``constant`` is a FWHM percentage of ``q``; it is converted to an
+        absolute sigma so the smearing() contract is sigma for all types.
+        """
+        q_array = np.asarray(q, dtype=float)
+        fwhm = (self.constant / 100.0) * q_array
+        return fwhm / SIGMA_TO_FWHM
 
     def as_dict(
         self, skip: Optional[List[str]] = None
@@ -69,8 +87,13 @@ class LinearSpline(ResolutionFunction):
         self.fwhm_values = fwhm_values
 
     def smearing(self, q: Union[np.array, float]) -> np.array:
-        """Smearing function."""
-        return np.interp(q, self.q_data_points, self.fwhm_values)
+        """Return per-point sigma values from the FWHM knots.
+
+        The stored ``fwhm_values`` are FWHM widths; they are interpolated
+        onto ``q`` and converted to sigma to satisfy the smearing() contract.
+        """
+        fwhm = np.interp(np.asarray(q, dtype=float), self.q_data_points, self.fwhm_values)
+        return fwhm / SIGMA_TO_FWHM
 
     def as_dict(
         self, skip: Optional[List[str]] = None
@@ -111,10 +134,12 @@ class Pointwise(ResolutionFunction):
         self.q_data_points = q_data_points
 
     def smearing(self, q: Optional[Union[np.ndarray, float]] = None) -> np.ndarray:
-        """Return the resolution width interpolated onto ``q``.
+        """Return the resolution sigma interpolated onto ``q``.
 
-        The width at each data point is ``sqrt(sQz)``; values are linearly
-        interpolated onto the requested ``q``.  When ``q`` is ``None`` the widths
+        ``sQz`` is the variance of ``Qz``, so the sigma at each data point is
+        ``sqrt(sQz)``; values are linearly interpolated onto the requested
+        ``q``.  This already satisfies the sigma smearing() contract, so no
+        FWHM conversion is applied.  When ``q`` is ``None`` the sigma values
         are returned at the stored data points.
         """
         Qz = np.asarray(self.q_data_points[0], dtype=float)

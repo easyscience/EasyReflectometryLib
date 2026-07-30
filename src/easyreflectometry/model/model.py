@@ -148,12 +148,12 @@ class Model(BaseCore):
 
     # ----- assembly management -----
 
-    def add_assemblies(self, *assemblies: BaseAssembly) -> None:
+    def add_assemblies(self, *assemblies: list[BaseAssembly]) -> None:
         """Add assemblies to the model sample.
 
         Parameters
         ----------
-        *assemblies : BaseAssembly
+        *assemblies : list[BaseAssembly]
             Assemblies to add to model sample.
         """
         if not assemblies:

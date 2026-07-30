@@ -19,6 +19,7 @@ from easyreflectometry.fitting import MultiFitter
 from easyreflectometry.model import Model
 from easyreflectometry.model import ModelCollection
 from easyreflectometry.model import PercentageFwhm
+from easyreflectometry.model import Pointwise
 from easyreflectometry.project import Project
 from easyreflectometry.sample import Layer
 from easyreflectometry.sample import Material
@@ -476,7 +477,7 @@ class TestProject:
         project = Project()
         project._fitter = MagicMock()
         project._fitter.easy_science_multi_fitter = MagicMock()
-        project._fitter.easy_science_multi_fitter.minimizer.enum = AvailableMinimizers.LMFit
+        project._fitter.easy_science_multi_fitter.minimizer = AvailableMinimizers.LMFit
 
         # Then
         project_dict = project.as_dict()
@@ -663,7 +664,8 @@ class TestProject:
         assert isinstance(project.experiments[5], DataSet1D)
         assert project.experiments[5].name == 'Example data file from refnx docs'
         assert project.experiments[5].model == model_5
-        assert isinstance(project.models[5].resolution_function, PercentageFwhm)
+        # example.ort carries an sQz column, so the measured resolution is used
+        assert isinstance(project.models[5].resolution_function, Pointwise)
         assert isinstance(project.models[4].resolution_function, PercentageFwhm)
 
     def test_load_experiment_sets_resolution_function_pointwise_when_xe_present(self, tmp_path):
@@ -679,12 +681,13 @@ class TestProject:
         # Then
         project.load_experiment_for_model_at_index(str(fpath))
 
-        # Resolution is always set to PercentageFwhm
-        from easyreflectometry.model.resolution_functions import PercentageFwhm
+        # Expect Pointwise because xe (q-resolution) is present
+        resolution_function = project.models[0].resolution_function
+        assert isinstance(resolution_function, Pointwise)
+        # The 4th column is sQz (sigma); smearing() must return it unchanged
+        assert_allclose(resolution_function.smearing([0.01, 0.02]), [1e-4, 1e-4])
 
-        assert isinstance(project.models[0].resolution_function, PercentageFwhm)
-
-    def test_load_experiment_sets_linearspline_when_only_ye_present(self, tmp_path):
+    def test_load_experiment_keeps_percentage_fwhm_when_no_xe(self, tmp_path):
         # When
         global_object.map._clear()
         project = Project()
@@ -697,10 +700,44 @@ class TestProject:
         # Then
         project.load_experiment_for_model_at_index(str(fpath))
 
-        # Resolution is always set to PercentageFwhm
-        from easyreflectometry.model.resolution_functions import PercentageFwhm
-
+        # No q-resolution data available, so the 5% FWHM default is kept
         assert isinstance(project.models[0].resolution_function, PercentageFwhm)
+
+    def test_apply_resolution_function_prefers_pointwise_falls_back_to_percentage(self):
+        # When
+        global_object.map._clear()
+        project = Project()
+        model = Model()
+        with_xe = DataSet1D(x=[0.01, 0.02], y=[1.0, 2.0], ye=[0.1, 0.1], xe=[1e-8, 4e-8])
+        zero_xe = DataSet1D(x=[0.01, 0.02], y=[1.0, 2.0], ye=[0.1, 0.1], xe=[0.0, 0.0])
+        no_xe = DataSet1D(x=[0.01, 0.02], y=[1.0, 2.0], ye=[0.1, 0.1])
+
+        # Then Expect
+        project._apply_resolution_function(with_xe, model)
+        assert isinstance(model.resolution_function, Pointwise)
+        # xe holds sQz variances; smearing() must return sigma = sqrt(xe)
+        assert_allclose(model.resolution_function.smearing([0.01, 0.02]), [1e-4, 2e-4])
+
+        project._apply_resolution_function(zero_xe, model)
+        assert isinstance(model.resolution_function, PercentageFwhm)
+
+        project._apply_resolution_function(no_xe, model)
+        assert isinstance(model.resolution_function, PercentageFwhm)
+
+    def test_load_all_experiments_from_file_sets_pointwise_when_sqz_present(self):
+        # When
+        global_object.map._clear()
+        project = Project()
+        project.models = ModelCollection(Model())
+        fpath = os.path.join(PATH_STATIC, 'test_example2.ort')
+
+        # Then
+        n_loaded = project.load_all_experiments_from_file(fpath)
+
+        # Expect
+        assert n_loaded == 2
+        assert list(project.experiments.keys()) == [0, 1]
+        assert isinstance(project.models[0].resolution_function, Pointwise)
 
     def test_experimental_data_at_index(self):
         # When

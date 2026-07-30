@@ -10,6 +10,7 @@ import numpy as np
 import scipp as sc
 from easyscience.fitting import AvailableMinimizers
 from easyscience.fitting import FitResults
+from easyscience.fitting import Sampler
 from easyscience.fitting.multi_fitter import MultiFitter as EasyScienceMultiFitter
 
 from easyreflectometry.data import DataSet1D
@@ -194,6 +195,7 @@ class MultiFitter:
         self._fit_results: list[FitResults] | None = None
         self._classical_fit_metrics: list[dict] | None = None
         self._objective = _validate_objective(objective)
+        self._sampler: Sampler | None = None
 
     def fit(self, data: sc.DataGroup, id: int = 0, objective: str | None = None) -> sc.DataGroup:
         """Perform the fitting and populate the DataGroups with the result.
@@ -355,24 +357,6 @@ class MultiFitter:
         ]
         return result
 
-    def record_fit_results(self, results: list[FitResults] | None) -> None:
-        """Record fit results produced outside this fitter instance.
-
-        The application runs threaded fits directly on the lower-level
-        ``easy_science_multi_fitter`` (for progress reporting and cancellation)
-        rather than through :meth:`fit`. As a result, the high-level
-        ``_fit_results`` used by :attr:`chi2`, :attr:`reduced_chi`, and the
-        HTML summary's goodness-of-fit are never populated. Call this after such
-        a fit so those consumers reflect the latest results. Pass ``None`` to
-        clear.
-
-        :param results: The list of ``FitResults`` from the completed fit, or
-            ``None`` to reset.
-        """
-        self._fit_results = results
-        if not results:
-            self._classical_fit_metrics = None
-
     def mcmc_sample(
         self,
         data: sc.DataGroup,
@@ -399,12 +383,18 @@ class MultiFitter:
         :param initializer: DREAM population initializer. One of ``'eps'``,
             ``'cov'``, ``'lhs'``, or ``'random'``. By default, None (BUMPS
             uses ``'eps'``).
-            — the population already exists in the saved state.
         :param progress_callback: Optional callback for progress updates during
             sampling.  Forwarded to the core MultiFitter.
-        :return: Dictionary with keys ``'draws'``, ``'param_names'``,
-            ``'internal_bumps_object'``, and ``'logp'``.
+        :return: Dictionary with keys ``'draws'``, ``'param_names'``, ``'state'``,
+            and ``'logp'``.
         :raises RuntimeError: If the current minimizer is not a BUMPS instance.
+
+        The underlying :class:`~easyscience.fitting.Sampler` is retained on
+        :attr:`sampler`, so the chain can be continued without re-running the
+        burn-in::
+
+            fitter.mcmc_sample(data, samples=2000, burn=500, thin=10)
+            extended = fitter.sampler.extend(additional_samples=8000, thin=10)
         """
         minimizer = self.easy_science_multi_fitter.minimizer
         if not (hasattr(minimizer, 'package') and minimizer.package == 'bumps'):
@@ -426,6 +416,14 @@ class MultiFitter:
             y_vals = data['data'][f'R_{i}'].values
             variances = data['data'][f'R_{i}'].variances
 
+            if obj != 'mighell' and np.all(np.asarray(variances) <= 0.0):
+                raise ValueError(
+                    f'Cannot run Bayesian sampling on reflectivity {i}: all points have zero variance. '
+                    'The likelihood is undefined without measurement uncertainties. Supply uncertainties, '
+                    "or explicitly opt in to the Mighell transform with objective='mighell' "
+                    '(a chi-square bias correction, not a true likelihood).'
+                )
+
             x_out, y_eff, weights, stats = _prepare_fit_arrays(x_vals, y_vals, variances, obj)
 
             if stats['masked'] > 0:
@@ -433,18 +431,43 @@ class MultiFitter:
                     f'Masked {stats["masked"]} data point(s) in reflectivity {i} due to zero variance during sampling.',
                     UserWarning,
                 )
+            if stats.get('transformed_all_points'):
+                warnings.warn(
+                    f'Applied Mighell transform to all {len(y_vals)} point(s) in reflectivity {i} during sampling. '
+                    'The Mighell transform is a chi-square bias correction, not a true likelihood; '
+                    'posterior widths may be unreliable.',
+                    UserWarning,
+                )
+            elif stats['mighell_substituted'] > 0:
+                warnings.warn(
+                    f'Applied Mighell substitution to {stats["mighell_substituted"]} '
+                    f'zero-variance point(s) in reflectivity {i} during sampling. '
+                    'The Mighell transform is a chi-square bias correction, not a true likelihood; '
+                    'posterior widths may be unreliable.',
+                    UserWarning,
+                )
             x.append(x_out)
             y.append(y_eff)
             dy.append(weights)
 
-        # Delegate the actual BUMPS/DREAM sampling to the core MultiFitter
+        # Delegate the actual BUMPS/DREAM sampling to the core ``Sampler``.
+        # The core API moved from ``MultiFitter.mcmc_sample()`` to a dedicated
+        # ``Sampler`` class: construct it with the configured fitter and the
+        # bound data, then call ``sample()``. ``Sampler`` handles the
+        # multi-dataset reshaping internally.
         sampler_kwargs = {}
         if initializer is not None:
             sampler_kwargs['init'] = initializer
-        return self.easy_science_multi_fitter.mcmc_sample(
+
+        sampler = Sampler(
+            self.easy_science_multi_fitter,
             x=x,
             y=y,
             weights=dy,
+        )
+        # Retained so the chain can be continued afterwards via ``self.sampler.extend()``.
+        self._sampler = sampler
+        results = sampler.sample(
             samples=samples,
             burn=burn,
             thin=thin,
@@ -453,6 +476,22 @@ class MultiFitter:
             progress_callback=progress_callback,
             abort_test=abort_test,
         )
+        return {
+            'draws': results.draws,
+            'param_names': results.param_names,
+            'state': results.state,
+            'logp': results.logp,
+        }
+
+    @property
+    def sampler(self) -> Sampler | None:
+        """The ``Sampler`` behind the most recent :meth:`mcmc_sample` call, or None.
+
+        Holds the live BUMPS chain state, so the sampling run can be continued
+        with ``fitter.sampler.extend(additional_samples=...)`` instead of
+        starting a fresh chain.
+        """
+        return self._sampler
 
     @property
     def chi2(self) -> float | None:
@@ -512,3 +551,19 @@ class MultiFitter:
             Minimizer to be switched to.
         """
         self.easy_science_multi_fitter.switch_minimizer(minimizer)
+
+
+def _flatten_list(this_list: list) -> list:
+    """Flatten nested lists.
+
+    Parameters
+    ----------
+    this_list : list
+        List to be flattened.
+
+    Returns
+    -------
+    list
+        Flattened list.
+    """
+    return np.array([item for sublist in this_list for item in sublist])

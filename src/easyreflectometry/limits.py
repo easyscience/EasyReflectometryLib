@@ -31,19 +31,14 @@ def apply_default_limits(parameter: Parameter, kind: str) -> None:
 
 
 def _apply_percentage_limits(parameter: Parameter) -> None:
-    """Set bounds to 50%-200% of the current value, only if current bounds are inf.
-
-    For negative values 0.5*value > 2*value, so the candidates are ordered
-    to keep min <= value <= max.
-    """
+    """Set min to 50% and max to 200% of the current value, only if current bounds are inf."""
     value = parameter.value
     if value == 0.0:
         return
-    low, high = sorted((0.5 * value, 2.0 * value))
     if np.isinf(parameter.min):
-        parameter.min = low
+        parameter.min = 0.5 * value
     if np.isinf(parameter.max):
-        parameter.max = high
+        parameter.max = 2.0 * value
 
 
 def _apply_fixed_limits(parameter: Parameter, low: float, high: float) -> None:

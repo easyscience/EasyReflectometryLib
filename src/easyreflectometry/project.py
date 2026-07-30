@@ -28,6 +28,7 @@ from easyreflectometry.limits import apply_default_limits
 from easyreflectometry.model import Model
 from easyreflectometry.model import ModelCollection
 from easyreflectometry.model import PercentageFwhm
+from easyreflectometry.model import Pointwise
 from easyreflectometry.sample import Layer
 from easyreflectometry.sample import Material
 from easyreflectometry.sample import MaterialCollection
@@ -346,30 +347,29 @@ class Project:
         """Path json."""
         return self.path / 'project.json'
 
-    def _get_or_add_material_index(self, name: str, sld: float, isld: float) -> int:
-        """Return the index of the named material, adding it to the project
-        materials first if not present. This mutates ``self._materials``."""
-        names = [material.name for material in self._materials]
-        if name not in names:
-            self._materials.add_material(Material(name=name, sld=sld, isld=isld))
-            names.append(name)
-        return names.index(name)
-
     def get_index_air(self) -> int:
-        """Index of the Air material, adding it to the project if missing."""
-        return self._get_or_add_material_index('Air', sld=0.0, isld=0.0)
+        """Get index air."""
+        if 'Air' not in [material.name for material in self._materials]:
+            self._materials.add_material(Material(name='Air', sld=0.0, isld=0.0))
+        return [material.name for material in self._materials].index('Air')
 
     def get_index_si(self) -> int:
-        """Index of the Si material, adding it to the project if missing."""
-        return self._get_or_add_material_index('Si', sld=2.07, isld=0.0)
+        """Get index si."""
+        if 'Si' not in [material.name for material in self._materials]:
+            self._materials.add_material(Material(name='Si', sld=2.07, isld=0.0))
+        return [material.name for material in self._materials].index('Si')
 
     def get_index_sio2(self) -> int:
-        """Index of the SiO2 material, adding it to the project if missing."""
-        return self._get_or_add_material_index('SiO2', sld=3.47, isld=0.0)
+        """Get index sio2."""
+        if 'SiO2' not in [material.name for material in self._materials]:
+            self._materials.add_material(Material(name='SiO2', sld=3.47, isld=0.0))
+        return [material.name for material in self._materials].index('SiO2')
 
     def get_index_d2o(self) -> int:
-        """Index of the D2O material, adding it to the project if missing."""
-        return self._get_or_add_material_index('D2O', sld=6.36, isld=0.0)
+        """Get index d2o."""
+        if 'D2O' not in [material.name for material in self._materials]:
+            self._materials.add_material(Material(name='D2O', sld=6.36, isld=0.0))
+        return [material.name for material in self._materials].index('D2O')
 
     def load_orso_file(self, path: Union[Path, str]) -> None:
         """Load an ORSO file and optionally create a model and a data from it."""
@@ -387,6 +387,7 @@ class Project:
             self._experiments[0].name = 'Experiment from ORSO'
             self._experiments[0].model = self.models[0]
             self._with_experiments = True
+        pass
 
     def set_sample_from_orso(self, sample: Sample) -> None:
         """Replace the current project model collection with a single model built from an ORSO-parsed sample.
@@ -521,6 +522,10 @@ class Project:
     ) -> None:
         """Set the resolution function on *model* based on variance data in *experiment*.
 
+        Uses the measured per-point q-resolution (``Pointwise``) when the
+        experiment carries q-variance data (``xe``, i.e. sQz²); otherwise
+        falls back to the default 5% FWHM percentage resolution.
+
         Parameters
         ----------
         experiment : DataSet1D
@@ -528,7 +533,10 @@ class Project:
         model : Model
             The model whose resolution function is set.
         """
-        model.resolution_function = PercentageFwhm(5.0)
+        if experiment.xe is not None and np.any(experiment.xe):
+            model.resolution_function = Pointwise(q_data_points=[experiment.x, experiment.y, experiment.xe])
+        else:
+            model.resolution_function = PercentageFwhm(5.0)
 
     @staticmethod
     def _auto_set_background(experiment: DataSet1D) -> None:
@@ -665,7 +673,7 @@ class Project:
         if q_range is None:
             q_range = np.linspace(self.q_min, self.q_max, self.q_resolution)
         self.models[index].interface = self._calculator
-        reflectivity = self.models[index].interface().reflectivity_profile(q_range, self._models[index].unique_name)
+        reflectivity = self.models[index].interface().reflectity_profile(q_range, self._models[index].unique_name)
         return DataSet1D(
             name=f'Reflectivity for Model {index}',
             x=q_range,
@@ -868,10 +876,10 @@ class Project:
             self._as_dict_add_materials_not_in_model_dict(project_dict)
         if self._with_experiments:
             self._as_dict_add_experiments(project_dict)
-        # Read the minimizer without touching the lazy `fitter` property:
-        # serialization must not construct a MultiFitter as a side effect.
-        if self.minimizer is not None:
-            project_dict['fitter_minimizer'] = self.minimizer.name
+        if self.fitter is not None:
+            project_dict['fitter_minimizer'] = self.fitter.easy_science_multi_fitter.minimizer.name
+        elif self._minimizer_selection is not None:
+            project_dict['fitter_minimizer'] = self._minimizer_selection.name
         if self._calculator is not None:
             project_dict['calculator'] = self._calculator.current_interface_name
         if self._colors is not None:
