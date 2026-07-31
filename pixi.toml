@@ -92,7 +92,11 @@ user = { features = ['py-max', 'user'] }
 # 🧪 Testing Tasks
 ##################
 
-unit-tests = 'python -m pytest tests/unit/ --color=yes -v'
+# The bulk of the unit-test suite still lives at the top level of tests/
+# (pending migration into tests/unit/), so run the whole tree minus the
+# functional and integration subtrees -- otherwise CI coverage only sees
+# the handful of files under tests/unit/.
+unit-tests = 'python -m pytest tests/ --ignore=tests/functional --ignore=tests/integration --color=yes -v'
 functional-tests = 'python -m pytest tests/functional/ --color=yes -v'
 # No -n auto: importing easyreflectometry pulls in arviz, and arviz 0.23.4
 # (py-311-env) writes a "warn once per day" stamp file on import via a
