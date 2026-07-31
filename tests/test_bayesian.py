@@ -565,10 +565,14 @@ class TestToArvizData:
         draws, param_names = sample_draws
         idata = _to_arviz_data(draws, param_names)
         posterior = idata.posterior
+        # Dimension naming varies across arviz versions, so assert on the
+        # contract itself: every sample survives conversion with its values
+        # intact, in a single chain.
         assert posterior.sizes['chain'] == 1
-        assert posterior.sizes['draw'] == draws.shape[0]
-        for name in param_names:
-            assert name in posterior
+        for i, name in enumerate(param_names):
+            values = np.asarray(posterior[name].values).reshape(-1)
+            assert values.size == draws.shape[0]
+            assert np.allclose(values, draws[:, i])
 
 
 # ===================================================================

@@ -84,7 +84,14 @@ def _to_arviz_data(draws: np.ndarray, param_names: list[str]):
     for i, name in enumerate(param_names):
         posterior_dict[name] = draws[:, :, i]
 
-    return _arviz.from_dict({'posterior': posterior_dict})
+    # arviz < 1.0 takes the posterior variables as a keyword argument; arviz
+    # >= 1.0 removed it in favour of a single {group: {var: array}} mapping.
+    # The 1.x call cannot go first: 0.x accepts the mapping without error but
+    # misreads it as one variable named 'posterior'.
+    try:
+        return _arviz.from_dict(posterior=posterior_dict)
+    except TypeError:
+        return _arviz.from_dict({'posterior': posterior_dict})
 
 
 class PosteriorResults:
