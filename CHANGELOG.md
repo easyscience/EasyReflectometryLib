@@ -1,4 +1,4 @@
-# Unreleased
+# Version 1.7.0 (1 Aug 2026)
 
 Restored the measured per-point resolution on data load (issue #368).
 
