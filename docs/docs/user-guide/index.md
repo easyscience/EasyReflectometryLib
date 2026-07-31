@@ -222,8 +222,8 @@ the reflectivity curve and SLD profile.
 
 ### Workflow
 
-Sampling is exposed through `MultiFitter.mcmc_sample()` and requires
-the BUMPS minimizer. The recommended workflow is to run a classical fit
+Sampling is exposed through `MultiFitter.mcmc_sample()` and requires the
+BUMPS minimizer. The recommended workflow is to run a classical fit
 first — MCMC converges much faster when started from a good optimum —
 and then sample around it:
 
@@ -260,10 +260,10 @@ results are never returned from the optimizer-shaped API.
 ### Convergence and Chain Extension
 
 Check convergence with the Gelman-Rubin R-hat diagnostic (values close
-to 1.0 indicate convergence; above ~1.1 the chain has not converged).
-If the chain is under-converged, do not restart from scratch — the
-sampler is retained on `fitter.sampler`, so the existing chain can be
-continued without re-running the burn-in:
+to 1.0 indicate convergence; above ~1.1 the chain has not converged). If
+the chain is under-converged, do not restart from scratch — the sampler
+is retained on `fitter.sampler`, so the existing chain can be continued
+without re-running the burn-in:
 
 ```python
 extended = fitter.sampler.extend(additional_samples=8000, thin=10)
@@ -294,19 +294,19 @@ Traces can be persisted and reloaded with `posterior.save(path)` and
 
 ### Practical Notes
 
-- **Set realistic parameter bounds.** DREAM samples within the
-  parameter bounds, so overly wide or missing bounds slow convergence
-  and can produce unphysical posterior mass.
-- **MCMC is 10-100x slower than least-squares.** Start with a short
-  run, check R-hat, and extend the chain as needed.
+- **Set realistic parameter bounds.** DREAM samples within the parameter
+  bounds, so overly wide or missing bounds slow convergence and can
+  produce unphysical posterior mass.
+- **MCMC is 10-100x slower than least-squares.** Start with a short run,
+  check R-hat, and extend the chain as needed.
 - **Measurement uncertainties are required.** The likelihood is
   undefined without them; datasets where all variances are non-positive
   are rejected unless you explicitly opt in to the Mighell transform
-  (`objective='mighell'`), whose posterior widths should be treated
-  with caution.
-- **Optional dependencies.** Corner and distribution plots use
-  `plotly` (installed by default); trace plots and R-hat use `arviz`
-  (install with `pip install arviz`).
+  (`objective='mighell'`), whose posterior widths should be treated with
+  caution.
+- **Optional dependencies.** Corner and distribution plots use `plotly`
+  (installed by default); trace plots and R-hat use `arviz` (install
+  with `pip install arviz`).
 
 See the
 [Bayesian Fitting tutorial](../tutorials/advancedfitting/bayesian_bumps.ipynb)

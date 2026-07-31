@@ -34,9 +34,9 @@ Fitting helpers and objective functions.
 
 ## Bayesian Analysis
 
-Posterior analysis utilities for Bayesian MCMC sampling results:
-summary statistics, credible intervals, corner/trace/distribution
-plots, posterior-predictive curves, and trace persistence.
+Posterior analysis utilities for Bayesian MCMC sampling results: summary
+statistics, credible intervals, corner/trace/distribution plots,
+posterior-predictive curves, and trace persistence.
 
 - [Bayesian Analysis](analysis.md)
 

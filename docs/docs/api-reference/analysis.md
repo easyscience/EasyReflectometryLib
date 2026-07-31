@@ -1,3 +1,1 @@
-::: easyreflectometry.analysis.bayesian
-    options:
-      docstring_style: sphinx
+::: easyreflectometry.analysis.bayesian options: docstring_style: sphinx
