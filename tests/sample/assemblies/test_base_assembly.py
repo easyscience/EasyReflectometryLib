@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2024 EasyScience contributors <https://github.com/easyscience>
+# SPDX-License-Identifier: BSD-3-Clause
+
 """
 Tests for BaseAssembly class module
 """
@@ -179,3 +182,18 @@ class TestBaseAssembly:
 
         # Expect
         assert base_assembly.layers == [self.mock_layer_0, self.mock_layer_1]
+
+    def test_layers_setter(self) -> None:
+        """The layers property setter should replace the layer list."""
+        global_object.map._clear()
+        BaseAssembly.__abstractmethods__ = set()
+        assembly = BaseAssembly(
+            name='test',
+            type='type',
+            interface=MagicMock(),
+            layers=[MagicMock(), MagicMock()],
+        )
+        new_layers = [MagicMock(), MagicMock(), MagicMock()]
+        assembly.layers = new_layers
+        assert assembly.layers == new_layers
+        assert len(assembly.layers) == 3

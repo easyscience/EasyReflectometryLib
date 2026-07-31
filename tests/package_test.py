@@ -1,5 +1,6 @@
+# SPDX-FileCopyrightText: 2024 EasyScience contributors <https://github.com/easyscience>
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright (c) 2024 Easyscience contributors (https://github.com/EasyScience)
+
 import easyreflectometry as pkg
 
 

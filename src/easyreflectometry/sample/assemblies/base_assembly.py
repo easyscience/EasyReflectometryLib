@@ -1,4 +1,6 @@
-from typing import Any
+# SPDX-FileCopyrightText: 2026 EasyScience contributors <https://github.com/easyscience>
+# SPDX-License-Identifier: BSD-3-Clause
+
 from typing import Optional
 
 from ..base_core import BaseCore
@@ -8,36 +10,43 @@ from ..elements.layers.layer import Layer
 
 class BaseAssembly(BaseCore):
     """Assembly of layers.
+
     The front layer (front_layer) is the layer the neutron beam starts in, it has an index of 0.
     The back layer (back_layer) is the final layer from which the unreflected neutron beam is transmitted,
     its index number depends on the number of finite layers in the system, but it might be accessed at index -1.
     """
-
-    # Added in super().__init__
-    #: Name of the assembly.
-    name: str
-    #: Layers in the assembly.
-    layers: LayerCollection
-    #: Interface to the calculator.
-    interface: Any
 
     def __init__(
         self,
         name: str,
         type: str,
         interface,
-        **layers: LayerCollection,
+        layers: LayerCollection,
+        unique_name: Optional[str] = None,
     ):
-        super().__init__(name=name, interface=interface, **layers)
+        super().__init__(name=name, unique_name=unique_name)
+        self._layers = layers
 
         # Type is needed when fitting in easyscience
         self._type = type
         self._roughness_constraints_setup = False
         self._thickness_constraints_setup = False
 
+        if interface is not None:
+            self.interface = interface
+
+    @property
+    def layers(self) -> LayerCollection:
+        return self._layers
+
+    @layers.setter
+    def layers(self, value: LayerCollection) -> None:
+        self._layers = value
+
     @property
     def type(self) -> str:
         """Get type of the assembly.
+
         Needed by the GUI.
         """
         return self._type
@@ -53,7 +62,10 @@ class BaseAssembly(BaseCore):
     def front_layer(self, layer: Layer) -> None:
         """Set the front layer in the assembly.
 
-        :param layer: Layer to set as the front layer.
+        Parameters
+        ----------
+        layer : Layer
+            Layer to set as the front layer.
         """
         if len(self.layers) == 0:
             self.layers.append(layer)
@@ -72,7 +84,10 @@ class BaseAssembly(BaseCore):
     def back_layer(self, layer: Layer) -> None:
         """Set the back layer in the assembly.
 
-        :param layer: Layer to set as the back layer.
+        Parameters
+        ----------
+        layer : Layer
+            Layer to set as the back layer.
         """
 
         if len(self.layers) == 0:
@@ -83,18 +98,14 @@ class BaseAssembly(BaseCore):
             self.layers[-1] = layer
 
     def _setup_thickness_constraints(self) -> None:
-        """
-        Setup thickness constraint, front layer is the deciding layer
-        """
+        """Setup thickness constraint, front layer is the deciding layer."""
         independent_param = self.front_layer.thickness
         for i in range(1, len(self.layers)):
             self.layers[i].thickness.make_dependent_on(dependency_expression='a', dependency_map={'a': independent_param})
         self._thickness_constraints_setup = True
 
     def _enable_thickness_constraints(self):
-        """
-        Enable the thickness constraint.
-        """
+        """Enable the thickness constraint."""
         if self._thickness_constraints_setup:
             # Make sure that the thickness constraint is enabled
             self._setup_thickness_constraints()
@@ -103,9 +114,7 @@ class BaseAssembly(BaseCore):
             raise Exception('Thickness constraints not setup')
 
     def _disable_thickness_constraints(self):
-        """
-        Disable the thickness constraint.
-        """
+        """Disable the thickness constraint."""
         if self._thickness_constraints_setup:
             for i in range(1, len(self.layers)):
                 self.layers[i].thickness.make_independent()
@@ -113,25 +122,19 @@ class BaseAssembly(BaseCore):
             raise Exception('Thickness constraints not setup')
 
     def _setup_roughness_constraints(self) -> None:
-        """
-        Setup roughness constraint, front layer is the deciding layer
-        """
+        """Setup roughness constraint, front layer is the deciding layer."""
         independent_parameter = self.front_layer.roughness
         for i in range(1, len(self.layers)):
             self.layers[i].roughness.make_dependent_on(dependency_expression='a', dependency_map={'a': independent_parameter})
         self._roughness_constraints_setup = True
 
     def _enable_roughness_constraints(self):
-        """
-        Enable the roughness constraint.
-        """
+        """Enable the roughness constraint."""
         independent_parameter = self.front_layer.roughness
         for i in range(1, len(self.layers)):
             self.layers[i].roughness.make_dependent_on(dependency_expression='a', dependency_map={'a': independent_parameter})
 
     def _disable_roughness_constraints(self):
-        """
-        Disable the roughness constraint.
-        """
+        """Disable the roughness constraint."""
         for i in range(1, len(self.layers)):
             self.layers[i].roughness.make_independent()

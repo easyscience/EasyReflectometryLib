@@ -1,8 +1,12 @@
+# SPDX-FileCopyrightText: 2026 EasyScience contributors <https://github.com/easyscience>
+# SPDX-License-Identifier: BSD-3-Clause
+
 import unittest
 
 import numpy as np
 
 from easyreflectometry.model.resolution_functions import DEFAULT_RESOLUTION_FWHM_PERCENTAGE
+from easyreflectometry.model.resolution_functions import SIGMA_TO_FWHM
 from easyreflectometry.model.resolution_functions import LinearSpline
 from easyreflectometry.model.resolution_functions import PercentageFwhm
 from easyreflectometry.model.resolution_functions import Pointwise
@@ -14,21 +18,24 @@ class TestPercentageFwhm(unittest.TestCase):
         # When
         resolution_function = PercentageFwhm(1.0)
 
-        # Then Expect
-        assert np.all(resolution_function.smearing([0, 2.5]) == np.array([1.0, 1.0]))
-        assert resolution_function.smearing([-100]) == np.array([1.0])
-        assert resolution_function.smearing([100]) == np.array([1.0])
+        # Then Expect: smearing() returns sigma = (constant / 100) * q / SIGMA_TO_FWHM
+        # Negative q is not asserted: sigma scales with q here, so q < 0 yields a
+        # negative width, which is meaningless. Leaving it unpinned keeps the door
+        # open to guarding with abs(q) without failing this test.
+        expected = (1.0 / 100.0) * np.array([0.0, 2.5]) / SIGMA_TO_FWHM
+        assert np.allclose(resolution_function.smearing([0, 2.5]), expected)
+        assert np.allclose(resolution_function.smearing([100]), (1.0 / 100.0) * 100.0 / SIGMA_TO_FWHM)
 
     def test_constructor_none(self):
         # When
         resolution_function = PercentageFwhm()
 
-        # Then Expect
-        assert np.all(
-            resolution_function.smearing([0, 2.5]) == [DEFAULT_RESOLUTION_FWHM_PERCENTAGE, DEFAULT_RESOLUTION_FWHM_PERCENTAGE]
-        )
-        assert resolution_function.smearing([-100]) == DEFAULT_RESOLUTION_FWHM_PERCENTAGE
-        assert resolution_function.smearing([100]) == DEFAULT_RESOLUTION_FWHM_PERCENTAGE
+        # Then Expect: defaults to DEFAULT_RESOLUTION_FWHM_PERCENTAGE, returned as sigma
+        # Negative q is not asserted -- see test_constructor.
+        c = DEFAULT_RESOLUTION_FWHM_PERCENTAGE
+        expected = (c / 100.0) * np.array([0.0, 2.5]) / SIGMA_TO_FWHM
+        assert np.allclose(resolution_function.smearing([0, 2.5]), expected)
+        assert np.allclose(resolution_function.smearing([100]), (c / 100.0) * 100.0 / SIGMA_TO_FWHM)
 
     def test_as_dict(self):
         # When
@@ -54,17 +61,23 @@ class TestLinearSpline(unittest.TestCase):
         # When
         resolution_function = LinearSpline(q_data_points=[0, 10], fwhm_values=[5, 10])
 
-        # Then Expect
-        assert np.all(resolution_function.smearing([0, 2.5]) == np.array([5, 6.25]))
-        assert resolution_function.smearing([-100]) == np.array([5.0])
-        assert resolution_function.smearing([100]) == np.array([10.0])
+        # Then Expect: smearing() returns sigma (FWHM knots converted to sigma)
+        # Unlike PercentageFwhm, q outside the knot range is meaningful here:
+        # np.interp clamps to the end knots, so the width stays positive.
+        assert np.allclose(resolution_function.smearing([0, 2.5]), np.array([5, 6.25]) / SIGMA_TO_FWHM)
+        assert np.allclose(resolution_function.smearing([-100]), np.array([5.0]) / SIGMA_TO_FWHM)
+        assert np.allclose(resolution_function.smearing([100]), np.array([10.0]) / SIGMA_TO_FWHM)
 
     def test_as_dict(self):
         # When
         resolution_function = LinearSpline(q_data_points=[0, 10], fwhm_values=[5, 10])
 
         # Then Expect
-        resolution_function.as_dict() == {'smearing': 'LinearSpline', 'q_data_points': [0, 10], 'fwhm_values': [5, 10]}
+        resolution_function.as_dict() == {
+            'smearing': 'LinearSpline',
+            'q_data_points': [0, 10],
+            'fwhm_values': [5, 10],
+        }
 
     def test_dict_round_trip(self):
         # When
@@ -88,10 +101,22 @@ class TestPointwise(unittest.TestCase):
         # When
         resolution_function = Pointwise(q_data_points=self.data_points)
 
-        # Then Expect
+        # Then Expect: smearing returns the resolution width sqrt(sQz) at the data
+        # points, since sQz holds the variance of Qz (consistent with LinearSpline).
+        expected_widths = np.sqrt(self.data_points[2])
         assert np.allclose(
-            np.array(resolution_function.smearing()), np.array([2.51664683, 2.84038734, 3.2460762, 3.6796519, 4.07869271])
+            np.array(resolution_function.smearing()),
+            expected_widths,
         )
+
+    def test_smearing_interpolates_onto_q(self):
+        # When
+        resolution_function = Pointwise(q_data_points=self.data_points)
+
+        # Then Expect: requesting points between data points linearly interpolates the width.
+        widths = np.sqrt(self.data_points[2])
+        expected = np.interp([0.15, 0.25], self.data_points[0], widths)
+        assert np.allclose(resolution_function.smearing([0.15, 0.25]), expected)
 
     def test_as_dict(self):
         # When

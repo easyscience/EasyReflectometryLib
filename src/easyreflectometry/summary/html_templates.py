@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2024 EasyScience contributors <https://github.com/easyscience>
+# SPDX-License-Identifier: BSD-3-Clause
+
 HTML_TEMPLATE = """<!DOCTYPE html>
 
 <html>
@@ -39,7 +42,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             experiments_section
 
             <tr></tr>
-            
+
             <!-- Analysis -->
             <tr>
                 <td><h2>Refinement</h2></td>
@@ -49,7 +52,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         </table>
 
         figures_section
-        
+
     </body>
 </html>"""
 
@@ -75,18 +78,18 @@ HTML_PROJECT_INFORMATION_TEMPLATE = """
 
 HTML_PARAMETER_HEADER_TEMPLATE = """
 <tr>
-    <th>parameter_name</th> 
+    <th>parameter_name</th>
     <th>parameter_value</th>
-    <th>parameter_unit</th> 
+    <th>parameter_unit</th>
     <th>parameter_error</th>
 </tr>
 """
 
 HTML_PARAMETER_TEMPLATE = """
 <tr>
-    <td>parameter_name</td> 
+    <td>parameter_name</td>
     <td>parameter_value</td>
-    <td>parameter_unit</td> 
+    <td>parameter_unit</td>
     <td>parameter_error</td>
 </tr>
 """
@@ -120,10 +123,10 @@ HTML_REFINEMENT_TEMPLATE = """
     <td>Minimization engine</td>
     <td>minimization_engine</td>
 </tr>
-<!-- <tr> -->
-<!--     <td>Goodness-of-fit: reduced <i>&chi;</i><sup>2</sup></td> -->
-<!--     <td>goodness_of_fit</td> -->
-<!-- </tr> -->
+<tr>
+    <td>Goodness-of-fit: reduced <i>&chi;</i><sup>2</sup></td>
+    <td>goodness_of_fit</td>
+</tr>
 <tr>
     <td>No. of parameters:</td>
     <td>num_total_params</td>
@@ -146,4 +149,14 @@ HTML_FIGURES_TEMPLATE = """
 <img src="path_sld_plot" alt="SLD plot" width="640" height="480">
 <br>
 <img src="path_fit_experiment_plot" alt="Fit experiment plot" width="640" height="480">
+"""
+
+# Interactive figures for HTML reports. The plotly ``<div>``s carry their own
+# JavaScript so the report stays interactive (zoom, pan, hover) when opened in a
+# browser. The plotly.js library is embedded inline in the first figure, which
+# keeps the saved report self-contained and working offline.
+HTML_INTERACTIVE_FIGURES_TEMPLATE = """
+sld_plot_div
+<br>
+fit_experiment_plot_div
 """

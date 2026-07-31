@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2024 EasyScience contributors <https://github.com/easyscience>
+# SPDX-License-Identifier: BSD-3-Clause
+
 import datetime
 import os
 from pathlib import Path
@@ -16,6 +19,7 @@ from easyreflectometry.fitting import MultiFitter
 from easyreflectometry.model import Model
 from easyreflectometry.model import ModelCollection
 from easyreflectometry.model import PercentageFwhm
+from easyreflectometry.model import Pointwise
 from easyreflectometry.project import Project
 from easyreflectometry.sample import Layer
 from easyreflectometry.sample import Material
@@ -133,7 +137,8 @@ class TestProject:
         models_dict['unique_name'] = 'project_models'
         remove_interface(project_models_dict)
         remove_interface(models_dict)
-        # Since as_dict may not include unique_name, remove it for comparison
+        # Since as_dict may not include unique_name,
+        # remove it for comparison
         for d in [project_models_dict, models_dict]:
             if 'unique_name' in d:
                 del d['unique_name']
@@ -171,7 +176,12 @@ class TestProject:
         assert len(sample_data.x) == 500
         assert_allclose(
             np.array([4.6119497e-08, 6.3189932e00, 6.3350000e00, 2.0740000e00]),
-            np.array([sample_data.y[0], sample_data.y[100], sample_data.y[300], sample_data.y[499]]),
+            np.array([
+                sample_data.y[0],
+                sample_data.y[100],
+                sample_data.y[300],
+                sample_data.y[499],
+            ]),
         )
 
     def test_sample_data_for_model_at_index(self):
@@ -200,7 +210,12 @@ class TestProject:
         # Expect
         assert len(model_data.y) == 4
         assert_allclose(
-            np.array([0.9738701849233727, 0.0017678986451491123, 0.00016581714423990004, 3.3290653551465554e-08]),
+            np.array([
+                0.9738701849233727,
+                0.0017678986451491123,
+                0.00016581714423990004,
+                3.3290653551465554e-08,
+            ]),
             model_data.y,
         )
 
@@ -363,11 +378,13 @@ class TestProject:
         keys.sort()
         assert keys == [
             'calculator',
+            'file_format',
             'fitter_minimizer',
             'info',
             'models',
             'with_experiments',
         ]
+        assert project_dict['file_format'] == Project.FILE_FORMAT
         assert project_dict['info'] == {
             'name': 'DefaultEasyReflectometryProject',
             'short_description': 'Reflectometry, 1D',
@@ -402,6 +419,44 @@ class TestProject:
         remove_interface(models_dict)
         remove_interface(project_dict['models'])
         assert project_dict['models'] == models_dict
+
+    def test_from_dict_missing_file_format_raises(self):
+        """Loading a dict without file_format should raise ValueError."""
+        project = Project()
+        bad_dict = {'info': {}, 'with_experiments': False, 'models': {'data': []}}
+        with pytest.raises(ValueError, match='predates file_format=2'):
+            project.from_dict(bad_dict)
+
+    def test_from_dict_wrong_file_format_raises(self):
+        """Loading a dict with an unsupported file_format should raise ValueError."""
+        project = Project()
+        bad_dict = {
+            'file_format': 99,
+            'info': {},
+            'with_experiments': False,
+            'models': {'data': []},
+        }
+        with pytest.raises(ValueError, match='Unsupported project file_format'):
+            project.from_dict(bad_dict)
+
+    def test_from_dict_correct_file_format_succeeds(self):
+        """Loading a dict with the correct file_format should work."""
+        global_object.map._clear()
+        # Build a valid project dict with at least one model
+        src_project = Project()
+        src_project._info['name'] = 'Test'
+        src_project._info['short_description'] = 'Desc'
+        src_project._info['modified'] = '01.01.2025 00:00'
+        src_project.default_model()  # ensures at least one model exists
+        src_project._with_experiments = False
+        good_dict = src_project.as_dict()
+        global_object.map._clear()
+
+        project = Project()
+        project.from_dict(good_dict)
+        assert project._info['name'] == 'Test'
+        assert project._with_experiments is False
+        assert len(project._models) >= 1
 
     def test_as_dict_materials_not_in_model(self):
         # When
@@ -558,7 +613,8 @@ class TestProject:
 
         # Then
         new_project.load_from_json(tmp_path / 'name' / 'project.json')
-        # Do it twice to ensure that potential global objects don't collide
+        # Do it twice to ensure that potential
+        # global objects don't collide
         new_project.load_from_json(tmp_path / 'name' / 'project.json')
 
         # Expect
@@ -608,7 +664,8 @@ class TestProject:
         assert isinstance(project.experiments[5], DataSet1D)
         assert project.experiments[5].name == 'Example data file from refnx docs'
         assert project.experiments[5].model == model_5
-        assert isinstance(project.models[5].resolution_function, PercentageFwhm)
+        # example.ort carries an sQz column, so the measured resolution is used
+        assert isinstance(project.models[5].resolution_function, Pointwise)
         assert isinstance(project.models[4].resolution_function, PercentageFwhm)
 
     def test_load_experiment_sets_resolution_function_pointwise_when_xe_present(self, tmp_path):
@@ -624,12 +681,13 @@ class TestProject:
         # Then
         project.load_experiment_for_model_at_index(str(fpath))
 
-        # Resolution is always set to PercentageFwhm
-        from easyreflectometry.model.resolution_functions import PercentageFwhm
+        # Expect Pointwise because xe (q-resolution) is present
+        resolution_function = project.models[0].resolution_function
+        assert isinstance(resolution_function, Pointwise)
+        # The 4th column is sQz (sigma); smearing() must return it unchanged
+        assert_allclose(resolution_function.smearing([0.01, 0.02]), [1e-4, 1e-4])
 
-        assert isinstance(project.models[0].resolution_function, PercentageFwhm)
-
-    def test_load_experiment_sets_linearspline_when_only_ye_present(self, tmp_path):
+    def test_load_experiment_keeps_percentage_fwhm_when_no_xe(self, tmp_path):
         # When
         global_object.map._clear()
         project = Project()
@@ -642,10 +700,44 @@ class TestProject:
         # Then
         project.load_experiment_for_model_at_index(str(fpath))
 
-        # Resolution is always set to PercentageFwhm
-        from easyreflectometry.model.resolution_functions import PercentageFwhm
-
+        # No q-resolution data available, so the 5% FWHM default is kept
         assert isinstance(project.models[0].resolution_function, PercentageFwhm)
+
+    def test_apply_resolution_function_prefers_pointwise_falls_back_to_percentage(self):
+        # When
+        global_object.map._clear()
+        project = Project()
+        model = Model()
+        with_xe = DataSet1D(x=[0.01, 0.02], y=[1.0, 2.0], ye=[0.1, 0.1], xe=[1e-8, 4e-8])
+        zero_xe = DataSet1D(x=[0.01, 0.02], y=[1.0, 2.0], ye=[0.1, 0.1], xe=[0.0, 0.0])
+        no_xe = DataSet1D(x=[0.01, 0.02], y=[1.0, 2.0], ye=[0.1, 0.1])
+
+        # Then Expect
+        project._apply_resolution_function(with_xe, model)
+        assert isinstance(model.resolution_function, Pointwise)
+        # xe holds sQz variances; smearing() must return sigma = sqrt(xe)
+        assert_allclose(model.resolution_function.smearing([0.01, 0.02]), [1e-4, 2e-4])
+
+        project._apply_resolution_function(zero_xe, model)
+        assert isinstance(model.resolution_function, PercentageFwhm)
+
+        project._apply_resolution_function(no_xe, model)
+        assert isinstance(model.resolution_function, PercentageFwhm)
+
+    def test_load_all_experiments_from_file_sets_pointwise_when_sqz_present(self):
+        # When
+        global_object.map._clear()
+        project = Project()
+        project.models = ModelCollection(Model())
+        fpath = os.path.join(PATH_STATIC, 'test_example2.ort')
+
+        # Then
+        n_loaded = project.load_all_experiments_from_file(fpath)
+
+        # Expect
+        assert n_loaded == 2
+        assert list(project.experiments.keys()) == [0, 1]
+        assert isinstance(project.models[0].resolution_function, Pointwise)
 
     def test_experimental_data_at_index(self):
         # When
@@ -904,11 +996,13 @@ class TestProject:
 
         # Expect - shared material should not be duplicated
         assert len(project._models) == 2
-        # The shared material instance is already in the collection, so count should stay the same
+        # The shared material instance is already in the collection,
+        # so count should stay the same
         assert len(project._materials) == initial_material_count
 
     def test_replace_models_from_orso(self):
-        """Test that replace_models_from_orso replaces all existing models with a single new model."""
+        """Test that replace_models_from_orso replaces all existing
+        models with a single new model."""
         # When
         global_object.map._clear()
         project = Project()
@@ -1077,7 +1171,12 @@ class TestProject:
         project._models.append(model)
         # Add experiment linked to model 0
         experiment = DataSet1D(
-            name='exp0', x=[0.01, 0.02], y=[1.0, 0.5], ye=[0.1, 0.1], xe=[0.001, 0.001], model=project._models[0]
+            name='exp0',
+            x=[0.01, 0.02],
+            y=[1.0, 0.5],
+            ye=[0.1, 0.1],
+            xe=[0.001, 0.001],
+            model=project._models[0],
         )
         project._experiments[0] = experiment
 

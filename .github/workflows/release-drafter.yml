@@ -4,7 +4,6 @@
 # Uses the release-drafter.yml configuration file in the .github directory.
 # https://github.com/marketplace/actions/release-drafter
 
-
 name: Release Drafter
 
 on:

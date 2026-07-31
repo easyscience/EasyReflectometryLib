@@ -1,4 +1,6 @@
-__author__ = 'github.com/arm61'
+# SPDX-FileCopyrightText: 2026 EasyScience contributors <https://github.com/easyscience>
+# SPDX-License-Identifier: BSD-3-Clause
+
 
 import bornagain as ba
 import numpy as np
@@ -14,6 +16,7 @@ PLEASE CONSULT ONE OF THE OTHER WRAPPES FOR A FUNCTIONAL EXAMPLE
 
 class BornAgainWrapper(WrapperBase):
     def __init__(self):
+        """Init function."""
         super().__init__()
         self.storage = {
             'layer_material': {},
@@ -24,9 +27,7 @@ class BornAgainWrapper(WrapperBase):
         }
 
     def reset_storage(self):
-        """
-        Reset the storage area to blank.
-        """
+        """Reset the storage area to blank."""
         super().reset_storage()
         self.storage = {
             'layer_material': {},
@@ -37,20 +38,23 @@ class BornAgainWrapper(WrapperBase):
         }
 
     def create_material(self, name):
-        """
-        Create a material using SLD.
+        """Create a material using SLD.
 
-        :param name: The name of the material
-        :type name: str
+        Parameters
+        ----------
+        name : str
+            The name of the material.
         """
         self.storage['material'][name] = ba.MaterialBySLD(str(name), 0.0, 0.0)
 
     def update_material(self, name, **kwargs):
-        """
-        Update a material.
+        """Update a material.
 
-        :param name: The name of the material
-        :type name: str
+        Parameters
+        ----------
+        **kwargs :
+        name : str
+            The name of the material.
         """
         current_value = self.storage['material'][name].materialData()
         real = current_value.real
@@ -64,40 +68,48 @@ class BornAgainWrapper(WrapperBase):
         self.storage['material'][name] = ba.MaterialBySLD(str(name), real, imag)
 
     def get_material_value(self, name, key):
-        """
-        A function to get a given material value
+        """A function to get a given material value.
 
-        :param name: The material name
-        :type name: str
-        :param key: The given value keys
-        :type name: str
-        :return: The desired value
-        :rtype: float
+        Parameters
+        ----------
+        name : str
+            The material name.
+        key : str
+            The given value keys.
+
+        Returns
+        -------
+        float
+            The desired value.
         """
         current_value = self.storage['material'][name].materialData()
         return getattr(current_value, key) / 1e-6
 
     def create_layer(self, name):
-        """
-        Create a layer using Slab.
+        """Create a layer using Slab.
 
-        :param name: The name of the layer
-        :type name: str
+        Parameters
+        ----------
+        name : str
+            The name of the layer.
         """
         self.storage['layer'][name] = ba.Layer(ba.MaterialBySLD('A', 0, 0))
         self.storage['roughness'][name] = ba.LayerRoughness()
 
     def update_layer(self, name, **kwargs):
-        """
-        Update a layer in a given item.
+        """Update a layer in a given item.
 
-        :param name: The layer name
-        :type name: str
+        Parameters
+        ----------
+        **kwargs :
+        name : str
+            The layer name.
         """
         if 'thickness' in kwargs.keys():
             thickness = kwargs['thickness']
             self.storage['layer'][name] = ba.Layer(
-                self.storage['material'][self.storage['layer_material'][name]], thickness * ba.angstrom
+                self.storage['material'][self.storage['layer_material'][name]],
+                thickness * ba.angstrom,
             )
         if 'sigma' in kwargs.keys():
             sigma = kwargs['sigma']
@@ -105,15 +117,19 @@ class BornAgainWrapper(WrapperBase):
             self.storage['roughness'][name].setSigma(sigma * ba.angstrom)
 
     def get_layer_value(self, name, key):
-        """
-        A function to get a given layer value
+        """A function to get a given layer value.
 
-        :param name: The layer name
-        :type name: str
-        :param key: The given value keys
-        :type name: str
-        :return: The desired value
-        :rtype: float
+        Parameters
+        ----------
+        name : str
+            The layer name.
+        key : str
+            The given value keys.
+
+        Returns
+        -------
+        float
+            The desired value.
         """
         layer = self.storage['layer'][name]
         roughness = self.storage['roughness'][name]
@@ -123,43 +139,48 @@ class BornAgainWrapper(WrapperBase):
             return roughness.getSigma() / ba.angstrom
 
     def create_item(self, name):
-        """
-        Create an item.
+        """Create an item.
 
-        :param name: The name of the item
-        :type name: str
+        Parameters
+        ----------
+        name : str
+            The name of the item.
         """
         self.storage['item'][name] = []
         self.storage['item_repeats'][name] = 1
 
     def update_item(self, name, **kwargs):
-        """
-        Update a layer.
+        """Update a layer.
 
-        :param name: The item name
-        :type name: str
+        Parameters
+        ----------
+        **kwargs :
+        name : str
+            The item name.
         """
         if 'repeats' in kwargs.keys():
             self.storage['item_repeats'][name] = kwargs['repeats']
 
     def get_item_value(self, name, key):
-        """
-        A function to get a given item value
+        """A function to get a given item value.
 
-        :param name: The item name
-        :type name: str
-        :param key: The given value keys
-        :type name: str
-        :return: The desired value
-        :rtype: float
+        Parameters
+        ----------
+        name : str
+            The item name.
+        key : str
+            The given value keys.
+
+        Returns
+        -------
+        float
+            The desired value.
         """
         if key == 'repeats':
             return self.storage['item_repeats'][name]
 
     def create_model(self):
-        """
-        Create a model for analysis
-        """
+        """Create a model for analysis."""
         self.storage['model'] = ba.Multilayer()
         self.storage['model'].setRoughnessModel(ba.RoughnessModel.NEVOT_CROCE)
         self.storage['model_items'] = []
@@ -168,65 +189,72 @@ class BornAgainWrapper(WrapperBase):
         self.storage['model_parameters']['resolution'] = 0
 
     def update_model(self, name, **kwargs):
-        """
-        Update the non-structural parameters of the model
-        """
+        """Update the non-structural parameters of the model."""
         model = self.storage[name + '_parameters']
         for key in kwargs.keys():
             model[key] = kwargs[key]
 
     def get_model_value(self, name, key):
-        """
-        A function to get a given model value
+        """A function to get a given model value.
 
-        :param key: The given value keys
-        :type name: str
-        :return: The desired value
-        :rtype: float
+        Parameters
+        ----------
+        name :
+        key : str
+            The given value keys.
+
+        Returns
+        -------
+        float
+            The desired value.
         """
         model = self.storage[name + '_parameters']
         return model[key]
 
     def assign_material_to_layer(self, material_name, layer_name):
-        """
-        Assign a material to a layer.
+        """Assign a material to a layer.
 
-        :param material_name: The material name
-        :type material_name: str
-        :param layer_name: The layer name
-        :type layer_name: str
+        Parameters
+        ----------
+        material_name : str
+            The material name.
+        layer_name : str
+            The layer name.
         """
         self.storage['layer_material'][layer_name] = material_name
 
     def add_layer_to_item(self, layer_name, item_name):
-        """
-        Create a layer from the material of the same name, in a given item.
+        """Create a layer from the material of the same name, in a given item.
 
-        :param layer_name: The layer name
-        :type layer_name: int
-        :param item_name: The item name
-        :type item_name: int
+        Parameters
+        ----------
+        layer_name : int
+            The layer name.
+        item_name : int
+            The item name.
         """
         item = self.storage['item'][item_name]
         item.append(layer_name)
 
     def add_item(self, item_name):
-        """
-        Add an item to the model.
+        """Add an item to the model.
 
-        :param item_name: items to add to model
-        :type item_name: str
+        Parameters
+        ----------
+        item_name : str
+            Items to add to model.
         """
         self.storage['model_items'].append(item_name)
 
     def remove_layer_from_item(self, layer_name, item_name):
-        """
-        Remove a layer in a given item.
+        """Remove a layer in a given item.
 
-        :param layer_name: The layer name
-        :type layer_name: int
-        :param item_name: The item name
-        :type item_name: int
+        Parameters
+        ----------
+        layer_name : int
+            The layer name.
+        item_name : int
+            The item name.
         """
         layers_idx = self.storage['item'][item_name].index(layer_name)
         del self.storage['layer'][layer_name]
@@ -234,11 +262,12 @@ class BornAgainWrapper(WrapperBase):
         del self.storage['layer_material'][layer_name]
 
     def remove_item(self, item_name):
-        """
-        Remove a given item.
+        """Remove a given item.
 
-        :param item_name: The item name
-        :type item_name: int
+        Parameters
+        ----------
+        item_name : int
+            The item name.
         """
         item_idx = self.storage['model_items'].index(item_name)
         del self.storage['model_items'][item_idx]
@@ -250,9 +279,17 @@ class BornAgainWrapper(WrapperBase):
     def calculate(self, q_array: np.ndarray) -> np.ndarray:
         """For a given q array calculate the corresponding reflectivity.
 
-        :param q_array: array of data points to be calculated
-        :param model_name: the model name
-        :return: reflectivity calculated at q
+        Parameters
+        ----------
+        q_array : np.ndarray
+            Array of data points to be calculated.
+        model_name :
+            The model name.
+
+        Returns
+        -------
+        np.ndarray
+            Reflectivity calculated at q.
         """
         # 3.5 sigma to sync with refnx
         n_sig = 3.5
@@ -261,7 +298,8 @@ class BornAgainWrapper(WrapperBase):
 
         scan = ba.QSpecScan(q_array / ba.angstrom)
         scan.setAbsoluteQResolution(
-            distr, q_array / ba.angstrom * (self.storage['model_parameters']['resolution'] * 0.5 / 100)
+            distr,
+            q_array / ba.angstrom * (self.storage['model_parameters']['resolution'] * 0.5 / 100),
         )
 
         simulation = ba.SpecularSimulation()
@@ -286,13 +324,14 @@ class BornAgainWrapper(WrapperBase):
         )
 
     def sld_profile(self) -> np.ndarray:
-        """
-        Return the scattering length density profile.
+        """Return the scattering length density profile.
 
         This is borrowed from the refnx implementation of the scattering length density.
 
-        :return: z and sld(z)
-        :rtype: tuple[np.ndarray, np.ndarray]
+        Returns
+        -------
+        tuple[np.ndarray, np.ndarray]
+            Z and sld(z).
         """
         number_of_layers = 0
         for i in self.storage['model_items']:
@@ -331,6 +370,7 @@ class BornAgainWrapper(WrapperBase):
 
         # use erf for roughness function, but step if the roughness is zero
         def step(z, scale=1, loc=0):
+            """Step function."""
             new_z = z - loc
             f = np.ones_like(new_z) * 0.5
             f[new_z <= -scale] = 0

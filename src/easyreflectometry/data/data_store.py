@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2024 EasyScience contributors <https://github.com/easyscience>
+# SPDX-License-Identifier: BSD-3-Clause
+
 __author__ = 'github.com/wardsimon'
 
 from collections.abc import Sequence
@@ -16,6 +19,7 @@ T = TypeVar('T')
 
 class ProjectData(SerializerComponent):
     def __init__(self, name='DataStore', exp_data=None, sim_data=None):
+        """Init function."""
         self.name = name
         if exp_data is None:
             exp_data = DataStore(name='Exp Datastore')
@@ -27,31 +31,39 @@ class ProjectData(SerializerComponent):
 
 class DataStore(Sequence, SerializerComponent):
     def __init__(self, *args, name='DataStore'):
+        """Init function."""
         self.name = name
         self.items = list(args)
         self.show_legend = False
 
     def __getitem__(self, i: int) -> T:
+        """Getitem function."""
         return self.items.__getitem__(i)
 
     def __len__(self) -> int:
+        """Len function."""
         return len(self.items)
 
     def __setitem__(self, key, value):
+        """Setitem function."""
         self.items[key] = value
 
     def __delitem__(self, key):
+        """Delitem function."""
         del self.items[key]
 
     def append(self, *args):
+        """Append function."""
         self.items.append(*args)
 
     def as_dict(self, skip: list = []) -> dict:
+        """As dict."""
         this_dict = super(DataStore, self).as_dict(self, skip=skip)
         this_dict['items'] = [item.as_dict() for item in self.items if hasattr(item, 'as_dict')]
 
     @classmethod
     def from_dict(cls, d):
+        """From dict."""
         items = d['items']
         del d['items']
         obj = cls.from_dict(d)
@@ -61,10 +73,12 @@ class DataStore(Sequence, SerializerComponent):
 
     @property
     def experiments(self):
+        """Experiments function."""
         return [self[idx] for idx in range(len(self)) if self[idx].is_experiment]
 
     @property
     def simulations(self):
+        """Simulations function."""
         return [self[idx] for idx in range(len(self)) if self[idx].is_simulation]
 
 
@@ -81,6 +95,7 @@ class DataSet1D(SerializerComponent):
         y_label: str = 'y',
         auto_background: bool = True,
     ):
+        """Init function."""
         self._model = model
         if y is not None and model is not None and auto_background:
             self._model.background = max(np.min(y), 1e-10)
@@ -119,22 +134,28 @@ class DataSet1D(SerializerComponent):
 
     @property
     def model(self) -> 'Model':  # delay type checking until runtime (quotes)
+        """Model function."""
         return self._model
 
     @model.setter
     def model(self, new_model: 'Model') -> None:
+        """Model function."""
         self._model = new_model
 
     @property
     def is_experiment(self) -> bool:
+        """Is experiment."""
         return self._model is not None
 
     @property
     def is_simulation(self) -> bool:
+        """Is simulation."""
         return self._model is None
 
     def data_points(self) -> tuple[float, float, float, float]:
+        """Data points."""
         return zip(self.x, self.y, self.ye, self.xe)
 
     def __repr__(self) -> str:
+        """Repr function."""
         return "1D DataStore of '{:s}' Vs '{:s}' with {} data points".format(self.x_label, self.y_label, len(self.x))

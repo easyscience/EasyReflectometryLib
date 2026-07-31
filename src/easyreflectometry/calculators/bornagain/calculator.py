@@ -1,4 +1,6 @@
-__author__ = 'github.com/arm61'
+# SPDX-FileCopyrightText: 2026 EasyScience contributors <https://github.com/easyscience>
+# SPDX-License-Identifier: BSD-3-Clause
+
 
 from easyscience.fitting.calculators.interface_factory import ItemContainer
 
@@ -18,9 +20,7 @@ PLEASE CONSULT ONE OF THE OTHER CALCULATORS FOR A FUNCTIONAL EXAMPLE
 
 
 class BornAgain(CalculatorBase):
-    """
-    Calculator for BornAgain
-    """
+    """Calculator for BornAgain."""
 
     name = 'BornAgain'
 
@@ -45,23 +45,26 @@ class BornAgain(CalculatorBase):
     }
 
     def __init__(self):
+        """Init function."""
         super().__init__()
         self._wrapper = BornAgainWrapper()
 
     def reset_storage(self) -> None:
-        """
-        Reset the storage area of the calculator
-        """
+        """Reset the storage area of the calculator."""
         self._wrapper.reset_storage()
 
     def create(self, model: Material | Layer | Multilayer | Model) -> list[ItemContainer]:
-        """
-        Creation function
+        """Creation function.
 
-        :param model: Object to be created
-        :type model: Union[Material, Layer, Item, Model]
-        :return: Item containers of the objects
-        :rtype: List[ItemContainer]
+        Parameters
+        ----------
+        model : Material | Layer | Multilayer | Model
+            Object to be created.
+
+        Returns
+        -------
+        List[ItemContainer]
+            Item containers of the objects.
         """
         r_list = []
         t_ = type(model)
@@ -130,52 +133,61 @@ class BornAgain(CalculatorBase):
         return r_list
 
     def assign_material_to_layer(self, material_id: int, layer_id: int) -> None:
-        """
-        Assign a material to a layer.
+        """Assign a material to a layer.
 
-        :param material_name: The material name
-        :type material_name: str
-        :param layer_name: The layer name
-        :type layer_name: str
+        Parameters
+        ----------
+        layer_id : int
+        material_id : int
+        material_name : str
+            The material name.
+        layer_name : str
+            The layer name.
         """
         self._wrapper.assign_material_to_layer(material_id, layer_id)
 
     def add_layer_to_item(self, layer_id: int, item_id: int) -> None:
-        """
-        Add a layer to the item stack
+        """Add a layer to the item stack.
 
-        :param item_id: The item id
-        :type item_id: int
-        :param layer_id: The layer id
-        :type layer_id: int
+        Parameters
+        ----------
+        item_id : int
+            The item id.
+        layer_id : int
+            The layer id.
         """
         self._wrapper.add_layer_to_item(layer_id, item_id)
 
     def remove_layer_from_item(self, layer_id: int, item_id: int) -> None:
-        """
-        Remove a layer from an item stack
+        """Remove a layer from an item stack.
 
-        :param item_id: The item id
-        :param layer_id: The layer id
+        Parameters
+        ----------
+        item_id : int
+            The item id.
+        layer_id : int
+            The layer id.
         """
         self._wrapper.remove_layer_from_item(layer_id, item_id)
 
     def add_item_to_model(self, item_id: int) -> None:
-        """
-        Add a layer to the item stack
+        """Add a layer to the item stack.
 
-        :param item_id: The item id
-        :type item_id: int
+        Parameters
+        ----------
+        item_id : int
+            The item id.
         """
         self._wrapper.add_item(item_id)
 
     def remove_item_from_model(self, item_id: int) -> None:
-        """
-        Remove a layer from the item stack
+        """Remove a layer from the item stack.
 
-        :param item_id: The item id
-        :type item_id: int
-        :param layer_id: The layer id
-        :type layer_id: int
+        Parameters
+        ----------
+        item_id : int
+            The item id.
+        layer_id : int
+            The layer id.
         """
         self._wrapper.remove_item(item_id)

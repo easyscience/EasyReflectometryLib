@@ -1,7 +1,10 @@
-__author__ = 'github.com/arm61'
+# SPDX-FileCopyrightText: 2026 EasyScience contributors <https://github.com/easyscience>
+# SPDX-License-Identifier: BSD-3-Clause
+
 
 import os
 from unittest.mock import MagicMock
+from unittest.mock import patch
 
 import numpy as np
 import pytest
@@ -175,12 +178,10 @@ def test_fitting_with_manual_zero_variance():
     variances[30:32] = 0.0  # 2 more zero variance points
 
     # Create scipp DataGroup manually
-    data = sc.DataGroup(
-        {
-            'coords': {'Qz_0': sc.array(dims=['Qz_0'], values=qz_values)},
-            'data': {'R_0': sc.array(dims=['Qz_0'], values=r_values, variances=variances)},
-        }
-    )
+    data = sc.DataGroup({
+        'coords': {'Qz_0': sc.array(dims=['Qz_0'], values=qz_values)},
+        'data': {'R_0': sc.array(dims=['Qz_0'], values=r_values, variances=variances)},
+    })
 
     # Create a simple model for fitting
     si = Material(2.07, 0, 'Si')
@@ -428,7 +429,12 @@ def test_prepare_fit_arrays_legacy_mask_drops_zero_variance():
     assert np.allclose(x_out, [0.01, 0.03])
     assert np.allclose(y_eff, [1.0, 0.6])
     assert np.allclose(weights, [1.0 / np.sqrt(0.01), 1.0 / np.sqrt(0.04)])
-    assert stats == {'valid': 2, 'mighell_substituted': 0, 'masked': 1, 'transformed_all_points': False}
+    assert stats == {
+        'valid': 2,
+        'mighell_substituted': 0,
+        'masked': 1,
+        'transformed_all_points': False,
+    }
 
 
 def test_prepare_fit_arrays_hybrid_transforms_zero_variance():
@@ -449,7 +455,12 @@ def test_prepare_fit_arrays_hybrid_transforms_zero_variance():
     assert y_eff[1] == pytest.approx(0.8 + 0.8)
     # sigma = sqrt(y + 1) = sqrt(1.8)
     assert weights[1] == pytest.approx(1.0 / np.sqrt(1.8))
-    assert stats == {'valid': 2, 'mighell_substituted': 1, 'masked': 0, 'transformed_all_points': False}
+    assert stats == {
+        'valid': 2,
+        'mighell_substituted': 1,
+        'masked': 0,
+        'transformed_all_points': False,
+    }
 
 
 def test_prepare_fit_arrays_mighell_transforms_all():
@@ -466,7 +477,12 @@ def test_prepare_fit_arrays_mighell_transforms_all():
     # sigma = sqrt(y + 1)
     assert weights[0] == pytest.approx(1.0 / np.sqrt(1.5))
     assert weights[1] == pytest.approx(1.0 / np.sqrt(1.3))
-    assert stats == {'valid': 0, 'mighell_substituted': 2, 'masked': 0, 'transformed_all_points': True}
+    assert stats == {
+        'valid': 0,
+        'mighell_substituted': 2,
+        'masked': 0,
+        'transformed_all_points': True,
+    }
 
 
 def test_fit_single_data_set_1d_hybrid_keeps_zero_variance_points():
@@ -553,13 +569,17 @@ def test_classical_and_objective_chi_are_split_for_fit_results():
     fitter._models = [MagicMock(unique_name='model_0', as_dict=MagicMock(return_value={'name': 'model_0'}))]
     fitter._fit_func = [lambda x: np.array([0.8, 0.75, 0.7])]
 
-    data = sc.DataGroup(
-        {
-            'coords': {'Qz_0': sc.array(dims=['Qz_0'], values=np.array([0.01, 0.02, 0.03]), unit=sc.Unit('1/angstrom'))},
-            'data': {'R_0': sc.array(dims=['Qz_0'], values=np.array([1.0, 0.9, 0.7]), variances=np.array([0.01, 0.0, 0.04]))},
-            'attrs': {},
-        }
-    )
+    data = sc.DataGroup({
+        'coords': {'Qz_0': sc.array(dims=['Qz_0'], values=np.array([0.01, 0.02, 0.03]), unit=sc.Unit('1/angstrom'))},
+        'data': {
+            'R_0': sc.array(
+                dims=['Qz_0'],
+                values=np.array([1.0, 0.9, 0.7]),
+                variances=np.array([0.01, 0.0, 0.04]),
+            )
+        },
+        'attrs': {},
+    })
 
     analysed = fitter.fit(data)
 
@@ -654,12 +674,10 @@ def test_fit_multi_dataset_hybrid_uses_transformed_y_and_weights():
     variances = np.ones_like(r_values) * 0.01
     variances[3:5] = 0.0  # 2 zero-variance points
 
-    data = sc.DataGroup(
-        {
-            'coords': {'Qz_0': sc.array(dims=['Qz_0'], values=qz_values)},
-            'data': {'R_0': sc.array(dims=['Qz_0'], values=r_values, variances=variances)},
-        }
-    )
+    data = sc.DataGroup({
+        'coords': {'Qz_0': sc.array(dims=['Qz_0'], values=qz_values)},
+        'data': {'R_0': sc.array(dims=['Qz_0'], values=r_values, variances=variances)},
+    })
 
     model = Model()
     model.interface = CalculatorFactory()
@@ -784,3 +802,467 @@ def test_fit_per_call_objective_override():
         fitter.fit_single_data_set_1d(data, objective='legacy_mask')
 
     assert len(captured['x'][0]) == 2  # one point dropped
+
+
+# ---------------------------------------------------------------------------
+# Tests for MultiFitter.mcmc_sample (Bayesian MCMC)
+# ---------------------------------------------------------------------------
+
+
+def _fake_sampling_results(draws=None, param_names=None, state=None, logp=None):
+    """Build a stand-in for the core ``SamplingResults`` returned by ``Sampler.sample``."""
+    res = MagicMock()
+    res.draws = np.ones((10, 2)) if draws is None else draws
+    res.param_names = ['a', 'b'] if param_names is None else param_names
+    res.state = state
+    res.logp = logp
+    return res
+
+
+def _patch_sampler(capture, results=None):
+    """Patch ``easyreflectometry.fitting.Sampler`` and capture its call args.
+
+    Records the constructor's ``(x, y, weights)`` and the ``sample()``
+    hyperparameters into the ``capture`` dict, and returns ``results`` (a
+    fake ``SamplingResults``) from ``sample()``.
+    """
+    results = results if results is not None else _fake_sampling_results()
+
+    def _ctor(fitter, *, x, y, weights, **kwargs):
+        capture['fitter'] = fitter
+        capture['x'] = x
+        capture['y'] = y
+        capture['weights'] = weights
+        capture.update(kwargs)  # e.g. sampler_kwargs if passed to the ctor
+        instance = MagicMock()
+
+        def _sample(**sample_kwargs):
+            capture.update(sample_kwargs)
+            return results
+
+        instance.sample = MagicMock(side_effect=_sample)
+        capture['instance'] = instance
+        return instance
+
+    return patch('easyreflectometry.fitting.Sampler', side_effect=_ctor)
+
+
+class TestMCMCSampleRequiresBumpsEngine:
+    """mcmc_sample() must raise when the core engine is not a BUMPS instance."""
+
+    def test_raises_runtime_error_when_not_bumps(self):
+        model = Model()
+        model.interface = CalculatorFactory()
+        fitter = MultiFitter(model)
+
+        data = sc.DataGroup({
+            'coords': {'Qz_0': sc.array(dims=['Qz_0'], values=np.linspace(0.01, 0.3, 10))},
+            'data': {'R_0': sc.array(dims=['Qz_0'], values=np.ones(10), variances=np.ones(10) * 0.01)},
+        })
+
+        with pytest.raises(RuntimeError, match='Bayesian sampling requires a BUMPS minimizer'):
+            fitter.mcmc_sample(data)
+
+    def test_wrapper_check_runs_before_sampler(self):
+        """The wrapper-level guard must fire before constructing the core ``Sampler``.
+
+        Patch ``Sampler`` with a sentinel that would record any instantiation;
+        the guard should raise without ever building it.
+        """
+        model = Model()
+        model.interface = CalculatorFactory()
+        fitter = MultiFitter(model)  # default minimizer is LMFit, not BUMPS
+
+        capture = {}
+
+        data = sc.DataGroup({
+            'coords': {'Qz_0': sc.array(dims=['Qz_0'], values=np.linspace(0.01, 0.3, 10))},
+            'data': {'R_0': sc.array(dims=['Qz_0'], values=np.ones(10), variances=np.ones(10) * 0.01)},
+        })
+
+        with _patch_sampler(capture) as sampler_cls:
+            with pytest.raises(RuntimeError, match='Bayesian sampling requires a BUMPS minimizer'):
+                fitter.mcmc_sample(data)
+        sampler_cls.assert_not_called()
+
+
+class TestMCMCSampleBasic:
+    """Basic mcmc_sample() dispatch and return-value forwarding."""
+
+    def test_returns_result_dict_from_sampler(self):
+        """mcmc_sample() returns a dict built from the core Sampler's SamplingResults."""
+        model = Model()
+        model.interface = CalculatorFactory()
+        fitter = MultiFitter(model)
+
+        fitter.easy_science_multi_fitter = MagicMock()
+        fitter.easy_science_multi_fitter.minimizer.package = 'bumps'
+
+        draws = np.ones((10, 2))
+        sentinel_state = object()
+        logp = np.zeros(10)
+        results = _fake_sampling_results(draws=draws, param_names=['a', 'b'], state=sentinel_state, logp=logp)
+
+        capture = {}
+
+        data = sc.DataGroup({
+            'coords': {'Qz_0': sc.array(dims=['Qz_0'], values=np.linspace(0.01, 0.3, 10))},
+            'data': {'R_0': sc.array(dims=['Qz_0'], values=np.ones(10), variances=np.ones(10) * 0.01)},
+        })
+
+        with _patch_sampler(capture, results=results):
+            result = fitter.mcmc_sample(data, samples=100, burn=20, thin=2, population=5)
+
+        # The fitter passed to Sampler is the core MultiFitter
+        assert capture['fitter'] is fitter.easy_science_multi_fitter
+        assert result['draws'] is draws
+        assert result['param_names'] == ['a', 'b']
+        assert result['state'] is sentinel_state
+        assert result['logp'] is logp
+
+    def test_forwards_hyperparams_to_sampler(self):
+        """Samples, burn, thin, population are forwarded to Sampler.sample()."""
+        model = Model()
+        model.interface = CalculatorFactory()
+        fitter = MultiFitter(model)
+
+        fitter.easy_science_multi_fitter = MagicMock()
+        fitter.easy_science_multi_fitter.minimizer.package = 'bumps'
+
+        capture = {}
+
+        data = sc.DataGroup({
+            'coords': {'Qz_0': sc.array(dims=['Qz_0'], values=np.linspace(0.01, 0.3, 10))},
+            'data': {'R_0': sc.array(dims=['Qz_0'], values=np.ones(10), variances=np.ones(10) * 0.01)},
+        })
+
+        with _patch_sampler(capture):
+            fitter.mcmc_sample(data, samples=500, burn=100, thin=5, population=8)
+        assert capture['samples'] == 500
+        assert capture['burn'] == 100
+        assert capture['thin'] == 5
+        assert capture['population'] == 8
+
+    def test_forwards_population_to_sampler(self):
+        """'population' argument is forwarded to Sampler.sample()."""
+        model = Model()
+        model.interface = CalculatorFactory()
+        fitter = MultiFitter(model)
+
+        fitter.easy_science_multi_fitter = MagicMock()
+        fitter.easy_science_multi_fitter.minimizer.package = 'bumps'
+
+        capture = {}
+
+        data = sc.DataGroup({
+            'coords': {'Qz_0': sc.array(dims=['Qz_0'], values=np.linspace(0.01, 0.3, 10))},
+            'data': {'R_0': sc.array(dims=['Qz_0'], values=np.ones(10), variances=np.ones(10) * 0.01)},
+        })
+
+        with _patch_sampler(capture):
+            fitter.mcmc_sample(data, samples=100, burn=20, thin=2, population=6)
+        assert capture['population'] == 6
+
+
+class TestMCMCSampleInitializer:
+    """initializer parameter is forwarded via sampler_kwargs."""
+
+    def test_initializer_passed_as_sampler_kwargs_init(self):
+        """initializer='lhs' should be passed as sampler_kwargs={'init': 'lhs'} to Sampler.sample()."""
+        model = Model()
+        model.interface = CalculatorFactory()
+        fitter = MultiFitter(model)
+
+        fitter.easy_science_multi_fitter = MagicMock()
+        fitter.easy_science_multi_fitter.minimizer.package = 'bumps'
+
+        capture = {}
+
+        data = sc.DataGroup({
+            'coords': {'Qz_0': sc.array(dims=['Qz_0'], values=np.linspace(0.01, 0.3, 10))},
+            'data': {'R_0': sc.array(dims=['Qz_0'], values=np.ones(10), variances=np.ones(10) * 0.01)},
+        })
+
+        with _patch_sampler(capture):
+            fitter.mcmc_sample(data, samples=100, burn=20, thin=2, initializer='lhs')
+        assert capture['sampler_kwargs'] == {'init': 'lhs'}
+
+    def test_initializer_none_omits_sampler_kwargs(self):
+        """When initializer is None, sampler_kwargs should be None, not an empty dict."""
+        model = Model()
+        model.interface = CalculatorFactory()
+        fitter = MultiFitter(model)
+
+        fitter.easy_science_multi_fitter = MagicMock()
+        fitter.easy_science_multi_fitter.minimizer.package = 'bumps'
+
+        capture = {}
+
+        data = sc.DataGroup({
+            'coords': {'Qz_0': sc.array(dims=['Qz_0'], values=np.linspace(0.01, 0.3, 10))},
+            'data': {'R_0': sc.array(dims=['Qz_0'], values=np.ones(10), variances=np.ones(10) * 0.01)},
+        })
+
+        with _patch_sampler(capture):
+            fitter.mcmc_sample(data, samples=100, burn=20, thin=2)
+        assert capture['sampler_kwargs'] is None
+
+
+class TestMCMCSampleZeroVariance:
+    """Zero-variance handling in the mcmc_sample() data-preparation path."""
+
+    def test_hybrid_transforms_zero_variance_points(self):
+        """mcmc_sample() uses the objective from constructor to prepare data arrays."""
+        import warnings
+
+        model = Model()
+        model.interface = CalculatorFactory()
+        # Use legacy_mask so zero-variance points are dropped
+        fitter = MultiFitter(model, objective='legacy_mask')
+
+        capture = {}
+
+        fitter.easy_science_multi_fitter = MagicMock()
+        fitter.easy_science_multi_fitter.minimizer.package = 'bumps'
+
+        qz = np.linspace(0.01, 0.3, 10)
+        r = np.exp(-qz * 50)
+        var = np.ones(10) * 0.01
+        var[3:5] = 0.0  # 2 zero-variance points
+
+        data = sc.DataGroup({
+            'coords': {'Qz_0': sc.array(dims=['Qz_0'], values=qz)},
+            'data': {'R_0': sc.array(dims=['Qz_0'], values=r, variances=var)},
+        })
+
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter('always')
+            with _patch_sampler(capture):
+                fitter.mcmc_sample(data, samples=100, burn=20, thin=2)
+
+        # legacy_mask should drop the 2 zero-variance points
+        assert len(capture['x'][0]) == 8
+        assert len(capture['y'][0]) == 8
+        assert len(capture['weights'][0]) == 8
+
+        mask_warnings = [str(ww.message) for ww in w if 'Masked' in str(ww.message)]
+        assert len(mask_warnings) == 1
+        assert '2 data point(s)' in mask_warnings[0]
+
+    def test_per_call_objective_override(self):
+        """mcmc_sample() respects per-call objective override."""
+        import warnings
+
+        model = Model()
+        model.interface = CalculatorFactory()
+        fitter = MultiFitter(model, objective='legacy_mask')  # default
+
+        capture = {}
+
+        fitter.easy_science_multi_fitter = MagicMock()
+        fitter.easy_science_multi_fitter.minimizer.package = 'bumps'
+
+        qz = np.linspace(0.01, 0.3, 10)
+        r = np.exp(-qz * 50)
+        var = np.ones(10) * 0.01
+        var[3:5] = 0.0
+
+        data = sc.DataGroup({
+            'coords': {'Qz_0': sc.array(dims=['Qz_0'], values=qz)},
+            'data': {'R_0': sc.array(dims=['Qz_0'], values=r, variances=var)},
+        })
+
+        # Override to hybrid — should keep all 10 points
+        with warnings.catch_warnings(record=True):
+            warnings.simplefilter('always')
+            with _patch_sampler(capture):
+                fitter.mcmc_sample(data, samples=100, burn=20, thin=2, objective='hybrid')
+
+        assert len(capture['x'][0]) == 10  # all points kept (Mighell-substituted)
+
+
+class TestMCMCSampleMighellWarningsAndZeroVarianceGuard:
+    """mcmc_sample() must warn about Mighell-transformed points feeding the
+    Bayesian likelihood, and refuse data with no uncertainties at all."""
+
+    @staticmethod
+    def _make_fitter(objective='hybrid'):
+        model = Model()
+        model.interface = CalculatorFactory()
+        fitter = MultiFitter(model, objective=objective)
+        fitter.easy_science_multi_fitter = MagicMock()
+        fitter.easy_science_multi_fitter.minimizer.package = 'bumps'
+        return fitter
+
+    @staticmethod
+    def _make_data(variances):
+        qz = np.linspace(0.01, 0.3, 10)
+        r = np.exp(-qz * 50)
+        return sc.DataGroup({
+            'coords': {'Qz_0': sc.array(dims=['Qz_0'], values=qz)},
+            'data': {'R_0': sc.array(dims=['Qz_0'], values=r, variances=variances)},
+        })
+
+    def test_hybrid_partial_zero_variance_warns_mighell_substitution(self):
+        fitter = self._make_fitter()
+        variances = np.ones(10) * 0.01
+        variances[3:5] = 0.0
+        data = self._make_data(variances)
+
+        capture = {}
+        with pytest.warns(
+            UserWarning,
+            match=r'Mighell substitution to 2 zero-variance point\(s\) in reflectivity 0 during sampling',
+        ):
+            with _patch_sampler(capture):
+                fitter.mcmc_sample(data, samples=100, burn=20, thin=2)
+
+        assert len(capture['x'][0]) == 10
+
+    def test_mighell_objective_warns_transform_all_points(self):
+        fitter = self._make_fitter(objective='mighell')
+        data = self._make_data(np.ones(10) * 0.01)
+
+        capture = {}
+        with pytest.warns(
+            UserWarning,
+            match=r'Applied Mighell transform to all 10 point\(s\) in reflectivity 0 during sampling',
+        ):
+            with _patch_sampler(capture):
+                fitter.mcmc_sample(data, samples=100, burn=20, thin=2)
+
+        assert len(capture['x'][0]) == 10
+
+    def test_all_zero_variance_hybrid_raises(self):
+        fitter = self._make_fitter()
+        data = self._make_data(np.zeros(10))
+
+        capture = {}
+        with _patch_sampler(capture) as sampler_cls:
+            with pytest.raises(ValueError, match='all points have zero variance'):
+                fitter.mcmc_sample(data, samples=100, burn=20, thin=2)
+        sampler_cls.assert_not_called()
+
+    def test_all_zero_variance_legacy_mask_raises(self):
+        fitter = self._make_fitter(objective='legacy_mask')
+        data = self._make_data(np.zeros(10))
+
+        capture = {}
+        with _patch_sampler(capture) as sampler_cls:
+            with pytest.raises(ValueError, match='all points have zero variance'):
+                fitter.mcmc_sample(data, samples=100, burn=20, thin=2)
+        sampler_cls.assert_not_called()
+
+    def test_all_zero_variance_allowed_with_explicit_mighell(self):
+        """Explicitly opting in to objective='mighell' keeps working on
+        variance-free (e.g. raw count) data, with a warning."""
+        fitter = self._make_fitter(objective='mighell')
+        data = self._make_data(np.zeros(10))
+
+        capture = {}
+        with pytest.warns(UserWarning, match='not a true likelihood'):
+            with _patch_sampler(capture):
+                fitter.mcmc_sample(data, samples=100, burn=20, thin=2)
+
+        assert len(capture['x'][0]) == 10
+
+
+# ---------------------------------------------------------------------------
+# Analytic weighted-least-squares convention test (issue #370)
+# ---------------------------------------------------------------------------
+
+
+def _analytic_wls(design, y, point_weights):
+    """Solve min_beta sum_i (point_weights_i * (y_i - design_i . beta))^2.
+
+    Returns the solution and the unscaled covariance (X^T W X)^-1 of the
+    corresponding weighted least-squares problem.
+    """
+    a = design * point_weights[:, None]
+    b = y * point_weights
+    beta, *_ = np.linalg.lstsq(a, b, rcond=None)
+    covariance = np.linalg.inv(a.T @ a)
+    return beta, covariance
+
+
+@pytest.mark.parametrize('minimizer', [AvailableMinimizers.LMFit, AvailableMinimizers.Bumps])
+def test_fit_weight_convention_matches_analytic_wls(minimizer):
+    """Pin the weights = 1/sigma convention end-to-end against analytic WLS.
+
+    A reflectometry model is exactly linear in (scale, background):
+    R(q) = scale * f(q) + background, so weighted least squares has the
+    closed-form solution beta = (X^T W X)^-1 X^T W y with W = diag(1/sigma^2).
+    On heteroscedastic data the candidate weight conventions (1/sigma, sigma,
+    1/sigma^2) give measurably different solutions, so this test fails if the
+    convention between ``_prepare_fit_arrays`` and the EasyScience core
+    minimizers ever drifts. See issue #370.
+    """
+    construction_background = 1e-7
+    si = Material(2.07, 0, 'Si')
+    sio2 = Material(3.47, 0, 'SiO2')
+    d2o = Material(6.36, 0, 'D2O')
+    sample = Sample(
+        Multilayer(Layer(si, 0, 0, 'Si layer')),
+        Multilayer(Layer(sio2, 30, 3, 'SiO2 layer')),
+        Multilayer(Layer(d2o, 0, 3, 'D2O Subphase')),
+        name='WLS Structure',
+    )
+    model = Model(sample, 1.0, construction_background, PercentageFwhm(0.02), 'WLS Model')
+    model.interface = CalculatorFactory()
+    fitter = MultiFitter(model)
+    fitter.easy_science_multi_fitter.switch_minimizer(minimizer)
+
+    # Unit-scale, zero-background reflectivity curve of the fixed structure
+    q = np.linspace(0.01, 0.25, 30)
+    f = fitter._fit_func[0](q) - construction_background
+    assert np.all(f > 0)
+
+    # Deterministic heteroscedastic data that does NOT lie on the model
+    scale_true, background_true = 1.3, 4.0e-6
+    signal = scale_true * f + background_true
+    fractional_error = 0.03 + 0.02 * np.cos(40.0 * q) ** 2
+    sigma = fractional_error * signal
+    perturbation = 0.8 * np.cos(7.0 * np.arange(q.size) + 0.3)
+    y = signal + perturbation * sigma
+    variances = sigma**2
+
+    design = np.column_stack([f, np.ones_like(f)])
+    beta, covariance = _analytic_wls(design, y, 1.0 / sigma)
+    beta_if_sigma, _ = _analytic_wls(design, y, sigma)
+    beta_if_inverse_variance, _ = _analytic_wls(design, y, 1.0 / sigma**2)
+
+    # Sanity check: the conventions are distinguishable well beyond the fit tolerance
+    scale_tolerance = 1e-3
+    background_tolerance = 5e-8
+    scale_margin = min(abs(beta_if_sigma[0] - beta[0]), abs(beta_if_inverse_variance[0] - beta[0]))
+    assert scale_margin > 10 * scale_tolerance, 'test data cannot discriminate weight conventions'
+
+    model.scale.fixed = False
+    model.scale.bounds = (0.5, 3.0)
+    model.scale.value = 1.0
+    model.background.fixed = False
+    model.background.bounds = (1e-9, 1e-4)
+    model.background.value = 1e-6
+
+    data = DataSet1D(
+        name='wls_convention',
+        x=q,
+        y=y,
+        ye=variances,
+        model=model,
+        auto_background=False,
+    )
+    result = fitter.fit_single_data_set_1d(data)
+
+    assert result.success
+    assert model.scale.value == pytest.approx(beta[0], abs=scale_tolerance)
+    assert model.background.value == pytest.approx(beta[1], abs=background_tolerance)
+
+    if minimizer == AvailableMinimizers.LMFit:
+        # lmfit scales the covariance by reduced chi-square (scale_covar=True)
+        residual = y - design @ beta
+        chi2 = float(np.sum((residual / sigma) ** 2))
+        reduced_chi2 = chi2 / (q.size - 2)
+        expected_errors = np.sqrt(np.diag(covariance) * reduced_chi2)
+        assert model.scale.error == pytest.approx(expected_errors[0], rel=0.05)
+        assert model.background.error == pytest.approx(expected_errors[1], rel=0.05)

@@ -1,11 +1,16 @@
-__author__ = 'github.com/arm61'
+# SPDX-FileCopyrightText: 2026 EasyScience contributors <https://github.com/easyscience>
+# SPDX-License-Identifier: BSD-3-Clause
+
 
 import warnings
+from typing import Any
+from typing import Callable
 
 import numpy as np
 import scipp as sc
 from easyscience.fitting import AvailableMinimizers
 from easyscience.fitting import FitResults
+from easyscience.fitting import Sampler
 from easyscience.fitting.multi_fitter import MultiFitter as EasyScienceMultiFitter
 
 from easyreflectometry.data import DataSet1D
@@ -18,11 +23,20 @@ _EPS = 1e-30
 def _validate_objective(objective: str) -> str:
     """Validate and resolve the objective string.
 
-    :param objective: The objective mode string.
-    :type objective: str
-    :return: Resolved objective string ('auto' becomes 'hybrid').
-    :rtype: str
-    :raises ValueError: If the objective is not one of the valid options.
+    Parameters
+    ----------
+    objective : str
+        The objective mode string.
+
+    Raises
+    ------
+    ValueError :
+        If the objective is not one of the valid options.
+
+    Returns
+    -------
+    str
+        Resolved objective string ('auto' becomes 'hybrid').
     """
     if objective not in _VALID_OBJECTIVES:
         raise ValueError(f'Unknown objective {objective!r}. Valid options: {_VALID_OBJECTIVES}')
@@ -46,17 +60,22 @@ def _prepare_fit_arrays(
 
     Note: ``variances`` here means σ² (the scipp convention), not σ.
 
-    :param x_vals: Independent variable values.
-    :type x_vals: np.ndarray
-    :param y_vals: Observed dependent variable values.
-    :type y_vals: np.ndarray
-    :param variances: Variance (σ²) of each observed point.
-    :type variances: np.ndarray
-    :param objective: One of 'legacy_mask', 'hybrid', 'mighell'.
-    :type objective: str
-    :return: Tuple of (x_out, y_eff, weights, stats) where stats is a dict
-             with keys 'valid', 'mighell_substituted', 'masked'.
-    :rtype: tuple[np.ndarray, np.ndarray, np.ndarray, dict]
+    Parameters
+    ----------
+    x_vals : np.ndarray
+        Independent variable values.
+    y_vals : np.ndarray
+        Observed dependent variable values.
+    variances : np.ndarray
+        Variance (σ²) of each observed point.
+    objective : str
+        One of 'legacy_mask', 'hybrid', 'mighell'.
+
+    Returns
+    -------
+    tuple[np.ndarray, np.ndarray, np.ndarray, dict]
+        Tuple of (x_out, y_eff, weights, stats) where stats is a dict
+        with keys 'valid', 'mighell_substituted', 'masked'.
     """
     n = len(y_vals)
     zero_mask = variances <= 0.0
@@ -71,7 +90,12 @@ def _prepare_fit_arrays(
             weights = 1.0 / np.sqrt(variances[valid])
         else:
             weights = np.array([])
-        stats = {'valid': n_valid, 'mighell_substituted': 0, 'masked': n_zero, 'transformed_all_points': False}
+        stats = {
+            'valid': n_valid,
+            'mighell_substituted': 0,
+            'masked': n_zero,
+            'transformed_all_points': False,
+        }
         return x_out, y_eff, weights, stats
 
     # hybrid or mighell
@@ -143,18 +167,24 @@ class MultiFitter:
         which will populate the :py:class:`sc.DataGroup` appropriately
         after the fitting is performed.
 
-        :param args: Reflectometry model(s).
-        :param objective: Zero-variance handling strategy. One of
+        Parameters
+        ----------
+        *args : Model
+            Reflectometry model(s).
+        objective : str, optional
+            Zero-variance handling strategy. One of
             ``'hybrid'`` (default, Mighell for zero-variance, WLS otherwise),
             ``'mighell'`` (Mighell transform for all points),
             ``'legacy_mask'`` (drop zero-variance points),
-            ``'auto'`` (alias for ``'hybrid'``).
-        :type objective: str
+            ``'auto'`` (alias for ``'hybrid'``). By default, 'hybrid'.
         """
 
         # This lets the unique_name be passed with the fit_func.
         def func_wrapper(func, unique_name):
+            """Func wrapper."""
+
             def wrapped(*args, **kwargs):
+                """Wrapped function."""
                 return func(*args, unique_name, **kwargs)
 
             return wrapped
@@ -165,25 +195,25 @@ class MultiFitter:
         self._fit_results: list[FitResults] | None = None
         self._classical_fit_metrics: list[dict] | None = None
         self._objective = _validate_objective(objective)
+        self._sampler: Sampler | None = None
 
     def fit(self, data: sc.DataGroup, id: int = 0, objective: str | None = None) -> sc.DataGroup:
         """Perform the fitting and populate the DataGroups with the result.
 
-        :param data: DataGroup to be fitted to and populated.
-        :type data: sc.DataGroup
-        :param id: Unused parameter kept for backward compatibility.
-        :type id: int
-        :param objective: Per-call override for the zero-variance objective.
-            If ``None``, uses the instance default set at construction.
-        :type objective: str or None
-        :return: A new DataGroup with fitted model curves, SLD profiles, and fit statistics.
-        :rtype: sc.DataGroup
+        Parameters
+        ----------
+        data : sc.DataGroup
+            DataGroup to be fitted to and populated.
+        id : int, optional
+            Unused parameter kept for backward compatibility. By default, 0.
+        objective : str | None, optional
+            Per-call override for the zero-variance objective.
+            If ``None``, uses the instance default set at construction. By default, None.
 
-        :note: Under the ``mighell`` objective all points are transformed,
-               so ``reduced_chi`` is not a classical chi-square statistic.
-               Under ``hybrid``, only zero-variance points are transformed;
-               when they are a small fraction of the data the chi-square
-               remains approximately classical.
+        Returns
+        -------
+        sc.DataGroup
+            A new DataGroup with fitted model curves, SLD profiles, and fit statistics.
         """
         obj = _validate_objective(objective) if objective is not None else self._objective
 
@@ -236,7 +266,9 @@ class MultiFitter:
             if 'attrs' in new_data:
                 new_data['attrs'][f'R_{id}_model'] = {'model': sc.scalar(self._models[i].as_dict())}
             new_data['coords'][f'z_{id}'] = sc.array(
-                dims=[f'z_{id}'], values=sld_profile[0], unit=(1 / new_data['coords'][f'Qz_{id}'].unit).unit
+                dims=[f'z_{id}'],
+                values=sld_profile[0],
+                unit=(1 / new_data['coords'][f'Qz_{id}'].unit).unit,
             )
             original = original_arrays[i]
             sigma_classical = np.sqrt(np.clip(original['variances'], 0.0, None))
@@ -246,15 +278,13 @@ class MultiFitter:
             objective_chi2 = float(result[i].chi2)
             objective_reduced_chi = _fit_result_reduced_chi(result[i], np.size(result[i].x))
 
-            self._classical_fit_metrics.append(
-                {
-                    'classical_chi2': classical_chi2,
-                    'classical_reduced_chi': classical_reduced_chi,
-                    'objective_chi2': objective_chi2,
-                    'objective_reduced_chi': objective_reduced_chi,
-                    'n_classical_points': n_classical_points,
-                }
-            )
+            self._classical_fit_metrics.append({
+                'classical_chi2': classical_chi2,
+                'classical_reduced_chi': classical_reduced_chi,
+                'objective_chi2': objective_chi2,
+                'objective_reduced_chi': objective_reduced_chi,
+                'n_classical_points': n_classical_points,
+            })
 
             new_data['objective_chi2'] = objective_chi2
             new_data['objective_reduced_chi'] = objective_reduced_chi
@@ -267,14 +297,19 @@ class MultiFitter:
     def fit_single_data_set_1d(self, data: DataSet1D, objective: str | None = None) -> FitResults:
         """Perform fitting on a single 1D dataset.
 
-        :param data: The 1D dataset to fit. Note that ``data.ye`` stores
+        Parameters
+        ----------
+        data : DataSet1D
+            The 1D dataset to fit. Note that ``data.ye`` stores
             variances (σ²), not standard deviations.
-        :type data: DataSet1D
-        :param objective: Per-call override for the zero-variance objective.
-            If ``None``, uses the instance default set at construction.
-        :type objective: str or None
-        :return: Fit results from the minimizer.
-        :rtype: FitResults
+        objective : str | None, optional
+            Per-call override for the zero-variance objective.
+            If ``None``, uses the instance default set at construction. By default, None.
+
+        Returns
+        -------
+        FitResults
+            Fit results from the minimizer.
         """
         obj = _validate_objective(objective) if objective is not None else self._objective
 
@@ -321,6 +356,142 @@ class MultiFitter:
             }
         ]
         return result
+
+    def mcmc_sample(
+        self,
+        data: sc.DataGroup,
+        samples: int = 10000,
+        burn: int = 2000,
+        thin: int = 10,
+        population: int | None = None,
+        objective: str | None = None,
+        initializer: str | None = None,
+        progress_callback: Callable[..., Any] | None = None,
+        abort_test: Callable[[], bool] | None = None,
+    ) -> dict:
+        """Run Bayesian MCMC sampling on reflectometry data using the DREAM sampler.
+
+        Requires that the minimizer is a BUMPS instance (i.e. the minimizer was
+        switched to ``AvailableMinimizers.Bumps``).
+
+        :param data: DataGroup with reflectivity data.
+        :param samples: Number of retained DREAM samples requested from BUMPS.
+        :param burn: Burn-in steps.
+        :param thin: Thinning interval.
+        :param population: BUMPS DREAM population count for advanced users.
+        :param objective: Zero-variance handling strategy.
+        :param initializer: DREAM population initializer. One of ``'eps'``,
+            ``'cov'``, ``'lhs'``, or ``'random'``. By default, None (BUMPS
+            uses ``'eps'``).
+        :param progress_callback: Optional callback for progress updates during
+            sampling.  Forwarded to the core MultiFitter.
+        :return: Dictionary with keys ``'draws'``, ``'param_names'``, ``'state'``,
+            and ``'logp'``.
+        :raises RuntimeError: If the current minimizer is not a BUMPS instance.
+
+        The underlying :class:`~easyscience.fitting.Sampler` is retained on
+        :attr:`sampler`, so the chain can be continued without re-running the
+        burn-in::
+
+            fitter.mcmc_sample(data, samples=2000, burn=500, thin=10)
+            extended = fitter.sampler.extend(additional_samples=8000, thin=10)
+        """
+        minimizer = self.easy_science_multi_fitter.minimizer
+        if not (hasattr(minimizer, 'package') and minimizer.package == 'bumps'):
+            raise RuntimeError(
+                'Bayesian sampling requires a BUMPS minimizer. '
+                'Use ``fitter.switch_minimizer(AvailableMinimizers.Bumps)`` first.'
+            )
+
+        obj = _validate_objective(objective) if objective is not None else self._objective
+
+        refl_nums = [k[3:] for k in data['coords'].keys() if k.startswith('Qz_')]
+        x = []
+        y = []
+        dy = []
+
+        # Process each reflectivity dataset
+        for i in refl_nums:
+            x_vals = data['coords'][f'Qz_{i}'].values
+            y_vals = data['data'][f'R_{i}'].values
+            variances = data['data'][f'R_{i}'].variances
+
+            if obj != 'mighell' and np.all(np.asarray(variances) <= 0.0):
+                raise ValueError(
+                    f'Cannot run Bayesian sampling on reflectivity {i}: all points have zero variance. '
+                    'The likelihood is undefined without measurement uncertainties. Supply uncertainties, '
+                    "or explicitly opt in to the Mighell transform with objective='mighell' "
+                    '(a chi-square bias correction, not a true likelihood).'
+                )
+
+            x_out, y_eff, weights, stats = _prepare_fit_arrays(x_vals, y_vals, variances, obj)
+
+            if stats['masked'] > 0:
+                warnings.warn(
+                    f'Masked {stats["masked"]} data point(s) in reflectivity {i} due to zero variance during sampling.',
+                    UserWarning,
+                )
+            if stats.get('transformed_all_points'):
+                warnings.warn(
+                    f'Applied Mighell transform to all {len(y_vals)} point(s) in reflectivity {i} during sampling. '
+                    'The Mighell transform is a chi-square bias correction, not a true likelihood; '
+                    'posterior widths may be unreliable.',
+                    UserWarning,
+                )
+            elif stats['mighell_substituted'] > 0:
+                warnings.warn(
+                    f'Applied Mighell substitution to {stats["mighell_substituted"]} '
+                    f'zero-variance point(s) in reflectivity {i} during sampling. '
+                    'The Mighell transform is a chi-square bias correction, not a true likelihood; '
+                    'posterior widths may be unreliable.',
+                    UserWarning,
+                )
+            x.append(x_out)
+            y.append(y_eff)
+            dy.append(weights)
+
+        # Delegate the actual BUMPS/DREAM sampling to the core ``Sampler``.
+        # The core API moved from ``MultiFitter.mcmc_sample()`` to a dedicated
+        # ``Sampler`` class: construct it with the configured fitter and the
+        # bound data, then call ``sample()``. ``Sampler`` handles the
+        # multi-dataset reshaping internally.
+        sampler_kwargs = {}
+        if initializer is not None:
+            sampler_kwargs['init'] = initializer
+
+        sampler = Sampler(
+            self.easy_science_multi_fitter,
+            x=x,
+            y=y,
+            weights=dy,
+        )
+        # Retained so the chain can be continued afterwards via ``self.sampler.extend()``.
+        self._sampler = sampler
+        results = sampler.sample(
+            samples=samples,
+            burn=burn,
+            thin=thin,
+            population=population,
+            sampler_kwargs=sampler_kwargs or None,
+            progress_callback=progress_callback,
+            abort_test=abort_test,
+        )
+        return {
+            'draws': results.draws,
+            'param_names': results.param_names,
+            'state': results.state,
+            'logp': results.logp,
+        }
+
+    @property
+    def sampler(self) -> Sampler | None:
+        """The ``Sampler`` behind the most recent :meth:`mcmc_sample` call, or None.
+
+        Holds the live BUMPS chain state, so the sampling run can be continued
+        with ``fitter.sampler.extend(additional_samples=...)`` instead of
+        starting a fresh chain.
+        """
+        return self._sampler
 
     @property
     def chi2(self) -> float | None:
@@ -372,20 +543,27 @@ class MultiFitter:
         return self.reduced_chi
 
     def switch_minimizer(self, minimizer: AvailableMinimizers) -> None:
-        """
-        Switch the minimizer for the fitting.
+        """Switch the minimizer for the fitting.
 
-        :param minimizer: Minimizer to be switched to
+        Parameters
+        ----------
+        minimizer : AvailableMinimizers
+            Minimizer to be switched to.
         """
         self.easy_science_multi_fitter.switch_minimizer(minimizer)
 
 
 def _flatten_list(this_list: list) -> list:
-    """
-    Flatten nested lists.
+    """Flatten nested lists.
 
-    :param this_list: List to be flattened
+    Parameters
+    ----------
+    this_list : list
+        List to be flattened.
 
-    :return: Flattened list
+    Returns
+    -------
+    list
+        Flattened list.
     """
     return np.array([item for sublist in this_list for item in sublist])

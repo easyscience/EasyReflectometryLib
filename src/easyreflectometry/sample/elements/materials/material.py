@@ -1,4 +1,6 @@
-__author__ = 'github.com/arm61'
+# SPDX-FileCopyrightText: 2026 EasyScience contributors <https://github.com/easyscience>
+# SPDX-License-Identifier: BSD-3-Clause
+
 
 from typing import Optional
 from typing import Union
@@ -35,10 +37,6 @@ DEFAULTS = {
 
 
 class Material(BaseCore):
-    # Added in super().__init__
-    sld: Parameter
-    isld: Parameter
-
     def __init__(
         self,
         sld: Union[Parameter, float, None] = None,
@@ -49,10 +47,18 @@ class Material(BaseCore):
     ):
         """Constructor.
 
-        :param sld: Real scattering length density.
-        :param isld: Imaginary scattering length density.
-        :param name: Name of the material, defaults to 'EasyMaterial'.
-        :param interface: Calculator interface, defaults to `None`.
+        Parameters
+        ----------
+        unique_name : Optional[str], optional
+            By default, None.
+        sld : Union[Parameter, float, None], optional
+            Real scattering length density. By default, None.
+        isld : Union[Parameter, float, None], optional
+            Imaginary scattering length density. By default, None.
+        name : str, optional
+            Name of the material. By default, 'EasyMaterial'.
+        interface :
+            Calculator interface. By default, None.
         """
         if unique_name is None:
             unique_name = global_object.generate_unique_name(self.__class__.__name__)
@@ -73,13 +79,28 @@ class Material(BaseCore):
         )
         apply_default_limits(isld, 'isld')
 
-        super().__init__(
-            name=name,
-            sld=sld,
-            isld=isld,
-            interface=interface,
-            unique_name=unique_name,
-        )
+        super().__init__(name=name, unique_name=unique_name)
+        self._sld = sld
+        self._isld = isld
+
+        if interface is not None:
+            self.interface = interface
+
+    @property
+    def sld(self) -> Parameter:
+        return self._sld
+
+    @sld.setter
+    def sld(self, value: float) -> None:
+        self._sld.value = value
+
+    @property
+    def isld(self) -> Parameter:
+        return self._isld
+
+    @isld.setter
+    def isld(self, value: float) -> None:
+        self._isld.value = value
 
     # Representation
     @property
@@ -87,7 +108,7 @@ class Material(BaseCore):
         """A simplified dict representation."""
         return {
             self.name: {
-                'sld': f'{self.sld.value:.3f}e-6 {self.sld.unit}',
-                'isld': f'{self.isld.value:.3f}e-6 {self.isld.unit}',
+                'sld': f'{self._sld.value:.3f}e-6 {self._sld.unit}',
+                'isld': f'{self._isld.value:.3f}e-6 {self._isld.unit}',
             }
         }

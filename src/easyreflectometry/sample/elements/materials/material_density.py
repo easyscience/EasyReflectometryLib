@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 EasyScience contributors <https://github.com/easyscience>
+# SPDX-License-Identifier: BSD-3-Clause
+
 from typing import Optional
 from typing import Union
 
@@ -38,12 +41,6 @@ DEFAULTS.update(MATERIAL_DEFAULTS)
 
 
 class MaterialDensity(Material):
-    # Added in __init__
-    scattering_length_real: Parameter
-    scattering_length_imag: Parameter
-    molecular_weight: Parameter
-    density: Parameter
-
     def __init__(
         self,
         chemical_structure: Union[str, None] = None,
@@ -54,10 +51,18 @@ class MaterialDensity(Material):
     ):
         """Constructor.
 
-        :param chemical_structure: Chemical formula for the material.
-        :param density: Mass density for the material.
-        :param name: Identifier, defaults to `EasyMaterialDensity`.
-        :param interface: Interface object, defaults to `None`.
+        Parameters
+        ----------
+        unique_name : Optional[str], optional
+            By default, None.
+        chemical_structure : Union[str, None], optional
+            Chemical formula for the material. By default, None.
+        density : Union[Parameter, float, None], optional
+            Mass density for the material. By default, None.
+        name : str, optional
+            Identifier. By default, 'EasyMaterialDensity'.
+        interface :
+            Interface object. By default, None.
         """
         if unique_name is None:
             unique_name = global_object.generate_unique_name(self.__class__.__name__)
@@ -112,14 +117,59 @@ class MaterialDensity(Material):
         dependency_map = {'d': density, 'sl': scattering_length_imag, 'mw': mw}
         isld.make_dependent_on(dependency_expression=dependency_expression, dependency_map=dependency_map)
 
-        super().__init__(sld, isld, name=name, interface=interface)
+        super().__init__(sld=sld, isld=isld, name=name, unique_name=unique_name, interface=None)
 
-        self._add_component('scattering_length_real', scattering_length_real)
-        self._add_component('scattering_length_imag', scattering_length_imag)
-        self._add_component('molecular_weight', mw)
-        self._add_component('density', density)
+        self._scattering_length_real = scattering_length_real
+        self._scattering_length_imag = scattering_length_imag
+        self._molecular_weight = mw
+        self._density = density
         self._chemical_structure = chemical_structure
-        self.interface = interface
+
+        if interface is not None:
+            self.interface = interface
+
+    def _setup_sld_constraints(self) -> None:
+        """Wire the derived `sld` / `isld` to depend on the current density and
+        scattering-length Parameters.
+
+        Idempotent — invoked once from `__init__` and again from `from_dict`
+        after :class:`ModelBase` has swapped in the saved Parameter objects.
+        """
+        for derived in (self._sld, self._isld):
+            if not derived.independent:
+                derived.make_independent()
+
+        dependency_expression = '1e-23*(0.602214076e6 * d * sl) / mw'
+        self._sld.make_dependent_on(
+            dependency_expression=dependency_expression,
+            dependency_map={
+                'd': self._density,
+                'sl': self._scattering_length_real,
+                'mw': self._molecular_weight,
+            },
+        )
+        self._isld.make_dependent_on(
+            dependency_expression=dependency_expression,
+            dependency_map={
+                'd': self._density,
+                'sl': self._scattering_length_imag,
+                'mw': self._molecular_weight,
+            },
+        )
+
+    @classmethod
+    def from_dict(cls, obj_dict: dict) -> 'MaterialDensity':
+        """Re-attach sld/isld dependencies after deserialization.
+
+        :class:`ModelBase.from_dict` re-points `self._density` at the
+        deserialized Parameter (because `density` is a constructor argument);
+        the constraint graph built in `__init__` still references the
+        temporary Parameter created from the float kwarg. Rebuild here so
+        `q.density = X` propagates to the derived SLDs.
+        """
+        instance = super().from_dict(obj_dict)
+        instance._setup_sld_constraints()
+        return instance
 
     @property
     def chemical_structure(self) -> str:
@@ -130,12 +180,35 @@ class MaterialDensity(Material):
     def chemical_structure(self, structure_string: str) -> None:
         """Set the chemical structure string.
 
-        :param structure_string: String that defines the chemical structure.
+        Parameters
+        ----------
+        structure_string : str
+            String that defines the chemical structure.
         """
         self._chemical_structure = structure_string
         scattering_length = neutron_scattering_length(structure_string)
-        self.scattering_length_real.value = scattering_length.real
-        self.scattering_length_imag.value = scattering_length.imag
+        self._scattering_length_real.value = scattering_length.real
+        self._scattering_length_imag.value = scattering_length.imag
+
+    @property
+    def density(self) -> Parameter:
+        return self._density
+
+    @density.setter
+    def density(self, value: float) -> None:
+        self._density.value = value
+
+    @property
+    def molecular_weight(self) -> Parameter:
+        return self._molecular_weight
+
+    @property
+    def scattering_length_real(self) -> Parameter:
+        return self._scattering_length_real
+
+    @property
+    def scattering_length_imag(self) -> Parameter:
+        return self._scattering_length_imag
 
     @property
     def _dict_repr(self) -> dict[str, str]:
@@ -144,19 +217,3 @@ class MaterialDensity(Material):
         mat_dict['chemical_structure'] = self._chemical_structure
         mat_dict['density'] = f'{self.density.value:.2e} {self.density.unit}'
         return mat_dict
-
-    def as_dict(self, skip: list = []) -> dict[str, str]:
-        """Produces a cleaned dict using a custom as_dict method to skip necessary things.
-        The resulting dict matches the parameters in __init__
-
-        :param skip: List of keys to skip, defaults to `None`.
-        """
-        this_dict = super().as_dict(skip=skip)
-        # From Material
-        del this_dict['sld']
-        del this_dict['isld']
-        # Determined in __init__
-        del this_dict['scattering_length_real']
-        del this_dict['scattering_length_imag']
-        del this_dict['molecular_weight']
-        return this_dict

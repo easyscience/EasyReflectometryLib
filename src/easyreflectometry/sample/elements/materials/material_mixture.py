@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 EasyScience contributors <https://github.com/easyscience>
+# SPDX-License-Identifier: BSD-3-Clause
+
 from typing import Optional
 from typing import Union
 
@@ -25,11 +28,6 @@ DEFAULTS.update(MATERIAL_DEFAULTS)
 
 
 class MaterialMixture(BaseCore):
-    # Added in super().__init__
-    _material_a: Material
-    _material_b: Material
-    _fraction: Parameter
-
     def __init__(
         self,
         material_a: Union[Material, None] = None,
@@ -41,11 +39,20 @@ class MaterialMixture(BaseCore):
     ):
         """Constructor.
 
-        :param material_a: The first material.
-        :param material_b: The second material.
-        :param fraction: The fraction of material_b in material_a.
-        :param name: Name of the material, defaults to None that causes the name to be constructed.
-        :param interface: Calculator interface, defaults to `None`.
+        Parameters
+        ----------
+        unique_name : Optional[str], optional
+            By default, None.
+        material_a : Union[Material, None], optional
+            The first material. By default, None.
+        material_b : Union[Material, None], optional
+            The second material. By default, None.
+        fraction : Union[Parameter, float, None], optional
+            The fraction of material_b in material_a. By default, None.
+        name : Union[str, None], optional
+            Name of the material. By default, None.
+        interface :
+            Calculator interface. By default, None.
         """
         if unique_name is None:
             unique_name = global_object.generate_unique_name(self.__class__.__name__)
@@ -62,47 +69,92 @@ class MaterialMixture(BaseCore):
             unique_name_prefix=f'{unique_name}_Fraction',
         )
 
-        sld = weighted_average(
+        sld_value = weighted_average(
             a=material_a.sld.value,
             b=material_b.sld.value,
             p=fraction.value,
         )
-        isld = weighted_average(
+        isld_value = weighted_average(
             a=material_a.isld.value,
             b=material_b.isld.value,
             p=fraction.value,
         )
 
-        self._sld = get_as_parameter(
+        sld = get_as_parameter(
             name='sld',
-            value=sld,
+            value=sld_value,
             default_dict=DEFAULTS,
             unique_name_prefix=f'{unique_name}_Sld',
         )
-        self._isld = get_as_parameter(
+        isld = get_as_parameter(
             name='isld',
-            value=isld,
+            value=isld_value,
             default_dict=DEFAULTS,
             unique_name_prefix=f'{unique_name}_Isld',
         )
 
-        # To avoid problems when setting the interface
-        # self._sld and self._isld need to be declared before calling the super constructor
-        super().__init__(
-            name,
-            _material_a=material_a,
-            _material_b=material_b,
-            _fraction=fraction,
-            interface=interface,
-        )
+        # `name` may be None to signal "derive from material names"; resolve
+        # before super().__init__ since BaseCore stores `_name` directly.
         if name is None:
-            self._update_name()
+            resolved_name = material_a.name + '/' + material_b.name
+        else:
+            resolved_name = name
+
+        super().__init__(name=resolved_name, unique_name=unique_name)
+        self._material_a = material_a
+        self._material_b = material_b
+        self._fraction = fraction
+        self._sld = sld
+        self._isld = isld
 
         self._materials_constraints()
-        self.interface = interface
 
-    def _get_linkable_attributes(self):
-        return [self._sld, self._isld]
+        if interface is not None:
+            self.interface = interface
+
+    # ----- constructor-arg accessors -----
+
+    @property
+    def material_a(self) -> Material:
+        return self._material_a
+
+    @material_a.setter
+    def material_a(self, new_material_a: Material) -> None:
+        self._material_a = new_material_a
+        self._materials_constraints()
+        if self.interface is not None:
+            self.interface.generate_bindings(self)
+        self._update_name()
+
+    @property
+    def material_b(self) -> Material:
+        return self._material_b
+
+    @material_b.setter
+    def material_b(self, new_material_b: Material) -> None:
+        self._material_b = new_material_b
+        self._materials_constraints()
+        if self.interface is not None:
+            self.interface.generate_bindings(self)
+        self._update_name()
+
+    @property
+    def fraction(self) -> Parameter:
+        """The Parameter that controls the mixing fraction of material_b in material_a."""
+        return self._fraction
+
+    @fraction.setter
+    def fraction(self, value: float) -> None:
+        if not isinstance(value, (int, float)):
+            raise ValueError('fraction must be a float')
+        self._fraction.value = value
+
+    # ----- derived sld / isld parameters (shared shape with Material) -----
+    #
+    # These are *derived* via the constraints set up in `_materials_constraints`
+    # (not constructor arguments) so we expose them as floats to match the
+    # legacy MaterialMixture API. The underlying Parameter objects remain
+    # available as `self._sld` / `self._isld`.
 
     @property
     def sld(self) -> float:
@@ -112,65 +164,71 @@ class MaterialMixture(BaseCore):
     def isld(self) -> float:
         return self._isld.value
 
+    # ----- calculator binding -----
+
+    def _get_linkable_attributes(self):
+        """Return the *mixed* sld / isld parameters for calculator binding.
+
+        Override of the inherited `BaseCore._get_linkable_attributes`, which
+        walks `get_all_variables()` and would otherwise expose the **child**
+        materials' sld/isld (because our own `sld` / `isld` are floats, not
+        Parameters). The calculator's `InterfaceFactoryTemplate.generate_bindings`
+        matches by parameter `name`; without this override it binds to
+        `material_a.sld` and reflectivity is computed off the wrong SLD.
+        """
+        return [self._sld, self._isld]
+
+    # ----- internal helpers -----
+
     def _materials_constraints(self):
+        """Wire the mixed `_sld` / `_isld` to depend on the current child
+        material parameters and the current `_fraction`. Idempotent: callers
+        invoke this once from ``__init__`` and again from ``from_dict`` after
+        the saved Parameters have been reattached (so the dependency graph
+        points at the right objects, not the temporary constructor params)."""
+        # Detach any existing dependency before rebuilding so make_dependent_on
+        # doesn't chain on top of stale references.
+        for derived in (self._sld, self._isld):
+            if not derived.independent:
+                derived.make_independent()
+
         dependency_expression = 'a * (1 - p) + b * p'
-        dependency_map = {'a': self._material_a.sld, 'b': self._material_b.sld, 'p': self._fraction}
+        dependency_map = {
+            'a': self._material_a.sld,
+            'b': self._material_b.sld,
+            'p': self._fraction,
+        }
         self._sld.make_dependent_on(dependency_expression=dependency_expression, dependency_map=dependency_map)
 
-        dependency_map = {'a': self._material_a.isld, 'b': self._material_b.isld, 'p': self._fraction}
+        dependency_map = {
+            'a': self._material_a.isld,
+            'b': self._material_b.isld,
+            'p': self._fraction,
+        }
         self._isld.make_dependent_on(dependency_expression=dependency_expression, dependency_map=dependency_map)
 
-    @property
-    def fraction(self) -> float:
-        """Get the fraction of material_b."""
-        return self._fraction.value
-
-    @fraction.setter
-    def fraction(self, fraction: float) -> None:
-        """Setter for fraction of material_b.
-
-        :param fraction: The fraction of material_b in material_a.
-        """
-        if not isinstance(fraction, float):
-            raise ValueError('fraction must be a float')
-        self._fraction.value = fraction
-
-    @property
-    def material_a(self) -> Material:
-        """Getter for material_a."""
-        return self._material_a
-
-    @material_a.setter
-    def material_a(self, new_material_a: Material) -> None:
-        """Setter for material_a
-
-        :param new_material_a: New Material for material_a
-        """
-        self._material_a = new_material_a
-        self._materials_constraints()
-        if self.interface is not None:
-            self.interface.generate_bindings(self)
-        self._update_name()
-
-    @property
-    def material_b(self) -> Material:
-        """Getter for material_b."""
-        return self._material_b
-
-    @material_b.setter
-    def material_b(self, new_material_b: Material) -> None:
-        """Setter for material_b
-
-        :param new_material_b: New Materialfor material_b
-        """
-        self._material_b = new_material_b
-        self._materials_constraints()
-        if self.interface is not None:
-            self.interface.generate_bindings(self)
-        self._update_name()
-
     def _update_name(self) -> None:
+        """Update name."""
         self.name = self._material_a.name + '/' + self._material_b.name
+
+    # ----- deserialization -----
+
+    @classmethod
+    def from_dict(cls, obj_dict: dict) -> 'MaterialMixture':
+        """Re-attach mixed-sld dependencies after :class:`ModelBase` swaps in
+        the saved ``_fraction`` Parameter.
+
+        :class:`ModelBase.from_dict` runs ``__init__`` (which builds the
+        ``_sld`` / ``_isld`` constraints against the *temporary* ``_fraction``
+        created from the float kwargs) and then re-points ``self._fraction``
+        at the persisted Parameter. The constraint graph still references the
+        temporary object, so subsequent ``mm.fraction = X`` mutations don't
+        propagate to ``_sld`` / ``_isld``. Re-running ``_materials_constraints``
+        here points the graph at the live objects.
+        """
+        instance = super().from_dict(obj_dict)
+        instance._materials_constraints()
+        return instance
 
     # Representation
     @property
@@ -185,15 +243,3 @@ class MaterialMixture(BaseCore):
                 'material_b': self._material_b._dict_repr,
             }
         }
-
-    def as_dict(self, skip: Optional[list[str]] = None) -> dict[str, str]:
-        """Produces a cleaned dict using a custom as_dict method to skip necessary things.
-        The resulting dict matches the parameters in __init__
-
-        :param skip: List of keys to skip, defaults to `None`.
-        """
-        this_dict = super().as_dict(skip=skip)
-        this_dict['material_a'] = self._material_a.as_dict(skip=skip)
-        this_dict['material_b'] = self._material_b.as_dict(skip=skip)
-        this_dict['fraction'] = self._fraction.as_dict(skip=skip)
-        return this_dict

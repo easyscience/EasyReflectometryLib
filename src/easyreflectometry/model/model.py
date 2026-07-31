@@ -1,6 +1,7 @@
-from __future__ import annotations
+# SPDX-FileCopyrightText: 2026 EasyScience contributors <https://github.com/easyscience>
+# SPDX-License-Identifier: BSD-3-Clause
 
-__author__ = 'github.com/arm61'
+from __future__ import annotations
 
 import copy
 from numbers import Number
@@ -8,15 +9,14 @@ from typing import Optional
 from typing import Union
 
 import numpy as np
-from easyscience import ObjBase as BaseObj
 from easyscience import global_object
 from easyscience.variable import Parameter
 
 from easyreflectometry.limits import apply_default_limits
 from easyreflectometry.sample import BaseAssembly
 from easyreflectometry.sample import Sample
+from easyreflectometry.sample.base_core import BaseCore
 from easyreflectometry.utils import get_as_parameter
-from easyreflectometry.utils import yaml_dump
 
 from .resolution_functions import PercentageFwhm
 from .resolution_functions import ResolutionFunction
@@ -43,19 +43,25 @@ DEFAULTS = {
     },
 }
 
-COLORS = ['#0173B2', '#DE8F05', '#029E73', '#D55E00', '#CC78BC', '#CA9161', '#FBAFE4', '#949494', '#ECE133', '#56B4E9']
+COLORS = [
+    '#0173B2',
+    '#DE8F05',
+    '#029E73',
+    '#D55E00',
+    '#CC78BC',
+    '#CA9161',
+    '#FBAFE4',
+    '#949494',
+    '#ECE133',
+    '#56B4E9',
+]
 
 
-class Model(BaseObj):
+class Model(BaseCore):
     """Model is the class that represents the experiment.
+
     It is used to store the information about the experiment and to perform the calculations.
     """
-
-    # Added in super().__init__
-    name: str
-    sample: Sample
-    scale: Parameter
-    background: Parameter
 
     def __init__(
         self,
@@ -70,13 +76,24 @@ class Model(BaseObj):
     ):
         """Constructor.
 
-        :param sample: The sample being modelled.
-        :param scale: Scaling factor of profile.
-        :param background: Linear background magnitude.
-        :param name: Name of the model, defaults to 'Model'.
-        :param resolution_function: Resolution function, defaults to PercentageFwhm.
-        :param interface: Calculator interface, defaults to `None`.
-
+        Parameters
+        ----------
+        unique_name : Optional[str], optional
+            By default, None.
+        color : str, optional
+            By default, COLORS[0].
+        sample : Union[Sample, None], optional
+            The sample being modelled. By default, None.
+        scale : Union[Parameter, Number, None], optional
+            Scaling factor of profile. By default, None.
+        background : Union[Parameter, Number, None], optional
+            Linear background magnitude. By default, None.
+        name : str, optional
+            Name of the model. By default, 'Model'.
+        resolution_function : Union[ResolutionFunction, None], optional
+            Resolution function. By default, None.
+        interface :
+            Calculator interface. By default, None.
         """
         if unique_name is None:
             unique_name = global_object.generate_unique_name(self.__class__.__name__)
@@ -91,23 +108,53 @@ class Model(BaseObj):
         background = get_as_parameter('background', background, DEFAULTS)
         self.color = color
         self._is_default = False
+        self._resolution_function = resolution_function
 
-        super().__init__(
-            name=name,
-            unique_name=unique_name,
-            sample=sample,
-            scale=scale,
-            background=background,
-        )
-        self.resolution_function = resolution_function
+        super().__init__(name=name, unique_name=unique_name)
+        self._sample = sample
+        self._scale = scale
+        self._background = background
 
-        # Must be set after resolution function
-        self.interface = interface
+        # Set interface last — propagates to children via BaseCore.generate_bindings
+        # and then sets the resolution function on the calculator (see setter).
+        if interface is not None:
+            self.interface = interface
+
+    # ----- @property accessors for serialization round-trip -----
+
+    @property
+    def sample(self) -> Sample:
+        return self._sample
+
+    @sample.setter
+    def sample(self, value: Sample) -> None:
+        self._sample = value
+
+    @property
+    def scale(self) -> Parameter:
+        return self._scale
+
+    @scale.setter
+    def scale(self, value: float) -> None:
+        self._scale.value = value
+
+    @property
+    def background(self) -> Parameter:
+        return self._background
+
+    @background.setter
+    def background(self, value: float) -> None:
+        self._background.value = value
+
+    # ----- assembly management -----
 
     def add_assemblies(self, *assemblies: list[BaseAssembly]) -> None:
         """Add assemblies to the model sample.
 
-        :param assemblies: Assemblies to add to model sample.
+        Parameters
+        ----------
+        *assemblies : list[BaseAssembly]
+            Assemblies to add to model sample.
         """
         if not assemblies:
             self.sample.add_assembly()
@@ -125,7 +172,11 @@ class Model(BaseObj):
     def duplicate_assembly(self, index: int) -> None:
         """Duplicate a given item or layer in a sample.
 
-        :param idx: Index of the item or layer to duplicate
+        Parameters
+        ----------
+        index : int
+        idx :
+            Index of the item or layer to duplicate.
         """
         self.sample.duplicate_assembly(index)
         if self.interface is not None:
@@ -134,7 +185,11 @@ class Model(BaseObj):
     def remove_assembly(self, index: int) -> None:
         """Remove an assembly from the model.
 
-        :param idx: Index of the item to remove.
+        Parameters
+        ----------
+        index : int
+        idx :
+            Index of the item to remove.
         """
         assembly_unique_name = self.sample[index].unique_name
         self.sample.remove_assembly(index)
@@ -148,12 +203,10 @@ class Model(BaseObj):
 
     @is_default.setter
     def is_default(self, value: bool) -> None:
-        """Set whether this model is a default placeholder.
-
-        :param value: True if the model is a default placeholder.
-        :type value: bool
-        """
+        """Set whether this model is a default placeholder."""
         self._is_default = value
+
+    # ----- resolution function -----
 
     @property
     def resolution_function(self) -> ResolutionFunction:
@@ -167,23 +220,20 @@ class Model(BaseObj):
         if self.interface is not None:
             self.interface().set_resolution_function(self._resolution_function)
 
-    @property
-    def interface(self):
-        """
-        Get the current interface of the object
-        """
-        return self._interface
+    # ----- interface (override BaseCore's to add resolution-function side effect) -----
 
-    @interface.setter
+    @BaseCore.interface.setter
     def interface(self, new_interface) -> None:
-        """Set the interface for the model."""
-        # From super class
-        self._interface = new_interface
+        """Set the interface; runs `generate_bindings` and then refreshes the
+        calculator's resolution function.
+        """
+        # Call BaseCore.interface.setter for the binding propagation.
+        BaseCore.interface.fset(self, new_interface)
         if new_interface is not None:
-            self.generate_bindings()
-            self._interface().set_resolution_function(self._resolution_function)
+            new_interface().set_resolution_function(self._resolution_function)
 
-    # Representation
+    # ----- representation -----
+
     @property
     def _dict_repr(self) -> dict[str, dict[str, str]]:
         """A simplified dict representation."""
@@ -203,20 +253,15 @@ class Model(BaseObj):
             }
         }
 
-    def __repr__(self) -> str:
-        """String representation of the layer."""
-        return yaml_dump(self._dict_repr)
+    # ----- serialization (custom because resolution_function + interface need special handling) -----
 
-    def as_dict(self, skip: Optional[list[str]] = None) -> dict:
-        """Produces a cleaned dict using a custom as_dict method to skip necessary things.
-        The resulting dict matches the parameters in __init__
-
-        :param skip: List of keys to skip, defaults to `None`.
-        """
+    def to_dict(self, skip: Optional[list[str]] = None) -> dict:
+        """Serialize the model, encoding the resolution function and interface name."""
         if skip is None:
             skip = []
-        skip.extend(['sample', 'resolution_function', 'interface'])
-        this_dict = super().as_dict(skip=skip)
+        # Sample/resolution_function/interface get bespoke encoding below.
+        skip_for_super = list(skip) + ['sample', 'resolution_function', 'interface']
+        this_dict = super().to_dict(skip=skip_for_super)
         this_dict['sample'] = self.sample.as_dict(skip=skip)
         this_dict['resolution_function'] = self.resolution_function.as_dict(skip=skip)
         if self.interface is None:
@@ -225,28 +270,23 @@ class Model(BaseObj):
             this_dict['interface'] = self.interface().name
         return this_dict
 
+    def as_dict(self, skip: Optional[list[str]] = None) -> dict:
+        """Compatibility alias for :meth:`to_dict`."""
+        return self.to_dict(skip=skip)
+
     def as_orso(self) -> dict:
         """Convert the model to a dictionary suitable for ORSO."""
-        this_dict = self.as_dict()
-
-        return this_dict
+        return self.as_dict()
 
     @classmethod
     def from_dict(cls, passed_dict: dict) -> Model:
-        """
-        Create a Model from a dictionary.
-
-        :param this_dict: dictionary of the Model
-        :return: Model
-        """
-        # Causes circular import if imported at the top
+        """Create a Model from a dictionary."""
+        # Circular import if hoisted to module-top.
         from easyreflectometry.calculators import CalculatorFactory
 
         this_dict = copy.deepcopy(passed_dict)
-        resolution_function = ResolutionFunction.from_dict(this_dict['resolution_function'])
-        del this_dict['resolution_function']
-        interface_name = this_dict['interface']
-        del this_dict['interface']
+        resolution_function = ResolutionFunction.from_dict(this_dict.pop('resolution_function'))
+        interface_name = this_dict.pop('interface')
         if interface_name is not None:
             interface = CalculatorFactory()
             interface.switch(interface_name)

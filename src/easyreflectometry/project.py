@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2024 EasyScience contributors <https://github.com/easyscience>
+# SPDX-License-Identifier: BSD-3-Clause
+
 import datetime
 import json
 import logging
@@ -25,6 +28,7 @@ from easyreflectometry.limits import apply_default_limits
 from easyreflectometry.model import Model
 from easyreflectometry.model import ModelCollection
 from easyreflectometry.model import PercentageFwhm
+from easyreflectometry.model import Pointwise
 from easyreflectometry.sample import Layer
 from easyreflectometry.sample import Material
 from easyreflectometry.sample import MaterialCollection
@@ -43,6 +47,7 @@ DEFAULT_MINIMIZER = AvailableMinimizers.LMFit_leastsq
 
 class Project:
     def __init__(self):
+        """Init function."""
         self._info = self._default_info()
         self._path_project_parent = Path(os.path.expanduser('~'))
         self._models = ModelCollection(populate_if_none=False, unique_name='project_models')
@@ -68,6 +73,7 @@ class Project:
         self._with_experiments = False
 
     def reset(self):
+        """Reset function."""
         del self._models
         del self._materials
         global_object.map._clear()
@@ -85,7 +91,7 @@ class Project:
         seen_ids: set[int] = set()
         if self._models is not None:
             for model in self._models:
-                for param in model.get_parameters():
+                for param in model.get_all_parameters():
                     pid = id(param)
                     if pid not in seen_ids:
                         seen_ids.add(pid)
@@ -140,40 +146,48 @@ class Project:
 
     @property
     def q_min(self):
+        """Q min."""
         if self._q_min is None:
             return Q_MIN
         return self._q_min
 
     @q_min.setter
     def q_min(self, value: float) -> None:
+        """Q min."""
         self._q_min = value
 
     @property
     def q_max(self):
+        """Q max."""
         if self._q_max is None:
             return Q_MAX
         return self._q_max
 
     @q_max.setter
     def q_max(self, value: float) -> None:
+        """Q max."""
         self._q_max = value
 
     @property
     def q_resolution(self):
+        """Q resolution."""
         if self._q_resolution is None:
             return Q_RESOLUTION
         return self._q_resolution
 
     @q_resolution.setter
     def q_resolution(self, value: int) -> None:
+        """Q resolution."""
         self._q_resolution = value
 
     @property
     def current_material_index(self) -> Optional[int]:
+        """Current material index."""
         return self._current_material_index
 
     @current_material_index.setter
     def current_material_index(self, value: int) -> None:
+        """Current material index."""
         if value < 0 or value >= len(self._materials):
             raise ValueError(f'Index {value} out of range')
         if self._current_material_index != value:
@@ -181,10 +195,12 @@ class Project:
 
     @property
     def current_model_index(self) -> Optional[int]:
+        """Current model index."""
         return self._current_model_index
 
     @current_model_index.setter
     def current_model_index(self, value: int) -> None:
+        """Current model index."""
         if value < 0 or value >= len(self._models):
             raise ValueError(f'Index {value} out of range')
         if self._current_model_index != value:
@@ -194,10 +210,12 @@ class Project:
 
     @property
     def current_assembly_index(self) -> Optional[int]:
+        """Current assembly index."""
         return self._current_assembly_index
 
     @current_assembly_index.setter
     def current_assembly_index(self, value: int) -> None:
+        """Current assembly index."""
         if value < 0 or value >= len(self._models[self._current_model_index].sample):
             raise ValueError(f'Index {value} out of range')
         if self._current_assembly_index != value:
@@ -206,10 +224,12 @@ class Project:
 
     @property
     def current_layer_index(self) -> Optional[int]:
+        """Current layer index."""
         return self._current_layer_index
 
     @current_layer_index.setter
     def current_layer_index(self, value: int) -> None:
+        """Current layer index."""
         if value < 0 or value >= len(self._models[self._current_model_index].sample[self._current_assembly_index].layers):
             raise ValueError(f'Index {value} out of range')
         if self._current_layer_index != value:
@@ -217,10 +237,12 @@ class Project:
 
     @property
     def current_experiment_index(self) -> Optional[int]:
+        """Current experiment index."""
         return self._current_experiment_index
 
     @current_experiment_index.setter
     def current_experiment_index(self, value: int) -> None:
+        """Current experiment index."""
         if value < 0 or value >= len(self._experiments):
             raise ValueError(f'Index {value} out of range')
         if self._current_experiment_index != value:
@@ -230,21 +252,26 @@ class Project:
 
     @property
     def created(self) -> bool:
+        """Created function."""
         return self._created
 
     @property
     def path(self):
+        """Path function."""
         return self._path_project_parent / self._info['name']
 
     def set_path_project_parent(self, path: Union[Path, str]):
+        """Set path project parent."""
         self._path_project_parent = Path(path)
 
     @property
     def models(self) -> ModelCollection:
+        """Models function."""
         return self._models
 
     @models.setter
     def models(self, models: ModelCollection) -> None:
+        """Models function."""
         self._replace_collection(models, self._models)
         # Use setter to update indicies for current model, assembly and layer
         self.current_model_index = 0
@@ -255,6 +282,7 @@ class Project:
 
     @property
     def fitter(self) -> MultiFitter:
+        """Fitter function."""
         if len(self._models):
             if (self._fitter is None) or (self._fitter_model_index != self._current_model_index):
                 self._fitter = MultiFitter(self._models[self._current_model_index])
@@ -264,10 +292,12 @@ class Project:
 
     @property
     def calculator(self) -> str:
+        """Calculator function."""
         return self._calculator.current_interface_name
 
     @calculator.setter
     def calculator(self, calculator: str) -> None:
+        """Calculator function."""
         if calculator == self._calculator.current_interface_name:
             return
 
@@ -282,47 +312,61 @@ class Project:
 
     @property
     def minimizer(self) -> AvailableMinimizers:
+        """Minimizer function."""
         if self._fitter is not None:
             return self._fitter.easy_science_multi_fitter.minimizer.enum
         return self._minimizer_selection
 
     @minimizer.setter
     def minimizer(self, minimizer: AvailableMinimizers) -> None:
+        """Minimizer function."""
         old_name = getattr(self._minimizer_selection, 'name', str(self._minimizer_selection))
         new_name = getattr(minimizer, 'name', str(minimizer))
-        logger.info('Minimizer changed from %s to %s (fitter active: %s)', old_name, new_name, self._fitter is not None)
+        logger.info(
+            'Minimizer changed from %s to %s (fitter active: %s)',
+            old_name,
+            new_name,
+            self._fitter is not None,
+        )
         self._minimizer_selection = minimizer
         if self._fitter is not None:
             self._fitter.easy_science_multi_fitter.switch_minimizer(minimizer)
 
     @property
     def experiments(self) -> Dict[int, DataSet1D]:
+        """Experiments function."""
         return self._experiments
 
     @experiments.setter
     def experiments(self, experiments: Dict[int, DataSet1D]) -> None:
+        """Experiments function."""
         self._experiments = experiments
 
     @property
     def path_json(self):
+        """Path json."""
         return self.path / 'project.json'
 
     def get_index_air(self) -> int:
+        """Get index air."""
         if 'Air' not in [material.name for material in self._materials]:
             self._materials.add_material(Material(name='Air', sld=0.0, isld=0.0))
         return [material.name for material in self._materials].index('Air')
 
     def get_index_si(self) -> int:
+        """Get index si."""
         if 'Si' not in [material.name for material in self._materials]:
             self._materials.add_material(Material(name='Si', sld=2.07, isld=0.0))
         return [material.name for material in self._materials].index('Si')
 
     def get_index_sio2(self) -> int:
+        """Get index sio2."""
         if 'SiO2' not in [material.name for material in self._materials]:
             self._materials.add_material(Material(name='SiO2', sld=3.47, isld=0.0))
         return [material.name for material in self._materials].index('SiO2')
 
     def get_index_d2o(self) -> int:
+        """Get index d2o."""
         if 'D2O' not in [material.name for material in self._materials]:
             self._materials.add_material(Material(name='D2O', sld=6.36, isld=0.0))
         return [material.name for material in self._materials].index('D2O')
@@ -351,10 +395,15 @@ class Project:
         This is a convenience helper for the ORSO import pipeline where a complete
         :class:`~easyreflectometry.sample.Sample` is constructed elsewhere.
 
-        :param sample: Sample to set as the project's (single) model.
-        :type sample: easyreflectometry.sample.Sample
-        :return: ``None``.
-        :rtype: None
+        Parameters
+        ----------
+        sample : Sample
+            Sample to set as the project's (single) model.
+
+        Returns
+        -------
+        None
+            ``None``.
         """
         model = Model(sample=sample)
         self.models = ModelCollection([model])
@@ -369,10 +418,15 @@ class Project:
         After adding the model, :attr:`current_model_index` is updated to point to
         the newly added model.
 
-        :param sample: Sample to add as a new model.
-        :type sample: easyreflectometry.sample.Sample
-        :return: ``None``.
-        :rtype: None
+        Parameters
+        ----------
+        sample : Sample
+            Sample to add as a new model.
+
+        Returns
+        -------
+        None
+            ``None``.
         """
         if sample is None:
             raise ValueError('The ORSO file does not contain a valid sample model definition.')
@@ -393,10 +447,15 @@ class Project:
         model is created from *sample*, assigned to the project's calculator,
         and the material collection is rebuilt from the new model only.
 
-        :param sample: Sample to set as the project's only model.
-        :type sample: easyreflectometry.sample.Sample
-        :return: ``None``.
-        :rtype: None
+        Parameters
+        ----------
+        sample : Sample
+            Sample to set as the project's only model.
+
+        Returns
+        -------
+        None
+            ``None``.
         """
         if sample is None:
             raise ValueError('The ORSO file does not contain a valid sample model definition.')
@@ -427,11 +486,18 @@ class Project:
     ) -> None:
         """Set experiment name from ORSO title and configure the resolution function.
 
-        :param path: Path to the experiment data file.
-        :param experiment: The loaded experiment dataset to configure.
-        :param fallback_name: Name to use when no ORSO title is available.
-        :param data_group: Pre-loaded scipp DataGroup (avoids reloading the file).
-        :param data_key: Specific dataset key to use for title extraction (e.g. ``'R_1'``).
+        Parameters
+        ----------
+        path : Union[Path, str]
+            Path to the experiment data file.
+        experiment : DataSet1D
+            The loaded experiment dataset to configure.
+        fallback_name : str
+            Name to use when no ORSO title is available.
+        data_group :
+            Pre-loaded scipp DataGroup (avoids reloading the file). By default, None.
+        data_key : Optional[str], optional
+            Specific dataset key to use for title extraction (e.g. ``'R_1'``). By default, None.
         """
         # Prefer ORSO title when available (keeps UI descriptive)
         title = None
@@ -456,10 +522,21 @@ class Project:
     ) -> None:
         """Set the resolution function on *model* based on variance data in *experiment*.
 
-        :param experiment: The experiment whose variance data drives the choice.
-        :param model: The model whose resolution function is set.
+        Uses the measured per-point q-resolution (``Pointwise``) when the
+        experiment carries q-variance data (``xe``, i.e. sQz²); otherwise
+        falls back to the default 5% FWHM percentage resolution.
+
+        Parameters
+        ----------
+        experiment : DataSet1D
+            The experiment whose variance data drives the choice.
+        model : Model
+            The model whose resolution function is set.
         """
-        model.resolution_function = PercentageFwhm(5.0)
+        if experiment.xe is not None and np.any(experiment.xe):
+            model.resolution_function = Pointwise(q_data_points=[experiment.x, experiment.y, experiment.xe])
+        else:
+            model.resolution_function = PercentageFwhm(5.0)
 
     @staticmethod
     def _auto_set_background(experiment: DataSet1D) -> None:
@@ -468,6 +545,7 @@ class Project:
             experiment.model.background = max(np.min(experiment.y), 1e-10)
 
     def load_new_experiment(self, path: Union[Path, str]) -> None:
+        """Load new experiment."""
         new_experiment = load_as_dataset(str(path))
         new_index = len(self._experiments)
 
@@ -485,8 +563,15 @@ class Project:
     def count_datasets_in_file(self, path: Union[Path, str]) -> int:
         """Return the number of datasets contained in the file at *path*.
 
-        :param path: Path to the data file.
-        :return: Number of datasets found; 1 if the file cannot be introspected.
+        Parameters
+        ----------
+        path : Union[Path, str]
+            Path to the data file.
+
+        Returns
+        -------
+        int
+            Number of datasets found; 1 if the file cannot be introspected.
         """
         try:
             data_group = load_data_from_orso_file(str(path))
@@ -502,8 +587,15 @@ class Project:
         currently selected.  Falls back to :meth:`load_new_experiment` for single-dataset
         files or on any loading error.
 
-        :param path: Path to the data file.
-        :return: Number of experiments that were added.
+        Parameters
+        ----------
+        path : Union[Path, str]
+            Path to the data file.
+
+        Returns
+        -------
+        int
+            Number of experiments that were added.
         """
         try:
             data_group = load_data_from_orso_file(str(path))
@@ -547,6 +639,7 @@ class Project:
         return len(data_keys)
 
     def load_experiment_for_model_at_index(self, path: Union[Path, str], index: Optional[int] = 0) -> None:
+        """Load experiment for model at index."""
         experiment = load_as_dataset(str(path))
 
         self._apply_experiment_metadata(path, experiment, f'Experiment {index}')
@@ -557,6 +650,7 @@ class Project:
         self._apply_resolution_function(experiment, self._models[index])
 
     def sld_data_for_model_at_index(self, index: int = 0) -> DataSet1D:
+        """Sld data for model at index."""
         self.models[index].interface = self._calculator
         sld = self.models[index].interface().sld_profile(self._models[index].unique_name)
         return DataSet1D(
@@ -566,6 +660,7 @@ class Project:
         )
 
     def sample_data_for_model_at_index(self, index: int = 0, q_range: Optional[np.array] = None) -> DataSet1D:
+        """Sample data for model at index."""
         original_resolution_function = self.models[index].resolution_function
         self.models[index].resolution_function = PercentageFwhm(0)
         reflectivity_data = self.model_data_for_model_at_index(index, q_range)
@@ -574,6 +669,7 @@ class Project:
         return reflectivity_data
 
     def model_data_for_model_at_index(self, index: int = 0, q_range: Optional[np.array] = None) -> DataSet1D:
+        """Model data for model at index."""
         if q_range is None:
             q_range = np.linspace(self.q_min, self.q_max, self.q_resolution)
         self.models[index].interface = self._calculator
@@ -585,18 +681,38 @@ class Project:
         )
 
     def experimental_data_for_model_at_index(self, index: int = 0) -> DataSet1D:
+        """Experimental data for model at index."""
         if index in self._experiments.keys():
             return self._experiments[index]
         else:
             raise IndexError(f'No experiment data for model at index {index}')
 
     def default_model(self):
+        """Default model."""
         self._replace_collection(MaterialCollection(interface=self._calculator), self._materials)
 
         layers = [
-            Layer(material=self._materials[0], thickness=0.0, roughness=0.0, name='Vacuum Layer', interface=self._calculator),
-            Layer(material=self._materials[1], thickness=100.0, roughness=3.0, name='D2O Layer', interface=self._calculator),
-            Layer(material=self._materials[2], thickness=0.0, roughness=1.2, name='Si Layer', interface=self._calculator),
+            Layer(
+                material=self._materials[0],
+                thickness=0.0,
+                roughness=0.0,
+                name='Vacuum Layer',
+                interface=self._calculator,
+            ),
+            Layer(
+                material=self._materials[1],
+                thickness=100.0,
+                roughness=3.0,
+                name='D2O Layer',
+                interface=self._calculator,
+            ),
+            Layer(
+                material=self._materials[2],
+                thickness=0.0,
+                roughness=1.2,
+                name='Si Layer',
+                interface=self._calculator,
+            ),
         ]
         assemblies = [
             Multilayer(layers[0], name='Superphase', interface=self._calculator),
@@ -611,10 +727,15 @@ class Project:
     def is_default_model(self, index: int) -> bool:
         """Check if the model at the given index is a default model.
 
-        :param index: Index of the model to check.
-        :type index: int
-        :return: True if the model was created as a default placeholder.
-        :rtype: bool
+        Parameters
+        ----------
+        index : int
+            Index of the model to check.
+
+        Returns
+        -------
+        bool
+            True if the model was created as a default placeholder.
         """
         if index < 0 or index >= len(self._models):
             return False
@@ -630,10 +751,17 @@ class Project:
 
         Adjusts the current model index if necessary.
 
-        :param index: Index of the model to remove.
-        :type index: int
-        :raises IndexError: If the index is out of range.
-        :raises ValueError: If trying to remove the last remaining model.
+        Parameters
+        ----------
+        index : int
+            Index of the model to remove.
+
+        Raises
+        ------
+        IndexError :
+            If the index is out of range.
+        ValueError :
+            If trying to remove the last remaining model.
         """
         if index < 0 or index >= len(self._models):
             raise IndexError(f'Model index {index} out of range')
@@ -668,18 +796,21 @@ class Project:
         self._current_layer_index = 0
 
     def add_material(self, material: MaterialCollection) -> None:
+        """Add material."""
         if material in self._materials:
             print(f'WARNING: Material {material} is already in material collection')
         else:
             self._materials.append(material)
 
     def remove_material(self, index: int) -> None:
+        """Remove material."""
         if self._materials[index] in self._get_materials_in_models():
             print(f'ERROR: Material {self._materials[index]} is used in models')
         else:
             self._materials.pop(index)
 
     def _default_info(self):
+        """Default info."""
         return dict(
             name='DefaultEasyReflectometryProject',
             short_description='Reflectometry, 1D',
@@ -687,6 +818,7 @@ class Project:
         )
 
     def create(self):
+        """Create function."""
         if not os.path.exists(self.path):
             os.makedirs(self.path)
             os.makedirs(self.path / 'experiments')
@@ -696,6 +828,7 @@ class Project:
             print(f'ERROR: Directory {self.path} already exists')
 
     def save_as_json(self, overwrite=False):
+        """Save as json."""
         if self.path_json.exists() and overwrite:
             print(f'File already exists {self.path_json}. Overwriting...')
             self.path_json.unlink()
@@ -708,6 +841,7 @@ class Project:
             print(exception)
 
     def load_from_json(self, path: Optional[Union[Path, str]] = None):
+        """Load from json."""
         if path is None:
             path = self.path_json
         path = Path(path)
@@ -721,8 +855,18 @@ class Project:
         else:
             print(f'ERROR: File {path} does not exist')
 
+    #: Schema version embedded in every serialized project. Bumped from 1 → 2
+    #: when the sample/model classes migrated from the legacy
+    #: ``easyscience.ObjBase``/``CollectionBase`` pipeline to
+    #: ``ModelBase``/``EasyList``. The on-disk shape of nested objects (Layer,
+    #: Material, MaterialMixture, MaterialSolvated, LayerAreaPerMolecule, etc.)
+    #: changed in a way that is not backward-compatible with v1 files.
+    FILE_FORMAT = 2
+
     def as_dict(self, include_materials_not_in_model=False):
+        """As dict."""
         project_dict = {}
+        project_dict['file_format'] = self.FILE_FORMAT
         project_dict['info'] = self._info
         project_dict['with_experiments'] = self._with_experiments
         if self._models is not None:
@@ -743,6 +887,7 @@ class Project:
         return project_dict
 
     def _as_dict_add_materials_not_in_model_dict(self, project_dict: dict):
+        """As dict add materials not in model dict."""
         materials_not_in_model = []
         for material in self._materials:
             if material not in self._get_materials_in_models():
@@ -751,19 +896,44 @@ class Project:
             project_dict['materials_not_in_model'] = MaterialCollection(materials_not_in_model).as_dict(skip=['interface'])
 
     def _as_dict_add_experiments(self, project_dict: dict):
+        """As dict add experiments."""
         project_dict['experiments'] = {}
         project_dict['experiments_models'] = {}
         project_dict['experiments_names'] = {}
 
         for key, experiment in self._experiments.items():
-            project_dict['experiments'][key] = [list(experiment.x), list(experiment.y), list(experiment.ye)]
+            project_dict['experiments'][key] = [
+                list(experiment.x),
+                list(experiment.y),
+                list(experiment.ye),
+            ]
             if experiment.xe is not None:
                 project_dict['experiments'][key].append(list(experiment.xe))
                 project_dict['experiments_models'][key] = experiment.model.name
                 project_dict['experiments_names'][key] = experiment.name
 
     def from_dict(self, project_dict: dict):
+        """From dict."""
         keys = list(project_dict.keys())
+        # Validate file format. v1 files were written by the legacy
+        # `ObjBase`/`CollectionBase` pipeline; their inner shapes (Layer,
+        # Material, MaterialMixture, …) are not compatible with the v2
+        # `ModelBase`/`EasyList` deserializer. Older files must be re-created.
+        file_format = project_dict.get('file_format')
+        if file_format is None:
+            raise ValueError(
+                'This project file predates file_format=2 and cannot be loaded by '
+                'this version of easyreflectometry. The serialization format changed '
+                'when the sample/model classes migrated from the legacy ObjBase / '
+                'CollectionBase pipeline. Please re-create the project from its '
+                'underlying data using the current API.'
+            )
+        if file_format != self.FILE_FORMAT:
+            raise ValueError(
+                f'Unsupported project file_format={file_format!r}; this version of '
+                f'easyreflectometry only reads file_format={self.FILE_FORMAT}. Please '
+                'either update easyreflectometry or re-create the project.'
+            )
         self._info = project_dict['info']
         self._with_experiments = project_dict['with_experiments']
         if 'calculator' in keys:
@@ -786,6 +956,7 @@ class Project:
         resolve_all_parameter_dependencies(self)
 
     def _from_dict_extract_experiments(self, project_dict: dict) -> Dict[int, DataSet1D]:
+        """From dict extract experiments."""
         experiments = {}
         for key in project_dict['experiments'].keys():
             experiments[int(key)] = DataSet1D(
@@ -800,6 +971,7 @@ class Project:
         return experiments
 
     def _get_materials_in_models(self) -> MaterialCollection:
+        """Get materials in models."""
         materials_in_model = MaterialCollection(populate_if_none=False)
         for model in self._models:
             for assembly in model.sample:
@@ -808,6 +980,7 @@ class Project:
         return materials_in_model
 
     def _replace_collection(self, src_collection: BaseCollection, dst_collection: BaseCollection) -> None:
+        """Replace collection."""
         # Clear the destination collection
         for i in range(len(dst_collection)):
             dst_collection.pop(0)
@@ -816,4 +989,5 @@ class Project:
             dst_collection.append(element)
 
     def _timestamp_modification(self):
+        """Timestamp modification."""
         self._info['modified'] = datetime.datetime.now().strftime('%d.%m.%Y %H:%M')

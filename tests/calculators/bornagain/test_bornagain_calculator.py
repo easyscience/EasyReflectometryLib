@@ -1,9 +1,10 @@
+# SPDX-FileCopyrightText: 2026 EasyScience contributors <https://github.com/easyscience>
+# SPDX-License-Identifier: BSD-3-Clause
+
 """
 Tests for BornAgain calculator.
 """
 
-__author__ = 'github.com/arm61'
-__version__ = '0.0.1'
 
 # import os
 # import unittest

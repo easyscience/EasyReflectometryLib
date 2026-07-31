@@ -1,4 +1,4 @@
-# This workflow will for a variety of Python versions 
+# This workflow will for a variety of Python versions
 # - install the code base
 # - lint the code base
 # - test the code base
@@ -21,8 +21,8 @@ jobs:
       - name: Suggestion to fix issues
         if: ${{ failure() }}
         run: |
-            echo "::notice::In project root run 'python.exe -m ruff . --fix' and commit changes to fix issues."
-            exit 1
+          echo "::notice::In project root run 'python.exe -m ruff . --fix' and commit changes to fix issues."
+          exit 1
 
   Code_Testing:
     strategy:
@@ -35,56 +35,54 @@ jobs:
     if: "!contains(github.event.head_commit.message, '[ci skip]')"
 
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
 
-    - name: Upgrade pip
-      run: |
-        python -m pip install --upgrade pip
+      - name: Upgrade pip
+        run: |
+          python -m pip install --upgrade pip
 
-    - name: Install dependencies
-      run: pip install -e '.[dev]'
+      - name: Install dependencies
+        run: pip install -e '.[dev]'
 
-    - name: Test with pytest and coverage
-      run: |
-        pip install pytest pytest-cov
-        pytest --cov=src/easyreflectometry tests --cov-branch --cov-report=xml:coverage-unit.xml
+      - name: Test with pytest and coverage
+        run: |
+          pip install pytest pytest-cov
+          pytest --cov=src/easyreflectometry tests --cov-branch --cov-report=xml:coverage-unit.xml
 
-    - name: Upload coverage reports to Codecov
-      # only on ubuntu to avoid multiple uploads
-      if: runner.os == 'Linux'
-      uses: codecov/codecov-action@v5
-      with:
-        name: unit-tests-job
-        flags: unittests
-        files: ./coverage-unit.xml
-        fail_ci_if_error: false
-        verbose: true
-        token: ${{ secrets.CODECOV_TOKEN }}
-        slug: EasyScience/EasyReflectometryLib
-
+      - name: Upload coverage reports to Codecov
+        # only on ubuntu to avoid multiple uploads
+        if: runner.os == 'Linux'
+        uses: codecov/codecov-action@v5
+        with:
+          name: unit-tests-job
+          flags: unittests
+          files: ./coverage-unit.xml
+          fail_ci_if_error: false
+          verbose: true
+          token: ${{ secrets.CODECOV_TOKEN }}
+          slug: EasyScience/EasyReflectometryLib
 
   Package_Testing:
-
     runs-on: ubuntu-latest
     if: "!contains(github.event.head_commit.message, '[ci skip]')"
 
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - uses: actions/setup-python@v5
-      with:
-        python-version: 3.11
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.11
 
-    - name: Install dependencies and build
-      run: |
-        pip install -e '.[dev]'
-        python -m build
+      - name: Install dependencies and build
+        run: |
+          pip install -e '.[dev]'
+          python -m build
 
-    - name: Check Build
-      run: |
-        cd ./dist
-        pytest ../
+      - name: Check Build
+        run: |
+          cd ./dist
+          pytest ../

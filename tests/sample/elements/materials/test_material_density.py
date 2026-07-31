@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 EasyScience contributors <https://github.com/easyscience>
+# SPDX-License-Identifier: BSD-3-Clause
+
 import unittest
 
 import numpy as np
@@ -61,3 +64,22 @@ class TestMaterialDensity(unittest.TestCase):
         q = MaterialDensity.from_dict(p_dict)
 
         assert sorted(p.as_dict()) == sorted(q.as_dict())
+
+    def test_density_mutation_propagates_after_round_trip(self):
+        """Regression: after ``from_dict`` reattaches the saved ``_density``
+        Parameter, mutating it must propagate to ``sld`` / ``isld`` (which
+        are constrained off it). The ``__init__``-time constraint references
+        the temporary constructor Parameter; ``from_dict`` rebuilds the
+        graph so subsequent mutations propagate correctly.
+        """
+        p = MaterialDensity(chemical_structure='Si', density=2.33)
+        original_sld = p.sld.value
+        p_dict = p.as_dict()
+        global_object.map._clear()
+
+        q = MaterialDensity.from_dict(p_dict)
+        assert_almost_equal(q.sld.value, original_sld)
+
+        q.density = 4.66
+        # SLD scales linearly with density (constraint: d * sl / mw, etc.)
+        assert_almost_equal(q.sld.value, 2 * original_sld)

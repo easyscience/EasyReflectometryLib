@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 EasyScience contributors <https://github.com/easyscience>
+# SPDX-License-Identifier: BSD-3-Clause
+
 from __future__ import annotations
 
 from typing import Optional
@@ -37,14 +40,23 @@ class SurfactantLayer(BaseAssembly):
     ):
         """Constructor.
 
-        :param tail_layer: Layer representing the tail part of the surfactant layer.
-        :param head_layer: Layer representing the head part of the surfactant layer.
-        :param name: Name for surfactant layer, defaults to 'EasySurfactantLayer'.
-        :param constrain_area_per_molecule: Constrain the area per molecule, defaults to `False`.
-        :param conformal_roughness: Constrain the roughness to be the same for both layers, defaults to `False`.
-        :param interface: Calculator interface, defaults to `None`.
+        Parameters
+        ----------
+        unique_name : Optional[str], optional
+            By default, None.
+        tail_layer : Optional[LayerAreaPerMolecule], optional
+            Layer representing the tail part of the surfactant layer. By default, None.
+        head_layer : Optional[LayerAreaPerMolecule], optional
+            Layer representing the head part of the surfactant layer. By default, None.
+        name : str, optional
+            Name for surfactant layer. By default, 'EasySurfactantLayer'.
+        constrain_area_per_molecule : bool, optional
+            Constrain the area per molecule. By default, False.
+        conformal_roughness : bool, optional
+            Constrain the roughness to be the same for both layers. By default, False.
+        interface :
+            Calculator interface. By default, None.
         """
-        # We need to generate a unique name to create the nested objects
         if unique_name is None:
             unique_name = global_object.generate_unique_name(self.__class__.__name__)
 
@@ -101,11 +113,13 @@ class SurfactantLayer(BaseAssembly):
             interface=interface,
         )
 
-        self.interface = interface
         self.conformal = False
 
+        if constrain_area_per_molecule:
+            self.constrain_area_per_molecule = True
         if conformal_roughness:
             self._enable_roughness_constraints()
+            self.conformal = True
 
     @property
     def tail_layer(self) -> Optional[LayerAreaPerMolecule]:
@@ -138,7 +152,10 @@ class SurfactantLayer(BaseAssembly):
         """Set the status for the area per molecule constraint such that the head and tail layers have the
         same area per molecule.
 
-        :param status: Boolean description the wanted of the constraint.
+        Parameters
+        ----------
+        status : bool
+            Boolean description the wanted of the constraint.
         """
         if status:
             independent_param = self.tail_layer._area_per_molecule
@@ -158,7 +175,10 @@ class SurfactantLayer(BaseAssembly):
     def conformal_roughness(self, status: bool):
         """Set the status for the roughness to be the same for both layers.
 
-        :param status: Boolean description the wanted of the constraint.
+        Parameters
+        ----------
+        status : bool
+            Boolean description the wanted of the constraint.
         """
         if status:
             self._enable_roughness_constraints()
@@ -170,7 +190,10 @@ class SurfactantLayer(BaseAssembly):
     def constrain_solvent_roughness(self, solvent_roughness: Parameter):
         """Add the constraint to the solvent roughness.
 
-        :param solvent_roughness: The solvent roughness parameter.
+        Parameters
+        ----------
+        solvent_roughness : Parameter
+            The solvent roughness parameter.
         """
         if not self.conformal_roughness:
             raise ValueError('Roughness must be conformal to use this function.')
@@ -189,7 +212,22 @@ class SurfactantLayer(BaseAssembly):
     ):
         """Constrain structural parameters between surfactant layer objects.
 
-        :param another_contrast: The surfactant layer to constrain
+        Parameters
+        ----------
+        tail_layer_fraction : bool, optional
+            By default, True.
+        head_layer_fraction : bool, optional
+            By default, True.
+        tail_layer_area_per_molecule : bool, optional
+            By default, True.
+        head_layer_area_per_molecule : bool, optional
+            By default, True.
+        tail_layer_thickness : bool, optional
+            By default, True.
+        head_layer_thickness : bool, optional
+            By default, True.
+        another_contrast : SurfactantLayer
+            The surfactant layer to constrain.
         """
         if head_layer_thickness:
             self.head_layer.thickness.make_dependent_on(
@@ -239,16 +277,13 @@ class SurfactantLayer(BaseAssembly):
             }
         }
 
-    def as_dict(self, skip: Optional[list[str]] = None) -> dict:
-        """Produces a cleaned dict using a custom as_dict method to skip necessary things.
-        The resulting dict matches the parameters in __init__
-
-        :param skip: List of keys to skip, defaults to `None`.
+    def to_dict(self, skip: Optional[list[str]] = None) -> dict:
+        """Serialize, dropping the derived ``layers`` field (it is rebuilt
+        from ``tail_layer`` and ``head_layer`` in ``__init__``).
         """
-        this_dict = super().as_dict(skip=skip)
-        this_dict['tail_layer'] = self.tail_layer.as_dict(skip=skip)
-        this_dict['head_layer'] = self.head_layer.as_dict(skip=skip)
-        this_dict['constrain_area_per_molecule'] = self.constrain_area_per_molecule
-        this_dict['conformal_roughness'] = self.conformal_roughness
-        del this_dict['layers']
+        this_dict = super().to_dict(skip=skip)
+        this_dict.pop('layers', None)
         return this_dict
+
+    def as_dict(self, skip: Optional[list[str]] = None) -> dict:
+        return self.to_dict(skip=skip)

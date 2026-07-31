@@ -1,4 +1,7 @@
-__author__ = 'github.com/arm61'
+# SPDX-FileCopyrightText: 2026 EasyScience contributors <https://github.com/easyscience>
+# SPDX-License-Identifier: BSD-3-Clause
+
+
 from typing import Optional
 from typing import Union
 
@@ -34,14 +37,6 @@ DEFAULTS = {
 
 
 class Layer(BaseCore):
-    # Added in super().__init__
-    #: Material that makes up the layer.
-    material: Material
-    #: Thickness of the layer in Angstrom.
-    thickness: Parameter
-    #: Roughness of the layer in Angstrom.
-    roughness: Parameter
-
     def __init__(
         self,
         material: Union[Material, None] = None,
@@ -53,11 +48,20 @@ class Layer(BaseCore):
     ):
         """Constructor.
 
-        :param material: The material for the layer.
-        :param thickness: Layer thickness in Angstrom.
-        :param roughness: Upper roughness on the layer in Angstrom.
-        :param name: Name of the layer, defaults to 'EasyLayer'
-        :param interface: Interface object, defaults to `None`
+        Parameters
+        ----------
+        unique_name : Optional[str], optional
+            By default, None.
+        material : Union[Material, None], optional
+            The material for the layer. By default, None.
+        thickness : Union[Parameter, float, None], optional
+            Layer thickness in Angstrom. By default, None.
+        roughness : Union[Parameter, float, None], optional
+            Upper roughness on the layer in Angstrom. By default, None.
+        name : str, optional
+            Name of the layer. By default, 'EasyLayer'.
+        interface :
+            Interface object. By default, None.
         """
         if material is None:
             material = Material(interface=interface)
@@ -83,21 +87,47 @@ class Layer(BaseCore):
         )
         roughness.default_limits_pending = not isinstance(roughness_value, Parameter)
 
-        super().__init__(
-            name=name,
-            interface=interface,
-            material=material,
-            thickness=thickness,
-            roughness=roughness,
-            unique_name=unique_name,
-        )
+        super().__init__(name=name, unique_name=unique_name)
+        self._material = material
+        self._thickness = thickness
+        self._roughness = roughness
+
+        if interface is not None:
+            self.interface = interface
+
+    @property
+    def material(self) -> Material:
+        return self._material
+
+    @material.setter
+    def material(self, value: Material) -> None:
+        self._material = value
+
+    @property
+    def thickness(self) -> Parameter:
+        return self._thickness
+
+    @thickness.setter
+    def thickness(self, value: float) -> None:
+        self._thickness.value = value
+
+    @property
+    def roughness(self) -> Parameter:
+        return self._roughness
+
+    @roughness.setter
+    def roughness(self, value: float) -> None:
+        self._roughness.value = value
 
     def assign_material(self, material: Material) -> None:
         """Assign a material to the layer interface.
 
-        :param material: The material to assign to the layer.
+        Parameters
+        ----------
+        material : Material
+            The material to assign to the layer.
         """
-        self.material = material
+        self._material = material
         if self.interface is not None:
             self.interface().assign_material_to_layer(self.material.unique_name, self.unique_name)
 

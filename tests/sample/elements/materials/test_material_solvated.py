@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2024 EasyScience contributors <https://github.com/easyscience>
+# SPDX-License-Identifier: BSD-3-Clause
+
 from unittest.mock import MagicMock
 
 import pytest
@@ -29,7 +32,7 @@ class TestMaterialSolvated:
         # When Then Expect
         assert material_solvated.material_a == self.material
         assert material_solvated.material_b == self.solvent
-        assert material_solvated.fraction == 0.1
+        assert material_solvated.fraction.value == 0.1
         assert material_solvated.name == 'name'
         assert material_solvated.interface == self.mock_interface
         self.mock_interface.generate_bindings.call_count == 2
@@ -66,14 +69,14 @@ class TestMaterialSolvated:
 
     def test_solvent_fraction(self, material_solvated: MaterialSolvated) -> None:
         # When Then Expect
-        assert material_solvated.solvent_fraction == 0.1
+        assert material_solvated.solvent_fraction.value == 0.1
 
     def test_set_solvent_fraction(self, material_solvated: MaterialSolvated) -> None:
         # When Then
         material_solvated.solvent_fraction = 1.0
 
         # Expect
-        assert material_solvated.solvent_fraction == 1.0
+        assert material_solvated.solvent_fraction.value == 1.0
 
     def test_set_solvent_fraction_exception(self, material_solvated: MaterialSolvated) -> None:
         # When Then Expect
@@ -130,3 +133,29 @@ class TestMaterialSolvated:
 
         # Expect
         assert material_solvated.name == 'name_a in name_b'
+
+    def test_solvent_fraction_metadata_survives_round_trip(self) -> None:
+        """Regression: ``solvent_fraction`` is a constructor argument, but its
+        backing storage is ``_fraction`` (inherited from MaterialMixture).
+        ``ModelBase.from_dict`` would write the saved Parameter to
+        ``_solvent_fraction`` (an orphan), silently resetting the active
+        parameter to constructor defaults. We re-route to ``_fraction`` in
+        ``MaterialSolvated.from_dict``.
+        """
+        material = Material(sld=6.36, isld=0, name='D2O')
+        solvent = Material(sld=-0.561, isld=0, name='H2O')
+        p = MaterialSolvated(material=material, solvent=solvent, solvent_fraction=0.3)
+        # Tweak fit metadata that the default would not have.
+        p.solvent_fraction.fixed = False
+        p.solvent_fraction.min = 0.12
+
+        p_dict = p.as_dict()
+        global_object.map._clear()
+
+        q = MaterialSolvated.from_dict(p_dict)
+
+        assert q.solvent_fraction.value == 0.3
+        assert q.solvent_fraction.fixed is False
+        assert q.solvent_fraction.min == 0.12
+        # No orphan field.
+        assert '_solvent_fraction' not in q.__dict__
