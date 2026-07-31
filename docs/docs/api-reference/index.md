@@ -32,6 +32,14 @@ Fitting helpers and objective functions.
 
 - [Fitting](fitting.md)
 
+## Bayesian Analysis
+
+Posterior analysis utilities for Bayesian MCMC sampling results:
+summary statistics, credible intervals, corner/trace/distribution
+plots, posterior-predictive curves, and trace persistence.
+
+- [Bayesian Analysis](analysis.md)
+
 ## Assemblies
 
 Assemblies are collections of layers that are used to represent a

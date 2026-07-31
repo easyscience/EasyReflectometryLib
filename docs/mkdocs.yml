@@ -194,12 +194,14 @@ nav:
           - Solvated Material Fitting: tutorials/fitting/material_solvated.ipynb
       - Advanced Fitting:
           - Multi-Contrast Fitting: tutorials/advancedfitting/multi_contrast.ipynb
+          - Bayesian Fitting: tutorials/advancedfitting/bayesian_bumps.ipynb
   - API Reference:
       - API Reference: api-reference/index.md
       - Model: api-reference/model.md
       - Sample: api-reference/sample.md
       - Project: api-reference/project.md
       - Fitting: api-reference/fitting.md
+      - Bayesian Analysis: api-reference/analysis.md
       - Assemblies:
           - Multilayer: api-reference/assemblies/multilayer.md
           - Repeating Multilayer: api-reference/assemblies/repeating_multilayer.md

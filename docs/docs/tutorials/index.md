@@ -49,6 +49,11 @@ These are basic fitting examples using the EasyReflectometry library.
 These are advanced fitting examples using the EasyReflectometry library.
 
 - [Multi-Contrast Fitting](advancedfitting/multi_contrast.ipynb)
+- [Bayesian Fitting](advancedfitting/bayesian_bumps.ipynb) – Sample the
+  posterior parameter distribution with the BUMPS DREAM MCMC sampler,
+  check convergence, extend an under-converged chain, and visualise
+  posterior distributions, corner plots, and posterior-predictive
+  reflectivity and SLD bands.
 
 ## Extra
 

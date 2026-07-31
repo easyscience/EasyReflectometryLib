@@ -209,3 +209,107 @@ fitting. `objective_chi2` and `objective_reduced_chi` describe the
 minimized objective value, while `classical_chi2` and
 `classical_reduced_chi` describe the fit quality against the original
 reflectivity values (with non-positive-variance points excluded).
+
+## Bayesian Analysis
+
+In addition to classical least-squares optimization, EasyReflectometry
+supports **Bayesian MCMC sampling** via the
+[BUMPS](https://bumps.readthedocs.io/) DREAM sampler. Instead of a
+single best-fit value per parameter, sampling produces the full
+**posterior distribution**, from which you obtain credible intervals,
+parameter correlations, and posterior-predictive uncertainty bands on
+the reflectivity curve and SLD profile.
+
+### Workflow
+
+Sampling is exposed through `MultiFitter.mcmc_sample()` and requires
+the BUMPS minimizer. The recommended workflow is to run a classical fit
+first — MCMC converges much faster when started from a good optimum —
+and then sample around it:
+
+```python
+from easyscience.fitting import AvailableMinimizers
+from easyreflectometry.analysis.bayesian import PosteriorResults
+from easyreflectometry.fitting import MultiFitter
+
+fitter = MultiFitter(model)
+fitter.switch_minimizer(AvailableMinimizers.Bumps)
+
+# Classical fit first
+analysed = fitter.fit(data)
+
+# Bayesian DREAM sampling
+result = fitter.mcmc_sample(data, samples=5000, burn=1000, thin=10)
+
+posterior = PosteriorResults(
+    draws=result['draws'],
+    param_names=result['param_names'],
+    logp=result['logp'],
+    sampler_state=result['state'],
+)
+
+print(posterior.summary())        # mean, sd, 95% credible interval
+posterior.credible_interval()     # {name: (lower, upper)}
+posterior.corner()                # pairwise correlations (Plotly)
+posterior.distribution()          # marginal posteriors (Plotly)
+```
+
+Note that `fit()` remains classical optimization only; sampler-shaped
+results are never returned from the optimizer-shaped API.
+
+### Convergence and Chain Extension
+
+Check convergence with the Gelman-Rubin R-hat diagnostic (values close
+to 1.0 indicate convergence; above ~1.1 the chain has not converged).
+If the chain is under-converged, do not restart from scratch — the
+sampler is retained on `fitter.sampler`, so the existing chain can be
+continued without re-running the burn-in:
+
+```python
+extended = fitter.sampler.extend(additional_samples=8000, thin=10)
+```
+
+### Posterior-Predictive Checks
+
+The `easyreflectometry.analysis.bayesian` module also provides
+posterior-predictive helpers that propagate parameter uncertainty to
+model curves, returning the median and a 95% credible band:
+
+```python
+from easyreflectometry.analysis.bayesian import (
+    posterior_predictive_reflectivity,
+    posterior_predictive_sld_profile,
+)
+
+median, lower, upper = posterior_predictive_reflectivity(
+    posterior.draws, posterior.param_names, model, q_values
+)
+z, sld_median, sld_lower, sld_upper = posterior_predictive_sld_profile(
+    posterior.draws, posterior.param_names, model
+)
+```
+
+Traces can be persisted and reloaded with `posterior.save(path)` and
+`load_posterior(path)`.
+
+### Practical Notes
+
+- **Set realistic parameter bounds.** DREAM samples within the
+  parameter bounds, so overly wide or missing bounds slow convergence
+  and can produce unphysical posterior mass.
+- **MCMC is 10-100x slower than least-squares.** Start with a short
+  run, check R-hat, and extend the chain as needed.
+- **Measurement uncertainties are required.** The likelihood is
+  undefined without them; datasets where all variances are non-positive
+  are rejected unless you explicitly opt in to the Mighell transform
+  (`objective='mighell'`), whose posterior widths should be treated
+  with caution.
+- **Optional dependencies.** Corner and distribution plots use
+  `plotly` (installed by default); trace plots and R-hat use `arviz`
+  (install with `pip install arviz`).
+
+See the
+[Bayesian Fitting tutorial](../tutorials/advancedfitting/bayesian_bumps.ipynb)
+for a complete worked example and the
+[Bayesian Analysis API reference](../api-reference/analysis.md) for all
+available functions.
