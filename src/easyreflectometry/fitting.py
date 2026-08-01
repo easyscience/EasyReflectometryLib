@@ -163,8 +163,8 @@ def _fit_result_reduced_chi(result: FitResults, n_points: int | None = None) -> 
 
 class MultiFitter:
     def __init__(self, *args: Model, objective: str = 'hybrid'):
-        r"""A convenience class for the :py:class:`easyscience.Fitting.Fitting`
-        which will populate the :py:class:`sc.DataGroup` appropriately
+        r"""A convenience class for the ``easyscience.Fitting.Fitting``
+        which will populate the ``sc.DataGroup`` appropriately
         after the fitting is performed.
 
         Parameters
@@ -374,27 +374,46 @@ class MultiFitter:
         Requires that the minimizer is a BUMPS instance (i.e. the minimizer was
         switched to ``AvailableMinimizers.Bumps``).
 
-        :param data: DataGroup with reflectivity data.
-        :param samples: Number of retained DREAM samples requested from BUMPS.
-        :param burn: Burn-in steps.
-        :param thin: Thinning interval.
-        :param population: BUMPS DREAM population count for advanced users.
-        :param objective: Zero-variance handling strategy.
-        :param initializer: DREAM population initializer. One of ``'eps'``,
-            ``'cov'``, ``'lhs'``, or ``'random'``. By default, None (BUMPS
-            uses ``'eps'``).
-        :param progress_callback: Optional callback for progress updates during
-            sampling.  Forwarded to the core MultiFitter.
-        :return: Dictionary with keys ``'draws'``, ``'param_names'``, ``'state'``,
-            and ``'logp'``.
-        :raises RuntimeError: If the current minimizer is not a BUMPS instance.
-
-        The underlying :class:`~easyscience.fitting.Sampler` is retained on
-        :attr:`sampler`, so the chain can be continued without re-running the
-        burn-in::
+        The underlying ``Sampler`` is retained on the ``sampler`` attribute, so
+        the chain can be continued without re-running the burn-in::
 
             fitter.mcmc_sample(data, samples=2000, burn=500, thin=10)
             extended = fitter.sampler.extend(additional_samples=8000, thin=10)
+
+        Parameters
+        ----------
+        data : sc.DataGroup
+            DataGroup with reflectivity data.
+        samples : int
+            Number of retained DREAM samples requested from BUMPS.
+        burn : int
+            Burn-in steps.
+        thin : int
+            Thinning interval.
+        population : int | None
+            BUMPS DREAM population count for advanced users.
+        objective : str | None
+            Zero-variance handling strategy.
+        initializer : str | None
+            DREAM population initializer. One of ``'eps'``, ``'cov'``,
+            ``'lhs'``, or ``'random'``. By default, None (BUMPS uses
+            ``'eps'``).
+        progress_callback : Callable | None
+            Optional callback for progress updates during sampling.
+            Forwarded to the core MultiFitter.
+        abort_test : Callable | None
+            Optional callable checked during sampling; return True to abort.
+
+        Returns
+        -------
+        dict
+            Dictionary with keys ``'draws'``, ``'param_names'``, ``'state'``,
+            and ``'logp'``.
+
+        Raises
+        ------
+        RuntimeError
+            If the current minimizer is not a BUMPS instance.
         """
         minimizer = self.easy_science_multi_fitter.minimizer
         if not (hasattr(minimizer, 'package') and minimizer.package == 'bumps'):
@@ -485,7 +504,7 @@ class MultiFitter:
 
     @property
     def sampler(self) -> Sampler | None:
-        """The ``Sampler`` behind the most recent :meth:`mcmc_sample` call, or None.
+        """The ``Sampler`` behind the most recent ``mcmc_sample`` call, or None.
 
         Holds the live BUMPS chain state, so the sampling run can be continued
         with ``fitter.sampler.extend(additional_samples=...)`` instead of

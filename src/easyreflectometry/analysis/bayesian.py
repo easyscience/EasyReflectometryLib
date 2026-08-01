@@ -68,10 +68,18 @@ def _wrap_pair_label(name: str, max_len: int = 16) -> str:
 def _to_arviz_data(draws: np.ndarray, param_names: list[str]):
     """Convert posterior draws to an arviz InferenceData object.
 
-    :param draws: Posterior samples, shape ``(n_samples, n_params)`` or
+    Parameters
+    ----------
+    draws : np.ndarray
+        Posterior samples, shape ``(n_samples, n_params)`` or
         ``(n_chains, n_draws, n_params)``.
-    :param param_names: Parameter names (one per column).
-    :return: arviz InferenceData object.
+    param_names : list[str]
+        Parameter names (one per column).
+
+    Returns
+    -------
+    Any
+        arviz InferenceData object.
     """
     draws = np.asarray(draws, dtype=np.float64)
     if draws.ndim == 2:
@@ -95,10 +103,16 @@ def _to_arviz_data(draws: np.ndarray, param_names: list[str]):
 class PosteriorResults:
     """Container for Bayesian posterior samples with analysis methods.
 
-    :param draws: Posterior samples, shape ``(n_samples, n_params)``.
-    :param param_names: Parameter names (one per column of ``draws``).
-    :param logp: Log-posterior values, shape ``(n_samples,)``, or ``None``.
-    :param sampler_state: Raw sampler state object (e.g. BUMPS ``DreamState``), or ``None``.
+    Parameters
+    ----------
+    draws : np.ndarray
+        Posterior samples, shape ``(n_samples, n_params)``.
+    param_names : list[str]
+        Parameter names (one per column of ``draws``).
+    logp : np.ndarray | None
+        Log-posterior values, shape ``(n_samples,)``, or ``None``.
+    sampler_state : Any | None
+        Raw sampler state object (e.g. BUMPS ``DreamState``), or ``None``.
     """
 
     def __init__(
@@ -120,8 +134,10 @@ class PosteriorResults:
     def summary(self) -> str:
         """Return a formatted summary table with mean, sd, and equal-tailed 95% credible interval for each parameter.
 
-        :return: Formatted summary table as a string.
-        :rtype: str
+        Returns
+        -------
+        str
+            Formatted summary table as a string.
         """
         return posterior_summary(self.draws, self.param_names)
 
@@ -130,7 +146,10 @@ class PosteriorResults:
 
         Requires the ``plotly`` library.
 
-        :return: Plotly Figure.
+        Returns
+        -------
+        Any
+            Plotly Figure.
         """
         return plot_corner(self.draws, self.param_names)
 
@@ -139,7 +158,10 @@ class PosteriorResults:
 
         Requires the ``arviz`` library.
 
-        :param kwargs: Additional keyword arguments passed to ``arviz.plot_trace``.
+        Parameters
+        ----------
+        **kwargs
+            Additional keyword arguments passed to ``arviz.plot_trace``.
         """
         plot_trace(self.draws, self.param_names, **kwargs)
 
@@ -150,25 +172,37 @@ class PosteriorResults:
         95% credible interval, the median, and the best posterior sample (when
         ``logp`` is available). Requires the ``plotly`` library.
 
-        :return: Plotly Figure.
+        Returns
+        -------
+        Any
+            Plotly Figure.
         """
         return plot_distribution(self.draws, self.param_names, logp=self.logp, return_figure=True)
 
     def credible_interval(self, alpha: float = 0.95) -> dict:
         """Compute equal-tailed credible intervals for each parameter.
 
-        :param alpha: Credible interval width (e.g. 0.95 for 95%).
-        :return: Dictionary mapping parameter name to ``(lower, upper)``.
-        :rtype: dict
+        Parameters
+        ----------
+        alpha : float
+            Credible interval width (e.g. 0.95 for 95%).
+
+        Returns
+        -------
+        dict
+            Dictionary mapping parameter name to ``(lower, upper)``.
         """
         return credible_intervals(self.draws, self.param_names, alpha=alpha)
 
     def save(self, path: str) -> None:
         """Persist this posterior trace to disk.
 
-        Convenience wrapper around :func:`save_posterior`.
+        Convenience wrapper around ``save_posterior``.
 
-        :param path: File path prefix (see :func:`save_posterior`).
+        Parameters
+        ----------
+        path : str
+            File path prefix (see ``save_posterior``).
         """
         save_posterior(self, path)
 
@@ -179,10 +213,16 @@ class PosteriorResults:
         two chains, i.e. shape ``(n_chains, n_draws, n_params)`` with
         ``n_chains >= 2``. R-hat is undefined for a single chain.
 
-        :return: Dictionary mapping parameter name to R-hat value, or ``None``
+        Returns
+        -------
+        dict | None
+            Dictionary mapping parameter name to R-hat value, or ``None``
             if ``arviz`` is not available.
-        :rtype: dict | None
-        :raises ValueError: If ``self.draws`` does not contain at least two
+
+        Raises
+        ------
+        ValueError
+            If ``self.draws`` does not contain at least two
             chains.
         """
         if not _HAS_ARVIZ:
@@ -209,10 +249,17 @@ def posterior_summary(draws: np.ndarray, param_names: list[str]) -> str:
     not a highest-density interval (HDI) and the two coincide only for
     symmetric unimodal posteriors.
 
-    :param draws: Posterior samples, shape ``(n_samples, n_params)``.
-    :param param_names: Parameter names (one per column).
-    :return: Formatted summary table as a string.
-    :rtype: str
+    Parameters
+    ----------
+    draws : np.ndarray
+        Posterior samples, shape ``(n_samples, n_params)``.
+    param_names : list[str]
+        Parameter names (one per column).
+
+    Returns
+    -------
+    str
+        Formatted summary table as a string.
     """
     draws = np.asarray(draws)
     lines = [f'{"parameter":<30s} {"mean":>10s} {"sd":>10s} {"q2.5%":>10s} {"q97.5%":>10s}']
@@ -278,9 +325,15 @@ _POSTERIOR_NEGATIVE_CONTOUR_LINE_COLORSCALE = [
 def _posterior_axis_bounds(values: np.ndarray) -> tuple[float, float] | None:
     """Return padded ``(lower, upper)`` plotting bounds for one posterior axis.
 
-    :param values: Posterior samples for a single parameter.
-    :return: Padded bounds, or ``None`` if there are no finite samples.
-    :rtype: tuple[float, float] | None
+    Parameters
+    ----------
+    values : np.ndarray
+        Posterior samples for a single parameter.
+
+    Returns
+    -------
+    tuple[float, float] | None
+        Padded bounds, or ``None`` if there are no finite samples.
     """
     data = np.asarray(values, dtype=float)
     data = data[np.isfinite(data)]
@@ -301,11 +354,18 @@ def _posterior_density_curve(
 ) -> tuple[np.ndarray, np.ndarray] | None:
     """Estimate a 1-D Gaussian-KDE marginal density normalised to unit area.
 
-    :param values: Posterior samples for a single parameter.
-    :param grid_size: Number of grid points at which to evaluate the density.
-    :return: ``(grid, density)`` arrays, or ``None`` if a smooth density could
+    Parameters
+    ----------
+    values : np.ndarray
+        Posterior samples for a single parameter.
+    grid_size : int
+        Number of grid points at which to evaluate the density.
+
+    Returns
+    -------
+    tuple[np.ndarray, np.ndarray] | None
+        ``(grid, density)`` arrays, or ``None`` if a smooth density could
         not be estimated (e.g. ``scipy`` missing or degenerate samples).
-    :rtype: tuple[np.ndarray, np.ndarray] | None
     """
     try:
         from scipy.stats import gaussian_kde
@@ -345,12 +405,20 @@ def _posterior_density_surface(
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray] | None:
     """Estimate a 2-D Gaussian-KDE density surface for one pair panel.
 
-    :param x_values: Posterior samples for the x-axis parameter.
-    :param y_values: Posterior samples for the y-axis parameter.
-    :param grid_size: Number of grid points per axis.
-    :return: ``(x_grid, y_grid, density)``, or ``None`` if a smooth surface
+    Parameters
+    ----------
+    x_values : np.ndarray
+        Posterior samples for the x-axis parameter.
+    y_values : np.ndarray
+        Posterior samples for the y-axis parameter.
+    grid_size : int
+        Number of grid points per axis.
+
+    Returns
+    -------
+    tuple[np.ndarray, np.ndarray, np.ndarray] | None
+        ``(x_grid, y_grid, density)``, or ``None`` if a smooth surface
         could not be estimated (e.g. ``scipy`` missing or degenerate samples).
-    :rtype: tuple[np.ndarray, np.ndarray, np.ndarray] | None
     """
     try:
         from scipy.stats import gaussian_kde
@@ -399,10 +467,17 @@ def _posterior_contour_colorscales(
     Negatively correlated parameter pairs use a red palette; everything else
     uses blue.
 
-    :param x_values: Posterior samples for the x-axis parameter.
-    :param y_values: Posterior samples for the y-axis parameter.
-    :return: ``(fill_colorscale, line_colorscale)``.
-    :rtype: tuple[list, list]
+    Parameters
+    ----------
+    x_values : np.ndarray
+        Posterior samples for the x-axis parameter.
+    y_values : np.ndarray
+        Posterior samples for the y-axis parameter.
+
+    Returns
+    -------
+    tuple[list, list]
+        ``(fill_colorscale, line_colorscale)``.
     """
     x_data = np.asarray(x_values, dtype=float)
     y_data = np.asarray(y_values, dtype=float)
@@ -425,12 +500,20 @@ def _add_corner_marginal(
 ) -> None:
     """Add a diagonal marginal-density panel (smooth KDE, histogram fallback).
 
-    :param fig: The Plotly Figure being built.
-    :param go: The ``plotly.graph_objects`` module.
-    :param values: Posterior samples for the diagonal parameter.
-    :param row: 1-based subplot row.
-    :param col: 1-based subplot column.
-    :param show_legend: Whether this trace should add the legend entry.
+    Parameters
+    ----------
+    fig
+        The Plotly Figure being built.
+    go
+        The ``plotly.graph_objects`` module.
+    values : np.ndarray
+        Posterior samples for the diagonal parameter.
+    row : int
+        1-based subplot row.
+    col : int
+        1-based subplot column.
+    show_legend : bool
+        Whether this trace should add the legend entry.
     """
     curve = _posterior_density_curve(values)
     if curve is not None:
@@ -479,12 +562,20 @@ def _corner_contour_traces(
 ) -> tuple[Any, Any] | None:
     """Build filled and line 2-D KDE contour traces for one pair panel.
 
-    :param go: The ``plotly.graph_objects`` module.
-    :param x_values: Posterior samples for the x-axis parameter.
-    :param y_values: Posterior samples for the y-axis parameter.
-    :return: ``(fill_trace, line_trace)``, or ``None`` if no smooth surface
+    Parameters
+    ----------
+    go
+        The ``plotly.graph_objects`` module.
+    x_values : np.ndarray
+        Posterior samples for the x-axis parameter.
+    y_values : np.ndarray
+        Posterior samples for the y-axis parameter.
+
+    Returns
+    -------
+    tuple[Any, Any] | None
+        ``(fill_trace, line_trace)``, or ``None`` if no smooth surface
         could be estimated.
-    :rtype: tuple[Any, Any] | None
     """
     surface = _posterior_density_surface(x_values, y_values)
     if surface is None:
@@ -552,10 +643,18 @@ def plot_corner(draws: np.ndarray, param_names: list[str]) -> Any:
     ``scipy`` for the KDE smoothing; without it the diagonal falls back to a
     histogram and the contours are omitted).
 
-    :param draws: Posterior samples, shape ``(n_samples, n_params)`` or
+    Parameters
+    ----------
+    draws : np.ndarray
+        Posterior samples, shape ``(n_samples, n_params)`` or
         ``(n_chains, n_draws, n_params)``.
-    :param param_names: Parameter names (one per column).
-    :return: Plotly Figure.
+    param_names : list[str]
+        Parameter names (one per column).
+
+    Returns
+    -------
+    Any
+        Plotly Figure.
     """
     _require_plotly()
     import plotly.graph_objects as go
@@ -638,7 +737,7 @@ def plot_corner(draws: np.ndarray, param_names: list[str]) -> Any:
     for i, label in enumerate(wrapped_labels):
         fig.update_xaxes(title_text=label, title_font=dict(size=10), row=n_params, col=i + 1)
         fig.update_yaxes(title_text=label, title_font=dict(size=10), row=i + 1, col=1)
-    # Diagonal y-axes are probability density — hide their tick labels (except the
+    # Diagonal y-axes are probability density â€” hide their tick labels (except the
     # top-left, where ticks would be the only cue about the density scale).
     for i in range(1, n_params):
         fig.update_yaxes(showticklabels=False, row=i + 1, col=i + 1)
@@ -671,13 +770,23 @@ def plot_trace(draws: np.ndarray, param_names: list[str], return_figure: bool = 
     being displayed inline; the caller is responsible for rendering it.  This
     requires the ``plotly`` package.
 
-    :param draws: Posterior samples, shape ``(n_chains, n_draws, n_params)`` or
+    Parameters
+    ----------
+    draws : np.ndarray
+        Posterior samples, shape ``(n_chains, n_draws, n_params)`` or
         ``(n_draws, n_params)``.
-    :param param_names: Parameter names (one per column).
-    :param return_figure: Return a Plotly Figure instead of rendering inline.
-    :param kwargs: Additional keyword arguments passed to ``arviz.plot_trace``
+    param_names : list[str]
+        Parameter names (one per column).
+    return_figure : bool
+        Return a Plotly Figure instead of rendering inline.
+    **kwargs
+        Additional keyword arguments passed to ``arviz.plot_trace``
         when *return_figure* is ``False``.
-    :return: Plotly Figure when *return_figure* is ``True``, otherwise ``None``.
+
+    Returns
+    -------
+    Any
+        Plotly Figure when *return_figure* is ``True``, otherwise ``None``.
     """
     draws = np.asarray(draws)
     if draws.ndim == 2:
@@ -762,10 +871,17 @@ def _posterior_marginal_y_range(
     and smooth-KDE peaks so credible-interval bands and reference lines, which
     are drawn as full-height traces, reach the top of the panel.
 
-    :param values: Posterior samples for a single parameter.
-    :param density_curve: ``(grid, density)`` from :func:`_posterior_density_curve`, or ``None``.
-    :return: ``(0.0, padded_max)`` range, or ``None`` if no density is available.
-    :rtype: tuple[float, float] | None
+    Parameters
+    ----------
+    values : np.ndarray
+        Posterior samples for a single parameter.
+    density_curve : tuple[np.ndarray, np.ndarray] | None
+        ``(grid, density)`` from ``_posterior_density_curve``, or ``None``.
+
+    Returns
+    -------
+    tuple[float, float] | None
+        ``(0.0, padded_max)`` range, or ``None`` if no density is available.
     """
     data = np.asarray(values, dtype=float)
     data = data[np.isfinite(data)]
@@ -796,14 +912,27 @@ def _posterior_interval_band_trace(
 ) -> Any:
     """Return a filled rectangle marking a credible interval.
 
-    :param go: The ``plotly.graph_objects`` module.
-    :param x0: Lower interval bound.
-    :param x1: Upper interval bound.
-    :param y_range: Panel y-axis range the band should span.
-    :param name: Legend/trace name.
-    :param color: Fill colour.
-    :param show_legend: Whether this trace adds the legend entry.
-    :return: A Plotly Scatter trace.
+    Parameters
+    ----------
+    go
+        The ``plotly.graph_objects`` module.
+    x0 : float
+        Lower interval bound.
+    x1 : float
+        Upper interval bound.
+    y_range : tuple[float, float]
+        Panel y-axis range the band should span.
+    name : str
+        Legend/trace name.
+    color : str
+        Fill colour.
+    show_legend : bool
+        Whether this trace adds the legend entry.
+
+    Returns
+    -------
+    Any
+        A Plotly Scatter trace.
     """
     return go.Scatter(
         x=[x0, x1, x1, x0, x0],
@@ -831,14 +960,27 @@ def _posterior_reference_line_trace(
 ) -> Any:
     """Return a vertical reference line for a posterior marginal panel.
 
-    :param go: The ``plotly.graph_objects`` module.
-    :param x_value: Parameter value at which to draw the line.
-    :param y_range: Panel y-axis range the line should span.
-    :param name: Legend/trace name.
-    :param color: Line colour.
-    :param dash: Plotly dash style (e.g. ``'dash'``, ``'dot'``).
-    :param show_legend: Whether this trace adds the legend entry.
-    :return: A Plotly Scatter trace.
+    Parameters
+    ----------
+    go
+        The ``plotly.graph_objects`` module.
+    x_value : float
+        Parameter value at which to draw the line.
+    y_range : tuple[float, float]
+        Panel y-axis range the line should span.
+    name : str
+        Legend/trace name.
+    color : str
+        Line colour.
+    dash : str
+        Plotly dash style (e.g. ``'dash'``, ``'dot'``).
+    show_legend : bool
+        Whether this trace adds the legend entry.
+
+    Returns
+    -------
+    Any
+        A Plotly Scatter trace.
     """
     return go.Scatter(
         x=[x_value, x_value],
@@ -873,14 +1015,25 @@ def plot_distribution(
 
     When *return_figure* is ``True`` a Plotly ``Figure`` is returned.
 
-    :param draws: Posterior samples, shape ``(n_samples, n_params)`` or
+    Parameters
+    ----------
+    draws : np.ndarray
+        Posterior samples, shape ``(n_samples, n_params)`` or
         ``(n_chains, n_draws, n_params)``.
-    :param param_names: Parameter names (one per column).
-    :param logp: Log-posterior values, shape ``(n_samples,)``. When given, the
+    param_names : list[str]
+        Parameter names (one per column).
+    logp : np.ndarray | None
+        Log-posterior values, shape ``(n_samples,)``. When given, the
         draw with the largest value marks the best posterior sample.
-    :param return_figure: Return a Plotly Figure instead of rendering inline.
-    :param kwargs: Additional keyword arguments (currently unused).
-    :return: Plotly Figure when *return_figure* is ``True``, otherwise ``None``.
+    return_figure : bool
+        Return a Plotly Figure instead of rendering inline.
+    **kwargs
+        Additional keyword arguments (currently unused).
+
+    Returns
+    -------
+    Any
+        Plotly Figure when *return_figure* is ``True``, otherwise ``None``.
     """
     draws = np.asarray(draws)
     if draws.ndim == 3:
@@ -1047,11 +1200,19 @@ def credible_intervals(
 ) -> dict:
     """Compute equal-tailed credible intervals for each parameter.
 
-    :param draws: Posterior samples, shape ``(n_samples, n_params)``.
-    :param param_names: Parameter names (one per column).
-    :param alpha: Credible interval width (e.g. 0.95 for 95%).
-    :return: Dictionary mapping parameter name to ``(lower, upper)``.
-    :rtype: dict
+    Parameters
+    ----------
+    draws : np.ndarray
+        Posterior samples, shape ``(n_samples, n_params)``.
+    param_names : list[str]
+        Parameter names (one per column).
+    alpha : float
+        Credible interval width (e.g. 0.95 for 95%).
+
+    Returns
+    -------
+    dict
+        Dictionary mapping parameter name to ``(lower, upper)``.
     """
     draws = np.asarray(draws)
     tail = (1.0 - alpha) / 2.0
@@ -1068,9 +1229,15 @@ def credible_intervals(
 def _save_parameter_state(model) -> dict:
     """Save the current values and errors of all free parameters in a model.
 
-    :param model: A reflectometry model with ``get_parameters()``.
-    :return: Dictionary mapping ``unique_name`` to ``(value, error)``.
-    :rtype: dict
+    Parameters
+    ----------
+    model
+        A reflectometry model with ``get_parameters()``.
+
+    Returns
+    -------
+    dict
+        Dictionary mapping ``unique_name`` to ``(value, error)``.
     """
     state = {}
     for param in model.get_parameters():
@@ -1081,8 +1248,12 @@ def _save_parameter_state(model) -> dict:
 def _restore_parameter_state(model, state: dict) -> None:
     """Restore parameter values and errors from a saved state.
 
-    :param model: A reflectometry model with ``get_parameters()``.
-    :param state: Dictionary mapping ``unique_name`` to ``(value, error)``.
+    Parameters
+    ----------
+    model
+        A reflectometry model with ``get_parameters()``.
+    state
+        Dictionary mapping ``unique_name`` to ``(value, error)``.
     """
     for param in model.get_parameters():
         if param.unique_name in state:
@@ -1097,10 +1268,16 @@ def _apply_draw(model, draws: np.ndarray, param_names: list[str], row: int) -> N
     removing the minimizer prefix, which avoids collisions when repeated models
     or multi-contrast fits contain similarly named parameters.
 
-    :param model: A reflectometry model with ``get_parameters()``.
-    :param draws: Posterior samples array.
-    :param param_names: Parameter names matching the columns of ``draws``.
-    :param row: Index of the draw to apply.
+    Parameters
+    ----------
+    model
+        A reflectometry model with ``get_parameters()``.
+    draws
+        Posterior samples array.
+    param_names
+        Parameter names matching the columns of ``draws``.
+    row
+        Index of the draw to apply.
     """
     param_lookup = {p.unique_name: p for p in model.get_parameters()}
     for j, name in enumerate(param_names):
@@ -1120,13 +1297,23 @@ def posterior_predictive_reflectivity(
     Parameter values and errors are saved before applying any posterior draw
     and restored in a ``finally`` block, so the model is not left mutated.
 
-    :param draws: Posterior samples, shape ``(n_samples_posterior, n_params)``.
-    :param param_names: Parameter names matching the columns of ``draws``.
-    :param model: A reflectometry model with ``interface.fit_func``.
-    :param q_values: Q values at which to evaluate reflectivity.
-    :param n_samples: Number of posterior draws to use (last ``n_samples``).
-    :return: Tuple of ``(median, lower_95, upper_95)`` reflectivity arrays.
-    :rtype: tuple[np.ndarray, np.ndarray, np.ndarray]
+    Parameters
+    ----------
+    draws : np.ndarray
+        Posterior samples, shape ``(n_samples_posterior, n_params)``.
+    param_names : list[str]
+        Parameter names matching the columns of ``draws``.
+    model
+        A reflectometry model with ``interface.fit_func``.
+    q_values : np.ndarray
+        Q values at which to evaluate reflectivity.
+    n_samples : int
+        Number of posterior draws to use (last ``n_samples``).
+
+    Returns
+    -------
+    tuple[np.ndarray, np.ndarray, np.ndarray]
+        Tuple of ``(median, lower_95, upper_95)`` reflectivity arrays.
     """
     draws = np.asarray(draws)
     q_values = np.asarray(q_values)
@@ -1163,12 +1350,21 @@ def posterior_predictive_sld_profile(
     Parameter values and errors are saved before applying any posterior draw
     and restored in a ``finally`` block, so the model is not left mutated.
 
-    :param draws: Posterior samples, shape ``(n_samples_posterior, n_params)``.
-    :param param_names: Parameter names matching the columns of ``draws``.
-    :param model: A reflectometry model with ``interface.sld_profile``.
-    :param n_samples: Number of posterior draws to use (last ``n_samples``).
-    :return: Tuple of ``(z, median, lower_95, upper_95)`` SLD profile arrays.
-    :rtype: tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]
+    Parameters
+    ----------
+    draws : np.ndarray
+        Posterior samples, shape ``(n_samples_posterior, n_params)``.
+    param_names : list[str]
+        Parameter names matching the columns of ``draws``.
+    model
+        A reflectometry model with ``interface.sld_profile``.
+    n_samples : int
+        Number of posterior draws to use (last ``n_samples``).
+
+    Returns
+    -------
+    tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]
+        Tuple of ``(z, median, lower_95, upper_95)`` SLD profile arrays.
     """
     draws = np.asarray(draws)
 
@@ -1197,7 +1393,7 @@ def posterior_predictive_sld_profile(
 
 
 # ===================================================================
-# Persistence helpers — save / load a posterior trace to / from disk
+# Persistence helpers â€” save / load a posterior trace to / from disk
 # ===================================================================
 
 _SIDECAR_SCHEMA_VERSION = 1
@@ -1233,19 +1429,28 @@ def save_posterior(results: 'PosteriorResults', path: str) -> None:
 
     Writes ``<path>-*.mc`` (BUMPS ``save_state`` output) plus a sidecar
     ``<path>.params.json`` holding parameter names and metadata so that
-    :func:`load_posterior` can reconstruct a fully populated
-    :class:`PosteriorResults` without re-deriving names from the model.
+    ``load_posterior`` can reconstruct a fully populated
+    ``PosteriorResults`` without re-deriving names from the model.
 
     Note that ``save_state`` writes **multiple** files (one per DREAM
     component: chain, point, and stats).  The ``path`` argument is a
     prefix; the actual files will be ``<path>-chain.mc``,
     ``<path>-point.mc``, and ``<path>-stats.mc``.
 
-    :param results: The posterior results to persist.  Must have a
+    Parameters
+    ----------
+    results : PosteriorResults
+        The posterior results to persist.  Must have a
         non-``None`` ``sampler_state``.
-    :param path: File path prefix.  BUMPS appends its own suffixes.
-    :raises ValueError: If ``results.sampler_state`` is ``None``.
-    :raises TypeError: If ``results.sampler_state`` is not a BUMPS
+    path : str
+        File path prefix.  BUMPS appends its own suffixes.
+
+    Raises
+    ------
+    ValueError
+        If ``results.sampler_state`` is ``None``.
+    TypeError
+        If ``results.sampler_state`` is not a BUMPS
         ``MCMCDraw`` object.
     """
     from bumps.dream.state import MCMCDraw
@@ -1277,19 +1482,26 @@ def save_posterior(results: 'PosteriorResults', path: str) -> None:
 
 
 def load_posterior(path: str, skip: int = 0) -> 'PosteriorResults':
-    """Reload a trace saved by :func:`save_posterior` into a
-    :class:`PosteriorResults`.
+    """Reload a trace saved by ``save_posterior`` into a
+    ``PosteriorResults``.
 
     The returned object's ``sampler_state`` can be fed back into the core
     ``Sampler`` (via ``Sampler.load_state(...)`` / ``Sampler.extend(...)``)
     to extend the chain.
 
-    :param path: File path prefix used in :func:`save_posterior`.
-    :param skip: Discard the first ``skip`` saved generations on load,
+    Parameters
+    ----------
+    path : str
+        File path prefix used in ``save_posterior``.
+    skip : int
+        Discard the first ``skip`` saved generations on load,
         forwarded to ``bumps.dream.state.load_state(path, skip=skip)``.
         Useful for trimming additional burn-in without re-sampling.
-    :return: A fully populated :class:`PosteriorResults`.
-    :rtype: PosteriorResults
+
+    Returns
+    -------
+    PosteriorResults
+        A fully populated ``PosteriorResults``.
     """
     from bumps.dream.state import load_state
 

@@ -64,8 +64,7 @@ class MaterialCollection(BaseCollection):
         Parameters
         ----------
         index : int
-        material :
-            Assembly to add.
+            Index of the material to duplicate.
         """
         to_be_duplicated = self[index]
         duplicate = Material.from_dict(to_be_duplicated.as_dict(skip=['unique_name']))

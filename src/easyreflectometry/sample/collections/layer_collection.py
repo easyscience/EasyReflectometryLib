@@ -52,8 +52,7 @@ class LayerCollection(BaseCollection):
         Parameters
         ----------
         index : int
-        layer :
-            Assembly to add.
+            Index of the layer to duplicate.
         """
         to_be_duplicated = self[index]
         duplicate = Layer.from_dict(to_be_duplicated.as_dict(skip=['unique_name']))

@@ -175,7 +175,6 @@ class Model(BaseCore):
         Parameters
         ----------
         index : int
-        idx :
             Index of the item or layer to duplicate.
         """
         self.sample.duplicate_assembly(index)
@@ -188,7 +187,6 @@ class Model(BaseCore):
         Parameters
         ----------
         index : int
-        idx :
             Index of the item to remove.
         """
         assembly_unique_name = self.sample[index].unique_name
