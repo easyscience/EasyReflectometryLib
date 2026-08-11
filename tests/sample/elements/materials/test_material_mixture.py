@@ -144,11 +144,10 @@ class TestMaterialMixture:
         assert material_mixture.name == 'name_a/name_b'
 
     def test_calculator_binding_uses_mixed_sld(self) -> None:
-        """Regression: the calculator wrapper must bind to the mixture's own
-        ``_sld``/``_isld`` (the weighted average), not to either child material's
-        sld/isld parameter. Without an explicit ``_get_linkable_attributes``
-        override the inherited dir-walk picks up the first matching child
-        parameter and the wrapper silently gets the wrong SLD.
+        """Regression: the calculator must use the mixture's own
+        ``_sld``/``_isld`` (the weighted average), not either child material's
+        sld/isld parameter. The mixture exposes its derived values as floats, so
+        a naive ``material.sld`` read would miss the Parameter entirely.
         """
         from easyreflectometry.calculators import CalculatorFactory
 
@@ -159,9 +158,9 @@ class TestMaterialMixture:
 
         # 2 * 0.75 + 6 * 0.25 = 1.5 + 1.5 = 3.0
         assert_almost_equal(mixture.sld, 3.0)
-        wrapper_material = interface()._wrapper.storage['material'][mixture.unique_name]
-        assert_almost_equal(wrapper_material.real.value, 3.0)
-        assert_almost_equal(wrapper_material.imag.value, 0.0)
+        scatterer = interface()._wrapper._sld(mixture)
+        assert_almost_equal(scatterer.real.value, 3.0)
+        assert_almost_equal(scatterer.imag.value, 0.0)
 
     def test_mutation_propagates_after_round_trip(self) -> None:
         """Regression: after ``from_dict`` swaps in the saved ``_fraction``

@@ -220,17 +220,18 @@ class Model(BaseCore):
         if self.interface is not None:
             self.interface().set_resolution_function(self._resolution_function)
 
-    # ----- interface (override BaseCore's to add resolution-function side effect) -----
+    # ----- bindings (override BaseCore's to add the resolution-function side effect) -----
 
-    @BaseCore.interface.setter
-    def interface(self, new_interface) -> None:
-        """Set the interface; runs `generate_bindings` and then refreshes the
-        calculator's resolution function.
+    def generate_bindings(self) -> None:
+        """Bind to the calculator and refresh its resolution function.
+
+        Done on every (re)binding, not only when the interface is first
+        assigned: switching calculator creates a fresh instance whose
+        resolution function would otherwise fall back to the default, and the
+        re-binding loop (``Project.calculator``) is what runs afterwards.
         """
-        # Call BaseCore.interface.setter for the binding propagation.
-        BaseCore.interface.fset(self, new_interface)
-        if new_interface is not None:
-            new_interface().set_resolution_function(self._resolution_function)
+        super().generate_bindings()
+        self.interface().set_resolution_function(self._resolution_function)
 
     # ----- representation -----
 

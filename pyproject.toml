@@ -23,9 +23,13 @@ classifiers = [
 ]
 requires-python = '>=3.11'
 dependencies = [
-  'easyscience',
+  # 3.0.0 removes the mirrored-calculator support from the core interface
+  # factory; the calculators here implement the `set_model` contract only.
+  'easyscience>=3.0.0',
   'scipp',
-  'refnx',
+  # The write-through proxy subclasses `refnx.analysis.Parameter` and relies on
+  # refnx passing Parameter instances through `possibly_create_parameter`.
+  'refnx>=0.1.62,<0.2',
   'refl1d>=1.0.0',
   'orsopy',
   'svglib<1.6 ; platform_system=="Linux" or sys_platform == "darwin"',

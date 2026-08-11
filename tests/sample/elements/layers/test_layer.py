@@ -100,15 +100,19 @@ class TestLayer(unittest.TestCase):
         assert_almost_equal(p.material.isld.value, 0.0)
 
     def test_assign_material_with_interface_refnx(self):
+        # refnx is stateless: assigning a material needs no mirroring, the next
+        # evaluation builds the slab from whatever material the layer holds.
         interface = CalculatorFactory()
         m = Material(6.908, -0.278, 'Boron', interface=interface)
         p = Layer(m, 5.0, 2.0, 'thinBoron', interface=interface)
         k = Material(2.074, 0.0, 'Silicon', interface=interface)
-        assert_almost_equal(p.interface()._wrapper.storage['layer'][p.unique_name].sld.real.value, 6.908)
-        assert_almost_equal(p.interface()._wrapper.storage['layer'][p.unique_name].sld.imag.value, -0.278)
+        slab = interface()._wrapper._slab(p)
+        assert_almost_equal(slab.sld.real.value, 6.908)
+        assert_almost_equal(slab.sld.imag.value, -0.278)
         p.assign_material(k)
-        assert_almost_equal(p.interface()._wrapper.storage['layer'][p.unique_name].sld.real.value, 2.074)
-        assert_almost_equal(p.interface()._wrapper.storage['layer'][p.unique_name].sld.imag.value, 0.0)
+        slab = interface()._wrapper._slab(p)
+        assert_almost_equal(slab.sld.real.value, 2.074)
+        assert_almost_equal(slab.sld.imag.value, 0.0)
 
     def test_dict_repr(self):
         p = Layer()

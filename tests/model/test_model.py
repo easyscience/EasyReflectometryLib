@@ -27,6 +27,20 @@ from easyreflectometry.sample import Sample
 from easyreflectometry.sample import SurfactantLayer
 
 
+def _refnx_structure(model):
+    """The refnx structure the calculator builds for `model`.
+
+    The direct replacement for inspecting the old `wrapper.storage`: it is what
+    the backend is actually handed, rebuilt from the current model.
+    """
+    return model.interface()._wrapper._build_structure(model)
+
+
+def _refl1d_slabs(model):
+    """The refl1d slabs the calculator builds for `model`."""
+    return list(model.interface()._wrapper._build_sample(model))
+
+
 class TestModel(unittest.TestCase):
     def test_default(self):
         p = Model()
@@ -131,11 +145,13 @@ class TestModel(unittest.TestCase):
         d = Sample(o1, name='myModel')
         resolution_function = PercentageFwhm(2.0)
         mod = Model(d, 2, 1e-5, resolution_function, 'newModel', interface=interface)
-        assert_equal(len(mod.interface()._wrapper.storage['item']), 1)
-        assert_equal(len(mod.interface()._wrapper.storage['layer']), 2)
+        # refnx is stateless: nothing is mirrored, the calculator holds the model
+        # root only and the next evaluation walks the current object graph.
+        assert_equal(list(mod.interface().models), [mod.unique_name])
+        assert_equal(len(_refnx_structure(mod).components), 1)
         mod.add_assemblies(o2)
-        assert_equal(len(mod.interface()._wrapper.storage['item']), 2)
-        assert_equal(len(mod.interface()._wrapper.storage['layer']), 2)
+        assert_equal(len(mod.sample), 2)
+        assert_equal(len(_refnx_structure(mod).components), 3)
 
     def test_add_assemblies_with_interface_refl1d(self):
         interface = CalculatorFactory()
@@ -151,30 +167,11 @@ class TestModel(unittest.TestCase):
         d = Sample(o1, name='myModel')
         resolution_function = PercentageFwhm(2.0)
         mod = Model(d, 2, 1e-5, resolution_function, 'newModel', interface=interface)
-        assert_equal(len(mod.interface()._wrapper.storage['item']), 1)
-        assert_equal(len(mod.interface()._wrapper.storage['layer']), 2)
+        assert_equal(list(mod.interface().models), [mod.unique_name])
+        assert_equal(len(_refl1d_slabs(mod)), 1)
         mod.add_assemblies(o2)
-        assert_equal(len(mod.interface()._wrapper.storage['item']), 2)
-        assert_equal(len(mod.interface()._wrapper.storage['layer']), 2)
-
-    # def test_add_assemblies_with_interface_bornagain(self):
-    #     interface = CalculatorFactory()
-    #     interface.switch('BornAgain')
-    #     m1 = Material.from_pars(6.908, 0.278, 'Boron')
-    #     m2 = Material.from_pars(0.487, 0.000, 'Potassium')
-    #     l1 = Layer.from_pars(m1, 5.0, 2.0, 'thinBoron')
-    #     l2 = Layer.from_pars(m2, 50.0, 1.0, 'thickPotassium')
-    #     ls1 = Layers.from_pars(l1, l2, name='twoLayer1')
-    #     ls2 = Layers.from_pars(l2, l1, name='twoLayer2')
-    #     o1 = RepeatingMultilayer.from_pars(ls1, 2.0, 'twoLayerItem1')
-    #     o2 = RepeatingMultilayer.from_pars(ls2, 1.0, 'oneLayerItem2')
-    #     d = Sample.from_pars(o1, name='myModel')
-    #     mod = Model(d, 2, 1e-5, 2.0, 'newModel', interface=interface)
-    #     assert_equal(len(mod.interface()._wrapper.storage['item']), 1)
-    #     assert_equal(len(mod.interface()._wrapper.storage['layer']), 2)
-    #     mod.add_assemblies(o2)
-    #     assert_equal(len(mod.interface()._wrapper.storage['item']), 2)
-    #     assert_equal(len(mod.interface()._wrapper.storage['layer']), 2)
+        assert_equal(len(mod.sample), 2)
+        assert_equal(len(_refl1d_slabs(mod)), 3)
 
     def test_duplicate_assembly(self):
         m1 = Material(6.908, -0.278, 'Boron')
@@ -209,11 +206,12 @@ class TestModel(unittest.TestCase):
         d = Sample(o1, name='myModel')
         resolution_function = PercentageFwhm(2.0)
         mod = Model(d, 2, 1e-5, resolution_function, 'newModel', interface=interface)
-        assert_equal(len(mod.interface()._wrapper.storage['item']), 1)
+        assert_equal(len(_refnx_structure(mod).components), 1)
         mod.add_assemblies(o2)
-        assert_equal(len(mod.interface()._wrapper.storage['item']), 2)
+        assert_equal(len(_refnx_structure(mod).components), 3)
         mod.duplicate_assembly(1)
-        assert_equal(len(mod.interface()._wrapper.storage['item']), 3)
+        assert_equal(len(mod.sample), 3)
+        assert_equal(len(_refnx_structure(mod).components), 5)
 
     def test_duplicate_assembly_with_interface_refl1d(self):
         interface = CalculatorFactory()
@@ -229,30 +227,12 @@ class TestModel(unittest.TestCase):
         d = Sample(o1, name='myModel')
         resolution_function = PercentageFwhm(2.0)
         mod = Model(d, 2, 1e-5, resolution_function, 'newModel', interface=interface)
-        assert_equal(len(mod.interface()._wrapper.storage['item']), 1)
+        assert_equal(len(_refl1d_slabs(mod)), 1)
         mod.add_assemblies(o2)
-        assert_equal(len(mod.interface()._wrapper.storage['item']), 2)
+        assert_equal(len(_refl1d_slabs(mod)), 3)
         mod.duplicate_assembly(1)
-        assert_equal(len(mod.interface()._wrapper.storage['item']), 3)
-
-    # def test_duplicate_item_with_interface_bornagain(self):
-    #     interface = CalculatorFactory()
-    #     interface.switch('BornAgain')
-    #     m1 = Material.from_pars(6.908, 0.278, 'Boron')
-    #     m2 = Material.from_pars(0.487, 0.000, 'Potassium')
-    #     l1 = Layer.from_pars(m1, 5.0, 2.0, 'thinBoron')
-    #     l2 = Layer.from_pars(m2, 50.0, 1.0, 'thickPotassium')
-    #     ls1 = Layers.from_pars(l1, l2, name='twoLayer1')
-    #     ls2 = Layers.from_pars(l2, l1, name='twoLayer2')
-    #     o1 = RepeatingMultilayer.from_pars(ls1, 2.0, 'twoLayerItem1')
-    #     o2 = RepeatingMultilayer.from_pars(ls2, 1.0, 'oneLayerItem2')
-    #     d = Sample.from_pars(o1, name='myModel')
-    #     mod = Model(d, 2, 1e-5, 2.0, 'newModel', interface=interface)
-    #     assert_equal(len(mod.interface()._wrapper.storage['assembly']), 1)
-    #     mod.add_assemblies(o2)
-    #     assert_equal(len(mod.interface()._wrapper.storage['item']), 2)
-    #     mod.duplicate_assembly(1)
-    #     assert_equal(len(mod.interface()._wrapper.storage['item']), 3)
+        assert_equal(len(mod.sample), 3)
+        assert_equal(len(_refl1d_slabs(mod)), 5)
 
     def test_remove_assembly(self):
         m1 = Material(6.908, -0.278, 'Boron')
@@ -285,14 +265,12 @@ class TestModel(unittest.TestCase):
         d = Sample(o1, name='myModel')
         resolution_function = PercentageFwhm(2.0)
         mod = Model(d, 2, 1e-5, resolution_function, 'newModel', interface=interface)
-        assert_equal(len(mod.interface()._wrapper.storage['item']), 1)
-        assert_equal(len(mod.interface()._wrapper.storage['layer']), 2)
+        assert_equal(len(_refnx_structure(mod).components), 1)
         mod.add_assemblies(o2)
-        assert_equal(len(mod.interface()._wrapper.storage['item']), 2)
-        assert_equal(len(mod.interface()._wrapper.storage['layer']), 2)
+        assert_equal(len(_refnx_structure(mod).components), 3)
         mod.remove_assembly(0)
-        assert_equal(len(mod.interface()._wrapper.storage['item']), 1)
-        assert_equal(len(mod.interface()._wrapper.storage['layer']), 2)
+        assert_equal(len(mod.sample), 1)
+        assert_equal(len(_refnx_structure(mod).components), 2)
 
     def test_remove_assembly_with_interface_refl1d(self):
         interface = CalculatorFactory()
@@ -308,36 +286,12 @@ class TestModel(unittest.TestCase):
         d = Sample(o1, name='myModel')
         resolution_function = PercentageFwhm(2.0)
         mod = Model(d, 2, 1e-5, resolution_function, 'newModel', interface=interface)
-        assert_equal(len(mod.interface()._wrapper.storage['item']), 1)
-        assert_equal(len(mod.interface()._wrapper.storage['layer']), 2)
+        assert_equal(len(_refl1d_slabs(mod)), 1)
         mod.add_assemblies(o2)
-        assert_equal(len(mod.interface()._wrapper.storage['item']), 2)
-        assert_equal(len(mod.interface()._wrapper.storage['layer']), 2)
+        assert_equal(len(_refl1d_slabs(mod)), 3)
         mod.remove_assembly(0)
-        assert_equal(len(mod.interface()._wrapper.storage['item']), 1)
-        assert_equal(len(mod.interface()._wrapper.storage['layer']), 2)
-
-    # def test_remove_assembly_with_interface_bornagain(self):
-    #     interface = CalculatorFactory()
-    #     interface.switch('BornAgain')
-    #     m1 = Material.from_pars(6.908, 0.278, 'Boron')
-    #     m2 = Material.from_pars(0.487, 0.000, 'Potassium')
-    #     l1 = Layer.from_pars(m1, 5.0, 2.0, 'thinBoron')
-    #     l2 = Layer.from_pars(m2, 50.0, 1.0, 'thickPotassium')
-    #     ls1 = Layers.from_pars(l1, l2, name='twoLayer1')
-    #     ls2 = Layers.from_pars(l2, l1, name='twoLayer2')
-    #     o1 = RepeatingMultilayer.from_pars(ls1, 2.0, 'twoLayerItem1')
-    #     o2 = RepeatingMultilayer.from_pars(ls2, 1.0, 'oneLayerItem2')
-    #     d = Sample.from_pars(o1, name='myModel')
-    #     mod = Model(d, 2, 1e-5, 2.0, 'newModel', interface=interface)
-    #     assert_equal(len(mod.interface()._wrapper.storage['item']), 1)
-    #     assert_equal(len(mod.interface()._wrapper.storage['layer']), 2)
-    #     mod.add_assemblies(o2)
-    #     assert_equal(len(mod.interface()._wrapper.storage['item']), 2)
-    #     assert_equal(len(mod.interface()._wrapper.storage['layer']), 2)
-    #     mod.remove_assembly(0)
-    #     assert_equal(len(mod.interface()._wrapper.storage['item']), 1)
-    #     assert_equal(len(mod.interface()._wrapper.storage['layer']), 2)
+        assert_equal(len(mod.sample), 1)
+        assert_equal(len(_refl1d_slabs(mod)), 2)
 
     def test_remove_all_assemblies(self):
         # when
@@ -429,8 +383,8 @@ def test_dict_round_trip(interface):
     if interface is not None:
         assert model.interface().name == model_from_dict.interface().name
         assert_almost_equal(
-            model.interface().reflectity_profile([0.3], model.unique_name),
-            model_from_dict.interface().reflectity_profile([0.3], model_from_dict.unique_name),
+            model.interface().reflectivity_profile([0.3], model.unique_name),
+            model_from_dict.interface().reflectivity_profile([0.3], model_from_dict.unique_name),
         )
 
 

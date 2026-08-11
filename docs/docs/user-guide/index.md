@@ -33,8 +33,35 @@ engines:
 - [**Refl1D**](https://refl1d.readthedocs.io/en/latest/)
 
 And we are working to add more, in particular
-[**BornAgain**](https://www.bornagainproject.org) and
 [**GenX**](https://aglavic.github.io/genx/doc/).
+
+Calculators keep **no copy** of your model. A calculator is handed the
+model when you attach the interface and reads it again on every
+calculation, building the backend objects from scratch each time. Your
+`Parameter` objects are the only place a value lives.
+
+That has a few consequences worth knowing:
+
+- **Editing the sample.** Adding or removing layers and assemblies needs
+  no bookkeeping: the next calculation walks the current sample and sees
+  the change.
+- **Reading a value.** `layer.thickness.value` is a plain read. It never
+  reaches into the calculation engine.
+- **Several models, one calculator.** A calculator registers every model
+  it is attached to, keyed by `unique_name`, and you select between them
+  with the `model_id` argument of `reflectivity_profile` and
+  `sld_profile`. With exactly one model attached the argument may be
+  omitted; with several attached, omitting it is an error rather than a
+  guess. Evaluating before any model is attached (right after
+  `interface.switch(...)`, for instance, and before the models are
+  re-bound) raises rather than using a stale model.
+- **Values the engine changes.** Anything refnx assigns during a
+  calculation is pushed straight back into the corresponding
+  `Parameter`. A **fixed** or **dependent** parameter refuses such a
+  write and logs a warning: a backend must not move a parameter you
+  pinned, and a dependent parameter is owned by its expression.
+- **Undo.** A whole fit is a single undo step, as before. Only manual
+  edits (`layer.thickness.value = 12`) are individually undoable.
 
 ### Model
 

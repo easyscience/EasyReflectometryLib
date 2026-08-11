@@ -673,7 +673,7 @@ class Project:
         if q_range is None:
             q_range = np.linspace(self.q_min, self.q_max, self.q_resolution)
         self.models[index].interface = self._calculator
-        reflectivity = self.models[index].interface().reflectity_profile(q_range, self._models[index].unique_name)
+        reflectivity = self.models[index].interface().reflectivity_profile(q_range, self._models[index].unique_name)
         return DataSet1D(
             name=f'Reflectivity for Model {index}',
             x=q_range,

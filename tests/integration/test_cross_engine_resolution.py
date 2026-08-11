@@ -41,18 +41,26 @@ See GitHub issue #367 for background.
 import numpy as np
 import pytest
 
-from easyreflectometry.calculators.refl1d.wrapper import Refl1dWrapper
-from easyreflectometry.calculators.refnx.wrapper import RefnxWrapper
+from easyreflectometry.calculators.refl1d.stateless_wrapper import Refl1dStatelessWrapper
+from easyreflectometry.calculators.refnx.stateless_wrapper import RefnxStatelessWrapper
+from easyreflectometry.model import Model
 from easyreflectometry.model.resolution_functions import SIGMA_TO_FWHM
 from easyreflectometry.model.resolution_functions import LinearSpline
 from easyreflectometry.model.resolution_functions import PercentageFwhm
 from easyreflectometry.model.resolution_functions import Pointwise
+from easyreflectometry.sample import Layer
+from easyreflectometry.sample import Material
+from easyreflectometry.sample import Multilayer
+from easyreflectometry.sample import Sample
 
 Q = np.geomspace(0.005, 0.3, 100)
 
 
 def _build_simple_model_refnx(wrapper):
-    """Build an ambient | 100 A film | substrate model on a refnx wrapper.
+    """Attach an ambient | 100 A film | substrate model to a refnx wrapper.
+
+    The refnx path is stateless, so the model itself is the input: the wrapper
+    rebuilds the refnx structure from it on every ``calculate``.
 
     The ambient layer is not optional decoration: both engines treat the first
     layer as the semi-infinite superphase and ignore its thickness.  Without it
@@ -60,67 +68,55 @@ def _build_simple_model_refnx(wrapper):
     fringes -- and resolution smearing acts almost entirely on fringes, so the
     model would be insensitive to the very thing under test.
     """
-    wrapper.reset_storage()
-    wrapper.create_material('Ambient')
-    wrapper.update_material('Ambient', real=0.0, imag=0.0)
-    wrapper.create_material('Film')
-    wrapper.update_material('Film', real=3.45, imag=0.0)
-    wrapper.create_material('Substrate')
-    wrapper.update_material('Substrate', real=2.07, imag=0.0)
-    wrapper.create_layer('AmbientLayer')
-    wrapper.assign_material_to_layer('Ambient', 'AmbientLayer')
-    wrapper.create_layer('FilmLayer')
-    wrapper.assign_material_to_layer('Film', 'FilmLayer')
-    wrapper.update_layer('FilmLayer', thick=100.0, rough=3.0)
-    wrapper.create_layer('SubstrateLayer')
-    wrapper.assign_material_to_layer('Substrate', 'SubstrateLayer')
-    wrapper.update_layer('SubstrateLayer', rough=3.0)
-    wrapper.create_item('Item')
-    wrapper.add_layer_to_item('AmbientLayer', 'Item')
-    wrapper.add_layer_to_item('FilmLayer', 'Item')
-    wrapper.add_layer_to_item('SubstrateLayer', 'Item')
-    wrapper.create_model('MyModel')
-    wrapper.add_item('Item', 'MyModel')
-    wrapper.update_model('MyModel', bkg=0.0)
+    ambient = Material(0.0, 0.0, 'Ambient')
+    film = Material(3.45, 0.0, 'Film')
+    substrate = Material(2.07, 0.0, 'Substrate')
+    sample = Sample(
+        Multilayer(
+            [
+                Layer(ambient, 0.0, 0.0, 'AmbientLayer'),
+                Layer(film, 100.0, 3.0, 'FilmLayer'),
+                Layer(substrate, 0.0, 3.0, 'SubstrateLayer'),
+            ],
+            'Item',
+        )
+    )
+    model = Model(sample, 1.0, 0.0, name='MyModel')
+    wrapper.set_model(model)
+    return model
 
 
 def _build_simple_model_refl1d(wrapper):
-    """Build the same ambient | 100 A film | substrate model on refl1d."""
-    wrapper.reset_storage()
-    wrapper.create_material('Ambient')
-    wrapper.update_material('Ambient', rho=0.0, irho=0.0)
-    wrapper.create_material('Film')
-    wrapper.update_material('Film', rho=3.45, irho=0.0)
-    wrapper.create_material('Substrate')
-    wrapper.update_material('Substrate', rho=2.07, irho=0.0)
-    wrapper.create_layer('AmbientLayer')
-    wrapper.assign_material_to_layer('Ambient', 'AmbientLayer')
-    wrapper.create_layer('FilmLayer')
-    wrapper.assign_material_to_layer('Film', 'FilmLayer')
-    wrapper.update_layer('FilmLayer', thickness=100.0, interface=3.0)
-    wrapper.create_layer('SubstrateLayer')
-    wrapper.assign_material_to_layer('Substrate', 'SubstrateLayer')
-    wrapper.update_layer('SubstrateLayer', interface=3.0)
-    wrapper.create_item('Item')
-    wrapper.add_layer_to_item('AmbientLayer', 'Item')
-    wrapper.add_layer_to_item('FilmLayer', 'Item')
-    wrapper.add_layer_to_item('SubstrateLayer', 'Item')
-    wrapper.create_model('MyModel')
-    wrapper.add_item('Item', 'MyModel')
-    wrapper.update_model('MyModel', bkg=0.0)
+    """Attach the same ambient | 100 A film | substrate model to refl1d."""
+    ambient = Material(0.0, 0.0, 'Ambient')
+    film = Material(3.45, 0.0, 'Film')
+    substrate = Material(2.07, 0.0, 'Substrate')
+    sample = Sample(
+        Multilayer(
+            [
+                Layer(ambient, 0.0, 0.0, 'AmbientLayer'),
+                Layer(film, 100.0, 3.0, 'FilmLayer'),
+                Layer(substrate, 0.0, 3.0, 'SubstrateLayer'),
+            ],
+            'Item',
+        )
+    )
+    model = Model(sample, 1.0, 0.0, name='MyModel')
+    wrapper.set_model(model)
+    return model
 
 
 def _both_engines(resolution_function):
     """Return (refnx_reflectivity, refl1d_reflectivity) for one resolution."""
-    refnx_w = RefnxWrapper()
-    _build_simple_model_refnx(refnx_w)
+    refnx_w = RefnxStatelessWrapper()
+    refnx_model = _build_simple_model_refnx(refnx_w)
     refnx_w.set_resolution_function(resolution_function)
-    refnx_r = refnx_w.calculate(Q, 'MyModel')
+    refnx_r = refnx_w.calculate(Q, refnx_model.unique_name)
 
-    refl1d_w = Refl1dWrapper()
-    _build_simple_model_refl1d(refl1d_w)
+    refl1d_w = Refl1dStatelessWrapper()
+    refl1d_model = _build_simple_model_refl1d(refl1d_w)
     refl1d_w.set_resolution_function(resolution_function)
-    refl1d_r = refl1d_w.calculate(Q, 'MyModel')
+    refl1d_r = refl1d_w.calculate(Q, refl1d_model.unique_name)
 
     return refnx_r, refl1d_r
 

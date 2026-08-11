@@ -10,12 +10,34 @@ import unittest
 from easyscience import global_object
 from numpy.testing import assert_equal
 from numpy.testing import assert_raises
+from refnx import reflect
 
 from easyreflectometry.calculators import CalculatorFactory
+from easyreflectometry.model import Model
+from easyreflectometry.sample import Sample
 from easyreflectometry.sample.assemblies.repeating_multilayer import RepeatingMultilayer
 from easyreflectometry.sample.collections.layer_collection import LayerCollection
 from easyreflectometry.sample.elements.layers.layer import Layer
 from easyreflectometry.sample.elements.materials.material import Material
+
+
+def _refnx_slabs(assembly, interface):
+    """The refnx slabs the stateless calculator builds for `assembly`.
+
+    The direct replacement for inspecting the legacy `wrapper.storage`: the
+    assembly is placed in a model and the structure is rebuilt from it, which is
+    exactly what happens on every evaluation.
+    """
+    model = Model(Sample(assembly), 1.0, 0.0, name='StructureProbe')
+    model.interface = interface
+    structure = interface()._wrapper._build_structure(model)
+    slabs = []
+    for component in structure.components:
+        if isinstance(component, reflect.Stack):
+            slabs.extend(component)
+        else:
+            slabs.append(component)
+    return slabs
 
 
 class TestRepeatingMultilayer(unittest.TestCase):
@@ -110,10 +132,10 @@ class TestRepeatingMultilayer(unittest.TestCase):
         p = Layer(m, 5.0, 2.0, 'thinBoron', interface=interface)
         q = Layer(k, 50.0, 1.0, 'thickPotassium', interface=interface)
         o = RepeatingMultilayer(p, 2.0, 'twoLayerItem', interface=interface)
-        assert_equal(len(o.interface()._wrapper.storage['item'][o.unique_name].components), 1)
+        assert_equal(len(_refnx_slabs(o, interface)), 1)
         o.add_layer(q)
-        assert_equal(len(o.interface()._wrapper.storage['item'][o.unique_name].components), 2)
-        assert_equal(o.interface()._wrapper.storage['item'][o.unique_name].components[1].thick.value, 50.0)
+        assert_equal(len(_refnx_slabs(o, interface)), 2)
+        assert_equal(_refnx_slabs(o, interface)[1].thick.value, 50.0)
 
     def test_duplicate_layer(self):
         m = Material(6.908, -0.278, 'Boron')
@@ -137,18 +159,18 @@ class TestRepeatingMultilayer(unittest.TestCase):
         p = Layer(m, 5.0, 2.0, 'thinBoron', interface=interface)
         q = Layer(k, 50.0, 1.0, 'thickPotassium', interface=interface)
         o = RepeatingMultilayer(p, 2.0, 'twoLayerItem', interface=interface)
-        assert_equal(len(o.interface()._wrapper.storage['item'][o.unique_name].components), 1)
+        assert_equal(len(_refnx_slabs(o, interface)), 1)
         o.add_layer(q)
-        assert_equal(len(o.interface()._wrapper.storage['item'][o.unique_name].components), 2)
-        assert_equal(o.interface()._wrapper.storage['item'][o.unique_name].components[1].thick.value, 50.0)
+        assert_equal(len(_refnx_slabs(o, interface)), 2)
+        assert_equal(_refnx_slabs(o, interface)[1].thick.value, 50.0)
         o.duplicate_layer(1)
-        assert_equal(len(o.interface()._wrapper.storage['item'][o.unique_name].components), 3)
-        assert_equal(o.interface()._wrapper.storage['item'][o.unique_name].components[2].thick.value, 50.0)
+        assert_equal(len(_refnx_slabs(o, interface)), 3)
+        assert_equal(_refnx_slabs(o, interface)[2].thick.value, 50.0)
         assert_raises(
             AssertionError,
             assert_equal,
-            o.interface()._wrapper.storage['item'][o.unique_name].components[1].name,
-            o.interface()._wrapper.storage['item'][o.unique_name].components[2].name,
+            _refnx_slabs(o, interface)[1].name,
+            _refnx_slabs(o, interface)[2].name,
         )
 
     def test_remove_layer(self):
@@ -173,12 +195,12 @@ class TestRepeatingMultilayer(unittest.TestCase):
         p = Layer(m, 5.0, 2.0, 'thinBoron', interface=interface)
         q = Layer(k, 50.0, 1.0, 'thickPotassium', interface=interface)
         o = RepeatingMultilayer(p, repetitions=2.0, name='twoLayerItem', interface=interface)
-        assert_equal(len(o.interface()._wrapper.storage['item'][o.unique_name].components), 1)
+        assert_equal(len(_refnx_slabs(o, interface)), 1)
         o.add_layer(q)
-        assert_equal(len(o.interface()._wrapper.storage['item'][o.unique_name].components), 2)
+        assert_equal(len(_refnx_slabs(o, interface)), 2)
         assert_equal(o.layers[1].name, 'thickPotassium')
         o.remove_layer(1)
-        assert_equal(len(o.interface()._wrapper.storage['item'][o.unique_name].components), 1)
+        assert_equal(len(_refnx_slabs(o, interface)), 1)
         assert_equal(o.layers[0].name, 'thinBoron')
 
     def test_repr(self):

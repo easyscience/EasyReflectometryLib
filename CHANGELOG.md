@@ -1,3 +1,66 @@
+# Version 2.0.0 (unreleased)
+
+Both calculators are now **stateless**: they build their backend objects
+from the EasyReflectometry model at evaluation time instead of keeping a
+mirrored copy of every parameter. The mirrored-state generation is gone.
+
+- **Requires easyscience >= 3.0.0**, the release which removes the
+  mirrored-calculator support from the core interface factory
+  (`ItemContainer`, the `generate_bindings` binding loop, and the
+  `Parameter` callback machinery).
+- **The `Parameter` is the only store of a value.** There is no
+  `wrapper.storage`, no `create_*` / `update_*` / `get_*` per-object
+  methods, and no `_material_link` / `_layer_link` / `_item_link` /
+  `_model_link` dictionaries. Reflectivity and SLD profiles are
+  unchanged, bit for bit, for both engines, verified against the
+  previous implementation for single and repeating assemblies and for
+  every resolution function.
+- **Removed:** `CalculatorBase.create`, `WrapperBase` and the two
+  wrappers built on it (`RefnxWrapper`, `Refl1dWrapper`), and the
+  non-functional, unregistered BornAgain calculator and wrapper. Code
+  which reached into `interface()._wrapper.storage` has no replacement
+  by design; read the model instead, it is the same data.
+- **Structural edits need no mirroring.** Adding or removing layers and
+  assemblies is picked up by the next evaluation. The mirroring calls
+  the model code still makes (`add_item_to_model`, `add_layer_to_item`,
+  `assign_material_to_layer`, ...) are no-ops on the calculator, so no
+  `if stateless` checks leaked into the model or sample classes.
+  `reset_storage()` is likewise a no-op, kept so the `Project.calculator`
+  flow is unchanged.
+- **Several models per calculator.** `set_model` is a registry keyed by
+  `unique_name`, and `reflectivity_profile` / `sld_profile` select with
+  `model_id`. With one model attached the id may be omitted; with
+  several, omitting it raises. Evaluating with no model attached raises
+  rather than using a stale one.
+- **Backend-side writes come back through a write-through proxy**
+  (refnx). Every core `Parameter` handed to refnx is wrapped in a
+  `WriteBackParameter` which calls `Parameter.update_from_calculator`
+  when refnx assigns, and is checked once at the end of an evaluation
+  for values refnx computes lazily (a refnx-side constraint). Fixed and
+  dependent parameters refuse a backend write and log a warning. refl1d
+  needs no proxies: it never assigns to a parameter during a
+  calculation.
+- **Reading a parameter performs no backend I/O**, and both
+  per-iteration pull sites disappear from the fit hot loop. Measured on
+  a 5-layer model over 300 q points, a full refnx evaluation costs
+  11.5 ms rebuilt versus 12.2 ms mirrored, so no rebuild caching is
+  warranted.
+
+**API change:** `reflectity_profile` is renamed to
+`reflectivity_profile` (the old name was a typo). The old spelling still
+works on every calculator for one release and emits a
+`DeprecationWarning`; update call sites to the new name.
+
+Also in this release:
+
+- `Model.generate_bindings` now re-applies the model's resolution
+  function to the calculator. Previously it was only applied when the
+  interface was first assigned, so switching calculator silently fell
+  back to the default 5% FWHM until the model was re-attached.
+- `refnx` is now version-bounded in the dependencies: the write-through
+  proxy relies on refnx passing `Parameter` instances through
+  `possibly_create_parameter`.
+
 # Version 1.7.0 (1 Aug 2026)
 
 Restored the measured per-point resolution on data load (issue #368).

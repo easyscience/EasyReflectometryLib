@@ -16,13 +16,6 @@ except Exception:
     traceback.print_exc()
     print('Warning: refnx is not installed')
 
-# try:
-#     from .bornagain.calculator import BornAgain
-#    imported_calculators.append(BornAgain)
-# except Exception:
-#     traceback.print_exc()
-#     print('Warning: BornAgain python is not installed')
-
 try:
     from .refl1d.calculator import Refl1d  # noqa: F401
 

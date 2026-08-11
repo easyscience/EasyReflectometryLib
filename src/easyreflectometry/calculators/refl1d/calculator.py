@@ -3,34 +3,19 @@
 
 
 from ..calculator_base import CalculatorBase
-from .wrapper import Refl1dWrapper
+from .stateless_wrapper import Refl1dStatelessWrapper
 
 
 class Refl1d(CalculatorBase):
-    """Calculator for refl1."""
+    """Calculator for refl1d.
+
+    The refl1d objects are built from the easyscience model on every
+    evaluation, so there is no mirrored state and no name-link dictionaries.
+    """
 
     name = 'refl1d'
-
-    _material_link = {
-        'sld': 'rho',
-        'isld': 'irho',
-    }
-
-    _layer_link = {
-        'thickness': 'thickness',
-        'roughness': 'interface',
-    }
-
-    _item_link = {
-        'repetitions': 'repeat',
-    }
-
-    _model_link = {
-        'scale': 'scale',
-        'background': 'bkg',
-    }
 
     def __init__(self):
         """Init function."""
         super().__init__()
-        self._wrapper = Refl1dWrapper()
+        self._wrapper = Refl1dStatelessWrapper()

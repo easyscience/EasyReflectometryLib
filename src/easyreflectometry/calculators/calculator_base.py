@@ -3,32 +3,37 @@
 
 from __future__ import annotations
 
+import warnings
 from abc import ABCMeta
 from typing import Callable
 
 import numpy as np
-from easyscience.fitting.calculators.interface_factory import ItemContainer
 from easyscience.io import SerializerComponent
 
-# if TYPE_CHECKING:
 from easyreflectometry.model import Model
-from easyreflectometry.sample import BaseAssembly
-from easyreflectometry.sample import Layer
-from easyreflectometry.sample import Material
-from easyreflectometry.sample import MaterialMixture
-from easyreflectometry.sample import Multilayer
 
-from .wrapper_base import WrapperBase
+from .stateless_wrapper_base import StatelessWrapperBase
 
 
 class CalculatorBase(SerializerComponent, metaclass=ABCMeta):
-    """This class is a template and defines all properties that a calculator should have."""
+    """Template for a calculator, and the registry the factory discovers.
+
+    A calculator keeps **no copy** of any parameter. It is handed the model
+    roots through :meth:`set_model` and walks them whenever it is asked to
+    calculate, so the easyscience ``Parameter`` is the only persistent store of
+    a value.
+
+    ``root_type`` is the contract with
+    ``easyscience.fitting.calculators.interface_factory.InterfaceFactoryTemplate``:
+    it names the class whose instances :meth:`set_model` accepts. The interface
+    is propagated to every child of a model, so without it the registry would
+    fill up with materials and layers. It lives here, on the object the factory
+    holds, not on the wrapper the calculator delegates to.
+    """
 
     _calculators: list[CalculatorBase] = []  # class variable to store all calculators
-    _material_link: dict[str, str]
-    _layer_link: dict[str, str]
-    _item_link: dict[str, str]
-    _model_link: dict[str, str]
+
+    root_type = Model
 
     def __init_subclass__(cls, is_abstract: bool = False, **kwargs) -> None:
         r"""Initialise all subclasses so that they can be created in the factory.
@@ -37,7 +42,7 @@ class CalculatorBase(SerializerComponent, metaclass=ABCMeta):
         ----------
         cls :
         is_abstract : bool, optional
-            Is this a subclass which shouldn't be dded. By default, False.
+            Is this a subclass which shouldn't be added. By default, False.
         **kwargs :
             Key word arguments.
         """
@@ -48,166 +53,79 @@ class CalculatorBase(SerializerComponent, metaclass=ABCMeta):
     def __init__(self):
         """Init function."""
         self._namespace = {}
-        self._wrapper: WrapperBase
+        self._wrapper: StatelessWrapperBase
 
-    def reset_storage(self) -> None:
-        r"""Reset the storage area of the calculator."""
-        self._wrapper.reset_storage()
+    # ----- model registry -----
 
-    def create(self, model: Material | Layer | Multilayer | Model) -> list[ItemContainer]:
-        """Creation function.
+    def set_model(self, model: Model) -> None:
+        """Register a model root with the calculator.
 
-        Parameters
-        ----------
-        model : Material | Layer | Multilayer | Model
-            Object to be created.
-        """
-        r_list = []
-        t_ = type(model)
-        if issubclass(t_, Material):
-            key = model.unique_name
-            if key not in self._wrapper.storage['material'].keys():
-                self._wrapper.create_material(key)
-            r_list.append(
-                ItemContainer(
-                    key,
-                    self._material_link,
-                    self._wrapper.get_material_value,
-                    self._wrapper.update_material,
-                )
-            )
-        elif issubclass(t_, MaterialMixture):
-            key = model.unique_name
-            if key not in self._wrapper.storage['material'].keys():
-                self._wrapper.create_material(key)
-            r_list.append(
-                ItemContainer(
-                    key,
-                    self._material_link,
-                    self._wrapper.get_material_value,
-                    self._wrapper.update_material,
-                )
-            )
-        elif issubclass(t_, Layer):
-            key = model.unique_name
-            if key not in self._wrapper.storage['layer'].keys():
-                self._wrapper.create_layer(key)
-            r_list.append(
-                ItemContainer(
-                    key,
-                    self._layer_link,
-                    self._wrapper.get_layer_value,
-                    self._wrapper.update_layer,
-                )
-            )
-            self.assign_material_to_layer(model.material.unique_name, key)
-        elif issubclass(t_, BaseAssembly):
-            key = model.unique_name
-            self._wrapper.create_item(key)
-            r_list.append(
-                ItemContainer(
-                    key,
-                    self._item_link,
-                    self._wrapper.get_item_value,
-                    self._wrapper.update_item,
-                )
-            )
-            for i in model.layers:
-                self.add_layer_to_item(i.unique_name, model.unique_name)
-        elif issubclass(t_, Model):
-            key = model.unique_name
-            self._wrapper.create_model(key)
-            r_list.append(
-                ItemContainer(
-                    key,
-                    self._model_link,
-                    self._wrapper.get_model_value,
-                    self._wrapper.update_model,
-                )
-            )
-            for i in model.sample:
-                self.add_item_to_model(i.unique_name, key)
-        return r_list
-
-    def assign_material_to_layer(self, material_id: str, layer_id: str) -> None:
-        """Assign a material to a layer.
+        This is a registry add, not a single slot: one ``CalculatorFactory`` is
+        routinely shared by every model of a project, and a last-write-wins slot
+        would silently serve whichever model bound last.
 
         Parameters
         ----------
-        material_id : str
-            The material name.
-        layer_id : str
-            The layer name.
+        model : Model
+            The model to register, keyed by its ``unique_name``.
         """
-        self._wrapper.assign_material_to_layer(material_id, layer_id)
+        self._wrapper.set_model(model)
 
-    def add_layer_to_item(self, layer_id: str, item_id: str) -> None:
-        """Add a layer to the item stack.
+    @property
+    def models(self) -> dict[str, Model]:
+        """The registered models, keyed by ``unique_name``."""
+        return self._wrapper.models
 
-        Parameters
-        ----------
-        item_id : str
-            The item id.
-        layer_id : str
-            The layer id.
-        """
-        self._wrapper.add_layer_to_item(layer_id, item_id)
+    # ----- evaluation -----
 
-    def remove_layer_from_item(self, layer_id: str, item_id: str) -> None:
-        """Remove a layer from an item stack.
+    def reflectivity_profile(self, x_array: np.ndarray, model_id: str | None = None) -> np.ndarray:
+        """Determine the reflectivity profile for the given range and model.
 
-        Parameters
-        ----------
-        item_id : str
-            The item id.
-        layer_id : str
-            The layer id.
-        """
-        self._wrapper.remove_layer_from_item(layer_id, item_id)
-
-    def add_item_to_model(self, item_id: str, model_id: str) -> None:
-        """Add a layer to the item stack.
-
-        Parameters
-        ----------
-        item_id : str
-            The item id.
-        model_id : str
-            The model id.
-        """
-        self._wrapper.add_item(item_id, model_id)
-
-    def remove_item_from_model(self, item_id: str, model_id: str) -> None:
-        """Remove an item from the model.
-
-        Parameters
-        ----------
-        item_id : str
-            The item id.
-        model_id : str
-            The model id.
-        """
-        self._wrapper.remove_item(item_id, model_id)
-
-    def reflectity_profile(self, x_array: np.ndarray, model_id: str) -> np.ndarray:
-        """Determines the reflectivity profile for the given range and model.
+        This is the fit entry point:
+        :attr:`~easyreflectometry.calculators.factory.CalculatorFactory.fit_func`
+        routes here, and it evaluates from the *current* state of the registered
+        model, which is what makes per-iteration parameter plumbing
+        unnecessary.
 
         Parameters
         ----------
         x_array : np.ndarray
             Points to be calculated at.
-        model_id : str
-            The model id.
+        model_id : str | None, optional
+            The ``unique_name`` of the model to evaluate. May be omitted when
+            exactly one model is registered. By default, None.
         """
         return self._wrapper.calculate(x_array, model_id)
 
-    def sld_profile(self, model_id: str) -> tuple[np.ndarray, np.ndarray]:
+    def reflectity_profile(self, x_array: np.ndarray, model_id: str | None = None) -> np.ndarray:
+        """Deprecated alias of :meth:`reflectivity_profile`.
+
+        .. deprecated::
+            The method was misspelled; use ``reflectivity_profile``. The alias
+            is kept for one release so that external callers keep working.
+
+        Parameters
+        ----------
+        x_array : np.ndarray
+            Points to be calculated at.
+        model_id : str | None, optional
+            The model id. By default, None.
+        """
+        warnings.warn(
+            '`reflectity_profile` is deprecated (it was a typo), use `reflectivity_profile` instead.',
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.reflectivity_profile(x_array, model_id)
+
+    def sld_profile(self, model_id: str | None = None) -> tuple[np.ndarray, np.ndarray]:
         """Return the scattering length density profile.
 
         Parameters
         ----------
-        model_id : str
-            The model id.
+        model_id : str | None, optional
+            The ``unique_name`` of the model to evaluate. May be omitted when
+            exactly one model is registered. By default, None.
 
         Returns
         -------
@@ -216,17 +134,24 @@ class CalculatorBase(SerializerComponent, metaclass=ABCMeta):
         """
         return self._wrapper.sld_profile(model_id)
 
+    # ----- configuration -----
+
     def set_resolution_function(self, resolution_function: Callable[[np.array], np.array]) -> None:
-        """Set resolution function."""
+        """Set resolution function.
+
+        A calculator still carries configuration such as the resolution
+        function and the magnetism flag; what it does not carry is mirrored
+        parameter or structure state.
+        """
         return self._wrapper.set_resolution_function(resolution_function)
 
     @property
-    def include_magnetism(self):
+    def include_magnetism(self) -> bool:
         """Include magnetism."""
         return self._wrapper.magnetism
 
     @include_magnetism.setter
-    def include_magnetism(self, magnetism: bool):
+    def include_magnetism(self, magnetism: bool) -> None:
         """Set the magnetism flag for the calculator.
 
         Parameters
@@ -235,3 +160,47 @@ class CalculatorBase(SerializerComponent, metaclass=ABCMeta):
             True if the calculator should include magnetism.
         """
         self._wrapper.magnetism = magnetism
+
+    # ----- backend to core pull contract -----
+
+    def reconcile(self) -> dict[str, float]:
+        """Return the final backend values after a run.
+
+        Write-through backends push every backend-side assignment into the core
+        ``Parameter`` as it happens (see
+        :class:`~easyreflectometry.calculators.refnx.stateless_wrapper.WriteBackParameter`),
+        so nothing can have drifted and there is nothing to reconcile.
+
+        Returns
+        -------
+        dict[str, float]
+            Mapping of ``Parameter.unique_name`` to its final backend value.
+            Empty for write-through backends.
+        """
+        return {}
+
+    # ----- structure mirroring API, no-ops -----
+    #
+    # The model and sample code calls these unconditionally on every structural
+    # edit. A calculator has nothing to mirror: the next evaluation walks the
+    # current object graph and sees the change. Implementing them as no-ops
+    # keeps the calculator generation out of the model code; the calls
+    # themselves are removed at the next major version.
+
+    def reset_storage(self) -> None:
+        """No-op, a calculator has no storage to reset."""
+
+    def assign_material_to_layer(self, material_id: str, layer_id: str) -> None:
+        """No-op, see the class docstring."""
+
+    def add_layer_to_item(self, layer_id: str, item_id: str) -> None:
+        """No-op, see the class docstring."""
+
+    def remove_layer_from_item(self, layer_id: str, item_id: str) -> None:
+        """No-op, see the class docstring."""
+
+    def add_item_to_model(self, item_id: str, model_id: str) -> None:
+        """No-op, see the class docstring."""
+
+    def remove_item_from_model(self, item_id: str, model_id: str) -> None:
+        """No-op, see the class docstring."""

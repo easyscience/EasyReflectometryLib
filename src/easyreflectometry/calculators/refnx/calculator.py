@@ -3,34 +3,21 @@
 
 
 from ..calculator_base import CalculatorBase
-from .wrapper import RefnxWrapper
+from .stateless_wrapper import RefnxStatelessWrapper
 
 
 class Refnx(CalculatorBase):
-    """Calculator for refnx."""
+    """Calculator for refnx.
+
+    The refnx objects are built from the easyscience model on every evaluation,
+    and every core ``Parameter`` which reaches refnx is wrapped in a
+    write-through proxy, so backend-side assignments come straight back. There
+    is no mirrored state and therefore no name-link dictionaries.
+    """
 
     name = 'refnx'
-
-    _material_link = {
-        'sld': 'real',
-        'isld': 'imag',
-    }
-
-    _layer_link = {
-        'thickness': 'thick',
-        'roughness': 'rough',
-    }
-
-    _item_link = {
-        'repetitions': 'repeats',
-    }
-
-    _model_link = {
-        'scale': 'scale',
-        'background': 'bkg',
-    }
 
     def __init__(self):
         """Init function."""
         super().__init__()
-        self._wrapper = RefnxWrapper()
+        self._wrapper = RefnxStatelessWrapper()
