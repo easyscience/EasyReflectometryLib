@@ -18,6 +18,11 @@ returned.
   it affects every subsequent calculation with that calculator, and
   `interface.switch(...)` constructs a fresh calculator, resetting it
   (along with `include_magnetism`).
+- New `magnetic_sld_profile(model_id)` on the calculator (and on
+  `CalculatorFactory`) returns the nuclear and magnetic scattering
+  length density profiles as a tuple `z`, `sld(z)`, `rhoM(z)` (magnetic
+  SLD) and `thetaM(z)` (magnetic angle). Requires
+  `include_magnetism = True`; refl1d only.
 - Magnetic calculations now always build all four refl1d cross-sections,
   so they may take somewhat longer than before; pp results are
   unchanged.

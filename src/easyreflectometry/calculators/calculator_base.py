@@ -235,6 +235,23 @@ class CalculatorBase(SerializerComponent, metaclass=ABCMeta):
         """
         return self._wrapper.sld_profile(model_id)
 
+    def magnetic_sld_profile(self, model_id: str) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        """Return the nuclear and magnetic scattering length density profiles.
+
+        Requires `include_magnetism` to be enabled and a calculator that supports it (refl1d).
+
+        Parameters
+        ----------
+        model_id : str
+            The model id.
+
+        Returns
+        -------
+        tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]
+            z, sld(z), magnetic sld rhoM(z) and magnetic angle thetaM(z).
+        """
+        return self._wrapper.magnetic_sld_profile(model_id)
+
     def set_resolution_function(self, resolution_function: Callable[[np.array], np.array]) -> None:
         """Set resolution function."""
         return self._wrapper.set_resolution_function(resolution_function)

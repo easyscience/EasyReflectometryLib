@@ -301,6 +301,35 @@ class Refl1dWrapper(WrapperBase):
         # -1 to reverse the order
         return z, sld[::-1]
 
+    def magnetic_sld_profile(self, model_name: str) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        """Return the nuclear and magnetic scattering length density profiles.
+
+        Parameters
+        ----------
+        model_name : str
+            The model name.
+
+        Returns
+        -------
+
+            z, sld(z), magnetic sld rhoM(z) and magnetic angle thetaM(z).
+        """
+        if not self._magnetism:
+            raise ValueError(
+                'The magnetic sld profile requires magnetism: enable it on this calculator first '
+                '(`include_magnetism = True` on the calculator / `magnetism = True` on the wrapper).'
+            )
+        sample = _build_sample(self.storage, model_name)
+        probe = _get_probe(
+            q_array=np.array([1]),  # dummy value
+            dq_array=np.array([1]),  # dummy value
+            model_name=model_name,
+            storage=self.storage,
+        )
+        z, sld, _, sld_magnetic, theta_magnetic = names.Experiment(probe=probe, sample=sample).magnetic_smooth_profile()
+        # -1 to reverse the order
+        return z, sld[::-1], sld_magnetic[::-1], theta_magnetic[::-1]
+
 
 def _get_oversampling_q(q_array: np.ndarray, dq_array: np.ndarray, oversampling_factor: int) -> np.ndarray:
     """Get oversampling q."""

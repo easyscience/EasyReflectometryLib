@@ -374,3 +374,17 @@ class WrapperBase:
             Reflectivity per spin channel, keyed 'pp', 'pm', 'mp', 'mm' (in that order).
         """
         raise NotImplementedError(f'{self.__class__.__name__} does not support polarized reflectivity.')
+
+    def magnetic_sld_profile(self, model_name: str) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        """Return the nuclear and magnetic scattering length density profiles.
+
+        Parameters
+        ----------
+        model_name : str
+            The model name.
+
+        Returns
+        -------
+            z, sld(z), magnetic sld rhoM(z) and magnetic angle thetaM(z).
+        """
+        raise NotImplementedError(f'{self.__class__.__name__} does not support magnetic sld profiles.')

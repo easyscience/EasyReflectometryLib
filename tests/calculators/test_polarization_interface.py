@@ -74,6 +74,46 @@ def test_switch_resets_polarization_state():
     assert calculator.include_magnetism is False
 
 
+def test_magnetic_sld_profile_through_factory():
+    model = _magnetic_model()
+    interface = CalculatorFactory()
+    interface.switch('refl1d')
+    model.interface = interface
+    calculator = model.interface()
+    calculator.include_magnetism = True
+    layer_name = list(calculator._wrapper.storage['layer'].keys())[1]
+    calculator._wrapper.update_layer(layer_name, magnetism_rhoM=2, magnetism_thetaM=45)
+
+    z, sld, sld_magnetic, theta_magnetic = interface.magnetic_sld_profile(model.unique_name)
+
+    assert len(z) == len(sld) == len(sld_magnetic) == len(theta_magnetic)
+    # inside the 100 angstrom magnetic layer (zero roughness, so plateaus are exact)
+    inside = (z > 25) & (z < 75)
+    assert_allclose(sld[inside], 4.0)
+    assert_allclose(sld_magnetic[inside], 2.0)
+    assert_allclose(theta_magnetic[inside], 45.0)
+
+
+def test_magnetic_sld_profile_requires_magnetism():
+    model = _magnetic_model()
+    interface = CalculatorFactory()
+    interface.switch('refl1d')
+    model.interface = interface
+
+    with pytest.raises(ValueError):
+        interface.magnetic_sld_profile(model.unique_name)
+
+
+def test_refnx_magnetic_sld_profile_raises():
+    model = _magnetic_model()
+    interface = CalculatorFactory()
+    interface.switch('refnx')
+    model.interface = interface
+
+    with pytest.raises(NotImplementedError):
+        interface.magnetic_sld_profile(model.unique_name)
+
+
 def test_refnx_include_magnetism_raises():
     interface = CalculatorFactory()
     interface.switch('refnx')

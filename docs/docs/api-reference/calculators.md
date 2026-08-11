@@ -13,6 +13,9 @@ spin channels are available:
   `'pm'`, `'mp'`, `'mm'` (in that order).
 - `polarization_channel` selects which channel `reflectity_profile` —
   and hence fitting — uses (default `'pp'`).
+- `magnetic_sld_profile(model_id)` returns the nuclear and magnetic
+  scattering length density profiles as a tuple `z`, `sld(z)`,
+  `rhoM(z)` (magnetic SLD) and `thetaM(z)` (magnetic angle).
 
 Note that `polarization_channel` is state of the currently active
 calculator instance, not of a model or dataset: it affects every
