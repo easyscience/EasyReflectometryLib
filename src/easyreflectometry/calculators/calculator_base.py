@@ -201,6 +201,25 @@ class CalculatorBase(SerializerComponent, metaclass=ABCMeta):
         """
         return self._wrapper.calculate(x_array, model_id)
 
+    def polarized_reflectivity_profiles(self, x_array: np.ndarray, model_id: str) -> dict[str, np.ndarray]:
+        """Determines the reflectivity profiles of all four spin channels for the given range and model.
+
+        Requires `include_magnetism` to be enabled and a calculator that supports it (refl1d).
+
+        Parameters
+        ----------
+        x_array : np.ndarray
+            Points to be calculated at.
+        model_id : str
+            The model id.
+
+        Returns
+        -------
+        dict[str, np.ndarray]
+            Reflectivity per spin channel, keyed 'pp', 'pm', 'mp', 'mm' (in that order).
+        """
+        return self._wrapper.calculate_polarized(x_array, model_id)
+
     def sld_profile(self, model_id: str) -> tuple[np.ndarray, np.ndarray]:
         """Return the scattering length density profile.
 
@@ -235,3 +254,23 @@ class CalculatorBase(SerializerComponent, metaclass=ABCMeta):
             True if the calculator should include magnetism.
         """
         self._wrapper.magnetism = magnetism
+
+    @property
+    def polarization_channel(self):
+        """The spin channel ('pp', 'pm', 'mp' or 'mm') used by `reflectity_profile` when magnetism is enabled.
+
+        Note: this state belongs to the currently-active calculator instance; switching
+        calculators via the factory constructs a fresh instance and resets it.
+        """
+        return self._wrapper.polarization_channel
+
+    @polarization_channel.setter
+    def polarization_channel(self, channel) -> None:
+        """Set the spin channel for reflectivity calculations.
+
+        Parameters
+        ----------
+        channel : PolarizationChannel | str
+            One of 'pp', 'pm', 'mp', 'mm' (or the corresponding enum member).
+        """
+        self._wrapper.polarization_channel = channel

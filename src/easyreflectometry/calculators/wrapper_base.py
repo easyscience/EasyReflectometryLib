@@ -8,11 +8,17 @@ import numpy as np
 from easyreflectometry.model import PercentageFwhm
 from easyreflectometry.model import ResolutionFunction
 
+from .polarization import PolarizationChannel
+
 
 class WrapperBase:
+    #: Whether this calculator backend can model magnetic samples.
+    supports_magnetism = False
+
     def __init__(self):
         """Constructor."""
         self._magnetism = False
+        self._polarization_channel = PolarizationChannel.PP
         self.storage = {
             'material': {},
             'layer': {},
@@ -317,4 +323,54 @@ class WrapperBase:
         magnetism : bool
             The magnetism flag.
         """
+        if magnetism and not self.supports_magnetism:
+            raise NotImplementedError(f'Magnetism is not supported by {self.__class__.__name__}')
         self._magnetism = magnetism
+        if not magnetism:
+            # A non-pp channel is only meaningful on the polarized probe path.
+            self._polarization_channel = PolarizationChannel.PP
+            # Leave no magnetic residue behind: the unpolarized calculation path
+            # must work on the layers that already exist.
+            self._remove_magnetism_from_layers()
+
+    def _remove_magnetism_from_layers(self) -> None:
+        """Strip backend magnetism state from existing layers when magnetism is disabled.
+
+        No-op by default; overridden by backends that attach magnetic objects to layers.
+        """
+
+    @property
+    def polarization_channel(self) -> PolarizationChannel:
+        """The spin channel returned by `calculate` when magnetism is enabled."""
+        return self._polarization_channel
+
+    @polarization_channel.setter
+    def polarization_channel(self, channel: PolarizationChannel | str) -> None:
+        """Set the spin channel returned by `calculate`.
+
+        Parameters
+        ----------
+        channel : PolarizationChannel | str
+            One of 'pp', 'pm', 'mp', 'mm' (or the corresponding enum member).
+        """
+        channel = PolarizationChannel(channel)
+        if channel is not PolarizationChannel.PP and not self._magnetism:
+            raise ValueError(f"Selecting the '{channel.value}' channel requires magnetism to be enabled.")
+        self._polarization_channel = channel
+
+    def calculate_polarized(self, q_array: np.ndarray, model_name: str) -> dict[str, np.ndarray]:
+        """For a given q array calculate the reflectivity of all four spin channels.
+
+        Parameters
+        ----------
+        q_array : np.ndarray
+            Array of data points to be calculated.
+        model_name : str
+            The model name.
+
+        Returns
+        -------
+        dict[str, np.ndarray]
+            Reflectivity per spin channel, keyed 'pp', 'pm', 'mp', 'mm' (in that order).
+        """
+        raise NotImplementedError(f'{self.__class__.__name__} does not support polarized reflectivity.')

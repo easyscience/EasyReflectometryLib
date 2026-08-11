@@ -22,6 +22,10 @@ class CalculatorFactory(InterfaceFactoryTemplate):
         """Sld profile."""
         return self().sld_profile(model_id)
 
+    def polarized_reflectivity_profiles(self, x_array, model_id: str) -> dict:
+        """Reflectivity profiles of all four spin channels ('pp', 'pm', 'mp', 'mm')."""
+        return self().polarized_reflectivity_profiles(x_array, model_id)
+
     @property
     def fit_func(self) -> Callable:
         """Fit func."""

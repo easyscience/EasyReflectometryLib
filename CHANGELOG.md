@@ -1,3 +1,38 @@
+# Unreleased
+
+All four polarization channels (pp, pm, mp, mm) are now available from
+the refl1d calculator; previously only the non-spin-flip pp channel was
+returned.
+
+- New `polarized_reflectivity_profiles(x_array, model_id)` on the
+  calculator (and on `CalculatorFactory`) returns the reflectivity of
+  all four spin channels in one calculation as a dictionary keyed
+  `'pp'`, `'pm'`, `'mp'`, `'mm'` (in that order). Requires
+  `include_magnetism = True`.
+- New `polarization_channel` property (accepts
+  `'pp'`/`'pm'`/`'mp'`/`'mm'` or the new `PolarizationChannel` enum)
+  selects which channel `reflectity_profile` — and hence fitting —
+  returns, enabling fits against spin-flip or mm data. Default `'pp'`;
+  disabling magnetism resets it to `'pp'`. Note: the channel belongs to
+  the currently active calculator instance, not to a model or dataset —
+  it affects every subsequent calculation with that calculator, and
+  `interface.switch(...)` constructs a fresh calculator, resetting it
+  (along with `include_magnetism`).
+- Magnetic calculations now always build all four refl1d cross-sections,
+  so they may take somewhat longer than before; pp results are
+  unchanged.
+- Bug fix: `include_magnetism = True` on a refnx-backed calculator now
+  raises `NotImplementedError`. Previously it was silently accepted (the
+  guard sat on a property the calculator never called) even though refnx
+  magnetism is not supported.
+- Bug fix (pre-existing): disabling magnetism after layers were created
+  with it enabled used to leave refl1d `Magnetism` objects on the slabs,
+  making a subsequent unpolarized calculation raise `AttributeError`
+  inside refl1d. Disabling magnetism now strips the magnetic state from
+  existing layers, so the unpolarized path works again. Consequently,
+  magnetic parameters (`rhoM`/`thetaM`) do not survive a
+  disable/re-enable cycle and must be set again.
+
 # Version 1.7.0 (1 Aug 2026)
 
 Restored the measured per-point resolution on data load (issue #368).

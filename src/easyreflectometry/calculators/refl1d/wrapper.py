@@ -8,14 +8,16 @@ import numpy as np
 from refl1d import names
 from refl1d.sample.layers import Repeat
 
+from ..polarization import POLARIZATION_CHANNEL_TO_INDEX
 from ..wrapper_base import WrapperBase
 
 RESOLUTION_PADDING = 3.5
 OVERSAMPLING_FACTOR = 21
-ALL_POLARIZATIONS = False
 
 
 class Refl1dWrapper(WrapperBase):
+    supports_magnetism = True
+
     def create_material(self, name: str):
         """Create a material using SLD.
 
@@ -81,6 +83,16 @@ class Refl1dWrapper(WrapperBase):
                 self.storage['layer'][name].magnetism, key.split('_')[-1]
             ).value  # TODO: check if we want to return the raw value or the full Parameter  # noqa: E501
         return super().get_layer_value(name, key)
+
+    def _remove_magnetism_from_layers(self) -> None:
+        """Detach Magnetism objects from all slabs.
+
+        Called when magnetism is disabled: slabs carrying Magnetism objects would
+        crash refl1d's plain (unpolarized) QProbe path. Magnetic parameters must be
+        set again (via `update_layer`) after re-enabling magnetism.
+        """
+        for layer in self.storage['layer'].values():
+            layer.magnetism = None
 
     def create_model(self, name: str):
         """Create a model for analysis.
@@ -202,44 +214,68 @@ class Refl1dWrapper(WrapperBase):
         np.ndarray
             Reflectivity calculated at q.
         """
+        if self._magnetism:
+            reflectivities = self._polarized_reflectivities(q_array, model_name)
+            return reflectivities[POLARIZATION_CHANNEL_TO_INDEX[self._polarization_channel]]
+
         sample = _build_sample(self.storage, model_name)
         # smearing() returns sigma, which is exactly what refl1d's probe.dQ expects.
         dq_array = self._resolution_function.smearing(q_array)
-
-        if not self._magnetism:
-            probe = _get_probe(
-                q_array=q_array,
-                dq_array=dq_array,
-                model_name=model_name,
-                storage=self.storage,
-                oversampling_factor=OVERSAMPLING_FACTOR,
-            )
-            # returns q, reflectivity
-            _, reflectivity = names.Experiment(probe=probe, sample=sample).reflectivity()
-        else:
-            polarized_probe = _get_polarized_probe(
-                q_array=q_array,
-                dq_array=dq_array,
-                model_name=model_name,
-                storage=self.storage,
-                oversampling_factor=OVERSAMPLING_FACTOR,
-                all_polarizations=ALL_POLARIZATIONS,
-            )
-            polarized_reflectivity = names.Experiment(probe=polarized_probe, sample=sample).reflectivity()
-
-            if ALL_POLARIZATIONS:
-                raise NotImplementedError('Polarized reflectivity not yet implemented')
-                # returns q, reflectivity
-                # _, reflectivity_pp = polarized_reflectivity[0]
-                # _, reflectivity_pm = polarized_reflectivity[1]
-                # _, reflectivity_mp = polarized_reflectivity[2]
-                # _, reflectivity_mm = polarized_reflectivity[3]
-            else:
-                # Only pick the pp reflectivity
-                # returns q, reflectivity
-                _, reflectivity = polarized_reflectivity[0]
-
+        probe = _get_probe(
+            q_array=q_array,
+            dq_array=dq_array,
+            model_name=model_name,
+            storage=self.storage,
+            oversampling_factor=OVERSAMPLING_FACTOR,
+        )
+        # returns q, reflectivity
+        _, reflectivity = names.Experiment(probe=probe, sample=sample).reflectivity()
         return reflectivity
+
+    def calculate_polarized(self, q_array: np.ndarray, model_name: str) -> dict[str, np.ndarray]:
+        """For a given q array calculate the reflectivity of all four spin channels.
+
+        Parameters
+        ----------
+        q_array : np.ndarray
+            Array of data points to be calculated.
+        model_name : str
+            The model name.
+
+        Returns
+        -------
+        dict[str, np.ndarray]
+            Reflectivity per spin channel, keyed 'pp', 'pm', 'mp', 'mm' (in that order).
+        """
+        if not self._magnetism:
+            raise ValueError(
+                'Polarized reflectivity requires magnetism: enable it on this calculator first '
+                '(`include_magnetism = True` on the calculator / `magnetism = True` on the wrapper).'
+            )
+        reflectivities = self._polarized_reflectivities(q_array, model_name)
+        return {channel.value: reflectivities[index] for channel, index in POLARIZATION_CHANNEL_TO_INDEX.items()}
+
+    def _polarized_reflectivities(self, q_array: np.ndarray, model_name: str) -> list:
+        """Reflectivity of the four spin cross-sections, in refl1d order (pp, pm, mp, mm)."""
+        sample = _build_sample(self.storage, model_name)
+        dq_array = self._resolution_function.smearing(q_array)
+        polarized_probe = _get_polarized_probe(
+            q_array=q_array,
+            dq_array=dq_array,
+            model_name=model_name,
+            storage=self.storage,
+            oversampling_factor=OVERSAMPLING_FACTOR,
+        )
+        polarized_reflectivity = names.Experiment(probe=polarized_probe, sample=sample).reflectivity()
+
+        # returns (q, reflectivity) per cross-section
+        reflectivities = [reflectivity for _, reflectivity in polarized_reflectivity]
+        if len(reflectivities) != 4:
+            raise RuntimeError(f'refl1d returned {len(reflectivities)} polarized cross-sections; expected 4.')
+        for channel, index in POLARIZATION_CHANNEL_TO_INDEX.items():
+            if len(reflectivities[index]) != len(q_array) or not np.all(np.isfinite(reflectivities[index])):
+                raise RuntimeError(f'refl1d returned a malformed {channel.value} cross-section.')
+        return reflectivities
 
     def sld_profile(self, model_name: str) -> Tuple[np.ndarray, np.ndarray]:
         """Return the scattering length density profile.
@@ -309,23 +345,19 @@ def _get_polarized_probe(
     model_name: str,
     storage: dict,
     oversampling_factor: int = 1,
-    all_polarizations: bool = False,
 ) -> names.PolarizedNeutronQProbe:
-    """Get polarized probe."""
-    four_probes = []
-    for i in range(4):
-        if i == 0 or all_polarizations:
-            probe = _get_probe(
-                q_array=q_array,
-                dq_array=dq_array,
-                model_name=model_name,
-                storage=storage,
-                oversampling_factor=oversampling_factor,
-                magnetism=True,  # Enable magnetism for polarized probes
-            )
-        else:
-            probe = None
-        four_probes.append(probe)
+    """Get polarized probe with all four cross-sections (pp, pm, mp, mm)."""
+    four_probes = [
+        _get_probe(
+            q_array=q_array,
+            dq_array=dq_array,
+            model_name=model_name,
+            storage=storage,
+            oversampling_factor=oversampling_factor,
+            magnetism=True,  # Enable magnetism for polarized probes
+        )
+        for _ in range(4)
+    ]
 
     # Create polarized probe and work around initialization bug
     polarized_probe = names.PolarizedNeutronQProbe.__new__(names.PolarizedNeutronQProbe)
