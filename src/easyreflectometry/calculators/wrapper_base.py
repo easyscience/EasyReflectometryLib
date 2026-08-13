@@ -348,6 +348,17 @@ class WrapperBase:
         No-op by default; overridden by backends that attach magnetic objects to layers.
         """
 
+    def remove_layer_magnetism(self, name: str) -> None:
+        """Remove the magnetic state of one layer; disable magnetism when none is left.
+
+        No-op by default; overridden by backends that support magnetism.
+
+        Parameters
+        ----------
+        name : str
+            The layer name.
+        """
+
     @property
     def polarization_channel(self) -> PolarizationChannel:
         """The spin channel returned by `calculate` when magnetism is enabled."""

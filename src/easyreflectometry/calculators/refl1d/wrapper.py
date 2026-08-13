@@ -135,6 +135,26 @@ class Refl1dWrapper(WrapperBase):
             thetaM=values.get('thetaM', DEFAULT_THETA_M),
         )
 
+    def remove_layer_magnetism(self, name: str) -> None:
+        """Remove the magnetic state of one layer; disable magnetism when none is left.
+
+        Keeps `magnetism` (the calculator flag) in sync with the model: once no
+        layer holds magnetic values any more, the polarized calculation path is
+        switched off entirely.
+
+        Parameters
+        ----------
+        name : str
+            The layer name.
+        """
+        self._layer_magnetism.pop(name, None)
+        slab = self.storage['layer'].get(name)
+        if slab is not None:
+            # A non-magnetic slab is fine inside a polarized calculation.
+            slab.magnetism = None
+        if self._magnetism and not self._layer_magnetism:
+            self.magnetism = False
+
     def create_model(self, name: str):
         """Create a model for analysis.
 

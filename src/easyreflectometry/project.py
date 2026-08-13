@@ -307,6 +307,10 @@ class Project:
         for model in self._models:
             model.generate_bindings()
 
+        # The cached fitter holds fit functions bound to the previous backend.
+        self._fitter = None
+        self._fitter_model_index = None
+
     @property
     def calculator_supports_magnetism(self) -> bool:
         """Whether the active calculator can model magnetic samples.
@@ -315,9 +319,6 @@ class Project:
         refnx or bornagain backend is selected).
         """
         return self._calculator().supports_magnetism
-
-        self._fitter = None
-        self._fitter_model_index = None
 
     @property
     def minimizer(self) -> AvailableMinimizers:

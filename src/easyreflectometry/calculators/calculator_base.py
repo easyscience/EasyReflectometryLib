@@ -261,6 +261,17 @@ class CalculatorBase(SerializerComponent, metaclass=ABCMeta):
         """Whether this calculator backend can model magnetic samples."""
         return self._wrapper.supports_magnetism
 
+    def remove_layer_magnetism(self, layer_id: str) -> None:
+        """Remove the magnetic state of one layer; disables `include_magnetism`
+        when no magnetic layer is left.
+
+        Parameters
+        ----------
+        layer_id : str
+            The layer id.
+        """
+        self._wrapper.remove_layer_magnetism(layer_id)
+
     @property
     def include_magnetism(self):
         """Include magnetism."""

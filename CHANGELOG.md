@@ -4,6 +4,17 @@ All four polarization channels (pp, pm, mp, mm) are now available from
 the refl1d calculator; previously only the non-spin-flip pp channel was
 returned.
 
+- New `LayerMagnetism` sample element makes magnetism part of the model:
+  `Layer` accepts an optional `magnetism` (with `rho_m`, the magnetic
+  SLD, and `theta_m`, the in-plane moment angle, as fittable, serialized
+  `Parameter`s). Attaching a magnetic layer automatically enables
+  `include_magnetism` on the calculator (raising `NotImplementedError`
+  on backends without magnetism support); removing the last magnetic
+  layer disables it again. `Model.has_magnetism`,
+  `CalculatorBase.supports_magnetism` and
+  `Project.calculator_supports_magnetism` expose the state to
+  applications.
+
 - New `polarized_reflectivity_profiles(x_array, model_id)` on the
   calculator (and on `CalculatorFactory`) returns the reflectivity of
   all four spin channels in one calculation as a dictionary keyed
@@ -34,9 +45,11 @@ returned.
   with it enabled used to leave refl1d `Magnetism` objects on the slabs,
   making a subsequent unpolarized calculation raise `AttributeError`
   inside refl1d. Disabling magnetism now strips the magnetic state from
-  existing layers, so the unpolarized path works again. Consequently,
-  magnetic parameters (`rhoM`/`thetaM`) do not survive a
-  disable/re-enable cycle and must be set again.
+  existing layers, so the unpolarized path works again. Magnetic
+  parameters (`rhoM`/`thetaM`) are kept in a per-layer store inside the
+  wrapper, so they survive a disable/re-enable cycle and are re-attached
+  when magnetism is enabled again; `update_layer` also accepts the
+  magnetism keys one at a time.
 
 # Version 1.7.0 (1 Aug 2026)
 

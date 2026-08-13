@@ -148,17 +148,40 @@ class TestMagnetismThroughCalculator:
         layer.magnetism.rho_m = 3.0
         assert wrapper.get_layer_value(layer.unique_name, 'magnetism_rhoM') == 3.0
 
-    def test_removing_magnetism_zeroes_backend(self):
+    def test_removing_last_magnetism_disables_calculator_magnetism(self):
         model = _magnetic_model(LayerMagnetism(rho_m=2.0, theta_m=45.0))
         model.interface = self._interface('refl1d')
+        calculator = model.interface()
         layer = model.sample[1].layers[0]
+        detached = layer.magnetism
 
         layer.magnetism = None
 
+        # Model and calculator agree again: no magnetism anywhere.
         assert layer.magnetism is None
         assert model.has_magnetism is False
-        wrapper = model.interface()._wrapper
-        assert wrapper.get_layer_value(layer.unique_name, 'magnetism_rhoM') == 0.0
+        assert calculator.include_magnetism is False
+        assert calculator._wrapper.get_layer_value(layer.unique_name, 'magnetism_rhoM') == 0.0
+        # The plain (unpolarized) calculation path works.
+        reflectivity = calculator.reflectity_profile(Q, model.unique_name)
+        assert len(reflectivity) == len(Q)
+        # The detached parameters no longer reach the backend.
+        detached.rho_m = 5.0
+        assert calculator._wrapper.get_layer_value(layer.unique_name, 'magnetism_rhoM') == 0.0
+
+    def test_removing_one_of_two_magnetic_layers_keeps_magnetism(self):
+        model = _magnetic_model(LayerMagnetism(rho_m=2.0, theta_m=45.0))
+        model.interface = self._interface('refl1d')
+        calculator = model.interface()
+        subphase = model.sample[2].layers[0]
+        subphase.magnetism = LayerMagnetism(rho_m=1.0, theta_m=270.0)
+
+        model.sample[1].layers[0].magnetism = None
+
+        # One magnetic layer remains: the polarized path stays on, its values intact.
+        assert model.has_magnetism is True
+        assert calculator.include_magnetism is True
+        assert calculator._wrapper.get_layer_value(subphase.unique_name, 'magnetism_rhoM') == 1.0
 
     def test_magnetic_layer_with_refnx_raises(self):
         model = _magnetic_model(LayerMagnetism(rho_m=2.0, theta_m=45.0))

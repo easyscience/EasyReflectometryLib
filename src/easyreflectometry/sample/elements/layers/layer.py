@@ -153,12 +153,17 @@ class Layer(BaseCore):
         """Attach or remove the magnetic properties of this layer.
 
         Attaching regenerates the calculator bindings so `rho_m`/`theta_m` become
-        live on the backend; removing zeroes the magnetic SLD on the backend so no
-        stale magnetism is left in subsequent calculations.
+        live on the backend; removing drops the layer's magnetic state from the
+        backend (and switches calculator magnetism off entirely when this was the
+        last magnetic layer).
         """
-        if value is None and self._magnetism is not None and self.interface is not None:
-            # Zero the backend moment through the still-bound parameter before detaching.
-            self._magnetism.rho_m = 0.0
+        if value is None and self._magnetism is not None:
+            if self.interface is not None:
+                self.interface().remove_layer_magnetism(self.unique_name)
+            # Detach the calculator callbacks of the removed parameters so later
+            # value changes on the detached object no longer reach the backend.
+            self._magnetism.rho_m._callback = property()
+            self._magnetism.theta_m._callback = property()
         self._magnetism = value
         if value is not None and self.interface is not None:
             self._enable_calculator_magnetism()
