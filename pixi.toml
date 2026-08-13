@@ -5,8 +5,7 @@
 [workspace]
 
 # Supported platforms for the lock file (pixi.lock)
-platforms = ['win-64', 'linux-64',
-{platform = 'osx-arm64', macos = '14.0'}]
+platforms = ['win-64', 'linux-64', { platform = 'osx-arm64', macos = '14.0' }]
 
 # Channels for fetching packages
 channels = ['nodefaults', 'conda-forge']
