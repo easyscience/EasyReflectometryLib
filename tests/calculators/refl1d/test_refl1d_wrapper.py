@@ -484,24 +484,43 @@ def test_calculate_polarized_channel_ordering():
     # Pins the pp/mm halves of POLARIZATION_CHANNEL_TO_INDEX with physics, guarding
     # against a pp/mm swap: with the moment collinear with the neutron polarization
     # axis there is no spin flip and the non-spin-flip channels see rho +/- rhoM.
-    # Empirically verified sign convention of refl1d 1.0.0 (QProbe path, default
-    # Aguide=270): thetaM=90 is the orientation where pp sees rho + rhoM;
-    # thetaM=270 swaps pp and mm; both are spin-flip-free. (What matters is
-    # refl1d's eigenstate assignment, not the geometric angle relative to Aguide.)
-    # If this test ever fails while the index map matches the refl1d docstring,
-    # the sign convention changed - adjust the expectation, not the code.
+    # refl1d returns cross-sections in probe._xs_names order ['mm','mp','pm','pp']
+    # (refl1d/probe/probe.py; magnetic_amplitude returns (--,-+,+-,++)). With the
+    # default guide field (Aguide=270), thetaM=270 is the moment-parallel-to-field
+    # orientation: spin-up ('pp') sees rho + rhoM, spin-down ('mm') sees rho - rhoM.
+    # thetaM=90 (anti-parallel) swaps the two; both are spin-flip-free.
     rho, rhoM = 4.0, 2.0
-    p = _sample_wrapper(rho=rho, magnetic=True, rhoM=rhoM, thetaM=90)
     plus = _sample_wrapper(rho=rho + rhoM, magnetic=False)
     minus = _sample_wrapper(rho=rho - rhoM, magnetic=False)
+    reflectivity_plus = plus.calculate(Q_POLARIZED, 'MyModel')
+    reflectivity_minus = minus.calculate(Q_POLARIZED, 'MyModel')
 
-    channels = p.calculate_polarized(Q_POLARIZED, 'MyModel')
+    aligned = _sample_wrapper(rho=rho, magnetic=True, rhoM=rhoM, thetaM=270)
+    channels = aligned.calculate_polarized(Q_POLARIZED, 'MyModel')
+    assert_allclose(channels['pp'], reflectivity_plus, rtol=1e-4, atol=1e-9)
+    assert_allclose(channels['mm'], reflectivity_minus, rtol=1e-4, atol=1e-9)
+    assert np.max(channels['pm']) < 1e-16
+    assert np.max(channels['mp']) < 1e-16
 
-    assert_allclose(channels['pp'], plus.calculate(Q_POLARIZED, 'MyModel'), rtol=1e-4, atol=1e-9)
-    assert_allclose(channels['mm'], minus.calculate(Q_POLARIZED, 'MyModel'), rtol=1e-4, atol=1e-9)
-    # Spin-flip tolerance pinned from observed refl1d 1.0.0 numerics (~1e-31).
-    assert np.max(channels['pm']) < 1e-30
-    assert np.max(channels['mp']) < 1e-30
+    anti_aligned = _sample_wrapper(rho=rho, magnetic=True, rhoM=rhoM, thetaM=90)
+    channels = anti_aligned.calculate_polarized(Q_POLARIZED, 'MyModel')
+    assert_allclose(channels['pp'], reflectivity_minus, rtol=1e-4, atol=1e-9)
+    assert_allclose(channels['mm'], reflectivity_plus, rtol=1e-4, atol=1e-9)
+
+
+def test_channel_index_map_matches_refl1d_xs_names():
+    # The index map must agree with refl1d's own cross-section labels: the wrapper
+    # extracts Experiment.reflectivity() results in probe.xs order, which is
+    # PolarizedNeutronProbe._xs_names. This pins the convention at the source so a
+    # refl1d-side reordering (or a wrapper-side swap) fails loudly.
+    from refl1d import names as refl1d_names
+
+    from easyreflectometry.calculators.polarization import POLARIZATION_CHANNEL_TO_INDEX
+
+    xs_names = refl1d_names.PolarizedNeutronQProbe._xs_names
+    assert len(xs_names) == 4
+    for channel, index in POLARIZATION_CHANNEL_TO_INDEX.items():
+        assert xs_names[index] == channel.value
 
 
 def test_calculate_polarized_spin_flip():
@@ -600,7 +619,7 @@ def test_polarized_reflectivities_guards_malformed_output():
         with pytest.raises(RuntimeError, match='expected 4'):
             p.calculate_polarized(q, 'MyModel')
 
-    # Wrong-length cross-section
+    # Wrong-length cross-section: index 1 is 'mp' in refl1d's (mm, mp, pm, pp) order.
     with patch('easyreflectometry.calculators.refl1d.wrapper.names.Experiment') as mock_experiment:
         mock_experiment.return_value.reflectivity.return_value = [
             (q, np.ones(len(q))),
@@ -608,15 +627,15 @@ def test_polarized_reflectivities_guards_malformed_output():
             (q, np.ones(len(q))),
             (q, np.ones(len(q))),
         ]
-        with pytest.raises(RuntimeError, match='malformed pm'):
+        with pytest.raises(RuntimeError, match='malformed mp'):
             p.calculate_polarized(q, 'MyModel')
 
-    # Non-finite values
+    # Non-finite values: index 3 is 'pp' in refl1d's (mm, mp, pm, pp) order.
     with patch('easyreflectometry.calculators.refl1d.wrapper.names.Experiment') as mock_experiment:
         bad = np.ones(len(q))
         bad[0] = np.nan
         mock_experiment.return_value.reflectivity.return_value = [(q, np.ones(len(q)))] * 3 + [(q, bad)]
-        with pytest.raises(RuntimeError, match='malformed mm'):
+        with pytest.raises(RuntimeError, match='malformed pp'):
             p.calculate_polarized(q, 'MyModel')
 
 

@@ -28,11 +28,18 @@ class Refl1dWrapper(WrapperBase):
         # Magnetic values per layer name, kept outside the slabs so they survive
         # magnetism being toggled off/on and can be set before it is enabled.
         self._layer_magnetism: dict[str, dict[str, float]] = {}
+        # Per-model cache of polarized reflectivities: all four cross-sections come
+        # from a single kernel evaluation, so a simultaneous multi-channel fit costs
+        # one evaluation per iteration instead of one per channel. Keyed on a token
+        # of every model input; entries per (q, dq) grid, so channels measured on
+        # different grids coexist within one iteration.
+        self._polarized_cache: dict[str, dict] = {}
 
     def reset_storage(self):
         """Reset the storage area (including stored magnetic values) to blank."""
         super().reset_storage()
         self._layer_magnetism = {}
+        self._polarized_cache = {}
 
     def create_material(self, name: str):
         """Create a material using SLD.
@@ -277,7 +284,8 @@ class Refl1dWrapper(WrapperBase):
         """
         if self._magnetism:
             reflectivities = self._polarized_reflectivities(q_array, model_name)
-            return reflectivities[POLARIZATION_CHANNEL_TO_INDEX[self._polarization_channel]]
+            # Copy: the arrays live in the polarized cache and must not be mutated.
+            return reflectivities[POLARIZATION_CHANNEL_TO_INDEX[self._polarization_channel]].copy()
 
         sample = _build_sample(self.storage, model_name)
         # smearing() returns sigma, which is exactly what refl1d's probe.dQ expects.
@@ -314,12 +322,60 @@ class Refl1dWrapper(WrapperBase):
                 '(`include_magnetism = True` on the calculator / `magnetism = True` on the wrapper).'
             )
         reflectivities = self._polarized_reflectivities(q_array, model_name)
-        return {channel.value: reflectivities[index] for channel, index in POLARIZATION_CHANNEL_TO_INDEX.items()}
+        # Copies: the arrays live in the polarized cache and must not be mutated.
+        return {channel.value: reflectivities[index].copy() for channel, index in POLARIZATION_CHANNEL_TO_INDEX.items()}
+
+    def _model_state_token(self, model_name: str) -> tuple:
+        """A token of every model input that affects the reflectivity.
+
+        Two calls with equal tokens (and equal q/dq grids) are guaranteed to
+        produce the same reflectivity, so cached cross-sections can be reused.
+        The resolution function needs no entry here — it enters through the dq
+        part of the per-grid cache key. Must be extended whenever a new slab or
+        material attribute starts reaching the kernel.
+        """
+        model = self.storage['model'][model_name]
+        values: list = [model['scale'], model['bkg']]
+        for item in model['items']:
+            values.append(item.repeat.value)
+            for slab in item.stack:
+                values.extend((
+                    slab.thickness.value,
+                    slab.interface.value,
+                    slab.material.rho.value,
+                    slab.material.irho.value,
+                ))
+                if slab.magnetism is None:
+                    values.append(None)
+                else:
+                    values.extend((slab.magnetism.rhoM.value, slab.magnetism.thetaM.value))
+        return tuple(values)
 
     def _polarized_reflectivities(self, q_array: np.ndarray, model_name: str) -> list:
-        """Reflectivity of the four spin cross-sections, in refl1d order (pp, pm, mp, mm)."""
+        """Reflectivity of the four spin cross-sections, in refl1d order (mm, mp, pm, pp).
+
+        The list follows `PolarizedNeutronProbe._xs_names`; use
+        `POLARIZATION_CHANNEL_TO_INDEX` to pick a channel out of it.
+        Results are cached per model state and (q, dq) grid; see `_polarized_cache`.
+        """
+        # Normalized dtype plus explicit shape in the key: raw bytes alone do not
+        # uniquely identify an ndarray (equal bytes can encode different
+        # dtype/shape combinations), which could return a wrong-length hit.
+        q_array = np.asarray(q_array, dtype=np.float64)
+        dq_array = np.asarray(self._resolution_function.smearing(q_array), dtype=np.float64)
+
+        token = self._model_state_token(model_name)
+        grid_key = (q_array.shape, q_array.tobytes(), dq_array.shape, dq_array.tobytes())
+        cache = self._polarized_cache.get(model_name)
+        if cache is not None and cache['token'] == token:
+            cached = cache['entries'].get(grid_key)
+            if cached is not None:
+                return cached
+        else:
+            cache = {'token': token, 'entries': {}}
+            self._polarized_cache[model_name] = cache
+
         sample = _build_sample(self.storage, model_name)
-        dq_array = self._resolution_function.smearing(q_array)
         polarized_probe = _get_polarized_probe(
             q_array=q_array,
             dq_array=dq_array,
@@ -336,6 +392,7 @@ class Refl1dWrapper(WrapperBase):
         for channel, index in POLARIZATION_CHANNEL_TO_INDEX.items():
             if len(reflectivities[index]) != len(q_array) or not np.all(np.isfinite(reflectivities[index])):
                 raise RuntimeError(f'refl1d returned a malformed {channel.value} cross-section.')
+        cache['entries'][grid_key] = reflectivities
         return reflectivities
 
     def sld_profile(self, model_name: str) -> Tuple[np.ndarray, np.ndarray]:
@@ -449,10 +506,17 @@ def _get_polarized_probe(
         for _ in range(4)
     ]
 
-    # Create polarized probe and work around initialization bug
-    polarized_probe = names.PolarizedNeutronQProbe.__new__(names.PolarizedNeutronQProbe)
-    polarized_probe._union_cache_key = None  # Initialize missing attribute
-    polarized_probe.__init__(xs=four_probes, name='polarized')
+    try:
+        polarized_probe = names.PolarizedNeutronQProbe(xs=four_probes, name='polarized')
+    except AttributeError:
+        # refl1d 1.0.0 bug: PolarizedQProbe.__init__ calls _calculate_union(), which
+        # reads self._union_cache_key before the attribute is ever assigned (the
+        # non-Q PolarizedNeutronProbe assigns it in __init__; the Q variant does
+        # not). Pre-seed the attribute and re-run __init__. The try/except makes
+        # the workaround self-removing once refl1d fixes the initialization.
+        polarized_probe = names.PolarizedNeutronQProbe.__new__(names.PolarizedNeutronQProbe)
+        polarized_probe._union_cache_key = None
+        polarized_probe.__init__(xs=four_probes, name='polarized')
     return polarized_probe
 
 

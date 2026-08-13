@@ -201,6 +201,29 @@ class CalculatorBase(SerializerComponent, metaclass=ABCMeta):
         """
         return self._wrapper.calculate(x_array, model_id)
 
+    def reflectivity_profile_channel(self, x_array: np.ndarray, model_id: str, channel) -> np.ndarray:
+        """Determine the reflectivity profile of one explicit spin channel.
+
+        Unlike `polarization_channel` (global calculator state), the channel is an
+        argument, so several channels can be evaluated against the same model —
+        one per dataset in a simultaneous multi-channel fit.
+
+        Parameters
+        ----------
+        x_array : np.ndarray
+            Points to be calculated at.
+        model_id : str
+            The model id.
+        channel : PolarizationChannel | str
+            One of 'pp', 'pm', 'mp', 'mm' (or the corresponding enum member).
+
+        Returns
+        -------
+        np.ndarray
+            Reflectivity of the requested channel at q.
+        """
+        return self._wrapper.calculate_channel(x_array, model_id, channel)
+
     def polarized_reflectivity_profiles(self, x_array: np.ndarray, model_id: str) -> dict[str, np.ndarray]:
         """Determines the reflectivity profiles of all four spin channels for the given range and model.
 

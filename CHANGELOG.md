@@ -14,6 +14,31 @@ returned.
   `CalculatorBase.supports_magnetism` and
   `Project.calculator_supports_magnetism` expose the state to
   applications.
+- New `PolarizedDataSet` groups per-spin-channel `DataSet1D` objects
+  (one file per channel; 'pp'/'mm' only for NSF experiments, spin-flip
+  channels optional) into one experiment sharing a single model.
+  `Project.load_polarized_experiment(paths)` loads it from an explicit
+  channel → file mapping, and
+  `Project.suggest_polarized_channel_assignment(paths)` pre-fills that
+  mapping from the ORSO header polarization (`pp`/`mm`/`pm`/`mp` only —
+  partially-analysed observables such as `po`/`mo`, which measure channel
+  sums, and `op`/`om`/`unpolarized` are left for the user to decide) or,
+  for plain text files, from filename tokens (`_uu`/`_up`/`_pp` → pp,
+  `_dd`/`_down`/`_mm` → mm, `_ud`/`_pm` → pm, `_du`/`_mp` → mp).
+- New `calculate_channel(q, model, channel)` on the wrapper (and
+  `reflectivity_profile_channel` on the calculator,
+  `fit_func_for_channel` on `CalculatorFactory`) evaluates one explicit
+  spin channel without touching the global `polarization_channel`
+  state.
+- New `MultiFitter.fit_polarized(data)` fits all measured channels of a
+  `PolarizedDataSet` simultaneously against the shared model: one fit
+  function per channel, common structural parameters, magnetic
+  parameters constrained by all channels at once. Returns per-channel
+  `FitResults`.
+- The refl1d wrapper now caches the four polarized cross-sections per
+  model state and (q, dq) grid — they come from a single kernel
+  evaluation, so a simultaneous N-channel fit costs about one
+  evaluation per iteration instead of N.
 
 - New `polarized_reflectivity_profiles(x_array, model_id)` on the
   calculator (and on `CalculatorFactory`) returns the reflectivity of

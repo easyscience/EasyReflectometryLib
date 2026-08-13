@@ -14,6 +14,7 @@ from easyscience.fitting import Sampler
 from easyscience.fitting.multi_fitter import MultiFitter as EasyScienceMultiFitter
 
 from easyreflectometry.data import DataSet1D
+from easyreflectometry.data import PolarizedDataSet
 from easyreflectometry.model import Model
 
 _VALID_OBJECTIVES = ('legacy_mask', 'mighell', 'hybrid', 'auto')
@@ -356,6 +357,123 @@ class MultiFitter:
             }
         ]
         return result
+
+    def fit_polarized(self, data: PolarizedDataSet, objective: str | None = None) -> dict[str, FitResults]:
+        """Fit all measured spin channels of a polarized experiment simultaneously.
+
+        Each channel dataset gets its own fit function evaluating the
+        corresponding spin cross-section, while every channel shares the single
+        model — so structural parameters (thickness, roughness, nuclear SLD,
+        scale, background) are common, and the magnetic parameters
+        (`rho_m`/`theta_m`) are constrained by all channels at once. The refl1d
+        backend computes all four cross-sections in one kernel evaluation and
+        caches them per iteration, so fitting N channels costs about as much as
+        fitting one.
+
+        Parameters
+        ----------
+        data : PolarizedDataSet
+            The polarized experiment (its model must be the model this fitter
+            was constructed with). Note that per-channel ``ye`` stores
+            variances (σ²), not standard deviations.
+        objective : str | None, optional
+            Per-call override for the zero-variance objective.
+            If ``None``, uses the instance default set at construction. By default, None.
+
+        Returns
+        -------
+        dict[str, FitResults]
+            Fit results per channel, keyed 'pp', 'pm', 'mp', 'mm' (measured
+            channels only, in that order).
+        """
+        obj = _validate_objective(objective) if objective is not None else self._objective
+        if len(self._models) != 1:
+            raise ValueError('Polarized fitting requires a MultiFitter constructed with exactly one model.')
+        model = self._models[0]
+        if data.model is not model:
+            raise ValueError('PolarizedDataSet.model must be the model this fitter was constructed with.')
+        channels = data.available_channels
+        for channel in channels:
+            if data[channel].model is not model:
+                raise ValueError(f"The '{channel.value}' channel dataset is bound to a different model than the fitter's.")
+
+        def func_wrapper(func, unique_name):
+            """Func wrapper."""
+
+            def wrapped(*args, **kwargs):
+                """Wrapped function."""
+                return func(*args, unique_name, **kwargs)
+
+            return wrapped
+
+        channel_fit_funcs = [
+            func_wrapper(model.interface.fit_func_for_channel(channel), model.unique_name) for channel in channels
+        ]
+        # One fit function per channel, all bound to the single model. Constructed
+        # per call because the channel set comes from the data; the minimizer
+        # selection and its generic settings (tolerance, max_evaluations) are
+        # carried over. Engine-specific settings applied directly to the minimizer
+        # instance of this fitter would not be.
+        polarized_fitter = EasyScienceMultiFitter([model], channel_fit_funcs)
+        polarized_fitter.switch_minimizer(self.easy_science_multi_fitter.minimizer.enum)
+        polarized_fitter.tolerance = self.easy_science_multi_fitter.tolerance
+        polarized_fitter.max_evaluations = self.easy_science_multi_fitter.max_evaluations
+
+        x = []
+        y = []
+        dy = []
+        original_arrays = []
+        for channel in channels:
+            dataset = data[channel]
+            x_vals = np.asarray(dataset.x)
+            y_vals = np.asarray(dataset.y)
+            variances = np.asarray(dataset.ye)
+
+            x_out, y_eff, weights, stats = _prepare_fit_arrays(x_vals, y_vals, variances, obj)
+
+            if stats['masked'] > 0:
+                warnings.warn(
+                    f'Masked {stats["masked"]} data point(s) in channel {channel.value} due to zero variance during fitting.',
+                    UserWarning,
+                )
+            if stats.get('transformed_all_points'):
+                warnings.warn(
+                    f'Applied Mighell transform to all {len(y_vals)} point(s) in channel {channel.value} during fitting.',
+                    UserWarning,
+                )
+            elif stats['mighell_substituted'] > 0:
+                warnings.warn(
+                    f'Applied Mighell substitution to {stats["mighell_substituted"]} '
+                    f'zero-variance point(s) in channel {channel.value} during fitting.',
+                    UserWarning,
+                )
+            if obj == 'legacy_mask' and len(x_out) == 0:
+                raise ValueError(f'Cannot fit channel {channel.value}: all points have zero variance.')
+
+            x.append(x_out)
+            y.append(y_eff)
+            dy.append(weights)
+            original_arrays.append({'x': x_vals, 'y': y_vals, 'variances': variances})
+
+        results = polarized_fitter.fit(x, y, weights=dy)
+        self._fit_results = list(results)
+
+        self._classical_fit_metrics = []
+        for index, (channel, result) in enumerate(zip(channels, results)):
+            original = original_arrays[index]
+            model_curve = channel_fit_funcs[index](original['x'])
+            sigma_classical = np.sqrt(np.clip(original['variances'], 0.0, None))
+            n_classical_points = int(np.sum(original['variances'] > 0.0))
+            classical_chi2 = _compute_weighted_chi2(original['y'], model_curve, sigma_classical)
+            self._classical_fit_metrics.append({
+                'classical_chi2': classical_chi2,
+                'classical_reduced_chi': _compute_reduced_chi2(classical_chi2, n_classical_points, result.n_pars),
+                'objective_chi2': float(result.chi2),
+                'objective_reduced_chi': _fit_result_reduced_chi(result, np.size(result.x)),
+                'n_classical_points': n_classical_points,
+            })
+
+        return {channel.value: result for channel, result in zip(channels, results)}
 
     def mcmc_sample(
         self,

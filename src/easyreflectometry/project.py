@@ -19,7 +19,10 @@ from easyscience.variable.parameter_dependency_resolver import resolve_all_param
 from scipp import DataGroup
 
 from easyreflectometry.calculators import CalculatorFactory
+from easyreflectometry.calculators import PolarizationChannel
 from easyreflectometry.data import DataSet1D
+from easyreflectometry.data import PolarizedDataSet
+from easyreflectometry.data import detect_polarization_channel
 from easyreflectometry.data import load_as_dataset
 from easyreflectometry.data.measurement import extract_orso_title
 from easyreflectometry.data.measurement import load_data_from_orso_file
@@ -343,12 +346,12 @@ class Project:
             self._fitter.easy_science_multi_fitter.switch_minimizer(minimizer)
 
     @property
-    def experiments(self) -> Dict[int, DataSet1D]:
+    def experiments(self) -> Dict[int, Union[DataSet1D, PolarizedDataSet]]:
         """Experiments function."""
         return self._experiments
 
     @experiments.setter
-    def experiments(self, experiments: Dict[int, DataSet1D]) -> None:
+    def experiments(self, experiments: Dict[int, Union[DataSet1D, PolarizedDataSet]]) -> None:
         """Experiments function."""
         self._experiments = experiments
 
@@ -647,6 +650,85 @@ class Project:
 
         self._with_experiments = True
         return len(data_keys)
+
+    def suggest_polarized_channel_assignment(self, paths: List[Union[Path, str]]) -> Dict[str, Optional[PolarizationChannel]]:
+        """Suggest a spin-channel assignment for a set of data files.
+
+        For each file, the ORSO header polarization is used when present, falling
+        back to filename heuristics ('_uu'/'_up' → pp, '_dd'/'_down' → mm, ...).
+        Files that cannot be identified map to None; a GUI should present the
+        result as an editable file → channel table.
+
+        Parameters
+        ----------
+        paths : List[Union[Path, str]]
+            Paths of the per-channel data files.
+
+        Returns
+        -------
+        Dict[str, Optional[PolarizationChannel]]
+            Detected channel (or None) per path.
+        """
+        return {str(path): detect_polarization_channel(str(path)) for path in paths}
+
+    def load_polarized_experiment(
+        self,
+        paths: Dict[Union[PolarizationChannel, str], Union[Path, str]],
+        model_index: Optional[int] = None,
+    ) -> None:
+        """Load a polarized experiment from one data file per spin channel.
+
+        The channel datasets form a single :class:`PolarizedDataSet` experiment
+        sharing one model. Two-channel NSF-only experiments simply pass 'pp' and
+        'mm' entries; spin-flip channels are optional.
+
+        Parameters
+        ----------
+        paths : Dict[Union[PolarizationChannel, str], Union[Path, str]]
+            Explicit channel → file assignment (e.g. from the GUI import dialog,
+            pre-filled via :meth:`suggest_polarized_channel_assignment`).
+        model_index : Optional[int], optional
+            Index of the model the experiment belongs to. By default, the
+            current model.
+        """
+        paths = {PolarizationChannel(channel): path for channel, path in paths.items()}
+        channels = {}
+        for channel, path in paths.items():
+            # One file per channel means one dataset per file; a multi-dataset ORSO
+            # file has no defined channel-to-dataset assignment here.
+            if self.count_datasets_in_file(path) > 1:
+                raise ValueError(
+                    f"File '{path}' contains multiple datasets; polarized loading requires one dataset "
+                    f'per channel file. Export the {channel.value} channel to its own file.'
+                )
+            dataset = load_as_dataset(str(path))
+            # Keep the source file visible per channel (file → channel provenance).
+            dataset.name = f'{channel.value}: {Path(path).name}'
+            channels[channel] = dataset
+
+        new_index = len(self._experiments)
+        if model_index is None:
+            model_index = self._current_model_index
+        model = self.models[model_index]
+
+        experiment = PolarizedDataSet(
+            name=f'Polarized experiment {new_index}',
+            channels=channels,
+            model=model,
+        )
+        # Name from the ORSO title of the first file, when available.
+        first_channel = experiment.available_channels[0]
+        first_path = paths[first_channel]
+        self._apply_experiment_metadata(first_path, experiment, f'Polarized experiment {new_index}')
+
+        # Background and resolution follow the first (in canonical order) channel;
+        # per-channel resolution functions are not supported (one per experiment).
+        first_dataset = experiment[first_channel]
+        self._auto_set_background(first_dataset)
+        self._apply_resolution_function(first_dataset, model)
+
+        self._experiments[new_index] = experiment
+        self._with_experiments = True
 
     def load_experiment_for_model_at_index(self, path: Union[Path, str], index: Optional[int] = 0) -> None:
         """Load experiment for model at index."""

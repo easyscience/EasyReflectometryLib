@@ -378,6 +378,35 @@ class WrapperBase:
             raise ValueError(f"Selecting the '{channel.value}' channel requires magnetism to be enabled.")
         self._polarization_channel = channel
 
+    def calculate_channel(self, q_array: np.ndarray, model_name: str, channel: PolarizationChannel | str) -> np.ndarray:
+        """For a given q array calculate the reflectivity of one explicit spin channel.
+
+        Unlike the `polarization_channel` property (global calculator state used by
+        `calculate`), the channel is passed explicitly, so several channels can be
+        evaluated against the same model, e.g. one per dataset in a simultaneous
+        multi-channel fit.
+
+        Parameters
+        ----------
+        q_array : np.ndarray
+            Array of data points to be calculated.
+        model_name : str
+            The model name.
+        channel : PolarizationChannel | str
+            One of 'pp', 'pm', 'mp', 'mm' (or the corresponding enum member).
+
+        Returns
+        -------
+        np.ndarray
+            Reflectivity of the requested channel at q.
+        """
+        channel = PolarizationChannel(channel)
+        if not self._magnetism:
+            if channel is PolarizationChannel.PP:
+                return self.calculate(q_array, model_name)
+            raise ValueError(f"Calculating the '{channel.value}' channel requires magnetism to be enabled.")
+        return self.calculate_polarized(q_array, model_name)[channel.value]
+
     def calculate_polarized(self, q_array: np.ndarray, model_name: str) -> dict[str, np.ndarray]:
         """For a given q array calculate the reflectivity of all four spin channels.
 
