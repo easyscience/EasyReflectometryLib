@@ -411,9 +411,9 @@ Q_POLARIZED = np.linspace(0.005, 0.3, 100)
 def _sample_wrapper(rho: float, magnetic: bool, rhoM: float = 0.0, thetaM: float = 270.0) -> Refl1dWrapper:
     """Vacuum | 100 A layer of `rho` (optionally magnetic) | Si substrate.
 
-    Magnetism must be enabled before `create_layer` — only then does the wrapper
-    attach a `Magnetism` object to the slab. `update_layer` requires BOTH magnetism
-    kwargs; partial updates raise KeyError and are not supported.
+    Magnetic values may be set via `update_layer` at any time (also one key at a
+    time); they are stored per layer and attached to the slabs whenever magnetism
+    is enabled.
     """
     p = Refl1dWrapper()
     if magnetic:
@@ -579,12 +579,15 @@ def test_disabling_magnetism_resets_channel():
     assert all(layer.magnetism is None for layer in p.storage['layer'].values())
     assert_allclose(p.calculate(Q_POLARIZED, 'MyModel'), unpolarized.calculate(Q_POLARIZED, 'MyModel'), rtol=1e-10)
 
-    # Re-enabling gives a clean magnetic state (no stale rhoM/thetaM); magnetic
-    # parameters must be set again via update_layer.
+    # Re-enabling restores the stored magnetic values (rhoM/thetaM survive the
+    # toggle so the wrapper stays in sync with model parameters that still hold them).
     p.magnetism = True
     assert p.polarization_channel is PolarizationChannel.PP
+    restored = _sample_wrapper(rho=4.0, magnetic=True, rhoM=2.0, thetaM=45)
     channels = p.calculate_polarized(Q_POLARIZED, 'MyModel')
-    assert_allclose(channels['pp'], unpolarized.calculate(Q_POLARIZED, 'MyModel'), rtol=1e-5)
+    reference = restored.calculate_polarized(Q_POLARIZED, 'MyModel')
+    for channel in ('pp', 'pm', 'mp', 'mm'):
+        assert_allclose(channels[channel], reference[channel], rtol=1e-10)
 
 
 def test_polarized_reflectivities_guards_malformed_output():

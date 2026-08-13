@@ -257,6 +257,11 @@ class CalculatorBase(SerializerComponent, metaclass=ABCMeta):
         return self._wrapper.set_resolution_function(resolution_function)
 
     @property
+    def supports_magnetism(self) -> bool:
+        """Whether this calculator backend can model magnetic samples."""
+        return self._wrapper.supports_magnetism
+
+    @property
     def include_magnetism(self):
         """Include magnetism."""
         return self._wrapper.magnetism

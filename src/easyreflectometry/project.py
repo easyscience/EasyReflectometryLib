@@ -307,6 +307,15 @@ class Project:
         for model in self._models:
             model.generate_bindings()
 
+    @property
+    def calculator_supports_magnetism(self) -> bool:
+        """Whether the active calculator can model magnetic samples.
+
+        The GUI uses this to gate magnetism-related controls (e.g. when the
+        refnx or bornagain backend is selected).
+        """
+        return self._calculator().supports_magnetism
+
         self._fitter = None
         self._fitter_model_index = None
 

@@ -45,17 +45,9 @@ jobs:
       - name: Init pixi project
         run: pixi init easyreflectometry
 
-      - name: Set the minimum system requirements
-        working-directory: easyreflectometry
-        run: pixi project system-requirements add macos 14.0
-
       - name: Add Python 3.13 from Conda
         working-directory: easyreflectometry
         run: pixi add "python=3.13"
-
-      - name: Add other Conda dependencies
-        working-directory: easyreflectometry
-        run: pixi add gsl
 
       - name: Add easyreflectometry (with dev dependencies) from PyPI
         working-directory: easyreflectometry

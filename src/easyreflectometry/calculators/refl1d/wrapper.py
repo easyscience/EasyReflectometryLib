@@ -14,9 +14,25 @@ from ..wrapper_base import WrapperBase
 RESOLUTION_PADDING = 3.5
 OVERSAMPLING_FACTOR = 21
 
+# refl1d convention: with the default guide field (Aguide = 270 deg) a moment at
+# thetaM = 270 deg is aligned with the field, i.e. produces no spin-flip.
+DEFAULT_THETA_M = 270.0
+
 
 class Refl1dWrapper(WrapperBase):
     supports_magnetism = True
+
+    def __init__(self):
+        """Constructor."""
+        super().__init__()
+        # Magnetic values per layer name, kept outside the slabs so they survive
+        # magnetism being toggled off/on and can be set before it is enabled.
+        self._layer_magnetism: dict[str, dict[str, float]] = {}
+
+    def reset_storage(self):
+        """Reset the storage area (including stored magnetic values) to blank."""
+        super().reset_storage()
+        self._layer_magnetism = {}
 
     def create_material(self, name: str):
         """Create a material using SLD.
@@ -37,7 +53,11 @@ class Refl1dWrapper(WrapperBase):
             The name of the layer.
         """
         if self._magnetism:
-            magnetism = names.Magnetism(rhoM=0.0, thetaM=0.0)
+            values = self._layer_magnetism.get(name, {})
+            magnetism = names.Magnetism(
+                rhoM=values.get('rhoM', 0.0),
+                thetaM=values.get('thetaM', DEFAULT_THETA_M),
+            )
         else:
             magnetism = None
         self.storage['layer'][name] = names.Slab(name=str(name), magnetism=magnetism)
@@ -56,17 +76,24 @@ class Refl1dWrapper(WrapperBase):
     def update_layer(self, name: str, **kwargs):
         """Update a layer in a given item.
 
+        Magnetic keys (`magnetism_rhoM`, `magnetism_thetaM`) may be passed alone or
+        together; values are stored per layer and attached to the slab when
+        magnetism is enabled.
+
         Parameters
         ----------
         name : str
             The layer name.
         **kwargs :
         """
-        kwargs_no_magnetism = {k: v for k, v in kwargs.items() if k != 'magnetism_rhoM' and k != 'magnetism_thetaM'}
+        magnetic_values = {k.removeprefix('magnetism_'): v for k, v in kwargs.items() if k.startswith('magnetism_')}
+        kwargs_no_magnetism = {k: v for k, v in kwargs.items() if not k.startswith('magnetism_')}
         super().update_layer(name, **kwargs_no_magnetism)
-        if any(item.startswith('magnetism') for item in kwargs.keys()):
-            magnetism = names.Magnetism(rhoM=kwargs['magnetism_rhoM'], thetaM=kwargs['magnetism_thetaM'])
-            self.storage['layer'][name].magnetism = magnetism
+        if magnetic_values:
+            stored = self._layer_magnetism.setdefault(name, {'rhoM': 0.0, 'thetaM': DEFAULT_THETA_M})
+            stored.update(magnetic_values)
+            if self._magnetism:
+                self._apply_magnetism_to_layer(name)
 
     def get_layer_value(self, name: str, key: str) -> float:
         """A function to get a given layer value.
@@ -79,20 +106,34 @@ class Refl1dWrapper(WrapperBase):
             The given value keys.
         """
         if key in ['magnetism_rhoM', 'magnetism_thetaM']:
-            return getattr(
-                self.storage['layer'][name].magnetism, key.split('_')[-1]
-            ).value  # TODO: check if we want to return the raw value or the full Parameter  # noqa: E501
+            defaults = {'rhoM': 0.0, 'thetaM': DEFAULT_THETA_M}
+            magnetic_key = key.removeprefix('magnetism_')
+            return self._layer_magnetism.get(name, defaults).get(magnetic_key, defaults[magnetic_key])
         return super().get_layer_value(name, key)
 
     def _remove_magnetism_from_layers(self) -> None:
         """Detach Magnetism objects from all slabs.
 
         Called when magnetism is disabled: slabs carrying Magnetism objects would
-        crash refl1d's plain (unpolarized) QProbe path. Magnetic parameters must be
-        set again (via `update_layer`) after re-enabling magnetism.
+        crash refl1d's plain (unpolarized) QProbe path. The magnetic values remain
+        stored and are re-attached when magnetism is re-enabled.
         """
         for layer in self.storage['layer'].values():
             layer.magnetism = None
+
+    def _apply_magnetism_to_layers(self) -> None:
+        """Attach stored magnetic values to all slabs (called when magnetism is enabled)."""
+        for name in self.storage['layer']:
+            self._apply_magnetism_to_layer(name)
+
+    def _apply_magnetism_to_layer(self, name: str) -> None:
+        """Attach the stored magnetic values (or defaults) of one layer to its slab."""
+        values = self._layer_magnetism.get(name, {})
+        slab = self.storage['layer'][name]
+        slab.magnetism = names.Magnetism(
+            rhoM=values.get('rhoM', 0.0),
+            thetaM=values.get('thetaM', DEFAULT_THETA_M),
+        )
 
     def create_model(self, name: str):
         """Create a model for analysis.

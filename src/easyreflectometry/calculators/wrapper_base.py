@@ -326,7 +326,10 @@ class WrapperBase:
         if magnetism and not self.supports_magnetism:
             raise NotImplementedError(f'Magnetism is not supported by {self.__class__.__name__}')
         self._magnetism = magnetism
-        if not magnetism:
+        if magnetism:
+            # Attach any magnetic values set (or restored) while magnetism was off.
+            self._apply_magnetism_to_layers()
+        else:
             # A non-pp channel is only meaningful on the polarized probe path.
             self._polarization_channel = PolarizationChannel.PP
             # Leave no magnetic residue behind: the unpolarized calculation path
@@ -335,6 +338,12 @@ class WrapperBase:
 
     def _remove_magnetism_from_layers(self) -> None:
         """Strip backend magnetism state from existing layers when magnetism is disabled.
+
+        No-op by default; overridden by backends that attach magnetic objects to layers.
+        """
+
+    def _apply_magnetism_to_layers(self) -> None:
+        """Attach stored magnetic values to existing layers when magnetism is enabled.
 
         No-op by default; overridden by backends that attach magnetic objects to layers.
         """
