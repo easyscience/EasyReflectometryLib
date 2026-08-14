@@ -44,6 +44,12 @@ returned.
   without a calculated overlay rather than with the channel-agnostic
   curve. Previously a polarized experiment made the report figures fail
   on `PolarizedDataSet.x`.
+- The summary's experiments table lists one row per spin channel of a
+  polarized experiment, named `<experiment> (<channel>)`. It previously
+  raised
+  `AttributeError: 'PolarizedDataSet' object has no attribute 'x'`,
+  which crashed applications that read the summary while a polarized
+  experiment was loaded.
 - New `calculate_channel(q, model, channel)` on the wrapper (and
   `reflectivity_profile_channel` on the calculator,
   `fit_func_for_channel` on `CalculatorFactory`) evaluates one explicit

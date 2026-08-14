@@ -304,27 +304,38 @@ class Summary:
         html_experiments = []
 
         for idx, experiment in self._project.experiments.items():
-            experiment_name = experiment.name
-            num_data_points = len(experiment.x)
-            resolution_function = experiment.model.resolution_function.as_dict()['smearing']
-            if resolution_function == 'PercentageFwhm':
-                precentage = experiment.model.resolution_function.as_dict()['constant']
-                resolution_function = f'{resolution_function} {precentage}%'
-            range_min = min(experiment.y)
-            range_max = max(experiment.y)
-            range_units = 'Å⁻¹'
-            html_experiment = HTML_DATA_COLLECTION_TEMPLATE
-            html_experiment = html_experiment.replace('experiment_name', _truncate_name(experiment_name))
-            html_experiment = html_experiment.replace('range_min', _format_value(range_min, 2))
-            html_experiment = html_experiment.replace('range_max', _format_value(range_max, 2))
-            html_experiment = html_experiment.replace('range_units', f'{range_units}')
-            html_experiment = html_experiment.replace('num_data_points', f'{num_data_points}')
-            html_experiment = html_experiment.replace('resolution_function', f'{resolution_function}')
-            html_experiments.append(html_experiment)
+            # A polarized experiment holds one dataset per spin channel; report
+            # one row per channel, as the plots already draw one curve each.
+            channels = getattr(experiment, 'available_channels', None)
+            if channels is None:
+                rows = [(experiment.name, experiment)]
+            else:
+                rows = [(f'{experiment.name} ({channel.value})', experiment[channel]) for channel in channels]
+            for row_name, dataset in rows:
+                html_experiments.append(self._experiment_row(row_name, dataset, experiment.model))
 
         html_experiments_str = '\n'.join(html_experiments)
 
         return html_experiments_str
+
+    def _experiment_row(self, experiment_name, dataset, model) -> str:
+        """One row of the experiments table for a single measured dataset."""
+        num_data_points = len(dataset.x)
+        resolution_function = model.resolution_function.as_dict()['smearing']
+        if resolution_function == 'PercentageFwhm':
+            precentage = model.resolution_function.as_dict()['constant']
+            resolution_function = f'{resolution_function} {precentage}%'
+        range_min = min(dataset.y)
+        range_max = max(dataset.y)
+        range_units = 'Å⁻¹'
+        html_experiment = HTML_DATA_COLLECTION_TEMPLATE
+        html_experiment = html_experiment.replace('experiment_name', _truncate_name(experiment_name))
+        html_experiment = html_experiment.replace('range_min', _format_value(range_min, 2))
+        html_experiment = html_experiment.replace('range_max', _format_value(range_max, 2))
+        html_experiment = html_experiment.replace('range_units', f'{range_units}')
+        html_experiment = html_experiment.replace('num_data_points', f'{num_data_points}')
+        html_experiment = html_experiment.replace('resolution_function', f'{resolution_function}')
+        return html_experiment
 
     def _refinement_section(self) -> str:
         """Refinement section."""

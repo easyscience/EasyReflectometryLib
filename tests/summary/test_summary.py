@@ -4,6 +4,7 @@
 import os
 from unittest.mock import MagicMock
 
+import numpy as np
 import pytest
 from easyscience import global_object
 
@@ -150,6 +151,47 @@ class TestSummary:
 
         # Expect
         assert 'PercentageFwhm 5%' in html
+
+    def test_experiments_section_polarized(self, project: Project, tmp_path) -> None:
+        # When
+        # A polarized experiment holds one DataSet1D per spin channel, not the
+        # x/y arrays an ordinary experiment has — the section used to raise
+        # AttributeError, which killed the app when QML read the summary.
+        channel_paths = {}
+        for channel, suffix in (('pp', 'uu'), ('mm', 'dd')):
+            path = tmp_path / f'sample_{suffix}.txt'
+            q = np.linspace(0.01, 0.2, 20)
+            reflectivity = np.exp(-q * 30)
+            np.savetxt(path, np.column_stack([q, reflectivity, 0.01 * reflectivity]))
+            channel_paths[channel] = str(path)
+        project.calculator = 'refl1d'
+        project.load_polarized_experiment(channel_paths)
+        summary = Summary(project)
+
+        # Then
+        html = summary._experiments_section()
+
+        # Expect: one row per measured channel
+        assert 'Polarized experiment 0 (pp)' in html
+        assert 'Polarized experiment 0 (mm)' in html
+        assert html.count('No. of data points') == 2
+        assert '20' in html
+
+    def test_compile_html_summary_polarized(self, project: Project, tmp_path) -> None:
+        # When
+        channel_paths = {}
+        for channel, suffix in (('pp', 'uu'), ('mm', 'dd')):
+            path = tmp_path / f'sample_{suffix}.txt'
+            q = np.linspace(0.01, 0.2, 20)
+            reflectivity = np.exp(-q * 30)
+            np.savetxt(path, np.column_stack([q, reflectivity, 0.01 * reflectivity]))
+            channel_paths[channel] = str(path)
+        project.calculator = 'refl1d'
+        project.load_polarized_experiment(channel_paths)
+        summary = Summary(project)
+
+        # Then Expect: the whole report compiles for a polarized experiment
+        assert 'Polarized experiment 0 (pp)' in summary.compile_html_summary()
 
     def test_refinement_section(self, project: Project) -> None:
         # When

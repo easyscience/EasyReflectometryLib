@@ -192,6 +192,20 @@ class TestLoadPolarizedExperiment:
         assert experiment['pp'].model is project.models[0]
         assert len(experiment['pp'].x) == 20
 
+    def test_second_polarized_experiment_gets_the_next_index(self, tmp_path):
+        pp_path = self._write_channel_file(tmp_path, 'sample_uu.txt')
+        mm_path = self._write_channel_file(tmp_path, 'sample_dd.txt')
+
+        project = Project()
+        project.calculator = 'refl1d'
+        project.default_model()
+
+        first = project.load_polarized_experiment({'pp': pp_path, 'mm': mm_path})
+        second = project.load_polarized_experiment({'pp': pp_path})
+
+        assert (first, second) == (0, 1)
+        assert len(project.experiments) == 2
+
     def test_multi_dataset_file_is_rejected(self, tmp_path):
         import os
 
