@@ -26,6 +26,24 @@ returned.
   decide) or, for plain text files, from filename tokens
   (`_uu`/`_up`/`_pp` → pp, `_dd`/`_down`/`_mm` → mm, `_ud`/`_pm` → pm,
   `_du`/`_mp` → mp).
+- Experiment and model accessors are channel aware:
+  `Project.experimental_data_for_model_at_index(index, channel=...)`
+  returns the `DataSet1D` of one spin channel (`None`, the default,
+  keeps the previous behavior and returns the stored experiment),
+  `Project.model_data_for_model_at_index(index, q_range, channel=...)`
+  calculates one spin cross-section, and
+  `Project.experiment_is_polarized_at_index(index)` /
+  `Project.experiment_channels_at_index(index)` report the polarization
+  state. Asking for a channel that was not measured raises `KeyError`;
+  an unknown channel, or any channel on an unpolarized experiment,
+  raises `ValueError`.
+- The summary/report figures now show one measured series per spin
+  channel of a polarized experiment, each in its channel color, with the
+  matching calculated cross-section. Channels whose cross-section cannot
+  be calculated (e.g. spin-flip on a non-magnetic model) are shown
+  without a calculated overlay rather than with the channel-agnostic
+  curve. Previously a polarized experiment made the report figures fail
+  on `PolarizedDataSet.x`.
 - New `calculate_channel(q, model, channel)` on the wrapper (and
   `reflectivity_profile_channel` on the calculator,
   `fit_func_for_channel` on `CalculatorFactory`) evaluates one explicit

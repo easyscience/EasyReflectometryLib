@@ -48,6 +48,9 @@ def _silence_pdf_converter():
 
 
 _NAME_MAX_LEN = 20
+# Fixed per-channel colors for polarized experiments, shared with the app so a
+# channel keeps the same color in the GUI and in the report.
+_CHANNEL_COLORS = {'pp': '#0173B2', 'pm': '#029E73', 'mp': '#CC78BC', 'mm': '#DE8F05'}
 # Custom href scheme used to pass the full name to QML via TextEdit.hoveredLink.
 _TOOLTIP_SCHEME = 'nametooltip'
 
@@ -184,22 +187,63 @@ class Summary:
         fig.savefig(filename, dpi=600)
         plt.close()
 
+    def _measured_series(self) -> list:
+        """Measured data of experiment 0 as ``(label, dataset, color, channel)`` entries.
+
+        One entry per measured spin channel for a polarized experiment (each
+        with its own channel color and channel key), a single channel-less
+        entry for an ordinary experiment, and an empty list when no experiment
+        is loaded.
+        """
+        try:
+            experiment = self._project.experimental_data_for_model_at_index(0)
+        except IndexError:
+            return []
+
+        channels = self._project.experiment_channels_at_index(0)
+        if not channels:
+            return [('Experiment', experiment, 'red', None)]
+        return [
+            (f'Experiment ({channel.value})', experiment[channel], _CHANNEL_COLORS[channel.value], channel)
+            for channel in channels
+        ]
+
+    def _model_curve(self, channel=None):
+        """Calculated curve for experiment 0, per spin channel when asked.
+
+        Returns None when the requested channel cannot be calculated (e.g. a
+        spin-flip channel on a non-magnetic model) — an incorrect overlay is
+        worse than none.
+        """
+        try:
+            return self._project.model_data_for_model_at_index(0, channel=channel)
+        except (ValueError, NotImplementedError) as exception:
+            logging.getLogger(__name__).warning(
+                'No calculated curve for channel %s: %s', getattr(channel, 'value', channel), exception
+            )
+            return None
+
     def save_fit_experiment_plot(self, filename: str) -> None:
         """Save fit experiment plot."""
         fig = plt.figure()
         ax = fig.add_subplot(1, 1, 1)
         legends = []
 
-        model = self._project.model_data_for_model_at_index(0)
-        ax.plot(model.x, np.log10(model.y), color='blue')
-        legends.append('Model')
+        measured_series = self._measured_series()
+        # One calculated curve per measured channel; the ordinary single curve
+        # when the experiment is unpolarized or nothing is loaded.
+        model_channels = [entry[3] for entry in measured_series] or [None]
+        for channel in model_channels:
+            model = self._model_curve(channel)
+            if model is None:
+                continue
+            color = 'blue' if channel is None else _CHANNEL_COLORS[channel.value]
+            ax.plot(model.x, np.log10(model.y), color=color)
+            legends.append('Model' if channel is None else f'Model ({channel.value})')
 
-        try:
-            experiment = self._project.experimental_data_for_model_at_index(0)
-            ax.plot(experiment.x, np.log10(experiment.y), color='red')
-            legends.append('Experiment')
-        except IndexError:
-            pass
+        for label, dataset, color, _channel in measured_series:
+            ax.plot(dataset.x, np.log10(dataset.y), color=color)
+            legends.append(label)
 
         ax.set_xlabel('Q (Å⁻¹)')
         ax.set_ylabel('Reflectivity')
@@ -411,30 +455,35 @@ class Summary:
 
         fig = go.Figure()
 
-        model = self._project.model_data_for_model_at_index(0)
-        fig.add_trace(
-            go.Scatter(
-                x=np.asarray(model.x),
-                y=np.asarray(model.y),
-                mode='lines',
-                name='Model',
-                line={'color': 'blue'},
-            )
-        )
-
-        try:
-            experiment = self._project.experimental_data_for_model_at_index(0)
+        measured_series = self._measured_series()
+        # One calculated curve per measured channel; the ordinary single curve
+        # when the experiment is unpolarized or nothing is loaded.
+        model_channels = [entry[3] for entry in measured_series] or [None]
+        for channel in model_channels:
+            model = self._model_curve(channel)
+            if model is None:
+                continue
+            color = 'blue' if channel is None else _CHANNEL_COLORS[channel.value]
             fig.add_trace(
                 go.Scatter(
-                    x=np.asarray(experiment.x),
-                    y=np.asarray(experiment.y),
-                    mode='markers',
-                    name='Experiment',
-                    marker={'color': 'red', 'size': 4},
+                    x=np.asarray(model.x),
+                    y=np.asarray(model.y),
+                    mode='lines',
+                    name='Model' if channel is None else f'Model ({channel.value})',
+                    line={'color': color},
                 )
             )
-        except IndexError:
-            pass
+
+        for label, dataset, color, _channel in measured_series:
+            fig.add_trace(
+                go.Scatter(
+                    x=np.asarray(dataset.x),
+                    y=np.asarray(dataset.y),
+                    mode='markers',
+                    name=label,
+                    marker={'color': color, 'size': 4},
+                )
+            )
 
         fig.update_layout(
             xaxis_title='Q (Å⁻¹)',

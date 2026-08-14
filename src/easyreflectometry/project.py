@@ -675,7 +675,7 @@ class Project:
         self,
         paths: Dict[Union[PolarizationChannel, str], Union[Path, str]],
         model_index: Optional[int] = None,
-    ) -> None:
+    ) -> int:
         """Load a polarized experiment from one data file per spin channel.
 
         The channel datasets form a single :class:`PolarizedDataSet` experiment
@@ -690,6 +690,12 @@ class Project:
         model_index : Optional[int], optional
             Index of the model the experiment belongs to. By default, the
             current model.
+
+        Returns
+        -------
+        int
+            Index of the newly loaded experiment, so a caller can make it
+            current.
         """
         paths = {PolarizationChannel(channel): path for channel, path in paths.items()}
         channels = {}
@@ -729,6 +735,7 @@ class Project:
 
         self._experiments[new_index] = experiment
         self._with_experiments = True
+        return new_index
 
     def load_experiment_for_model_at_index(self, path: Union[Path, str], index: Optional[int] = 0) -> None:
         """Load experiment for model at index."""
@@ -760,24 +767,113 @@ class Project:
 
         return reflectivity_data
 
-    def model_data_for_model_at_index(self, index: int = 0, q_range: Optional[np.array] = None) -> DataSet1D:
-        """Model data for model at index."""
+    def model_data_for_model_at_index(
+        self,
+        index: int = 0,
+        q_range: Optional[np.array] = None,
+        channel: Optional[Union[PolarizationChannel, str]] = None,
+    ) -> DataSet1D:
+        """Model data for model at index.
+
+        Parameters
+        ----------
+        index : int
+            Index of the model.
+        q_range : Optional[np.array]
+            Points to calculate at; the project q range by default.
+        channel : Optional[Union[PolarizationChannel, str]]
+            Spin cross-section to calculate. `None` (the default) gives the
+            ordinary, channel-agnostic reflectivity. A channel requires a
+            magnetic model (except 'pp', which falls back to the unpolarized
+            calculation) and a calculator supporting magnetism, otherwise the
+            calculator raises.
+        """
         if q_range is None:
             q_range = np.linspace(self.q_min, self.q_max, self.q_resolution)
         self.models[index].interface = self._calculator
-        reflectivity = self.models[index].interface().reflectity_profile(q_range, self._models[index].unique_name)
+        if channel is None:
+            reflectivity = self.models[index].interface().reflectity_profile(q_range, self._models[index].unique_name)
+            name = f'Reflectivity for Model {index}'
+        else:
+            channel = PolarizationChannel(channel)
+            reflectivity = (
+                self.models[index].interface().reflectivity_profile_channel(q_range, self._models[index].unique_name, channel)
+            )
+            name = f'Reflectivity ({channel.value}) for Model {index}'
         return DataSet1D(
-            name=f'Reflectivity for Model {index}',
+            name=name,
             x=q_range,
             y=reflectivity,
         )
 
-    def experimental_data_for_model_at_index(self, index: int = 0) -> DataSet1D:
-        """Experimental data for model at index."""
-        if index in self._experiments.keys():
-            return self._experiments[index]
-        else:
+    def experimental_data_for_model_at_index(
+        self,
+        index: int = 0,
+        channel: Optional[Union[PolarizationChannel, str]] = None,
+    ) -> Union[DataSet1D, PolarizedDataSet]:
+        """Experimental data for model at index.
+
+        Parameters
+        ----------
+        index : int
+            Index of the experiment.
+        channel : Optional[Union[PolarizationChannel, str]]
+            Spin channel of a polarized experiment. `None` (the default) keeps
+            the historical behavior and returns the stored experiment as is: a
+            `DataSet1D` for an unpolarized experiment, the whole
+            `PolarizedDataSet` for a polarized one.
+
+        Returns
+        -------
+        Union[DataSet1D, PolarizedDataSet]
+            The experiment, or the `DataSet1D` of the requested channel.
+
+        Raises
+        ------
+        IndexError
+            No experiment is loaded at `index`.
+        KeyError
+            `channel` is a valid spin channel but was not measured.
+        ValueError
+            `channel` was given for an unpolarized experiment, or is not one of
+            'pp', 'pm', 'mp', 'mm'.
+        """
+        if index not in self._experiments.keys():
             raise IndexError(f'No experiment data for model at index {index}')
+
+        experiment = self._experiments[index]
+        if channel is None:
+            return experiment
+
+        if not isinstance(experiment, PolarizedDataSet):
+            raise ValueError(
+                f"Experiment at index {index} is not polarized; it has no '{channel}' channel. "
+                'Call without a channel argument to get its data.'
+            )
+        try:
+            channel = PolarizationChannel(channel)
+        except ValueError as exception:
+            known = ', '.join(member.value for member in PolarizationChannel)
+            raise ValueError(f"Unknown spin channel '{channel}'; expected one of {known}.") from exception
+        if channel not in experiment:
+            measured = ', '.join(member.value for member in experiment.available_channels)
+            raise KeyError(f"Channel '{channel.value}' was not measured in experiment {index} (measured: {measured}).")
+        return experiment[channel]
+
+    def experiment_is_polarized_at_index(self, index: int = 0) -> bool:
+        """Whether the experiment at index holds per-channel (polarized) data.
+
+        Returns False when no experiment is loaded at `index`, so consumers can
+        use it as a plain predicate.
+        """
+        return isinstance(self._experiments.get(index), PolarizedDataSet)
+
+    def experiment_channels_at_index(self, index: int = 0) -> List[PolarizationChannel]:
+        """Measured spin channels of the experiment at index ([] when unpolarized)."""
+        experiment = self._experiments.get(index)
+        if not isinstance(experiment, PolarizedDataSet):
+            return []
+        return experiment.available_channels
 
     def default_model(self):
         """Default model."""

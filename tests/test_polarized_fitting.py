@@ -10,6 +10,7 @@ from unittest.mock import patch
 
 import numpy as np
 import pytest
+from easyscience import global_object
 from numpy.testing import assert_allclose
 
 from easyreflectometry.calculators import CalculatorFactory
@@ -19,6 +20,7 @@ from easyreflectometry.data import DataSet1D
 from easyreflectometry.data import PolarizedDataSet
 from easyreflectometry.fitting import MultiFitter
 from easyreflectometry.model import Model
+from easyreflectometry.model import ModelCollection
 from easyreflectometry.model import PercentageFwhm
 from easyreflectometry.project import Project
 from easyreflectometry.sample import Layer
@@ -178,8 +180,10 @@ class TestLoadPolarizedExperiment:
         project.calculator = 'refl1d'
         project.default_model()
 
-        project.load_polarized_experiment({'pp': pp_path, 'mm': mm_path})
+        new_index = project.load_polarized_experiment({'pp': pp_path, 'mm': mm_path})
 
+        # The index is returned so a GUI can make the new experiment current.
+        assert new_index == 0
         experiment = project.experiments[0]
         assert isinstance(experiment, PolarizedDataSet)
         assert experiment.available_channels == [PolarizationChannel.PP, PolarizationChannel.MM]
@@ -213,6 +217,97 @@ class TestLoadPolarizedExperiment:
         assert suggestion[str(pp_path)] == PolarizationChannel.PP
         assert suggestion[str(mm_path)] == PolarizationChannel.MM
         assert suggestion[str(unknown_path)] is None
+
+
+class TestChannelAwareExperimentAccessors:
+    """`experimental_data_for_model_at_index(index, channel=…)` and friends."""
+
+    @staticmethod
+    def _polarized_project(tmp_path) -> Project:
+        pp_path = TestLoadPolarizedExperiment._write_channel_file(tmp_path, 'sample_uu.txt')
+        mm_path = TestLoadPolarizedExperiment._write_channel_file(tmp_path, 'sample_dd.txt')
+        project = Project()
+        project.calculator = 'refl1d'
+        project.default_model()
+        project.load_polarized_experiment({'pp': pp_path, 'mm': mm_path})
+        return project
+
+    def test_without_channel_returns_the_whole_experiment(self, tmp_path):
+        project = self._polarized_project(tmp_path)
+
+        experiment = project.experimental_data_for_model_at_index(0)
+
+        assert isinstance(experiment, PolarizedDataSet)
+        assert project.experiment_is_polarized_at_index(0) is True
+        assert project.experiment_channels_at_index(0) == [PolarizationChannel.PP, PolarizationChannel.MM]
+
+    def test_channel_returns_that_channel_dataset(self, tmp_path):
+        project = self._polarized_project(tmp_path)
+        experiment = project.experiments[0]
+
+        for channel in ('pp', PolarizationChannel.MM):
+            data = project.experimental_data_for_model_at_index(0, channel=channel)
+            assert isinstance(data, DataSet1D)
+            assert data is experiment[channel]
+
+    def test_unmeasured_channel_raises_key_error(self, tmp_path):
+        project = self._polarized_project(tmp_path)
+
+        with pytest.raises(KeyError, match='was not measured'):
+            project.experimental_data_for_model_at_index(0, channel='pm')
+
+    def test_unknown_channel_raises_value_error(self, tmp_path):
+        project = self._polarized_project(tmp_path)
+
+        with pytest.raises(ValueError, match='Unknown spin channel'):
+            project.experimental_data_for_model_at_index(0, channel='xx')
+
+    def test_channel_on_unpolarized_experiment_raises_value_error(self, tmp_path):
+        path = TestLoadPolarizedExperiment._write_channel_file(tmp_path, 'sample.txt')
+        project = Project()
+        project.calculator = 'refl1d'
+        project.default_model()
+        project.load_experiment_for_model_at_index(path, 0)
+
+        assert project.experiment_is_polarized_at_index(0) is False
+        assert project.experiment_channels_at_index(0) == []
+        with pytest.raises(ValueError, match='not polarized'):
+            project.experimental_data_for_model_at_index(0, channel='pp')
+
+    def test_missing_experiment_raises_index_error(self):
+        project = Project()
+        project.default_model()
+
+        assert project.experiment_is_polarized_at_index(0) is False
+        with pytest.raises(IndexError):
+            project.experimental_data_for_model_at_index(0, channel='pp')
+
+    def test_model_data_per_channel_differs_for_magnetic_model(self):
+        global_object.map._clear()
+        model = _magnetic_model(LayerMagnetism(rho_m=2.5, theta_m=40.0))
+        project = Project()
+        project.calculator = 'refl1d'
+        project.models = ModelCollection(model)
+        q_range = np.linspace(0.01, 0.2, 25)
+
+        pp = project.model_data_for_model_at_index(0, q_range=q_range, channel='pp')
+        mm = project.model_data_for_model_at_index(0, q_range=q_range, channel='mm')
+        pm = project.model_data_for_model_at_index(0, q_range=q_range, channel='pm')
+
+        assert pp.name.endswith('(pp) for Model 0')
+        # Each cross-section is genuinely different — this is what a per-channel
+        # display/report must show instead of one curve repeated four times.
+        assert not np.allclose(pp.y, mm.y)
+        assert not np.allclose(pp.y, pm.y)
+
+    def test_spin_flip_channel_of_non_magnetic_model_raises(self):
+        global_object.map._clear()
+        project = Project()
+        project.calculator = 'refl1d'
+        project.default_model()
+
+        with pytest.raises(ValueError, match='requires magnetism'):
+            project.model_data_for_model_at_index(0, channel='pm')
 
 
 class TestFitPolarized:
