@@ -133,6 +133,12 @@ class Project:
                 for layer in assembly.layers:
                     self._sync_layer_parameter_state(layer.thickness, 'thickness', disabled_ids)
                     self._sync_layer_parameter_state(layer.roughness, 'roughness', disabled_ids)
+                    magnetism = getattr(layer, 'magnetism', None)
+                    if magnetism is not None:
+                        # Magnetic parameters exist only on magnetic layers, so
+                        # they are never in `disabled_ids`; theta_m carries
+                        # explicit 0-360 bounds and needs no default window.
+                        self._sync_layer_parameter_state(magnetism.rho_m, 'rho_m', disabled_ids)
 
     def _sync_layer_parameter_state(self, parameter: Parameter, kind: str, disabled_ids: set[int]) -> None:
         """Update a layer parameter's enabled state and pending default limits."""

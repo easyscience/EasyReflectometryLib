@@ -197,6 +197,91 @@ class MultiFitter:
         self._classical_fit_metrics: list[dict] | None = None
         self._objective = _validate_objective(objective)
         self._sampler: Sampler | None = None
+        # Set by `for_experiments`: the datasets the fit functions correspond
+        # to, and the spin channel each one is evaluated on (None = unpolarized).
+        self.fit_datasets: list[DataSet1D] = []
+        self.fit_channels: list[Any] = []
+
+    @classmethod
+    def for_experiments(
+        cls,
+        experiments: list[DataSet1D | PolarizedDataSet],
+        objective: str = 'hybrid',
+    ) -> 'MultiFitter':
+        """Build a fitter for a mixed list of unpolarized and polarized experiments.
+
+        Every experiment contributes one fit function per dataset: an ordinary
+        experiment one, a polarized experiment one per measured spin channel,
+        each evaluating that channel's spin cross-section against the single
+        model the channels share. Structural parameters are therefore common to
+        all channels and the magnetic ones are constrained by all of them at
+        once, exactly as in :meth:`fit_polarized` — but here several experiments
+        (and several models) can be fitted together, which is what an
+        application's "fit everything that is loaded" action needs.
+
+        The resulting fitter is *not* run: the caller supplies the data arrays
+        to ``easy_science_multi_fitter.fit(...)`` in the order given by
+        :attr:`fit_datasets`, which lets a GUI drive it from a worker thread.
+
+        Parameters
+        ----------
+        experiments : list[DataSet1D | PolarizedDataSet]
+            The loaded experiments, in the order they should be fitted.
+        objective : str, optional
+            Zero-variance handling strategy, see :meth:`__init__`. By default, 'hybrid'.
+
+        Returns
+        -------
+        MultiFitter
+            Fitter whose ``easy_science_multi_fitter`` has one fit function per
+            entry of ``fit_datasets``, with ``fit_channels`` holding the
+            matching :class:`PolarizationChannel` (``None`` when unpolarized).
+        """
+        if not experiments:
+            raise ValueError('At least one experiment is required to build a fitter.')
+
+        models: list[Model] = []
+        datasets: list[DataSet1D] = []
+        channels: list[Any] = []
+        for experiment in experiments:
+            model = experiment.model
+            if model is None:
+                raise ValueError(f"Experiment '{getattr(experiment, 'name', experiment)}' has no model to fit.")
+            # `in` would compare models by value; identity is what matters here.
+            if not any(model is known for known in models):
+                models.append(model)
+            experiment_channels = getattr(experiment, 'available_channels', None)
+            if experiment_channels is None:
+                datasets.append(experiment)
+                channels.append(None)
+                continue
+            for channel in experiment_channels:
+                datasets.append(experiment[channel])
+                channels.append(channel)
+
+        fitter = cls(*models, objective=objective)
+
+        def func_wrapper(func, unique_name):
+            """Func wrapper."""
+
+            def wrapped(*args, **kwargs):
+                """Wrapped function."""
+                return func(*args, unique_name, **kwargs)
+
+            return wrapped
+
+        fit_funcs = []
+        for dataset, channel in zip(datasets, channels):
+            model = dataset.model
+            interface = model.interface
+            func = interface.fit_func if channel is None else interface.fit_func_for_channel(channel)
+            fit_funcs.append(func_wrapper(func, model.unique_name))
+
+        fitter._fit_func = fit_funcs
+        fitter.easy_science_multi_fitter = EasyScienceMultiFitter(models, fit_funcs)
+        fitter.fit_datasets = datasets
+        fitter.fit_channels = channels
+        return fitter
 
     def fit(self, data: sc.DataGroup, id: int = 0, objective: str | None = None) -> sc.DataGroup:
         """Perform the fitting and populate the DataGroups with the result.
@@ -659,6 +744,27 @@ class MultiFitter:
     def objective_reduced_chi(self) -> float | None:
         """Objective-space reduced chi-squared returned by the minimizer."""
         return self.reduced_chi
+
+    def record_fit_results(self, results: list[FitResults] | None) -> None:
+        """Adopt fit results produced elsewhere, so this fitter reports on them.
+
+        An application that drives ``easy_science_multi_fitter.fit(...)`` itself
+        — to run it in a worker thread, for instance — leaves the ``MultiFitter``
+        that owns the goodness-of-fit properties none the wiser. Handing the
+        results back here makes :attr:`chi2` / :attr:`reduced_chi` describe that
+        fit instead of reporting "no fit performed".
+
+        Only the minimizer-reported metrics are restored: the classical ones
+        need the original data arrays, which are not part of ``FitResults``, so
+        :attr:`classical_chi2` and :attr:`classical_reduced_chi` stay None.
+
+        Parameters
+        ----------
+        results : list[FitResults] | None
+            Results of the fit, one per fitted dataset. None clears them.
+        """
+        self._fit_results = list(results) if results else None
+        self._classical_fit_metrics = None
 
     def switch_minimizer(self, minimizer: AvailableMinimizers) -> None:
         """Switch the minimizer for the fitting.

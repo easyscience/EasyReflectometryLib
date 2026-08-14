@@ -72,12 +72,17 @@ class LayerMagnetism(BaseCore):
         if unique_name is None:
             unique_name = global_object.generate_unique_name(self.__class__.__name__)
 
+        rho_m_value = rho_m
         rho_m = get_as_parameter(
             name='rho_m',
             value=rho_m,
             default_dict=DEFAULTS,
             unique_name_prefix=f'{unique_name}_RhoM',
         )
+        # The default bounds are infinite; `Project._sync_parameter_states`
+        # narrows them to the shared SLD window unless the caller passed an
+        # explicit Parameter with its own bounds (same contract as `Layer`).
+        rho_m.default_limits_pending = not isinstance(rho_m_value, Parameter)
         theta_m = get_as_parameter(
             name='theta_m',
             value=theta_m,

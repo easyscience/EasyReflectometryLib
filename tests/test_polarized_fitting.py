@@ -421,3 +421,149 @@ class TestFitPolarized:
         fitter = MultiFitter(model_a, model_b)
         with pytest.raises(ValueError):
             fitter.fit_polarized(data)
+
+
+class TestMultiFitterForExperiments:
+    """`MultiFitter.for_experiments` — one fit function per dataset, channels expanded."""
+
+    @staticmethod
+    def _unpolarized_data(model, name='plain') -> DataSet1D:
+        reflectivity = np.exp(-Q * 30)
+        dataset = DataSet1D(name=name, x=Q, y=reflectivity, ye=(0.01 * reflectivity) ** 2)
+        dataset.model = model
+        return dataset
+
+    def test_polarized_experiment_expands_to_one_function_per_channel(self):
+        model = _magnetic_model(LayerMagnetism(rho_m=2.0, theta_m=45.0))
+        model.interface = _refl1d_interface()
+        reference = model.interface.polarized_reflectivity_profiles(Q, model.unique_name)
+        data = _polarized_data(dict(reference), model=model)
+
+        fitter = MultiFitter.for_experiments([data])
+
+        assert fitter.fit_channels == [
+            PolarizationChannel.PP,
+            PolarizationChannel.PM,
+            PolarizationChannel.MP,
+            PolarizationChannel.MM,
+        ]
+        assert fitter.fit_datasets == [data[channel] for channel in data.available_channels]
+        assert len(fitter._fit_func) == 4
+        # Each function evaluates its own cross-section, not four copies of one.
+        curves = [func(Q) for func in fitter._fit_func]
+        for index, channel in enumerate(data.available_channels):
+            assert_allclose(curves[index], reference[channel.value], rtol=1e-9)
+
+    def test_unpolarized_experiment_keeps_one_function(self):
+        model = _magnetic_model(None)
+        model.interface = _refl1d_interface()
+        data = self._unpolarized_data(model)
+
+        fitter = MultiFitter.for_experiments([data])
+
+        assert fitter.fit_channels == [None]
+        assert fitter.fit_datasets == [data]
+        assert_allclose(fitter._fit_func[0](Q), model.interface.fit_func(Q, model.unique_name), rtol=1e-9)
+
+    def test_mixed_experiments_share_one_fitter(self):
+        """A polarized and an ordinary experiment fitted together, two models."""
+        magnetic = _magnetic_model(LayerMagnetism(rho_m=2.0, theta_m=270.0))
+        plain = _magnetic_model(None)
+        interface = _refl1d_interface()
+        magnetic.interface = interface
+        plain.interface = interface
+        reference = magnetic.interface.polarized_reflectivity_profiles(Q, magnetic.unique_name)
+        polarized = _polarized_data({'pp': reference['pp'], 'mm': reference['mm']}, model=magnetic)
+        unpolarized = self._unpolarized_data(plain)
+
+        fitter = MultiFitter.for_experiments([polarized, unpolarized])
+
+        assert fitter.fit_channels == [PolarizationChannel.PP, PolarizationChannel.MM, None]
+        # Both models' parameters are enumerated, so they are fitted together.
+        assert len(fitter._models) == 2
+        assert len(fitter.easy_science_multi_fitter._fit_functions) == 3
+
+    def test_repeated_model_is_registered_once(self):
+        model = _magnetic_model(None)
+        model.interface = _refl1d_interface()
+        first = self._unpolarized_data(model, name='a')
+        second = self._unpolarized_data(model, name='b')
+
+        fitter = MultiFitter.for_experiments([first, second])
+
+        assert len(fitter._models) == 1
+        assert len(fitter.fit_datasets) == 2
+
+    def test_experiment_without_model_is_rejected(self):
+        dataset = DataSet1D(name='orphan', x=Q, y=np.ones_like(Q), ye=np.ones_like(Q))
+        dataset.model = None
+
+        with pytest.raises(ValueError, match='no model'):
+            MultiFitter.for_experiments([dataset])
+
+    def test_empty_experiment_list_is_rejected(self):
+        with pytest.raises(ValueError, match='At least one experiment'):
+            MultiFitter.for_experiments([])
+
+    def test_prepared_fitter_recovers_rho_m_when_run(self):
+        """The fitter is usable exactly like `fit_polarized`, but caller-driven."""
+        truth = _magnetic_model(LayerMagnetism(rho_m=2.5, theta_m=270.0))
+        truth.interface = _refl1d_interface()
+        reference = truth.interface.polarized_reflectivity_profiles(Q, truth.unique_name)
+
+        model = _magnetic_model(LayerMagnetism(rho_m=1.0, theta_m=270.0))
+        model.interface = _refl1d_interface()
+        rho_m = model.sample[1].layers[0].magnetism.rho_m
+        rho_m.fixed = False
+        rho_m.bounds = (0.0, 5.0)
+        data = _polarized_data({'pp': reference['pp'], 'mm': reference['mm']}, model=model)
+
+        fitter = MultiFitter.for_experiments([data])
+        x = [np.asarray(dataset.x) for dataset in fitter.fit_datasets]
+        y = [np.asarray(dataset.y) for dataset in fitter.fit_datasets]
+        weights = [1.0 / np.sqrt(np.asarray(dataset.ye)) for dataset in fitter.fit_datasets]
+        results = fitter.easy_science_multi_fitter.fit(x, y, weights=weights)
+
+        assert all(result.success for result in results)
+        assert_allclose(rho_m.value, 2.5, atol=0.01)
+
+
+class TestRecordFitResults:
+    """Results produced by a caller-driven fit can be handed back to the fitter."""
+
+    def _fitter_and_results(self):
+        model = _magnetic_model(None)
+        model.interface = _refl1d_interface()
+        reflectivity = np.exp(-Q * 30)
+        dataset = DataSet1D(name='plain', x=Q, y=reflectivity, ye=(0.01 * reflectivity) ** 2)
+        dataset.model = model
+        fitter = MultiFitter.for_experiments([dataset])
+        results = fitter.easy_science_multi_fitter.fit(
+            [np.asarray(dataset.x)], [np.asarray(dataset.y)], weights=[1.0 / np.sqrt(np.asarray(dataset.ye))]
+        )
+        return fitter, list(results)
+
+    def test_metrics_are_none_before_recording(self):
+        fitter, _results = self._fitter_and_results()
+
+        # `easy_science_multi_fitter.fit` bypasses MultiFitter entirely.
+        assert fitter.chi2 is None
+        assert fitter.reduced_chi is None
+
+    def test_recording_makes_the_metrics_available(self):
+        fitter, results = self._fitter_and_results()
+
+        fitter.record_fit_results(results)
+
+        assert fitter.chi2 == pytest.approx(sum(r.chi2 for r in results))
+        assert fitter.reduced_chi is not None
+        # The classical metrics need the original arrays, which FitResults lacks.
+        assert fitter.classical_chi2 is None
+
+    def test_recording_none_clears_the_metrics(self):
+        fitter, results = self._fitter_and_results()
+        fitter.record_fit_results(results)
+
+        fitter.record_fit_results(None)
+
+        assert fitter.chi2 is None

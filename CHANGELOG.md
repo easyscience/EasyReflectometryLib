@@ -54,6 +54,23 @@ returned.
   `reflectivity_profile_channel` on the calculator,
   `fit_func_for_channel` on `CalculatorFactory`) evaluates one explicit
   spin channel without touching the global `polarization_channel` state.
+- New `MultiFitter.for_experiments(experiments)` builds a fitter with
+  one fit function per dataset — one per measured spin channel for a
+  polarized experiment, one for an ordinary one — across any number of
+  experiments and models, and returns without running the fit.
+  `fit_datasets` and `fit_channels` give the flat dataset list in
+  fit-function order, so an application can prepare the data arrays and
+  drive `easy_science_multi_fitter.fit(...)` from a worker thread.
+- New `MultiFitter.record_fit_results(results)` adopts results from such
+  a caller-driven fit, so `chi2` and `reduced_chi` describe it instead
+  of reporting that no fit was performed. The classical metrics need the
+  original data arrays and stay None.
+- `rho_m` now takes part in the project's default-limit policy: it is
+  created with `default_limits_pending`, and
+  `Project._sync_parameter_states` gives it the shared SLD window (-1
+  to 10) unless an explicit `Parameter` with its own bounds was passed.
+  `theta_m` keeps its explicit 0-360 bounds. Previously both stayed
+  unbounded, which made them awkward to fit and to display.
 - New `MultiFitter.fit_polarized(data)` fits all measured channels of a
   `PolarizedDataSet` simultaneously against the shared model: one fit
   function per channel, common structural parameters, magnetic
