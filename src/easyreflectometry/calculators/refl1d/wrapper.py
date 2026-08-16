@@ -2,14 +2,18 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 
+import logging
 from typing import Tuple
 
 import numpy as np
 from refl1d import names
+from refl1d.profile import build_profile
 from refl1d.sample.layers import Repeat
 
 from ..polarization import POLARIZATION_CHANNEL_TO_INDEX
 from ..wrapper_base import WrapperBase
+
+logger = logging.getLogger(__name__)
 
 RESOLUTION_PADDING = 3.5
 OVERSAMPLING_FACTOR = 21
@@ -422,6 +426,10 @@ class Refl1dWrapper(WrapperBase):
     def magnetic_sld_profile(self, model_name: str) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         """Return the nuclear and magnetic scattering length density profiles.
 
+        The magnetic profile is built by smoothing the two in-plane components
+        of the moment and converting back, not by smoothing its magnitude and
+        angle separately — see :meth:`_smoothed_magnetic_vector`.
+
         Parameters
         ----------
         model_name : str
@@ -444,9 +452,59 @@ class Refl1dWrapper(WrapperBase):
             model_name=model_name,
             storage=self.storage,
         )
-        z, sld, _, sld_magnetic, theta_magnetic = names.Experiment(probe=probe, sample=sample).magnetic_smooth_profile()
+        experiment = names.Experiment(probe=probe, sample=sample)
+        z, sld, _, _, _ = experiment.magnetic_smooth_profile()
+        sld_magnetic, theta_magnetic = self._smoothed_magnetic_vector(experiment, z)
         # -1 to reverse the order
         return z, sld[::-1], sld_magnetic[::-1], theta_magnetic[::-1]
+
+    @staticmethod
+    def _smoothed_magnetic_vector(experiment, z: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+        """Magnitude and angle of the smoothed in-plane moment.
+
+        refl1d smooths the magnetic microslabs channel by channel, so the
+        magnitude |rhoM| and the angle thetaM are interpolated independently
+        across an interface. For two layers whose moments differ by a couple of
+        degrees around 0/360 (e.g. 359 and 1) the angle then takes the long way
+        round the circle, passing through the guide-field direction: the profile
+        reports the *full* moment as longitudinal exactly where it is almost
+        entirely transverse, which shows up as a spurious spin-up/spin-down
+        splitting at the interface.
+
+        Smoothing the Cartesian components instead and converting back is
+        interpolation of the moment as a vector, which is what the physics does.
+        The reference angle used for the decomposition cancels out.
+
+        Raises
+        ------
+        NotImplementedError
+            The installed refl1d does not expose the microslab data this needs.
+            Falling back to its angle-smoothed profile is deliberately *not*
+            done: that output is wrong in a way a user cannot see, and a silent
+            change of results after a dependency update is worse than no
+            profile at all.
+        """
+        try:
+            slabs = experiment._render_slabs()
+            offsets = np.cumsum(slabs.w[:-1]) + slabs._z_offset
+            roughness = slabs.sigma
+            rho_m = np.asarray(slabs.rhoM, dtype=float)
+            theta_m = np.asarray(slabs.thetaM, dtype=float)
+        except (AttributeError, IndexError, TypeError) as exception:  # pragma: no cover - refl1d internals
+            raise NotImplementedError(
+                'The installed refl1d does not provide the microslab data needed for a '
+                f'component-safe magnetic profile ({exception}). The magnetic depth profile is '
+                "unavailable; refl1d's own profile smooths the moment angle separately, which "
+                'misreports the spin-up/spin-down splitting at interfaces between differently '
+                'oriented moments.'
+            ) from exception
+
+        relative_angle = np.radians(theta_m - DEFAULT_THETA_M)
+        parallel = build_profile(z, offsets, roughness, rho_m * np.cos(relative_angle))
+        perpendicular = build_profile(z, offsets, roughness, rho_m * np.sin(relative_angle))
+        magnitude = np.hypot(parallel, perpendicular)
+        angle = (DEFAULT_THETA_M + np.degrees(np.arctan2(perpendicular, parallel))) % 360.0
+        return magnitude, angle
 
 
 def _get_oversampling_q(q_array: np.ndarray, dq_array: np.ndarray, oversampling_factor: int) -> np.ndarray:

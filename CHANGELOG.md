@@ -1,85 +1,144 @@
 # Unreleased
 
 All four polarization channels (pp, pm, mp, mm) are now available from
-the refl1d calculator; previously only the non-spin-flip pp channel was
+the refl1d calculator. Previously only the non-spin-flip pp channel was
 returned.
 
-- New `LayerMagnetism` sample element makes magnetism part of the model:
-  `Layer` accepts an optional `magnetism` (with `rho_m`, the magnetic
-  SLD, and `theta_m`, the in-plane moment angle, as fittable, serialized
-  `Parameter`s). Attaching a magnetic layer automatically enables
-  `include_magnetism` on the calculator (raising `NotImplementedError`
-  on backends without magnetism support); removing the last magnetic
-  layer disables it again. `Model.has_magnetism`,
+- New `LayerMagnetism` sample element. `Layer` takes an optional
+  `magnetism` with fittable, serialized `Parameter`s `rho_m` (magnetic
+  SLD) and `theta_m` (in-plane moment angle). Adding a magnetic layer
+  turns on `include_magnetism` on the calculator, or raises
+  `NotImplementedError` if the backend cannot do magnetism. Removing
+  the last magnetic layer turns it off again. `Model.has_magnetism`,
   `CalculatorBase.supports_magnetism` and
-  `Project.calculator_supports_magnetism` expose the state to
-  applications.
-- New `PolarizedDataSet` groups per-spin-channel `DataSet1D` objects
-  (one file per channel; 'pp'/'mm' only for NSF experiments, spin-flip
-  channels optional) into one experiment sharing a single model.
-  `Project.load_polarized_experiment(paths)` loads it from an explicit
-  channel → file mapping, and
-  `Project.suggest_polarized_channel_assignment(paths)` pre-fills that
-  mapping from the ORSO header polarization (`pp`/`mm`/`pm`/`mp` only —
-  partially-analysed observables such as `po`/`mo`, which measure
-  channel sums, and `op`/`om`/`unpolarized` are left for the user to
-  decide) or, for plain text files, from filename tokens
-  (`_uu`/`_up`/`_pp` → pp, `_dd`/`_down`/`_mm` → mm, `_ud`/`_pm` → pm,
-  `_du`/`_mp` → mp).
-- Experiment and model accessors are channel aware:
+  `Project.calculator_supports_magnetism` report the current state.
+- New `PolarizedDataSet` groups per-channel `DataSet1D` objects (one
+  file per channel; NSF experiments use 'pp'/'mm' only, spin-flip
+  channels are optional) into one experiment that shares a single
+  model. `Project.load_polarized_experiment(paths)` loads from an
+  explicit channel-to-file mapping.
+  `Project.suggest_polarized_channel_assignment(paths)` fills that
+  mapping from the ORSO header polarization (`pp`/`mm`/`pm`/`mp`
+  only). Partially analysed observables such as `po`/`mo` (channel
+  sums) and `op`/`om`/`unpolarized` are left for the user. For plain
+  text files the mapping comes from filename tokens (`_uu`/`_up`/`_pp`
+  → pp, `_dd`/`_down`/`_mm` → mm, `_ud`/`_pm` → pm, `_du`/`_mp` →
+  mp).
+- Experiment and model accessors are channel-aware.
   `Project.experimental_data_for_model_at_index(index, channel=...)`
-  returns the `DataSet1D` of one spin channel (`None`, the default,
-  keeps the previous behavior and returns the stored experiment),
+  returns the `DataSet1D` of one spin channel. `channel=None` (the
+  default) still returns the stored experiment.
   `Project.model_data_for_model_at_index(index, q_range, channel=...)`
-  calculates one spin cross-section, and
-  `Project.experiment_is_polarized_at_index(index)` /
-  `Project.experiment_channels_at_index(index)` report the polarization
-  state. Asking for a channel that was not measured raises `KeyError`;
-  an unknown channel, or any channel on an unpolarized experiment,
-  raises `ValueError`.
-- The summary/report figures now show one measured series per spin
-  channel of a polarized experiment, each in its channel color, with the
-  matching calculated cross-section. Channels whose cross-section cannot
-  be calculated (e.g. spin-flip on a non-magnetic model) are shown
-  without a calculated overlay rather than with the channel-agnostic
-  curve. Previously a polarized experiment made the report figures fail
-  on `PolarizedDataSet.x`.
-- The summary's experiments table lists one row per spin channel of a
+  calculates one spin cross-section.
+  `Project.experiment_is_polarized_at_index(index)` and
+  `Project.experiment_channels_at_index(index)` report the
+  polarization state. A channel that was not measured raises
+  `KeyError`. An unknown channel, or any channel on an unpolarized
+  experiment, raises `ValueError`.
+- Summary/report figures now plot one measured series per spin channel
+  of a polarized experiment, each in its channel colour, plus the
+  matching calculated cross-section. Channels that cannot be
+  calculated (for example spin-flip on a non-magnetic model) are shown
+  without a calculated overlay. Previously a polarized experiment made
+  the report figures fail on `PolarizedDataSet.x`.
+- The summary experiments table lists one row per spin channel of a
   polarized experiment, named `<experiment> (<channel>)`. It previously
-  raised
-  `AttributeError: 'PolarizedDataSet' object has no attribute 'x'`,
-  which crashed applications that read the summary while a polarized
+  raised `AttributeError: 'PolarizedDataSet' object has no attribute
+  'x'` and crashed anything that read the summary while a polarized
   experiment was loaded.
+- New `Project.calculators_supporting_magnetism` lists the available
+  calculators that can model magnetic samples, without switching the
+  active one. `Project.models_have_magnetism` reports whether any
+  model has a magnetic layer. Use these to pick a suitable engine, or
+  to refuse one that cannot carry the sample's magnetism, instead of
+  hitting an error inside the binding.
+- New `Project.magnetic_sld_data_for_model_at_index(index)` returns
+  the depth profiles of a magnetic model as `DataSet1D`s keyed
+  `'sld'`, `'rho_m'`, `'theta_m'`, `'spin_up'` and `'spin_down'`. The
+  last two are the potentials each spin state sees,
+  rho +/- rho_m*cos(theta_m - A). The guide-field angle A is the new
+  module constant `GUIDE_FIELD_ANGLE` (270 degrees, refl1d's default
+  and the only value the library can currently model). A non-magnetic
+  model raises `ValueError`.
+  `Project.model_has_magnetism_at_index(index)` reports whether the
+  model is magnetic.
+- The magnetic depth profile is now built by smoothing the two
+  in-plane components of the moment and converting back, rather than
+  smoothing magnitude and angle separately as refl1d does channel by
+  channel. At an interface where moments differ by a few degrees
+  across 0/360, the smoothed *angle* used to take the long way around
+  the circle, pass through the guide-field direction, and report the
+  full moment as longitudinal. That produced a spurious
+  spin-up/spin-down splitting exactly at the interface (a 2-degree
+  difference gave the full 2*rho_m splitting; it is now the correct
+  ~0.02*rho_m). Collinear samples are unaffected. The reported
+  `theta_m` profile is restricted to depths that carry a moment (the
+  angle of a zero-length vector is arbitrary) and is made continuous
+  within each magnetic region. A profile turning from 359 to 1 degree
+  is a 2 degree turn; the wrapped values would plot as a full sweep.
+  If the installed refl1d does not expose the microslab data the
+  component-safe profile needs, the calculator now raises
+  `NotImplementedError` instead of falling back to the angle-smoothed
+  profile.
+- New `Project.spin_asymmetry_for_experiment_at_index(index)` returns
+  the measured spin asymmetry (R++ - R--)/(R++ + R--) of a polarized
+  experiment, the matching model curve when the model is magnetic, and
+  the number of points dropped. `ye` holds the SA **variance**, as
+  everywhere else in the library. Channels measured on different q
+  grids are interpolated onto the pp grid (values with the linear
+  weights, variances with their squares) only inside the q range both
+  channels cover. Outside that range `np.interp` would clamp to the
+  edge value. Dropped points are reported as `out_of_overlap_points`.
+  Points where R++ + R-- is not above `SPIN_ASYMMETRY_SIGNIFICANCE`
+  (3) times its own uncertainty are also dropped. A second,
+  uncertainty-independent guard drops points whose denominator is
+  non-positive or smaller than
+  `SPIN_ASYMMETRY_CANCELLATION_FRACTION` (1e-3) of |R++| + |R--|.
+  Without it, a file with no uncertainties (two columns, or a
+  malformed uncertainty array) had no guard, and background-subtracted
+  data could put values of +/-1e3 on the axis. Points with a
+  non-finite reflectivity or a negative/non-finite variance are
+  dropped rather than treated as having no uncertainty. Dropped
+  points are reported by reason (`low_significance_points`,
+  `small_denominator_points`, `invalid_points`).
+- Both channels of a spin asymmetry are validated before use. Empty,
+  length-mismatched, non-finite or duplicated q grids are rejected,
+  and `experiment_supports_spin_asymmetry_at_index` reports False for
+  them. A descending grid is sorted before pairing; `np.interp`
+  silently returns nonsense for one.
+  `Project.experiment_supports_spin_asymmetry_at_index(index)` reports
+  whether both non-spin-flip channels were measured.
 - New `calculate_channel(q, model, channel)` on the wrapper (and
   `reflectivity_profile_channel` on the calculator,
-  `fit_func_for_channel` on `CalculatorFactory`) evaluates one explicit
-  spin channel without touching the global `polarization_channel` state.
+  `fit_func_for_channel` on `CalculatorFactory`) evaluates one
+  explicit spin channel without touching the global
+  `polarization_channel` state.
 - New `MultiFitter.for_experiments(experiments)` builds a fitter with
-  one fit function per dataset — one per measured spin channel for a
-  polarized experiment, one for an ordinary one — across any number of
+  one fit function per dataset (one per measured spin channel for a
+  polarized experiment, one for an ordinary one) across any number of
   experiments and models, and returns without running the fit.
   `fit_datasets` and `fit_channels` give the flat dataset list in
-  fit-function order, so an application can prepare the data arrays and
-  drive `easy_science_multi_fitter.fit(...)` from a worker thread.
-- New `MultiFitter.record_fit_results(results)` adopts results from such
-  a caller-driven fit, so `chi2` and `reduced_chi` describe it instead
-  of reporting that no fit was performed. The classical metrics need the
-  original data arrays and stay None.
-- `rho_m` now takes part in the project's default-limit policy: it is
+  fit-function order, so an application can prepare the data arrays
+  and drive `easy_science_multi_fitter.fit(...)` from a worker thread.
+- New `MultiFitter.record_fit_results(results)` adopts results from
+  such a caller-driven fit, so `chi2` and `reduced_chi` describe it
+  instead of reporting that no fit was performed. The classical
+  metrics need the original data arrays and stay None.
+- `rho_m` now takes part in the project's default-limit policy. It is
   created with `default_limits_pending`, and
-  `Project._sync_parameter_states` gives it the shared SLD window (-1
-  to 10) unless an explicit `Parameter` with its own bounds was passed.
-  `theta_m` keeps its explicit 0-360 bounds. Previously both stayed
-  unbounded, which made them awkward to fit and to display.
-- New `MultiFitter.fit_polarized(data)` fits all measured channels of a
-  `PolarizedDataSet` simultaneously against the shared model: one fit
-  function per channel, common structural parameters, magnetic
+  `Project._sync_parameter_states` gives it the shared SLD window
+  (-1 to 10) unless an explicit `Parameter` with its own bounds was
+  passed. `theta_m` keeps its explicit 0-360 bounds. Previously both
+  stayed unbounded.
+- New `MultiFitter.fit_polarized(data)` fits all measured channels of
+  a `PolarizedDataSet` simultaneously against the shared model: one
+  fit function per channel, common structural parameters, magnetic
   parameters constrained by all channels at once. Returns per-channel
   `FitResults`.
 - The refl1d wrapper now caches the four polarized cross-sections per
-  model state and (q, dq) grid — they come from a single kernel
-  evaluation, so a simultaneous N-channel fit costs about one evaluation
-  per iteration instead of N.
+  model state and (q, dq) grid. They come from a single kernel
+  evaluation, so a simultaneous N-channel fit costs about one
+  evaluation per iteration instead of N.
 
 - New `polarized_reflectivity_profiles(x_array, model_id)` on the
   calculator (and on `CalculatorFactory`) returns the reflectivity of
@@ -88,33 +147,33 @@ returned.
   `include_magnetism = True`.
 - New `polarization_channel` property (accepts
   `'pp'`/`'pm'`/`'mp'`/`'mm'` or the new `PolarizationChannel` enum)
-  selects which channel `reflectity_profile` — and hence fitting —
-  returns, enabling fits against spin-flip or mm data. Default `'pp'`;
-  disabling magnetism resets it to `'pp'`. Note: the channel belongs to
-  the currently active calculator instance, not to a model or dataset —
-  it affects every subsequent calculation with that calculator, and
-  `interface.switch(...)` constructs a fresh calculator, resetting it
-  (along with `include_magnetism`).
+  selects which channel `reflectity_profile` (and therefore fitting)
+  returns, so fits can target spin-flip or mm data. Default `'pp'`;
+  disabling magnetism resets it to `'pp'`. The channel belongs to the
+  currently active calculator instance, not to a model or dataset. It
+  affects every subsequent calculation with that calculator.
+  `interface.switch(...)` constructs a fresh calculator and resets
+  both this and `include_magnetism`.
 - New `magnetic_sld_profile(model_id)` on the calculator (and on
   `CalculatorFactory`) returns the nuclear and magnetic scattering
-  length density profiles as a tuple `z`, `sld(z)`, `rhoM(z)` (magnetic
-  SLD) and `thetaM(z)` (magnetic angle). Requires
+  length density profiles as a tuple `z`, `sld(z)`, `rhoM(z)`
+  (magnetic SLD) and `thetaM(z)` (magnetic angle). Requires
   `include_magnetism = True`; refl1d only.
-- Magnetic calculations now always build all four refl1d cross-sections,
-  so they may take somewhat longer than before; pp results are
-  unchanged.
+- Magnetic calculations now always build all four refl1d
+  cross-sections, so they may take somewhat longer than before. pp
+  results are unchanged.
 - Bug fix: `include_magnetism = True` on a refnx-backed calculator now
-  raises `NotImplementedError`. Previously it was silently accepted (the
-  guard sat on a property the calculator never called) even though refnx
-  magnetism is not supported.
-- Bug fix (pre-existing): disabling magnetism after layers were created
-  with it enabled used to leave refl1d `Magnetism` objects on the slabs,
-  making a subsequent unpolarized calculation raise `AttributeError`
-  inside refl1d. Disabling magnetism now strips the magnetic state from
-  existing layers, so the unpolarized path works again. Magnetic
-  parameters (`rhoM`/`thetaM`) are kept in a per-layer store inside the
-  wrapper, so they survive a disable/re-enable cycle and are re-attached
-  when magnetism is enabled again; `update_layer` also accepts the
+  raises `NotImplementedError`. Previously it was silently accepted
+  (the guard sat on a property the calculator never called) even
+  though refnx magnetism is not supported.
+- Bug fix (pre-existing): disabling magnetism after layers were
+  created with it enabled used to leave refl1d `Magnetism` objects on
+  the slabs, and a later unpolarized calculation raised
+  `AttributeError` inside refl1d. Disabling magnetism now strips the
+  magnetic state from existing layers. Magnetic parameters
+  (`rhoM`/`thetaM`) are kept in a per-layer store inside the wrapper,
+  so they survive a disable/re-enable cycle and are re-attached when
+  magnetism is enabled again. `update_layer` also accepts the
   magnetism keys one at a time.
 
 # Version 1.7.0 (1 Aug 2026)

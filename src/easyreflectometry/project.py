@@ -20,6 +20,7 @@ from scipp import DataGroup
 
 from easyreflectometry.calculators import CalculatorFactory
 from easyreflectometry.calculators import PolarizationChannel
+from easyreflectometry.calculators.calculator_base import CalculatorBase
 from easyreflectometry.data import DataSet1D
 from easyreflectometry.data import PolarizedDataSet
 from easyreflectometry.data import detect_polarization_channel
@@ -44,6 +45,33 @@ logger = logging.getLogger(__name__)
 Q_MIN = 0.001
 Q_MAX = 0.3
 Q_RESOLUTION = 500
+
+# Guide-field angle A in degrees, used to project the moment onto the neutron
+# quantisation axis for the spin-up/spin-down potentials and nothing else.
+# refl1d's default (`Aguide = 270`), which is what every model the library can
+# currently build uses — `Aguide` is not exposed as a parameter yet. Keep this
+# the single source of the value: exposing it later is a change here only.
+GUIDE_FIELD_ANGLE = 270.0
+
+# Points whose spin-asymmetry denominator (R⁺⁺ + R⁻⁻) is smaller than this
+# multiple of its own uncertainty are dropped: there SA is noise divided by
+# noise and would swamp the axis with ±values of no physical meaning.
+SPIN_ASYMMETRY_SIGNIFICANCE = 3.0
+
+# Points whose spin-asymmetry denominator (R⁺⁺ + R⁻⁻) is smaller than this
+# fraction of |R⁺⁺| + |R⁻⁻| are dropped too: there the sum is what is left after
+# cancellation between the two channels, so SA is a ratio of rounding noise.
+# Unlike the significance rule above this needs no uncertainties, which is what
+# keeps a two-column file from putting ±10³ values on the axis.
+SPIN_ASYMMETRY_CANCELLATION_FRACTION = 1e-3
+
+# A depth whose magnetic SLD is below this fraction of the largest one in the
+# profile carries no moment worth speaking of, and its moment *angle* is
+# meaningless — the direction of a (nearly) zero-length vector. Used to restrict
+# the reported theta_m profile; a relative floor because it has to work both for
+# a weak 0.1 and a strong 5 (1e-6 A^-2) moment, and because the interface
+# roughness leaves a small erf tail everywhere.
+MAGNETIC_MOMENT_FLOOR_FRACTION = 0.01
 
 DEFAULT_MINIMIZER = AvailableMinimizers.LMFit_leastsq
 
@@ -328,6 +356,33 @@ class Project:
         refnx or bornagain backend is selected).
         """
         return self._calculator().supports_magnetism
+
+    @property
+    def calculators_supporting_magnetism(self) -> List[str]:
+        """Names of the available calculators that can model magnetic samples.
+
+        Lets an application offer the switch a magnetic sample needs ("this
+        requires refl1d — change to it?") instead of only reporting that the
+        current calculator cannot do it. The active calculator is not touched.
+        """
+        supporting = []
+        for name in self._calculator.available_interfaces:
+            calculator = next(
+                (candidate for candidate in CalculatorBase._calculators if candidate.name == name),
+                None,
+            )
+            if calculator is not None and calculator().supports_magnetism:
+                supporting.append(name)
+        return supporting
+
+    @property
+    def models_have_magnetism(self) -> bool:
+        """Whether any model in the project carries a magnetic layer.
+
+        A calculator without magnetism cannot be selected while this holds — the
+        binding it would have to build does not exist.
+        """
+        return any(model.has_magnetism for model in self._models)
 
     @property
     def minimizer(self) -> AvailableMinimizers:
@@ -764,6 +819,74 @@ class Project:
             y=sld[1],
         )
 
+    def model_has_magnetism_at_index(self, index: int = 0) -> bool:
+        """Whether the model at index carries magnetism (False when there is no such model)."""
+        try:
+            return bool(self.models[index].has_magnetism)
+        except (IndexError, AttributeError):
+            return False
+
+    def magnetic_sld_data_for_model_at_index(self, index: int = 0) -> Dict[str, DataSet1D]:
+        """Nuclear and magnetic depth profiles of a magnetic model.
+
+        Parameters
+        ----------
+        index : int
+            Index of the model.
+
+        Returns
+        -------
+        Dict[str, DataSet1D]
+            Profiles versus depth z, keyed:
+
+            - ``'sld'``: nuclear ρ(z), the same curve as
+              :meth:`sld_data_for_model_at_index`;
+            - ``'rho_m'``: magnetic SLD ρM(z);
+            - ``'theta_m'``: in-plane moment angle θM(z) in degrees, restricted
+              to the depths that carry a moment — the angle of a zero-length
+              vector is meaningless, so points below
+              :data:`MAGNETIC_MOMENT_FLOOR_FRACTION` of the largest ρM are left
+              out instead of drawing an arbitrary angle through vacuum;
+            - ``'spin_up'`` / ``'spin_down'``: the potentials each spin state
+              sees, ρ(z) ± ρM(z)·cos(θM(z) − A), where A is the guide-field
+              angle :data:`GUIDE_FIELD_ANGLE`.
+
+        Raises
+        ------
+        ValueError
+            The model has no magnetic layer, so there is no magnetic profile.
+        NotImplementedError
+            The active calculator cannot model magnetism.
+        """
+        model = self.models[index]
+        if not model.has_magnetism:
+            raise ValueError(
+                f'Model {index} has no magnetic layer; there is no magnetic SLD profile to show. '
+                'Attach magnetism to a layer first.'
+            )
+        model.interface = self._calculator
+        z, sld, rho_m, theta_m = model.interface().magnetic_sld_profile(model.unique_name)
+        z = np.asarray(z, dtype=float)
+        sld = np.asarray(sld, dtype=float)
+        rho_m = np.asarray(rho_m, dtype=float)
+        theta_m = np.asarray(theta_m, dtype=float)
+        # Component of the moment along the guide field: what the neutron spin
+        # states add to / subtract from the nuclear potential.
+        projection = rho_m * np.cos(np.radians(theta_m - GUIDE_FIELD_ANGLE))
+        # Only report the angle where there is a moment to have an angle, and
+        # make it continuous along z: 359° followed by 1° is a 2° turn, but a
+        # plotted line through the wrapped values sweeps the whole circle.
+        magnitude = np.abs(rho_m)
+        has_moment = magnitude > MAGNETIC_MOMENT_FLOOR_FRACTION * magnitude.max(initial=0.0)
+        theta_display = _unwrapped_angle(theta_m, has_moment)
+        return {
+            'sld': DataSet1D(name=f'SLD for Model {index}', x=z, y=sld),
+            'rho_m': DataSet1D(name=f'Magnetic SLD for Model {index}', x=z, y=rho_m),
+            'theta_m': DataSet1D(name=f'Moment angle for Model {index}', x=z[has_moment], y=theta_display[has_moment]),
+            'spin_up': DataSet1D(name=f'Spin-up potential for Model {index}', x=z, y=sld + projection),
+            'spin_down': DataSet1D(name=f'Spin-down potential for Model {index}', x=z, y=sld - projection),
+        }
+
     def sample_data_for_model_at_index(self, index: int = 0, q_range: Optional[np.array] = None) -> DataSet1D:
         """Sample data for model at index."""
         original_resolution_function = self.models[index].resolution_function
@@ -880,6 +1003,161 @@ class Project:
         if not isinstance(experiment, PolarizedDataSet):
             return []
         return experiment.available_channels
+
+    def experiment_supports_spin_asymmetry_at_index(self, index: int = 0) -> bool:
+        """Whether SA can be formed for the experiment at index.
+
+        Spin asymmetry needs both non-spin-flip channels; an NSF-incomplete or
+        spin-flip-only experiment has no SA. The two channel datasets must also
+        be structurally usable (non-empty, matching lengths, a strictly ordered
+        q grid) — an application asks this before offering a spin-asymmetry
+        view, so a dataset that cannot be turned into one must not be advertised
+        and then fail.
+        """
+        channels = self.experiment_channels_at_index(index)
+        if PolarizationChannel.PP not in channels or PolarizationChannel.MM not in channels:
+            return False
+        experiment = self._experiments[index]
+        try:
+            for channel in (PolarizationChannel.PP, PolarizationChannel.MM):
+                _ordered_channel_arrays(experiment[channel])
+        except ValueError as exception:
+            logger.warning('Experiment %s cannot produce a spin asymmetry: %s', index, exception)
+            return False
+        return True
+
+    def spin_asymmetry_for_experiment_at_index(self, index: int = 0) -> Dict[str, object]:
+        """Spin asymmetry SA = (R⁺⁺ − R⁻⁻) / (R⁺⁺ + R⁻⁻) of a polarized experiment.
+
+        The measured SA is formed on the q grid of the pp channel. A mm channel
+        measured on a different grid is linearly interpolated onto it — values
+        with the usual weights, variances with the *squared* weights, which is
+        the propagation rule for independent endpoints (the covariance this
+        introduces between neighbouring SA points is not representable in
+        `DataSet1D` and is discarded). Interpolation happens **only inside the q
+        range both channels cover**: `np.interp` would otherwise clamp to the
+        edge value and turn extrapolated points into fabricated measurements.
+
+        Points are dropped when the denominator cannot carry a meaningful
+        asymmetry:
+
+        - it is not positive, or is lost to cancellation between the two
+          channels (see :data:`SPIN_ASYMMETRY_CANCELLATION_FRACTION`) — this
+          guard needs no uncertainties and is what keeps a background-subtracted
+          tail from throwing ±10³ values onto the axis;
+        - it is not above :data:`SPIN_ASYMMETRY_SIGNIFICANCE` times its own
+          uncertainty, when the channels carry usable uncertainties;
+        - the point itself is not usable (non-finite reflectivity, or a negative
+          or non-finite variance).
+
+        Parameters
+        ----------
+        index : int
+            Index of the experiment.
+
+        Returns
+        -------
+        Dict[str, object]
+            - ``'measured'``: `DataSet1D` of SA versus q. As everywhere in this
+              library, ``ye`` holds **variances**, not standard deviations.
+            - ``'calculated'``: `DataSet1D` of the model SA on the same q
+              points, or None when the model is not magnetic (an unpolarized
+              model has SA ≡ 0, which is not worth drawing).
+            - ``'masked_points'``: how many measured points were dropped for any
+              of the reasons above.
+            - ``'low_significance_points'``: of those, how many had a
+              denominator below the significance threshold.
+            - ``'small_denominator_points'``: of those, how many had a
+              denominator that was non-positive or lost to cancellation.
+            - ``'invalid_points'``: of those, how many carried a non-finite
+              reflectivity or an unusable variance.
+            - ``'out_of_overlap_points'``: number of pp points dropped because
+              the mm channel does not cover their q.
+
+        Raises
+        ------
+        IndexError
+            No experiment is loaded at `index`.
+        ValueError
+            The experiment does not carry both pp and mm channels, or their
+            datasets are not structurally usable.
+        """
+        if index not in self._experiments.keys():
+            raise IndexError(f'No experiment data for model at index {index}')
+        channels = self.experiment_channels_at_index(index)
+        if PolarizationChannel.PP not in channels or PolarizationChannel.MM not in channels:
+            raise ValueError(f'Experiment {index} does not have both non-spin-flip channels; spin asymmetry needs pp and mm.')
+
+        experiment = self._experiments[index]
+        q, r_pp, var_pp = _ordered_channel_arrays(experiment[PolarizationChannel.PP])
+        q_mm, r_mm_source, var_mm_source = _ordered_channel_arrays(experiment[PolarizationChannel.MM])
+
+        out_of_overlap = 0
+        if q.shape == q_mm.shape and np.allclose(q, q_mm, rtol=1e-9, atol=0.0):
+            # The usual case: both channels come from one instrument scan.
+            # A tolerance keeps grids that only differ by float round-trips
+            # (text files) on this path.
+            r_mm, var_mm = r_mm_source, var_mm_source
+        else:
+            # Different grids: put mm on the pp grid, but only where mm has data
+            # — np.interp clamps outside its range, which would silently invent
+            # measurements at the edges.
+            inside = (q >= q_mm.min()) & (q <= q_mm.max())
+            out_of_overlap = int(np.count_nonzero(~inside))
+            if out_of_overlap:
+                logger.warning(
+                    'Spin asymmetry of experiment %s: %s of %s pp points lie outside the mm q range '
+                    '[%.5g, %.5g] and are dropped.',
+                    index,
+                    out_of_overlap,
+                    q.size,
+                    q_mm.min(),
+                    q_mm.max(),
+                )
+            q, r_pp, var_pp = q[inside], r_pp[inside], var_pp[inside]
+            r_mm, var_mm = _interpolate_with_variance(q, q_mm, r_mm_source, var_mm_source)
+
+        asymmetry, variance, keep, reasons = _spin_asymmetry(r_pp, r_mm, var_pp, var_mm)
+        measured = DataSet1D(
+            name=f'Spin asymmetry for Experiment {index}',
+            x=q[keep],
+            y=asymmetry[keep],
+            ye=variance[keep],
+            x_label='q (1/angstrom)',
+            y_label='Spin asymmetry',
+        )
+
+        calculated = None
+        model_index = self._model_index_for_experiment(experiment)
+        if model_index is not None and self.models[model_index].has_magnetism and measured.x.size > 0:
+            calculated_pp = self.model_data_for_model_at_index(model_index, q_range=measured.x, channel='pp').y
+            calculated_mm = self.model_data_for_model_at_index(model_index, q_range=measured.x, channel='mm').y
+            calculated_asymmetry, _, _, _ = _spin_asymmetry(calculated_pp, calculated_mm)
+            calculated = DataSet1D(
+                name=f'Calculated spin asymmetry for Experiment {index}',
+                x=measured.x,
+                y=calculated_asymmetry,
+                x_label='q (1/angstrom)',
+                y_label='Spin asymmetry',
+            )
+
+        return {
+            'measured': measured,
+            'calculated': calculated,
+            'masked_points': int(np.count_nonzero(~keep)),
+            'out_of_overlap_points': out_of_overlap,
+            **reasons,
+        }
+
+    def _model_index_for_experiment(self, experiment) -> Optional[int]:
+        """Index of the model an experiment is bound to, or None."""
+        model = getattr(experiment, 'model', None)
+        if model is None:
+            return None
+        for model_index, candidate in enumerate(self._models):
+            if candidate is model:
+                return model_index
+        return None
 
     def default_model(self):
         """Default model."""
@@ -1185,3 +1463,179 @@ class Project:
     def _timestamp_modification(self):
         """Timestamp modification."""
         self._info['modified'] = datetime.datetime.now().strftime('%d.%m.%Y %H:%M')
+
+
+def _unwrapped_angle(angle: np.ndarray, mask: np.ndarray) -> np.ndarray:
+    """Make an angle profile continuous along z within each magnetic region.
+
+    The moment angle is periodic, so a profile that turns smoothly from 359° to
+    1° comes back from `atan2` as a jump of nearly 360°. Drawn as a line that is
+    a full sweep across the chart where the moment barely moves. Each contiguous
+    run of `mask` (a magnetic region) is therefore unwrapped on its own and then
+    shifted by whole turns so it sits as close to the conventional [0, 360)
+    range as possible — neighbouring regions stay independent, since the angle
+    between them is not defined.
+
+    Parameters
+    ----------
+    angle : np.ndarray
+        Wrapped angles in degrees.
+    mask : np.ndarray
+        Which points carry a moment.
+
+    Returns
+    -------
+    np.ndarray
+        Angles in degrees, continuous within each masked region. Points outside
+        the mask are returned unchanged (callers drop them).
+    """
+    unwrapped = np.array(angle, dtype=float, copy=True)
+    if mask.size == 0 or not np.any(mask):
+        return unwrapped
+
+    # Each contiguous run of masked points is one magnetic region.
+    masked_indices = np.flatnonzero(mask)
+    region_breaks = np.flatnonzero(np.diff(masked_indices) > 1) + 1
+    for region in np.split(masked_indices, region_breaks):
+        segment = np.unwrap(unwrapped[region], period=360.0)
+        # Keep the drawn values near the usual range rather than at 720 deg.
+        turns = np.round(np.median(segment) / 360.0 - 0.5)
+        unwrapped[region] = segment - turns * 360.0
+    return unwrapped
+
+
+def _ordered_channel_arrays(dataset: DataSet1D) -> tuple:
+    """A channel's (q, reflectivity, variance) arrays, ordered and checked.
+
+    Spin asymmetry pairs two channels point by point and interpolates one onto
+    the other, both of which assume well-formed, strictly increasing q. Rather
+    than trusting that, the arrays are checked here and sorted when needed —
+    `np.interp` silently returns nonsense for a descending grid.
+
+    Raises
+    ------
+    ValueError
+        The dataset is empty, its arrays disagree in length or shape, its q
+        values are not finite, or it visits the same q twice.
+    """
+    name = getattr(dataset, 'name', '?')
+    q = np.asarray(getattr(dataset, 'x', np.empty(0)), dtype=float).ravel()
+    y = np.asarray(getattr(dataset, 'y', np.empty(0)), dtype=float).ravel()
+    if q.size == 0:
+        raise ValueError(f"Channel '{name}' has no data points.")
+    if q.size != y.size:
+        raise ValueError(f"Channel '{name}' has {q.size} q values for {y.size} reflectivities.")
+    if not np.all(np.isfinite(q)):
+        raise ValueError(f"Channel '{name}' has non-finite q values.")
+
+    variance = np.asarray(getattr(dataset, 'ye', None) if getattr(dataset, 'ye', None) is not None else [], dtype=float)
+    variance = variance.ravel()
+    if variance.size == 0:
+        variance = np.zeros_like(y)
+    elif variance.size != y.size:
+        logger.warning(
+            "Channel '%s' has %s uncertainties for %s points; treating it as having none.",
+            name,
+            variance.size,
+            y.size,
+        )
+        variance = np.zeros_like(y)
+
+    order = np.argsort(q, kind='stable')
+    if not np.array_equal(order, np.arange(q.size)):
+        logger.warning("Channel '%s' is not ordered in q; sorting it before pairing.", name)
+        q, y, variance = q[order], y[order], variance[order]
+    if np.any(np.diff(q) <= 0):
+        raise ValueError(f"Channel '{name}' visits the same q more than once; the pairing would be ambiguous.")
+    return q, y, variance
+
+
+def _interpolate_with_variance(q: np.ndarray, q_source: np.ndarray, values: np.ndarray, variances: np.ndarray) -> tuple:
+    """Linear interpolation of values and their variances onto `q`.
+
+    Values use the linear weights (1−t, t); variances use their **squares**,
+    which is the propagation rule for independent endpoints — interpolating a
+    variance linearly (as `np.interp` would) overestimates it, by a factor 2 at
+    the midpoint of two equal variances.
+
+    `q` must lie inside `q_source`; the caller restricts it to the overlap.
+    """
+    upper = np.clip(np.searchsorted(q_source, q, side='left'), 1, q_source.size - 1)
+    lower = upper - 1
+    span = q_source[upper] - q_source[lower]
+    # span is > 0 for a strictly increasing source grid; guard anyway.
+    weight = np.where(span > 0, (q - q_source[lower]) / np.where(span > 0, span, 1.0), 0.0)
+    interpolated = (1.0 - weight) * values[lower] + weight * values[upper]
+    interpolated_variance = (1.0 - weight) ** 2 * variances[lower] + weight**2 * variances[upper]
+    return interpolated, interpolated_variance
+
+
+def _spin_asymmetry(
+    r_pp: np.ndarray,
+    r_mm: np.ndarray,
+    var_pp: Optional[np.ndarray] = None,
+    var_mm: Optional[np.ndarray] = None,
+) -> tuple:
+    """Spin asymmetry, its variance, which points to keep, and why not.
+
+    Parameters
+    ----------
+    r_pp, r_mm : np.ndarray
+        Non-spin-flip reflectivities on a common q grid.
+    var_pp, var_mm : Optional[np.ndarray]
+        Their variances (`DataSet1D.ye`), or None for a calculated curve.
+
+    Returns
+    -------
+    tuple
+        SA, its variance (zeros without input variances), a boolean mask of the
+        points to keep, and a dict counting the dropped ones by reason.
+    """
+    r_pp = np.asarray(r_pp, dtype=float)
+    r_mm = np.asarray(r_mm, dtype=float)
+    denominator = r_pp + r_mm
+    var_pp = np.zeros_like(r_pp) if var_pp is None else np.asarray(var_pp, dtype=float)
+    var_mm = np.zeros_like(r_mm) if var_mm is None else np.asarray(var_mm, dtype=float)
+
+    # A denominator of exactly zero would divide by zero; those points are
+    # dropped by the masks below anyway.
+    safe_denominator = np.where(denominator == 0, np.nan, denominator)
+    with np.errstate(invalid='ignore', divide='ignore'):
+        asymmetry = (r_pp - r_mm) / safe_denominator
+        # sigma_SA = 2 sqrt(R--^2 sigma_++^2 + R++^2 sigma_--^2) / (R++ + R--)^2,
+        # so the variance is its square. ye holds variances, hence no squaring
+        # of var_pp / var_mm here.
+        variance = 4.0 * (r_mm**2 * var_pp + r_pp**2 * var_mm) / safe_denominator**4
+
+    asymmetry = np.nan_to_num(asymmetry, nan=0.0, posinf=0.0, neginf=0.0)
+    variance = np.nan_to_num(variance, nan=0.0, posinf=0.0, neginf=0.0)
+
+    # A point with a non-finite reflectivity, or an uncertainty that is not a
+    # usable variance, cannot produce a meaningful SA — and must not be silently
+    # demoted to "no uncertainty", which would also skip the significance test.
+    invalid = ~np.isfinite(r_pp) | ~np.isfinite(r_mm)
+    invalid |= ~np.isfinite(var_pp) | ~np.isfinite(var_mm) | (var_pp < 0) | (var_mm < 0)
+
+    # Uncertainty-independent guard: the denominator must be positive and must
+    # not be the small remainder of two much larger numbers. Reflectivities are
+    # positive, so this only bites on background-subtracted data — which is
+    # exactly where SA otherwise explodes to +/-1e3 and destroys the axis.
+    magnitude = np.abs(r_pp) + np.abs(r_mm)
+    with np.errstate(invalid='ignore'):
+        degenerate = ~np.isfinite(denominator) | (denominator <= 0)
+        degenerate |= np.abs(denominator) <= SPIN_ASYMMETRY_CANCELLATION_FRACTION * magnitude
+    degenerate &= ~invalid
+
+    # Uncertainty-based guard: is the denominator above the noise?
+    denominator_sigma = np.sqrt(np.clip(var_pp + var_mm, 0.0, None))
+    with_uncertainty = denominator_sigma > 0
+    insignificant = with_uncertainty & (denominator <= SPIN_ASYMMETRY_SIGNIFICANCE * denominator_sigma)
+    insignificant &= ~invalid & ~degenerate
+
+    keep = ~invalid & ~degenerate & ~insignificant
+    reasons = {
+        'invalid_points': int(np.count_nonzero(invalid)),
+        'small_denominator_points': int(np.count_nonzero(degenerate)),
+        'low_significance_points': int(np.count_nonzero(insignificant)),
+    }
+    return asymmetry, variance, keep, reasons
