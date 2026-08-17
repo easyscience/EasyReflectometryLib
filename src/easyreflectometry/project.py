@@ -809,9 +809,21 @@ class Project:
         self._with_experiments = True
         self._apply_resolution_function(experiment, self._models[index])
 
+    def _bind_calculator(self, model) -> None:
+        """Bind the project's calculator to a model unless it already is.
+
+        Reassigning ``model.interface`` re-propagates the interface over the
+        whole sample tree — an expensive rebuild. The plot getters run on every
+        chart refresh, so an already-bound model must be left alone; engine
+        switches go through the ``calculator`` setter, which regenerates the
+        bindings itself.
+        """
+        if model.interface is not self._calculator:
+            model.interface = self._calculator
+
     def sld_data_for_model_at_index(self, index: int = 0) -> DataSet1D:
         """Sld data for model at index."""
-        self.models[index].interface = self._calculator
+        self._bind_calculator(self.models[index])
         sld = self.models[index].interface().sld_profile(self._models[index].unique_name)
         return DataSet1D(
             name=f'SLD for Model {index}',
@@ -864,7 +876,7 @@ class Project:
                 f'Model {index} has no magnetic layer; there is no magnetic SLD profile to show. '
                 'Attach magnetism to a layer first.'
             )
-        model.interface = self._calculator
+        self._bind_calculator(model)
         z, sld, rho_m, theta_m = model.interface().magnetic_sld_profile(model.unique_name)
         z = np.asarray(z, dtype=float)
         sld = np.asarray(sld, dtype=float)
@@ -919,7 +931,7 @@ class Project:
         """
         if q_range is None:
             q_range = np.linspace(self.q_min, self.q_max, self.q_resolution)
-        self.models[index].interface = self._calculator
+        self._bind_calculator(self.models[index])
         if channel is None:
             reflectivity = self.models[index].interface().reflectity_profile(q_range, self._models[index].unique_name)
             name = f'Reflectivity for Model {index}'
