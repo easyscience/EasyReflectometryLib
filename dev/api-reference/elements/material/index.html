@@ -3766,7 +3766,7 @@ list (appends <code>unique_name</code> / <code>display_name</code> if those are 
             </td>
             <td>
               <div class="doc-md-description">
-                <p>One of 'thickness', 'roughness', 'sld', 'isld', 'scale'.</p>
+                <p>One of 'thickness', 'roughness', 'sld', 'isld', 'rho_m', 'scale'.</p>
 <!-- prettier-ignore-start -->
 
 <!-- prettier-ignore-end -->
@@ -3800,7 +3800,8 @@ list (appends <code>unique_name</code> / <code>display_name</code> if those are 
 <span class="normal">27</span>
 <span class="normal">28</span>
 <span class="normal">29</span>
-<span class="normal">30</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">apply_default_limits</span><span class="p">(</span><span class="n">parameter</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">,</span> <span class="n">kind</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="normal">30</span>
+<span class="normal">31</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">apply_default_limits</span><span class="p">(</span><span class="n">parameter</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">,</span> <span class="n">kind</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Apply default min/max to a parameter if current bounds are infinite.</span>
 
 <span class="sd">    Parameters</span>
@@ -3808,14 +3809,15 @@ list (appends <code>unique_name</code> / <code>display_name</code> if those are 
 <span class="sd">    parameter : Parameter</span>
 <span class="sd">        The parameter to adjust.</span>
 <span class="sd">    kind : str</span>
-<span class="sd">        One of &#39;thickness&#39;, &#39;roughness&#39;, &#39;sld&#39;, &#39;isld&#39;, &#39;scale&#39;.</span>
+<span class="sd">        One of &#39;thickness&#39;, &#39;roughness&#39;, &#39;sld&#39;, &#39;isld&#39;, &#39;rho_m&#39;, &#39;scale&#39;.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">parameter</span><span class="o">.</span><span class="n">independent</span><span class="p">:</span>
         <span class="k">return</span>
 
     <span class="k">if</span> <span class="n">kind</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;thickness&#39;</span><span class="p">,</span> <span class="s1">&#39;roughness&#39;</span><span class="p">):</span>
         <span class="n">_apply_percentage_limits</span><span class="p">(</span><span class="n">parameter</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="n">kind</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;sld&#39;</span><span class="p">,</span> <span class="s1">&#39;isld&#39;</span><span class="p">):</span>
+    <span class="k">elif</span> <span class="n">kind</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;sld&#39;</span><span class="p">,</span> <span class="s1">&#39;isld&#39;</span><span class="p">,</span> <span class="s1">&#39;rho_m&#39;</span><span class="p">):</span>
+        <span class="c1"># A magnetic SLD is an SLD: same physical scale, same default window.</span>
         <span class="n">_apply_fixed_limits</span><span class="p">(</span><span class="n">parameter</span><span class="p">,</span> <span class="o">*</span><span class="n">SLD_LIMITS</span><span class="p">)</span>
     <span class="k">elif</span> <span class="n">kind</span> <span class="o">==</span> <span class="s1">&#39;scale&#39;</span><span class="p">:</span>
         <span class="n">_apply_fixed_limits</span><span class="p">(</span><span class="n">parameter</span><span class="p">,</span> <span class="o">*</span><span class="n">SCALE_LIMITS</span><span class="p">)</span>
