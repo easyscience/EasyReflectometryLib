@@ -24,6 +24,8 @@ env:
 jobs:
   # Job 1: Test installation from PyPI on multiple OS
   pypi-package-tests:
+    # Only run the package tests on the master branch
+    if: github.ref == 'refs/heads/master'
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
