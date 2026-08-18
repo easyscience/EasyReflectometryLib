@@ -162,6 +162,93 @@ def _fit_result_reduced_chi(result: FitResults, n_points: int | None = None) -> 
     raise AttributeError('FitResults object has neither reduced_chi nor reduced_chi2')
 
 
+def _bind_fit_func(func: Callable, unique_name: str) -> Callable:
+    """Bind a model's fit function to its ``unique_name`` for ``EasyScienceMultiFitter``.
+
+    ``EasyScienceMultiFitter`` calls each fit function positionally as
+    ``func(x, *extra_args)``; the model's ``interface.fit_func`` expects its
+    ``unique_name`` as that extra positional argument, so it has to be closed
+    over here rather than passed through the fitter's call signature.
+    """
+
+    def wrapped(*args, **kwargs):
+        return func(*args, unique_name, **kwargs)
+
+    return wrapped
+
+
+def _emit_array_prep_warnings(stats: dict, y_vals: np.ndarray, label: str, *, action: str = 'fitting', extra: str = '') -> None:
+    """Warn about zero-variance handling applied by :func:`_prepare_fit_arrays`.
+
+    Parameters
+    ----------
+    stats : dict
+        The ``stats`` dict returned by :func:`_prepare_fit_arrays`.
+    y_vals : np.ndarray
+        The original (pre-transform) y values, used for the "all points" count.
+    label : str
+        Identifies what was fitted/sampled, e.g. ``'reflectivity 1'`` or
+        ``'channel pp'``.
+    action : str, optional
+        Verb describing the operation, e.g. ``'fitting'`` or ``'sampling'``. By default, 'fitting'.
+    extra : str, optional
+        Extra sentence(s) appended to the Mighell-related warnings (e.g. a
+        likelihood-validity caveat for MCMC). By default, ''.
+    """
+    if stats['masked'] > 0:
+        warnings.warn(
+            f'Masked {stats["masked"]} data point(s) in {label} due to zero variance during {action}.',
+            UserWarning,
+        )
+    if stats.get('transformed_all_points'):
+        warnings.warn(
+            f'Applied Mighell transform to all {len(y_vals)} point(s) in {label} during {action}.{extra}',
+            UserWarning,
+        )
+    elif stats['mighell_substituted'] > 0:
+        warnings.warn(
+            f'Applied Mighell substitution to {stats["mighell_substituted"]} '
+            f'zero-variance point(s) in {label} during {action}.{extra}',
+            UserWarning,
+        )
+
+
+def _classical_metrics_for(original: dict, model_curve: np.ndarray, result: FitResults, n_points: int | None = None) -> dict:
+    """Assemble the classical (positive-variance-only) and objective-space fit metrics.
+
+    Parameters
+    ----------
+    original : dict
+        Dict with keys ``'y'`` and ``'variances'`` holding the un-transformed
+        observed values and their variances (σ²).
+    model_curve : np.ndarray
+        Model evaluated at the original x values.
+    result : FitResults
+        The minimizer's result for this dataset/channel.
+    n_points : int | None, optional
+        Number of points actually fitted, used as the ``reduced_chi``/``reduced_chi2``
+        fallback's point count. If ``None``, derived from ``result.x``. By default, None.
+
+    Returns
+    -------
+    dict
+        Keys ``'classical_chi2'``, ``'classical_reduced_chi'``,
+        ``'objective_chi2'``, ``'objective_reduced_chi'``, ``'n_classical_points'``.
+    """
+    sigma_classical = np.sqrt(np.clip(original['variances'], 0.0, None))
+    n_classical_points = int(np.sum(original['variances'] > 0.0))
+    classical_chi2 = _compute_weighted_chi2(original['y'], model_curve, sigma_classical)
+    if n_points is None:
+        n_points = np.size(result.x)
+    return {
+        'classical_chi2': classical_chi2,
+        'classical_reduced_chi': _compute_reduced_chi2(classical_chi2, n_classical_points, result.n_pars),
+        'objective_chi2': float(result.chi2),
+        'objective_reduced_chi': _fit_result_reduced_chi(result, n_points),
+        'n_classical_points': n_classical_points,
+    }
+
+
 class MultiFitter:
     def __init__(self, *args: Model, objective: str = 'hybrid'):
         r"""A convenience class for the :py:class:`easyscience.Fitting.Fitting`
@@ -180,17 +267,7 @@ class MultiFitter:
             ``'auto'`` (alias for ``'hybrid'``). By default, 'hybrid'.
         """
 
-        # This lets the unique_name be passed with the fit_func.
-        def func_wrapper(func, unique_name):
-            """Func wrapper."""
-
-            def wrapped(*args, **kwargs):
-                """Wrapped function."""
-                return func(*args, unique_name, **kwargs)
-
-            return wrapped
-
-        self._fit_func = [func_wrapper(m.interface.fit_func, m.unique_name) for m in args]
+        self._fit_func = [_bind_fit_func(m.interface.fit_func, m.unique_name) for m in args]
         self._models = args
         self.easy_science_multi_fitter = EasyScienceMultiFitter(args, self._fit_func)
         self._fit_results: list[FitResults] | None = None
@@ -222,6 +299,17 @@ class MultiFitter:
         The resulting fitter is *not* run: the caller supplies the data arrays
         to ``easy_science_multi_fitter.fit(...)`` in the order given by
         :attr:`fit_datasets`, which lets a GUI drive it from a worker thread.
+
+        Note
+        ----
+        Built via ``cls(*models, objective=objective)`` and then overwrites
+        ``_fit_func`` / ``easy_science_multi_fitter`` with the per-channel
+        versions — the ``__init__``-built pair is briefly constructed and
+        discarded. Unlike :meth:`fit_polarized`, the minimizer selection and
+        its ``tolerance`` / ``max_evaluations`` are *not* carried over: the
+        returned fitter starts from ``easy_science_multi_fitter``'s defaults,
+        so a caller that needs a specific minimizer must set it explicitly
+        before calling ``.fit(...)``.
 
         Parameters
         ----------
@@ -261,21 +349,12 @@ class MultiFitter:
 
         fitter = cls(*models, objective=objective)
 
-        def func_wrapper(func, unique_name):
-            """Func wrapper."""
-
-            def wrapped(*args, **kwargs):
-                """Wrapped function."""
-                return func(*args, unique_name, **kwargs)
-
-            return wrapped
-
         fit_funcs = []
         for dataset, channel in zip(datasets, channels):
             model = dataset.model
             interface = model.interface
             func = interface.fit_func if channel is None else interface.fit_func_for_channel(channel)
-            fit_funcs.append(func_wrapper(func, model.unique_name))
+            fit_funcs.append(_bind_fit_func(func, model.unique_name))
 
         fitter._fit_func = fit_funcs
         fitter.easy_science_multi_fitter = EasyScienceMultiFitter(models, fit_funcs)
@@ -316,23 +395,7 @@ class MultiFitter:
             variances = data['data'][f'R_{i}'].variances
 
             x_out, y_eff, weights, stats = _prepare_fit_arrays(x_vals, y_vals, variances, obj)
-
-            if stats['masked'] > 0:
-                warnings.warn(
-                    f'Masked {stats["masked"]} data point(s) in reflectivity {i} due to zero variance during fitting.',
-                    UserWarning,
-                )
-            if stats.get('transformed_all_points'):
-                warnings.warn(
-                    f'Applied Mighell transform to all {len(y_vals)} point(s) in reflectivity {i} during fitting.',
-                    UserWarning,
-                )
-            elif stats['mighell_substituted'] > 0:
-                warnings.warn(
-                    f'Applied Mighell substitution to {stats["mighell_substituted"]} '
-                    f'zero-variance point(s) in reflectivity {i} during fitting.',
-                    UserWarning,
-                )
+            _emit_array_prep_warnings(stats, y_vals, f'reflectivity {i}')
 
             x.append(x_out)
             y.append(y_eff)
@@ -356,27 +419,14 @@ class MultiFitter:
                 values=sld_profile[0],
                 unit=(1 / new_data['coords'][f'Qz_{id}'].unit).unit,
             )
-            original = original_arrays[i]
-            sigma_classical = np.sqrt(np.clip(original['variances'], 0.0, None))
-            n_classical_points = int(np.sum(original['variances'] > 0.0))
-            classical_chi2 = _compute_weighted_chi2(original['y'], model_curve, sigma_classical)
-            classical_reduced_chi = _compute_reduced_chi2(classical_chi2, n_classical_points, result[i].n_pars)
-            objective_chi2 = float(result[i].chi2)
-            objective_reduced_chi = _fit_result_reduced_chi(result[i], np.size(result[i].x))
+            metrics = _classical_metrics_for(original_arrays[i], model_curve, result[i])
+            self._classical_fit_metrics.append(metrics)
 
-            self._classical_fit_metrics.append({
-                'classical_chi2': classical_chi2,
-                'classical_reduced_chi': classical_reduced_chi,
-                'objective_chi2': objective_chi2,
-                'objective_reduced_chi': objective_reduced_chi,
-                'n_classical_points': n_classical_points,
-            })
-
-            new_data['objective_chi2'] = objective_chi2
-            new_data['objective_reduced_chi'] = objective_reduced_chi
-            new_data['classical_chi2'] = classical_chi2
-            new_data['classical_reduced_chi'] = classical_reduced_chi
-            new_data['reduced_chi'] = objective_reduced_chi
+            new_data['objective_chi2'] = metrics['objective_chi2']
+            new_data['objective_reduced_chi'] = metrics['objective_reduced_chi']
+            new_data['classical_chi2'] = metrics['classical_chi2']
+            new_data['classical_reduced_chi'] = metrics['classical_reduced_chi']
+            new_data['reduced_chi'] = metrics['objective_reduced_chi']
             new_data['success'] = result[i].success
         return new_data
 
@@ -404,42 +454,16 @@ class MultiFitter:
         variances = np.asarray(data.ye)
 
         x_out, y_eff, weights, stats = _prepare_fit_arrays(x_vals, y_vals, variances, obj)
-
-        if stats['masked'] > 0:
-            warnings.warn(
-                f'Masked {stats["masked"]} data point(s) in single-dataset fit due to zero variance during fitting.',
-                UserWarning,
-            )
-        if stats.get('transformed_all_points'):
-            warnings.warn(
-                f'Applied Mighell transform to all {len(y_vals)} point(s) in single-dataset fit during fitting.',
-                UserWarning,
-            )
-        elif stats['mighell_substituted'] > 0:
-            warnings.warn(
-                f'Applied Mighell substitution to {stats["mighell_substituted"]} '
-                'zero-variance point(s) in single-dataset fit during fitting.',
-                UserWarning,
-            )
+        _emit_array_prep_warnings(stats, y_vals, 'single-dataset fit')
 
         if obj == 'legacy_mask' and len(x_out) == 0:
             raise ValueError('Cannot fit single dataset: all points have zero variance.')
 
         result = self.easy_science_multi_fitter.fit(x=[x_out], y=[y_eff], weights=[weights])[0]
         self._fit_results = [result]
-        sigma_classical = np.sqrt(np.clip(variances, 0.0, None))
         model_curve = self._fit_func[0](x_vals)
-        n_classical_points = int(np.sum(variances > 0.0))
-        classical_chi2 = _compute_weighted_chi2(y_vals, model_curve, sigma_classical)
-        classical_reduced_chi = _compute_reduced_chi2(classical_chi2, n_classical_points, result.n_pars)
         self._classical_fit_metrics = [
-            {
-                'classical_chi2': classical_chi2,
-                'classical_reduced_chi': classical_reduced_chi,
-                'objective_chi2': float(result.chi2),
-                'objective_reduced_chi': _fit_result_reduced_chi(result, len(x_out)),
-                'n_classical_points': n_classical_points,
-            }
+            _classical_metrics_for({'y': y_vals, 'variances': variances}, model_curve, result, n_points=len(x_out))
         ]
         return result
 
@@ -470,6 +494,12 @@ class MultiFitter:
         dict[str, FitResults]
             Fit results per channel, keyed 'pp', 'pm', 'mp', 'mm' (measured
             channels only, in that order).
+
+        Note
+        ----
+        Unlike :meth:`for_experiments`, this method does not populate
+        :attr:`fit_datasets` / :attr:`fit_channels` — those are set only by the
+        caller-driven, `for_experiments`-built flow.
         """
         obj = _validate_objective(objective) if objective is not None else self._objective
         if len(self._models) != 1:
@@ -482,17 +512,8 @@ class MultiFitter:
             if data[channel].model is not model:
                 raise ValueError(f"The '{channel.value}' channel dataset is bound to a different model than the fitter's.")
 
-        def func_wrapper(func, unique_name):
-            """Func wrapper."""
-
-            def wrapped(*args, **kwargs):
-                """Wrapped function."""
-                return func(*args, unique_name, **kwargs)
-
-            return wrapped
-
         channel_fit_funcs = [
-            func_wrapper(model.interface.fit_func_for_channel(channel), model.unique_name) for channel in channels
+            _bind_fit_func(model.interface.fit_func_for_channel(channel), model.unique_name) for channel in channels
         ]
         # One fit function per channel, all bound to the single model. Constructed
         # per call because the channel set comes from the data; the minimizer
@@ -515,23 +536,7 @@ class MultiFitter:
             variances = np.asarray(dataset.ye)
 
             x_out, y_eff, weights, stats = _prepare_fit_arrays(x_vals, y_vals, variances, obj)
-
-            if stats['masked'] > 0:
-                warnings.warn(
-                    f'Masked {stats["masked"]} data point(s) in channel {channel.value} due to zero variance during fitting.',
-                    UserWarning,
-                )
-            if stats.get('transformed_all_points'):
-                warnings.warn(
-                    f'Applied Mighell transform to all {len(y_vals)} point(s) in channel {channel.value} during fitting.',
-                    UserWarning,
-                )
-            elif stats['mighell_substituted'] > 0:
-                warnings.warn(
-                    f'Applied Mighell substitution to {stats["mighell_substituted"]} '
-                    f'zero-variance point(s) in channel {channel.value} during fitting.',
-                    UserWarning,
-                )
+            _emit_array_prep_warnings(stats, y_vals, f'channel {channel.value}')
             if obj == 'legacy_mask' and len(x_out) == 0:
                 raise ValueError(f'Cannot fit channel {channel.value}: all points have zero variance.')
 
@@ -541,22 +546,16 @@ class MultiFitter:
             original_arrays.append({'x': x_vals, 'y': y_vals, 'variances': variances})
 
         results = polarized_fitter.fit(x, y, weights=dy)
+        # All channels are fitted against one parameter vector (the shared model),
+        # so `result.n_pars` is identical across `results`; `reduced_chi` and
+        # `classical_reduced_chi` below rely on that invariant.
         self._fit_results = list(results)
 
         self._classical_fit_metrics = []
         for index, (channel, result) in enumerate(zip(channels, results)):
             original = original_arrays[index]
             model_curve = channel_fit_funcs[index](original['x'])
-            sigma_classical = np.sqrt(np.clip(original['variances'], 0.0, None))
-            n_classical_points = int(np.sum(original['variances'] > 0.0))
-            classical_chi2 = _compute_weighted_chi2(original['y'], model_curve, sigma_classical)
-            self._classical_fit_metrics.append({
-                'classical_chi2': classical_chi2,
-                'classical_reduced_chi': _compute_reduced_chi2(classical_chi2, n_classical_points, result.n_pars),
-                'objective_chi2': float(result.chi2),
-                'objective_reduced_chi': _fit_result_reduced_chi(result, np.size(result.x)),
-                'n_classical_points': n_classical_points,
-            })
+            self._classical_fit_metrics.append(_classical_metrics_for(original, model_curve, result))
 
         return {channel.value: result for channel, result in zip(channels, results)}
 
@@ -628,27 +627,16 @@ class MultiFitter:
                 )
 
             x_out, y_eff, weights, stats = _prepare_fit_arrays(x_vals, y_vals, variances, obj)
-
-            if stats['masked'] > 0:
-                warnings.warn(
-                    f'Masked {stats["masked"]} data point(s) in reflectivity {i} due to zero variance during sampling.',
-                    UserWarning,
-                )
-            if stats.get('transformed_all_points'):
-                warnings.warn(
-                    f'Applied Mighell transform to all {len(y_vals)} point(s) in reflectivity {i} during sampling. '
-                    'The Mighell transform is a chi-square bias correction, not a true likelihood; '
-                    'posterior widths may be unreliable.',
-                    UserWarning,
-                )
-            elif stats['mighell_substituted'] > 0:
-                warnings.warn(
-                    f'Applied Mighell substitution to {stats["mighell_substituted"]} '
-                    f'zero-variance point(s) in reflectivity {i} during sampling. '
-                    'The Mighell transform is a chi-square bias correction, not a true likelihood; '
-                    'posterior widths may be unreliable.',
-                    UserWarning,
-                )
+            _emit_array_prep_warnings(
+                stats,
+                y_vals,
+                f'reflectivity {i}',
+                action='sampling',
+                extra=(
+                    ' The Mighell transform is a chi-square bias correction, not a true likelihood; '
+                    'posterior widths may be unreliable.'
+                ),
+            )
             x.append(x_out)
             y.append(y_eff)
             dy.append(weights)

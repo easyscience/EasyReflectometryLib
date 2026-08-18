@@ -403,6 +403,9 @@ class WrapperBase:
         channel = PolarizationChannel(channel)
         if not self._magnetism:
             if channel is PolarizationChannel.PP:
+                # No explicit `.copy()` needed here: `calculate()` always returns
+                # a fresh array (a cached, shared array only exists on the
+                # magnetism-enabled `calculate_polarized` path below).
                 return self.calculate(q_array, model_name)
             raise ValueError(f"Calculating the '{channel.value}' channel requires magnetism to be enabled.")
         return self.calculate_polarized(q_array, model_name)[channel.value]

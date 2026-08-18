@@ -1027,7 +1027,7 @@ class Project:
         and then fail.
         """
         channels = self.experiment_channels_at_index(index)
-        if PolarizationChannel.PP not in channels or PolarizationChannel.MM not in channels:
+        if not _has_both_nsf_channels(channels):
             return False
         experiment = self._experiments[index]
         try:
@@ -1097,7 +1097,7 @@ class Project:
         if index not in self._experiments.keys():
             raise IndexError(f'No experiment data for model at index {index}')
         channels = self.experiment_channels_at_index(index)
-        if PolarizationChannel.PP not in channels or PolarizationChannel.MM not in channels:
+        if not _has_both_nsf_channels(channels):
             raise ValueError(f'Experiment {index} does not have both non-spin-flip channels; spin asymmetry needs pp and mm.')
 
         experiment = self._experiments[index]
@@ -1386,6 +1386,9 @@ class Project:
         project_dict['experiments_names'] = {}
 
         for key, experiment in self._experiments.items():
+            if isinstance(experiment, PolarizedDataSet):
+                self._as_dict_add_polarized_experiment(project_dict, key, experiment)
+                continue
             project_dict['experiments'][key] = [
                 list(experiment.x),
                 list(experiment.y),
@@ -1395,6 +1398,31 @@ class Project:
                 project_dict['experiments'][key].append(list(experiment.xe))
                 project_dict['experiments_models'][key] = experiment.model.name
                 project_dict['experiments_names'][key] = experiment.name
+
+    @staticmethod
+    def _as_dict_add_polarized_experiment(project_dict: dict, key: int, experiment: PolarizedDataSet) -> None:
+        """Serialize a `PolarizedDataSet`: one (name, x, y, ye, xe) array set per measured channel.
+
+        `experiments[key]` is a plain list for an ordinary `DataSet1D` (see
+        `_as_dict_add_experiments`); a dict here — tagged `'polarized': True` —
+        is how `_from_dict_extract_experiments` tells the two apart on load.
+        """
+        project_dict['experiments'][key] = {
+            'polarized': True,
+            'channels': {
+                channel.value: [
+                    experiment[channel].name,
+                    list(experiment[channel].x),
+                    list(experiment[channel].y),
+                    list(experiment[channel].ye),
+                    list(experiment[channel].xe),
+                ]
+                for channel in experiment.available_channels
+            },
+        }
+        if experiment.model is not None:
+            project_dict['experiments_models'][key] = experiment.model.name
+            project_dict['experiments_names'][key] = experiment.name
 
     def from_dict(self, project_dict: dict):
         """From dict."""
@@ -1439,20 +1467,44 @@ class Project:
         # Resolve any pending parameter dependencies (constraints) after all objects are loaded
         resolve_all_parameter_dependencies(self)
 
-    def _from_dict_extract_experiments(self, project_dict: dict) -> Dict[int, DataSet1D]:
+    def _from_dict_extract_experiments(self, project_dict: dict) -> Dict[int, Union[DataSet1D, PolarizedDataSet]]:
         """From dict extract experiments."""
         experiments = {}
-        for key in project_dict['experiments'].keys():
+        for key, raw in project_dict['experiments'].items():
+            if isinstance(raw, dict) and raw.get('polarized'):
+                experiments[int(key)] = self._polarized_experiment_from_dict(key, raw, project_dict)
+                continue
             experiments[int(key)] = DataSet1D(
                 name=project_dict['experiments_names'][key],
-                x=project_dict['experiments'][key][0],
-                y=project_dict['experiments'][key][1],
-                ye=project_dict['experiments'][key][2],
-                xe=project_dict['experiments'][key][3],
+                x=raw[0],
+                y=raw[1],
+                ye=raw[2],
+                xe=raw[3],
                 model=self._models[project_dict['experiments_models'][key]],
                 auto_background=False,
             )
         return experiments
+
+    def _polarized_experiment_from_dict(self, key: str, raw: dict, project_dict: dict) -> PolarizedDataSet:
+        """Reconstruct a `PolarizedDataSet` serialized by `_as_dict_add_polarized_experiment`."""
+        model = self._models[project_dict['experiments_models'][key]]
+        channels = {
+            channel_value: DataSet1D(
+                name=arrays[0],
+                x=arrays[1],
+                y=arrays[2],
+                ye=arrays[3],
+                xe=arrays[4],
+                model=model,
+                auto_background=False,
+            )
+            for channel_value, arrays in raw['channels'].items()
+        }
+        return PolarizedDataSet(
+            name=project_dict['experiments_names'][key],
+            channels=channels,
+            model=model,
+        )
 
     def _get_materials_in_models(self) -> MaterialCollection:
         """Get materials in models."""
@@ -1516,6 +1568,11 @@ def _unwrapped_angle(angle: np.ndarray, mask: np.ndarray) -> np.ndarray:
     return unwrapped
 
 
+def _has_both_nsf_channels(channels: List[PolarizationChannel]) -> bool:
+    """Whether both non-spin-flip channels (pp, mm) — the pair spin asymmetry needs — are present."""
+    return PolarizationChannel.PP in channels and PolarizationChannel.MM in channels
+
+
 def _ordered_channel_arrays(dataset: DataSet1D) -> tuple:
     """A channel's (q, reflectivity, variance) arrays, ordered and checked.
 
@@ -1557,6 +1614,12 @@ def _ordered_channel_arrays(dataset: DataSet1D) -> tuple:
     if not np.array_equal(order, np.arange(q.size)):
         logger.warning("Channel '%s' is not ordered in q; sorting it before pairing.", name)
         q, y, variance = q[order], y[order], variance[order]
+    # A single-point channel has an empty `np.diff`, so the duplicate-q check
+    # below is vacuously satisfied and it passes through here unrejected. That
+    # is intentional: a one-point channel is a legitimate (if degenerate) SA
+    # pair when it lines up exactly with the other channel's grid, and
+    # `_interpolate_with_variance` handles a size-1 `q_source` correctly (its
+    # clipped `searchsorted` result always resolves to that single point).
     if np.any(np.diff(q) <= 0):
         raise ValueError(f"Channel '{name}' visits the same q more than once; the pairing would be ambiguous.")
     return q, y, variance

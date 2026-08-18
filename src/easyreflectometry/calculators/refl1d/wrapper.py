@@ -164,6 +164,10 @@ class Refl1dWrapper(WrapperBase):
             # A non-magnetic slab is fine inside a polarized calculation.
             slab.magnetism = None
         if self._magnetism and not self._layer_magnetism:
+            # Goes through the `magnetism` property setter, which calls
+            # `_remove_magnetism_from_layers()` again (a no-op here since
+            # `_layer_magnetism` is already empty) and, more importantly,
+            # resets `_polarization_channel` back to PP.
             self.magnetism = False
 
     def create_model(self, name: str):
@@ -336,7 +340,9 @@ class Refl1dWrapper(WrapperBase):
         produce the same reflectivity, so cached cross-sections can be reused.
         The resolution function needs no entry here — it enters through the dq
         part of the per-grid cache key. Must be extended whenever a new slab or
-        material attribute starts reaching the kernel.
+        material attribute starts reaching the kernel: a forgotten kernel input
+        would silently serve stale reflectivities whenever only that input
+        changes, since the token would compare equal.
         """
         model = self.storage['model'][model_name]
         values: list = [model['scale'], model['bkg']]
@@ -446,6 +452,10 @@ class Refl1dWrapper(WrapperBase):
                 '(`include_magnetism = True` on the calculator / `magnetism = True` on the wrapper).'
             )
         sample = _build_sample(self.storage, model_name)
+        # Plain (non-polarized) probe: unlike `_polarized_reflectivities`, this
+        # only renders slabs for `magnetic_smooth_profile()`/`_render_slabs()`,
+        # never computes a per-channel reflectivity, so the `theta_offset` that
+        # `magnetism=True` would add (needed by `PolarizedQProbe`) is not required.
         probe = _get_probe(
             q_array=np.array([1]),  # dummy value
             dq_array=np.array([1]),  # dummy value
@@ -535,7 +545,10 @@ def _get_probe(
     )
 
     # Add theta_offset attribute if magnetism is enabled
-    # This is required for PolarizedQProbe to work correctly
+    # This is required for PolarizedQProbe to work correctly: refl1d's
+    # `PolarizedNeutronQProbe.__init__` -> `_calculate_union` reads `theta_offset`
+    # off each constituent probe, so a QProbe destined for a PolarizedQProbe must
+    # carry it even though the plain (unpolarized) QProbe path never touches it.
     if magnetism:
         probe.theta_offset = names.Parameter.default(0, name='theta_offset')
 

@@ -162,6 +162,9 @@ class Layer(BaseCore):
                 self.interface().remove_layer_magnetism(self.unique_name)
             # Detach the calculator callbacks of the removed parameters so later
             # value changes on the detached object no longer reach the backend.
+            # `property()` (fget/fset/fdel all None) is easyscience's own "no
+            # callback" sentinel -- `Parameter.__copy__` sets it the same way --
+            # so a later `fset` guard in `Parameter` cleanly no-ops.
             self._magnetism.rho_m._callback = property()
             self._magnetism.theta_m._callback = property()
         self._magnetism = value

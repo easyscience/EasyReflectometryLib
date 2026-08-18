@@ -6,6 +6,7 @@ Tests for explicit-channel calculation, the polarized reflectivity cache,
 per-channel experiment loading, and simultaneous multi-channel fitting.
 """
 
+import json
 from unittest.mock import patch
 
 import numpy as np
@@ -110,6 +111,36 @@ class TestCalculateChannel:
         reference = model.interface.polarized_reflectivity_profiles(Q, model.unique_name)
         fit_func = model.interface.fit_func_for_channel('mm')
         assert_allclose(fit_func(Q, model.unique_name), reference['mm'], rtol=1e-12)
+
+    def test_magnetism_inside_a_repeating_multilayer_raises_instead_of_silently_wrong(self):
+        """refl1d itself does not support repeated magnetic slabs (`profile.repeat`).
+
+        `magnetism.ipynb` documents this as a known limitation; this test pins
+        that the failure is loud (`NotImplementedError`) rather than a silent
+        wrong answer, so the tutorial's claim stays checked against behaviour.
+        """
+        from easyreflectometry.sample import RepeatingMultilayer
+
+        vacuum = Material(sld=0, isld=0, name='Vacuum')
+        material = Material(sld=4.0, isld=0, name='Fe')
+        si = Material(sld=2.047, isld=0, name='Si')
+        superphase = Layer(material=vacuum, thickness=0, roughness=0, name='Vacuum Superphase')
+        layer = Layer(
+            material=material,
+            thickness=50,
+            roughness=2,
+            magnetism=LayerMagnetism(rho_m=5.0, theta_m=40.0),
+            name='Fe film',
+        )
+        subphase = Layer(material=si, thickness=0, roughness=3, name='Si Subphase')
+        repeated = RepeatingMultilayer(layer, repetitions=3, name='Repeated Fe')
+        sample = Sample(Multilayer(superphase), repeated, Multilayer(subphase), name='Repeated magnetic sample')
+        model = Model(sample=sample, scale=1, background=0, name='Repeated magnetic model')
+        model.resolution_function = PercentageFwhm(0)
+        model.interface = _refl1d_interface()
+
+        with pytest.raises(NotImplementedError, match='[Rr]epeat'):
+            model.interface().polarized_reflectivity_profiles(Q, model.unique_name)
 
 
 class TestPolarizedCache:
@@ -244,6 +275,59 @@ class TestLoadPolarizedExperiment:
         assert suggestion[str(pp_path)] == PolarizationChannel.PP
         assert suggestion[str(mm_path)] == PolarizationChannel.MM
         assert suggestion[str(unknown_path)] is None
+
+    def test_project_as_dict_and_from_dict_round_trip_a_polarized_experiment(self, tmp_path):
+        pp_path = self._write_channel_file(tmp_path, 'sample_uu.txt')
+        mm_path = self._write_channel_file(tmp_path, 'sample_dd.txt')
+
+        project = Project()
+        project.calculator = 'refl1d'
+        project.default_model()
+        project.load_polarized_experiment({'pp': pp_path, 'mm': mm_path})
+        original = project.experiments[0]
+
+        # Must not raise (PolarizedDataSet has no .x/.y/.ye of its own) and must
+        # be plain-JSON-serializable, since that is what `save_as_json` does with it.
+        project_dict = project.as_dict(include_materials_not_in_model=True)
+        json.dumps(project_dict)
+
+        global_object.map._clear()
+        reloaded_project = Project()
+        reloaded_project.from_dict(project_dict)
+        reloaded = reloaded_project.experiments[0]
+
+        assert isinstance(reloaded, PolarizedDataSet)
+        assert reloaded.name == original.name
+        assert reloaded.available_channels == original.available_channels
+        assert reloaded.model is reloaded_project.models[0]
+        for channel in original.available_channels:
+            assert reloaded[channel].name == original[channel].name
+            assert reloaded[channel].model is reloaded_project.models[0]
+            assert_allclose(reloaded[channel].x, original[channel].x)
+            assert_allclose(reloaded[channel].y, original[channel].y)
+            assert_allclose(reloaded[channel].ye, original[channel].ye)
+
+    def test_project_save_as_json_and_load_from_json_round_trip_a_polarized_experiment(self, tmp_path):
+        pp_path = self._write_channel_file(tmp_path, 'sample_uu.txt')
+        mm_path = self._write_channel_file(tmp_path, 'sample_dd.txt')
+
+        project = Project()
+        project.set_path_project_parent(tmp_path)
+        project.calculator = 'refl1d'
+        project.default_model()
+        project._info['name'] = 'Polarized round trip'
+        project.load_polarized_experiment({'pp': pp_path, 'mm': mm_path})
+
+        project.save_as_json()
+        assert project.path_json.exists()
+
+        global_object.map._clear()
+        reloaded_project = Project()
+        reloaded_project.load_from_json(project.path_json)
+        reloaded = reloaded_project.experiments[0]
+
+        assert isinstance(reloaded, PolarizedDataSet)
+        assert reloaded.available_channels == [PolarizationChannel.PP, PolarizationChannel.MM]
 
 
 class TestChannelAwareExperimentAccessors:
