@@ -217,9 +217,6 @@ jobs:
             echo "Adding Python $py_ver"
             pixi add "python=$py_ver"
 
-            echo "Setting macOS 14.0 as minimum required"
-            pixi project system-requirements add macos 14.0
-
             echo "Looking for wheel in ../dist/py$py_ver/"
             ls -l "../dist/py$py_ver/"
 
