@@ -312,7 +312,11 @@ class Project:
         self._replace_collection(models, self._models)
         # Use setter to update indicies for current model, assembly and layer
         self.current_model_index = 0
-        self._materials.extend(self._get_materials_in_models())
+        # Only track materials not already in the project's material collection
+        # (e.g. layers built from self._materials, as in default_model(), would
+        # otherwise be re-added and trigger a spurious duplicate-item warning).
+        new_materials = [material for material in self._get_materials_in_models() if material not in self._materials]
+        self._materials.extend(new_materials)
         for model in self._models:
             model.interface = self._calculator
         self._sync_parameter_states()
