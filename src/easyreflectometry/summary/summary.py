@@ -55,7 +55,6 @@ _TOOLTIP_SCHEME = 'nametooltip'
 _ENGINE_URLS: dict[str, str] = {
     'refnx': 'https://refnx.readthedocs.io',
     'refl1d': 'https://refl1d.readthedocs.io',
-    'bornagain': 'https://www.bornagainproject.org',
     'lm': 'https://lmfit.github.io/lmfit-py/',
     'bumps': 'https://bumps.readthedocs.io',
     'dfo': 'https://github.com/fitbenchmarking/dfo-ls',
