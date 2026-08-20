@@ -2957,18 +2957,18 @@ there and focuses on what is new for <strong>polarization analysis</strong>:</p>
 <li>Computing all four spin cross-sections (<code>pp</code>, <code>pm</code>, <code>mp</code>, <code>mm</code>) in
 a single call.</li>
 <li>Reading the spin-resolved depth profile. The potential each neutron
-spin state actually sees.</li>
+spin state sees.</li>
 <li>Loading a polarized experiment from per-channel data files and forming the
 <strong>spin asymmetry</strong>, with correct error propagation.</li>
 <li><strong>Fitting multiple polarization channels simultaneously</strong> against one
 shared model with <code>MultiFitter.fit_polarized()</code>.
-First recovering the moment's magnitude from the two
+First, recovering the moment's magnitude from the two
 non-spin-flip channels, then recovering the full magnetization vector
 (magnitude <em>and</em> direction) from all four channels.</li>
 </ol>
-<p>Only the <code>refl1d</code> calculator supports magnetism; <code>refnx</code> does
-not. All magnetism handling: enabling it on the calculator, computing
-channels, fitting, requires <code>refl1d</code>.</p>
+<p>Only the <code>refl1d</code> calculator supports magnetism.
+All magnetism handling: enabling it on the calculator, computing channels,
+fitting, requires <code>refl1d</code>.</p>
 <p>The reflectometry convention used throughout: with the default guide field,
 a moment at <code>theta_m = 270</code> degrees is aligned with it (no spin-flip
 scattering); <code>theta_m = 90</code> is anti-aligned. A <strong>canted</strong> moment away from
@@ -3239,9 +3239,9 @@ dict with all four spin cross-sections at once:</p>
 </ul>
 <p>Internally this is a single <code>refl1d</code> kernel evaluation shared by all four
 channels (and cached per model state), so this costs about the same as
-computing one channel. For a single explicit channel without touching any
-calculator state, use <code>reflectivity_profile_channel(q, model_name, channel)</code>
-instead. Both are stateless, unlike setting <code>interface.polarization_channel</code>.</p>
+computing one channel. For a single explicit channel use
+<code>reflectivity_profile_channel(q, model_name, channel)</code>instead.
+Both are stateless, unlike setting <code>interface.polarization_channel</code>.</p>
 </div>
 </div>
 </div>
@@ -3541,7 +3541,7 @@ print(f'Loaded polarized experiment at index {experiment_index}, channels: {load
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>{'/tmp/easyreflectometry_polarized_wdcqola0/fe_film_uu.txt': &lt;PolarizationChannel.PP: 'pp'&gt;, '/tmp/easyreflectometry_polarized_wdcqola0/fe_film_dd.txt': &lt;PolarizationChannel.MM: 'mm'&gt;}
+<pre>{'/tmp/easyreflectometry_polarized_jhju2f63/fe_film_uu.txt': &lt;PolarizationChannel.PP: 'pp'&gt;, '/tmp/easyreflectometry_polarized_jhju2f63/fe_film_dd.txt': &lt;PolarizationChannel.MM: 'mm'&gt;}
 Loaded polarized experiment at index 0, channels: [&lt;PolarizationChannel.PP: 'pp'&gt;, &lt;PolarizationChannel.MM: 'mm'&gt;]
 </pre>
 </div>
@@ -4000,9 +4000,7 @@ Reduced chi^2: 0.808
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <h2 id="summary">Summary<a class="anchor-link" href="#summary">¶</a></h2><p>See <code>docs/docs/tutorials/simulation/magnetism.ipynb</code> for the basics of
-building magnetic samples and selecting a single channel, and
-<code>tests/test_polarized_fitting.py</code> for the full, tested API which
-this tutorial is based on.</p>
+building magnetic samples and selecting a single channel.</p>
 </div>
 </div>
 </div>
