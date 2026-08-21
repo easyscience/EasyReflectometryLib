@@ -153,7 +153,7 @@ unconstrain(layer_2.thickness)
 The parameter keeps its last evaluated value and becomes an independent,
 fittable parameter again. Calling `unconstrain` on a parameter that is
 not constrained does nothing. The parameter's original bounds and
-`fixed` state are **not** restored — they remain whatever the constraint
+`fixed` state are **not** restored. They remain whatever the constraint
 left behind, so review and reset the bounds before fitting.
 
 ### Things to be aware of
@@ -165,7 +165,7 @@ left behind, so review and reset the bounds before fitting.
 - Placeholder names in expressions must be valid Python identifiers and
   not Python keywords. An unmapped name that happens to match a
   mathematical builtin (`e`, `pi`, `sin`, ...) evaluates silently
-  instead of raising an error — prefer descriptive placeholder names.
+  instead of raising an error.
 - If the model is already attached to a calculator, regenerate the
   bindings after changing constraints so the calculator picks up the new
   dependency graph:
@@ -175,4 +175,4 @@ left behind, so review and reset the bounds before fitting.
   ```
 
 - Custom constraints are not yet preserved when a project is saved and
-  reloaded — re-apply them after loading a project.
+  reloaded. Re-apply them after loading a project.

@@ -10,7 +10,7 @@ by EasyScience; constrained parameters are excluded from the free fit
 parameters.
 
 Note: custom constraints are not yet preserved when a project is saved
-and reloaded — the nested-parameter serialization in EasyScience drops
+and reloaded. The nested-parameter serialization in EasyScience drops
 the dependency information. Re-apply constraints after loading a
 project.
 """
@@ -75,7 +75,7 @@ def unconstrain(parameter: Parameter) -> None:
     Idempotent: calling it on an already-independent parameter is a
     no-op. The parameter keeps its current (last evaluated) value and
     becomes fittable again. Its bounds, unit, variance and `fixed` state
-    are not restored to their pre-constraint values — review and reset
+    are not restored to their pre-constraint values. Review and reset
     the bounds before fitting.
 
     Parameters
