@@ -6,6 +6,9 @@
 from importlib import metadata
 
 from .analysis.bayesian import PosteriorResults
+from .constraints import constrain
+from .constraints import constrain_equal
+from .constraints import unconstrain
 from .project import Project
 
 try:
@@ -17,4 +20,7 @@ __all__ = [
     'Project',
     'PosteriorResults',
     '__version__',
+    'constrain',
+    'constrain_equal',
+    'unconstrain',
 ]
