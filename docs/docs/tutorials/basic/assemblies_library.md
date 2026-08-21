@@ -9,7 +9,7 @@ limited code. In this page, we will document the assemblies that are
 available with simple examples of the constructors that exist. Full API
 documentation is also available for the
 `easyreflectometry.sample.assemblies` module. For custom constraints
-between arbitrary parameters, see *Constraining Parameters* in the
+between arbitrary parameters, see _Constraining Parameters_ in the
 [Model tutorial](model.md).
 
 ## Multilayer
