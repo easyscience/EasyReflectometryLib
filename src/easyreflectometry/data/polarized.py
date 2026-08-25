@@ -244,6 +244,60 @@ def detect_polarization_channel(path: str) -> Optional[PolarizationChannel]:
     return _channel_from_filename(path)
 
 
+def channel_from_orso_polarization(polarization) -> Optional[PolarizationChannel]:
+    """Map an ORSO ``instrument_settings.polarization`` value to a spin channel.
+
+    Parameters
+    ----------
+    polarization :
+        The header value (orsopy ``Polarization`` enum, string, or None).
+
+    Returns
+    -------
+    Optional[PolarizationChannel]
+        The mapped channel, or None for absent/unmapped values (``po``, ``mo``,
+        ``op``, ``om``, ``unpolarized``, ``vector`` are deliberately unmapped).
+    """
+    if polarization is None:
+        return None
+    value = getattr(polarization, 'value', polarization)
+    return _ORSO_POLARIZATION_TO_CHANNEL.get(str(value).lower())
+
+
+def _dataset_polarization(orso_dataset):
+    """The declared polarization of one parsed ORSO dataset, or None."""
+    try:
+        return orso_dataset.info.data_source.measurement.instrument_settings.polarization
+    except AttributeError:
+        return None
+
+
+def detect_polarization_channels_per_dataset(
+    orso_data,
+) -> list[tuple[bool, Optional[PolarizationChannel]]]:
+    """Classify every dataset of a parsed ORSO file by its own header.
+
+    Unlike :func:`detect_polarization_channel`, which reads only the first
+    dataset, this honours per-dataset ``polarization:`` overrides in
+    multi-dataset files.
+
+    Parameters
+    ----------
+    orso_data : list
+        Parsed ORSO dataset list (as returned by ``orso.load_orso``).
+
+    Returns
+    -------
+    list[tuple[bool, Optional[PolarizationChannel]]]
+        Per dataset: (header declares a polarization, mapped channel or None).
+    """
+    result = []
+    for orso_dataset in orso_data:
+        polarization = _dataset_polarization(orso_dataset)
+        result.append((polarization is not None, channel_from_orso_polarization(polarization)))
+    return result
+
+
 def _channel_from_orso_header(path: str) -> tuple[bool, Optional[PolarizationChannel]]:
     """Read the polarization of the first dataset in an ORSO file.
 
@@ -254,16 +308,15 @@ def _channel_from_orso_header(path: str) -> tuple[bool, Optional[PolarizationCha
         False when the file is unreadable or carries no polarization field.
     """
     try:
-        from orsopy.fileio import orso
+        from easyreflectometry.orso_utils import _load_orso_any
 
-        orso_data = orso.load_orso(str(path))
+        orso_data = _load_orso_any(str(path))
         polarization = orso_data[0].info.data_source.measurement.instrument_settings.polarization
     except Exception:
         return False, None
     if polarization is None:
         return False, None
-    value = getattr(polarization, 'value', polarization)
-    return True, _ORSO_POLARIZATION_TO_CHANNEL.get(str(value).lower())
+    return True, channel_from_orso_polarization(polarization)
 
 
 def _channel_from_filename(path: str) -> Optional[PolarizationChannel]:
