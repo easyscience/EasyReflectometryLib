@@ -49,6 +49,10 @@ These are basic fitting examples using the EasyReflectometry library.
 These are advanced fitting examples using the EasyReflectometry library.
 
 - [Multi-Contrast Fitting](advancedfitting/multi_contrast.ipynb)
+- [Constraints & Inequalities](advancedfitting/constraints.ipynb) –
+  Equality constraints, derived read-only parameters (`total_thickness`,
+  `constrain_to_sum`) and inequality constraints enforced during BUMPS
+  fits.
 
 ## Extra
 

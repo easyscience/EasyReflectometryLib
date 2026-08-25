@@ -5,6 +5,7 @@ import datetime
 import json
 import logging
 import os
+import weakref
 from pathlib import Path
 from typing import Dict
 from typing import List
@@ -14,6 +15,7 @@ from typing import Union
 import numpy as np
 from easyscience import global_object
 from easyscience.fitting import AvailableMinimizers
+from easyscience.variable import DescriptorNumber as DescriptorNumberType
 from easyscience.variable import Parameter
 from easyscience.variable.parameter_dependency_resolver import resolve_all_parameter_dependencies
 from scipp import DataGroup
@@ -28,6 +30,11 @@ from easyreflectometry.data import load_as_dataset
 from easyreflectometry.data.measurement import extract_orso_title
 from easyreflectometry.data.measurement import load_data_from_orso_file
 from easyreflectometry.fitting import MultiFitter
+from easyreflectometry.inequality_constraints import InequalityEvaluation
+from easyreflectometry.inequality_constraints import InequalitySpec
+from easyreflectometry.inequality_constraints import build_constraints_factory
+from easyreflectometry.inequality_constraints import check_units
+from easyreflectometry.inequality_constraints import evaluate_spec
 from easyreflectometry.limits import apply_default_limits
 from easyreflectometry.model import Model
 from easyreflectometry.model import ModelCollection
@@ -75,6 +82,22 @@ MAGNETIC_MOMENT_FLOOR_FRACTION = 0.01
 
 DEFAULT_MINIMIZER = AvailableMinimizers.LMFit_leastsq
 
+#: Properties not descended into when *generating* structural parameter
+#: paths: non-structural objects and convenience aliases of ``layers[i]``
+#: (so a layer parameter is always addressed as ``.../layers/<i>/...``).
+#: ``resolve_parameter_path`` still accepts them.
+_PATH_SKIPPED_PROPERTIES = frozenset({'interface', 'parent', 'front_layer', 'back_layer', 'head_layer', 'tail_layer'})
+
+
+def _weak_constraints_provider(project: 'Project'):
+    project_ref = weakref.ref(project)
+
+    def provider():
+        target = project_ref()
+        return None if target is None else target.build_constraints_factory()
+
+    return provider
+
 
 class Project:
     def __init__(self):
@@ -98,6 +121,7 @@ class Project:
         self._current_layer_index = 0
         self._fitter_model_index = None
         self._current_experiment_index = 0
+        self._inequality_constraints: List[InequalitySpec] = []
 
         # Project flags
         self._created = False
@@ -329,7 +353,147 @@ class Project:
                 self._fitter = MultiFitter(self._models[self._current_model_index])
                 self._fitter.easy_science_multi_fitter.switch_minimizer(self._minimizer_selection)
                 self._fitter_model_index = self._current_model_index
+                # Fits run through this fitter pick up the project's inequality
+                # constraints automatically (resolved at fit time). A weak
+                # reference avoids a project -> fitter -> project cycle that
+                # would keep a discarded project (and its unique names) alive.
+                self._fitter.constraints_factory_provider = _weak_constraints_provider(self)
         return self._fitter
+
+    # ----- structural parameter paths -----
+
+    @staticmethod
+    def _child_candidates(obj) -> list:
+        """``(token, child)`` pairs to descend into from `obj`."""
+        from collections.abc import Sequence
+
+        from easyreflectometry.sample.base_core import BaseCore
+        from easyreflectometry.sample.collections.base_collection import BaseCollection
+
+        if isinstance(obj, (BaseCollection, list, tuple)) or (isinstance(obj, Sequence) and not isinstance(obj, str)):
+            return [(str(index), item) for index, item in enumerate(obj)]
+        if isinstance(obj, BaseCore) or hasattr(obj, 'get_all_parameters'):
+            candidates = []
+            for attr_name in dir(type(obj)):
+                if attr_name.startswith('_') or attr_name in _PATH_SKIPPED_PROPERTIES:
+                    continue
+                class_attr = getattr(type(obj), attr_name, None)
+                if not isinstance(class_attr, property):
+                    continue
+                try:
+                    value = getattr(obj, attr_name)
+                except Exception as exception:
+                    logger.debug("Skipping property '%s' on %r: %s", attr_name, obj, exception)
+                    continue
+                if isinstance(value, (DescriptorNumberType, BaseCore, BaseCollection, list, tuple)):
+                    candidates.append((attr_name, value))
+            return candidates
+        return []
+
+    def parameter_path(self, parameter) -> Optional[str]:
+        """Structural path of `parameter` within this project, e.g.
+        ``models/0/sample/1/layers/0/thickness``.
+
+        Paths are stable across save/load (unlike unique names, which are
+        regenerated) and are the way inequality constraints reference
+        parameters. Returns ``None`` when the parameter is not reachable
+        from the project's models.
+        """
+        target = id(parameter)
+        visited: set[int] = set()
+
+        def _search(obj, tokens: List[str]) -> Optional[str]:
+            if id(obj) == target:
+                return '/'.join(tokens)
+            if isinstance(obj, DescriptorNumberType):
+                return None
+            if id(obj) in visited:
+                return None
+            visited.add(id(obj))
+            for token, child in self._child_candidates(obj):
+                found = _search(child, tokens + [token])
+                if found is not None:
+                    return found
+            return None
+
+        return _search(self._models, ['models'])
+
+    def resolve_parameter_path(self, path: str):
+        """Return the parameter at a structural `path` (see :meth:`parameter_path`)."""
+        tokens = [t for t in str(path).split('/') if t != '']
+        if not tokens or tokens[0] != 'models':
+            raise KeyError(f"Parameter path must start with 'models': '{path}'.")
+        obj = self._models
+        for token in tokens[1:]:
+            if token.lstrip('-').isdigit():
+                try:
+                    obj = obj[int(token)]
+                except (IndexError, KeyError, TypeError):
+                    raise KeyError(f"Parameter path '{path}': index {token} is out of range.") from None
+            else:
+                if token.startswith('_') or not hasattr(obj, token):
+                    raise KeyError(f"Parameter path '{path}': unknown attribute '{token}'.")
+                obj = getattr(obj, token)
+        if not isinstance(obj, DescriptorNumberType):
+            raise KeyError(f"Parameter path '{path}' does not point to a parameter.")
+        return obj
+
+    # ----- inequality constraints -----
+
+    @property
+    def inequality_constraints(self) -> List[InequalitySpec]:
+        """The project's inequality constraints (a copy of the list)."""
+        return list(self._inequality_constraints)
+
+    def add_inequality_constraint(self, spec: InequalitySpec, validate: bool = True) -> InequalitySpec:
+        """Register an inequality constraint; returns it.
+
+        With ``validate`` the paths are resolved and the units of both sides
+        compared, raising ``KeyError``/``ValueError`` on problems.
+        """
+        if not isinstance(spec, InequalitySpec):
+            raise TypeError('spec must be an InequalitySpec')
+        if validate:
+            check_units(spec, self.resolve_parameter_path)
+        self._inequality_constraints.append(spec)
+        return spec
+
+    def remove_inequality_constraint(self, which: Union[int, str, InequalitySpec]) -> None:
+        """Remove a constraint by index, by name or by identity."""
+        if isinstance(which, InequalitySpec):
+            self._inequality_constraints = [s for s in self._inequality_constraints if s is not which]
+            return
+        if isinstance(which, str):
+            matches = [s for s in self._inequality_constraints if s.name == which]
+            if not matches:
+                raise KeyError(f"No inequality constraint named '{which}'.")
+            for spec in matches:
+                self._inequality_constraints.remove(spec)
+            return
+        del self._inequality_constraints[int(which)]
+
+    def clear_inequality_constraints(self) -> None:
+        self._inequality_constraints = []
+
+    def evaluate_inequality_constraints(self) -> List[InequalityEvaluation]:
+        """Evaluate every constraint (enabled or not) at the current values."""
+        return [evaluate_spec(spec, self.resolve_parameter_path) for spec in self._inequality_constraints]
+
+    def violated_inequality_constraints(self) -> List[InequalitySpec]:
+        """Enabled constraints that the *current* parameter values violate.
+
+        A fit started from an infeasible point begins on the BUMPS penalty
+        plateau; callers should refuse or warn before launching.
+        """
+        violated = []
+        for spec in self._inequality_constraints:
+            if spec.enabled and not evaluate_spec(spec, self.resolve_parameter_path).satisfied:
+                violated.append(spec)
+        return violated
+
+    def build_constraints_factory(self):
+        """``constraints_factory`` hook for the enabled inequality constraints, or ``None``."""
+        return build_constraints_factory(self._inequality_constraints, self.resolve_parameter_path)
 
     @property
     def calculator(self) -> str:
@@ -508,7 +672,10 @@ class Project:
         """
         if sample is None:
             raise ValueError('The ORSO file does not contain a valid sample model definition.')
-        model = Model(sample=sample)
+        # Take the collection's next colour: a supplied model keeps its own
+        # colour, and the Model default would give every loaded sample the
+        # same first palette colour.
+        model = Model(sample=sample, color=self._models.next_color())
         self.models.add_model(model)
         # Set interface after adding to collection
         model.interface = self._calculator
@@ -1372,6 +1539,8 @@ class Project:
             project_dict['calculator'] = self._calculator.current_interface_name
         if self._colors is not None:
             project_dict['colors'] = self._colors
+        if self._inequality_constraints:
+            project_dict['inequality_constraints'] = [spec.to_dict() for spec in self._inequality_constraints]
         return project_dict
 
     def _as_dict_add_materials_not_in_model_dict(self, project_dict: dict):
@@ -1470,6 +1639,9 @@ class Project:
 
         # Resolve any pending parameter dependencies (constraints) after all objects are loaded
         resolve_all_parameter_dependencies(self)
+        # Inequality constraints are declarative (paths), nothing to resolve yet:
+        # they are bound to parameters when a fit starts.
+        self._inequality_constraints = [InequalitySpec.from_dict(raw) for raw in project_dict.get('inequality_constraints', [])]
 
     def _from_dict_extract_experiments(self, project_dict: dict) -> Dict[int, Union[DataSet1D, PolarizedDataSet]]:
         """From dict extract experiments."""

@@ -37,6 +37,15 @@ Fitting helpers and objective functions.
 
    fitting
 
+Constraints
+===========
+Equality constraints, derived parameters and inequality constraints.
+
+.. toctree::
+   :maxdepth: 1
+
+   constraints
+
 Assemblies
 ==========
 Assemblies are collections of layers that are used to represent a specific physical setup.

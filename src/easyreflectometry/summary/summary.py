@@ -345,10 +345,12 @@ class Summary:
         model = self._project._models[self._project.current_model_index]
         parameters = model.get_all_parameters()
 
-        num_free_params = sum(1 for parameter in parameters if parameter.free)
-        num_fixed_params = sum(1 for parameter in parameters if not parameter.free)
-        num_params = num_free_params + num_fixed_params
+        # Dependent parameters (user constraints, derived values such as the
+        # total thickness) are neither free nor fixed: they never enter a fit.
+        num_free_params = sum(1 for parameter in parameters if parameter.independent and parameter.free)
+        num_fixed_params = sum(1 for parameter in parameters if parameter.independent and not parameter.free)
         num_constraints = sum(1 for parameter in parameters if not parameter.independent)
+        num_params = num_free_params + num_fixed_params + num_constraints
 
         goodness_of_fit = self._compute_goodness_of_fit()
 

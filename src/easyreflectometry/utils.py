@@ -80,13 +80,17 @@ def collect_unique_names_from_dict(structure_dict: dict, unique_names: Optional[
 
 
 def count_free_parameters(project) -> int:
-    """Count free parameters."""
-    return sum(1 for parameter in project.parameters if parameter.free)
+    """Count free parameters.
+
+    Dependent parameters (constrained or derived) are neither free nor fixed:
+    they never enter a fit, whatever their ``free`` flag says.
+    """
+    return sum(1 for parameter in project.parameters if parameter.independent and parameter.free)
 
 
 def count_fixed_parameters(project) -> int:
-    """Count fixed parameters."""
-    return sum(1 for parameter in project.parameters if not parameter.free)
+    """Count fixed parameters (independent parameters that are not free)."""
+    return sum(1 for parameter in project.parameters if parameter.independent and not parameter.free)
 
 
 def count_parameter_user_constraints(project) -> int:

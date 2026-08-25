@@ -149,17 +149,9 @@ class TestUnconstrain:
 
 
 class TestProjectRoundTrip:
-    @pytest.mark.xfail(
-        reason=(
-            'EasyScience serializes nested Parameters via the generic arg-spec walk '
-            '(SerializerBase._convert_to_dict), which drops _dependency_string / '
-            '_independent / serializer ids, and decodes them via cls(**data) instead of '
-            'Parameter.from_dict — so user constraints between model parameters do not '
-            'survive save/load. Fix belongs in easyscience core; this test flips when it lands.'
-        ),
-        strict=True,
-    )
     def test_constraint_survives_as_dict_from_dict(self):
+        # Requires the easyscience serializer to route nested Parameters through
+        # ``Parameter.as_dict`` and park the dependency as pending on rebuild.
         src_project = Project()
         src_project._info['name'] = 'Test'
         src_project.default_model()
@@ -180,5 +172,5 @@ class TestProjectRoundTrip:
         follower = sample[2].layers[0].thickness
 
         assert follower.independent is False
-        leader.value = 42.0
-        assert follower.value == 84.0
+        leader.value = 60.0  # within the default [50, 200] thickness limits
+        assert follower.value == 120.0

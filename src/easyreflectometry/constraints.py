@@ -9,16 +9,32 @@ parameter-dependency mechanism (``Parameter.make_dependent_on`` /
 by EasyScience; constrained parameters are excluded from the free fit
 parameters.
 
-Note: custom constraints are not yet preserved when a project is saved
-and reloaded. The nested-parameter serialization in EasyScience drops
-the dependency information. Re-apply constraints after loading a
-project.
+Constraints are preserved when a project is saved and reloaded: the
+dependency expression and the ids of the parameters it refers to are
+serialized with each parameter, and ``Project.from_dict`` re-establishes
+the dependency graph once every parameter exists again.
+
+Cross-parameter *inequalities* (``t_head < t_tail``) are not dependencies
+but fit penalties; see :mod:`easyreflectometry.inequality_constraints`.
 """
+
+from __future__ import annotations
+
+import numbers
+from typing import Iterable
+from typing import Optional
+from typing import Union
 
 from easyscience.variable import DescriptorNumber
 from easyscience.variable import Parameter
 
-__all__ = ['constrain', 'constrain_equal', 'unconstrain']
+__all__ = [
+    'constrain',
+    'constrain_equal',
+    'constrain_to_sum',
+    'derived_parameter',
+    'unconstrain',
+]
 
 
 def constrain_equal(parameter: Parameter, to: DescriptorNumber) -> None:
@@ -85,3 +101,100 @@ def unconstrain(parameter: Parameter) -> None:
     """
     if not parameter.independent:
         parameter.make_independent()
+
+
+def derived_parameter(
+    name: str,
+    expression: str,
+    unit: Optional[str] = None,
+    **parameters: DescriptorNumber,
+) -> Parameter:
+    """Create a standalone read-only parameter computed from other parameters.
+
+    The returned parameter is *dependent*: it never enters a fit, it
+    follows `expression` whenever any of `parameters` changes, and its
+    value cannot be set directly. It can be used anywhere a parameter
+    can — for example on either side of an inequality constraint or inside
+    another :func:`constrain` expression — which makes it the
+    EasyReflectometry counterpart of a bumps ``Calculation`` slot.
+
+    .. code-block:: python
+
+        total = derived_parameter('total', 't1 + t2', t1=layer_1.thickness, t2=layer_2.thickness)
+        constrain(layer_3.thickness, 'T - t', T=total, t=layer_4.thickness)
+
+    Parameters
+    ----------
+    name : str
+        Display name of the new parameter.
+    expression : str
+        Mathematical expression over the placeholder names in `parameters`.
+    unit : Optional[str], optional
+        Unit the result is converted to. By default the unit produced by
+        the expression is kept.
+    parameters : DescriptorNumber
+        Placeholder-name to parameter mapping for `expression`.
+
+    Returns
+    -------
+    Parameter
+        A new dependent parameter.
+    """
+    if not parameters:
+        raise ValueError('derived_parameter needs at least one parameter to depend on.')
+    return Parameter.from_dependency(
+        name=name,
+        dependency_expression=expression,
+        dependency_map=dict(parameters),
+        desired_unit=unit,
+    )
+
+
+def constrain_to_sum(
+    parameter: Parameter,
+    of_parameters: Iterable[DescriptorNumber],
+    *,
+    total: Union[DescriptorNumber, numbers.Number, None] = None,
+) -> None:
+    """Constrain `parameter` so that the sum of `of_parameters` stays equal to `total`.
+
+    `parameter` becomes dependent and takes the value
+    ``total - sum(other parameters)``, where "other" means every entry of
+    `of_parameters` except `parameter` itself (it may be listed or not).
+    This is the "keep the total film thickness fixed while fitting how it
+    is split" idiom:
+
+    .. code-block:: python
+
+        constrain_to_sum(layer_b.thickness, [layer_a.thickness, layer_b.thickness], total=120.0)
+
+    Parameters
+    ----------
+    parameter : Parameter
+        Parameter to make dependent (it absorbs the remainder).
+    of_parameters : Iterable[DescriptorNumber]
+        The parameters whose sum is constrained.
+    total : Union[DescriptorNumber, numbers.Number, None], optional
+        The target sum: a parameter/descriptor (e.g. a
+        :func:`derived_parameter`) or a plain number in `parameter`'s
+        unit. By default the current sum of `of_parameters` is frozen as
+        a constant.
+    """
+    others = [p for p in of_parameters if p is not parameter]
+    if not others and total is None:
+        raise ValueError('constrain_to_sum needs at least one other parameter or an explicit total.')
+    if total is None:
+        total = float(parameter.value) + sum(float(p.value) for p in others)
+    if isinstance(total, numbers.Number):
+        total = DescriptorNumber(name=f'{parameter.name}_sum_total', value=float(total), unit=str(parameter.unit))
+    elif not isinstance(total, DescriptorNumber):
+        raise TypeError('total must be a number, a DescriptorNumber/Parameter or None.')
+
+    dependency_map = {'total': total}
+    terms = []
+    for index, other in enumerate(others):
+        alias = f'p{index}'
+        dependency_map[alias] = other
+        terms.append(alias)
+    expression = 'total' if not terms else f'total - ({" + ".join(terms)})'
+    parameter.make_dependent_on(dependency_expression=expression, dependency_map=dependency_map)
