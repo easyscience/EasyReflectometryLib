@@ -194,6 +194,7 @@ nav:
           - Solvated Material Fitting: tutorials/fitting/material_solvated.ipynb
       - Advanced Fitting:
           - Multi-Contrast Fitting: tutorials/advancedfitting/multi_contrast.ipynb
+          - Polarized Fitting: tutorials/advancedfitting/polarized_fitting.ipynb
   - API Reference:
       - API Reference: api-reference/index.md
       - Model: api-reference/model.md

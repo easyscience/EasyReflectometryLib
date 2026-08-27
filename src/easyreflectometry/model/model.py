@@ -197,6 +197,11 @@ class Model(BaseCore):
             self.interface().remove_item_from_model(assembly_unique_name, self.unique_name)
 
     @property
+    def has_magnetism(self) -> bool:
+        """Whether any layer in the sample carries magnetic properties."""
+        return any(getattr(layer, 'magnetism', None) is not None for assembly in self.sample for layer in assembly.layers)
+
+    @property
     def is_default(self) -> bool:
         """Whether this model was created as a default placeholder."""
         return self._is_default

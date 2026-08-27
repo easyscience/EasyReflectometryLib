@@ -6,6 +6,8 @@ from .data_store import ProjectData
 from .measurement import load
 from .measurement import load_as_dataset
 from .measurement import merge_datagroups
+from .polarized import PolarizedDataSet
+from .polarized import detect_polarization_channel
 
 __all__ = [
     'load',
@@ -13,4 +15,6 @@ __all__ = [
     'merge_datagroups',
     'ProjectData',
     'DataSet1D',
+    'PolarizedDataSet',
+    'detect_polarization_channel',
 ]
