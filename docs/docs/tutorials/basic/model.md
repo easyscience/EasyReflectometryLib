@@ -174,5 +174,7 @@ left behind, so review and reset the bounds before fitting.
   model.generate_bindings()
   ```
 
-- Custom constraints are not yet preserved when a project is saved and
-  reloaded. Re-apply them after loading a project.
+- Constraints applied with `constrain`, `constrain_equal` and
+  `constrain_to_sum` are preserved when a project is saved and reloaded.
+  Dependencies created by calling `make_dependent_on` directly are not,
+  and must be re-applied after loading.

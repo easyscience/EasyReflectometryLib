@@ -15,9 +15,10 @@ then leaves the set of free fit parameters and follows the expression::
     constrain(layer_b.thickness, '2 * t', t=layer_a.thickness)
     unconstrain(layer_b.thickness)
 
-Constraints survive ``Project`` save/load: the dependency expression and the
-ids of the parameters it refers to are stored with every parameter and the
-graph is rebuilt when the project is loaded.
+Constraints survive ``Project`` save/load: the expression and the structural
+paths of the parameters it refers to are stored with the project and the graph
+is rebuilt when it is loaded. This covers the helpers above; a dependency
+created by calling ``make_dependent_on`` directly is not recorded.
 
 Derived (read-only) parameters
 ------------------------------

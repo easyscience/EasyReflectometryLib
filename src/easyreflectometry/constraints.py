@@ -9,10 +9,12 @@ parameter-dependency mechanism (``Parameter.make_dependent_on`` /
 by EasyScience; constrained parameters are excluded from the free fit
 parameters.
 
-Constraints are preserved when a project is saved and reloaded: the
-dependency expression and the ids of the parameters it refers to are
-serialized with each parameter, and ``Project.from_dict`` re-establishes
-the dependency graph once every parameter exists again.
+Constraints created through this module are preserved when a project is
+saved and reloaded: ``Project.as_dict`` records the expression and the
+structural paths of the parameters it refers to, and ``Project.from_dict``
+re-applies them once every parameter exists again. Dependencies created by
+calling ``make_dependent_on`` directly are outside that contract and are
+not persisted.
 
 Cross-parameter *inequalities* (``t_head < t_tail``) are not dependencies
 but fit penalties; see :mod:`easyreflectometry.inequality_constraints`.
@@ -36,6 +38,12 @@ __all__ = [
     'unconstrain',
 ]
 
+#: Marks a dependency created through this module, so ``Project`` can persist
+#: user constraints without also re-applying the internal ones that assemblies
+#: and materials rebuild themselves. Read together with ``independent``: see
+#: :func:`easyreflectometry.project.Project._user_constraints`.
+USER_CONSTRAINT_FLAG = '_easyreflectometry_user_constraint'
+
 
 def constrain_equal(parameter: Parameter, to: DescriptorNumber) -> None:
     """Tie `parameter` to always equal `to`.
@@ -53,7 +61,7 @@ def constrain_equal(parameter: Parameter, to: DescriptorNumber) -> None:
     to : DescriptorNumber
         Parameter (or descriptor) to follow.
     """
-    parameter.make_dependent_on(dependency_expression='a', dependency_map={'a': to})
+    constrain(parameter, 'a', a=to)
 
 
 def constrain(parameter: Parameter, expression: str, **parameters: DescriptorNumber) -> None:
@@ -83,6 +91,7 @@ def constrain(parameter: Parameter, expression: str, **parameters: DescriptorNum
         Placeholder-name to parameter mapping for `expression`.
     """
     parameter.make_dependent_on(dependency_expression=expression, dependency_map=parameters)
+    setattr(parameter, USER_CONSTRAINT_FLAG, True)
 
 
 def unconstrain(parameter: Parameter) -> None:
@@ -101,6 +110,8 @@ def unconstrain(parameter: Parameter) -> None:
     """
     if not parameter.independent:
         parameter.make_independent()
+    if hasattr(parameter, USER_CONSTRAINT_FLAG):
+        delattr(parameter, USER_CONSTRAINT_FLAG)
 
 
 def derived_parameter(
@@ -197,4 +208,4 @@ def constrain_to_sum(
         dependency_map[alias] = other
         terms.append(alias)
     expression = 'total' if not terms else f'total - ({" + ".join(terms)})'
-    parameter.make_dependent_on(dependency_expression=expression, dependency_map=dependency_map)
+    constrain(parameter, expression, **dependency_map)

@@ -5,6 +5,8 @@
 Tests for the user-facing constraint helpers
 """
 
+import json
+
 import pytest
 from easyscience import global_object
 from easyscience.variable import DescriptorNumber
@@ -12,6 +14,7 @@ from easyscience.variable import Parameter
 
 from easyreflectometry import constrain
 from easyreflectometry import constrain_equal
+from easyreflectometry import constrain_to_sum
 from easyreflectometry import unconstrain
 from easyreflectometry.project import Project
 
@@ -174,3 +177,115 @@ class TestProjectRoundTrip:
         assert follower.independent is False
         leader.value = 60.0  # within the default [50, 200] thickness limits
         assert follower.value == 120.0
+
+    def test_constrain_to_sum_with_numeric_total_survives(self):
+        """The object-less constant built for an explicit total is embedded by value."""
+        source = Project()
+        source.default_model()
+        sample = source.models[0].sample
+        constrain_to_sum(
+            sample[2].layers[0].roughness,
+            [sample[1].layers[0].roughness, sample[2].layers[0].roughness],
+            total=10.0,
+        )
+        project_dict = json.loads(json.dumps(source.as_dict()))
+        global_object.map._clear()
+
+        project = Project()
+        project.from_dict(project_dict)
+        sample = project.models[0].sample
+        project.models[0].sample[1].layers[0].roughness.value = 4.0
+        assert sample[2].layers[0].roughness.value == 6.0
+
+    def test_constraint_against_a_derived_parameter_survives(self):
+        """`Model.total_thickness` is reachable by path, so it can be a dependency."""
+        source = Project()
+        source.default_model()
+        model = source.models[0]
+        constrain(model.sample[1].layers[0].roughness, 'total / 100', total=model.total_thickness)
+        project_dict = json.loads(json.dumps(source.as_dict()))
+        global_object.map._clear()
+
+        project = Project()
+        project.from_dict(project_dict)
+        model = project.models[0]
+        roughness = model.sample[1].layers[0].roughness
+        assert roughness.independent is False
+        assert roughness.value == model.total_thickness.value / 100
+
+    def test_unconstrain_does_not_resurrect_on_reload(self):
+        source = Project()
+        source.default_model()
+        sample = source.models[0].sample
+        follower = sample[2].layers[0].thickness
+        constrain(follower, '2 * t', t=sample[1].layers[0].thickness)
+        unconstrain(follower)
+
+        project_dict = json.loads(json.dumps(source.as_dict()))
+        assert 'parameter_constraints' not in project_dict
+        global_object.map._clear()
+
+        project = Project()
+        project.from_dict(project_dict)
+        assert project.models[0].sample[2].layers[0].thickness.independent is True
+
+    def test_raw_make_independent_does_not_resurrect_either(self):
+        """The marker alone is not enough: the parameter must still be dependent."""
+        source = Project()
+        source.default_model()
+        sample = source.models[0].sample
+        follower = sample[2].layers[0].thickness
+        constrain(follower, '2 * t', t=sample[1].layers[0].thickness)
+        follower.make_independent()  # bypasses `unconstrain`, so the marker survives
+
+        assert 'parameter_constraints' not in source.as_dict()
+
+    def test_unreachable_dependency_raises_rather_than_freezing(self):
+        """Embedding a live parameter by value would silently kill the dependency."""
+        project = Project()
+        project.default_model()
+        detached = Parameter('detached', 5.0, unit='angstrom')
+        constrain(project.models[0].sample[1].layers[0].roughness, 'a', a=detached)
+
+        with pytest.raises(ValueError, match='not reachable from'):
+            project.as_dict()
+
+    def test_warns_when_dependencies_are_embedded_in_the_parameters(self):
+        """A file from a core that serializes dependencies in-place cannot be restored."""
+        project = Project()
+        project.default_model()
+        project_dict = project.as_dict()
+        # Mimic the shape such a core writes for a dependent nested parameter.
+        project_dict['models']['data'][0]['scale']['_dependency_string'] = 'a'
+        global_object.map._clear()
+
+        with pytest.warns(UserWarning, match='must be re-applied'):
+            Project().from_dict(project_dict)
+
+    def test_chained_constraints_survive_and_still_follow(self):
+        """Records are restored in tree order, which need not be dependency order."""
+        source = Project()
+        source.default_model()
+        sample = source.models[0].sample
+        root = sample[1].layers[0].roughness
+        middle = sample[2].layers[0].roughness
+        leaf = sample[2].layers[0].thickness
+        # leaf <- middle <- root, i.e. the chain runs against the tree order.
+        constrain(middle, '2 * r', r=root)
+        constrain(leaf, '10 * m', m=middle)
+
+        project_dict = json.loads(json.dumps(source.as_dict()))
+        global_object.map._clear()
+
+        project = Project()
+        project.from_dict(project_dict)
+        sample = project.models[0].sample
+        root = sample[1].layers[0].roughness
+        middle = sample[2].layers[0].roughness
+        leaf = sample[2].layers[0].thickness
+
+        assert middle.independent is False
+        assert leaf.independent is False
+        root.value = 3.0
+        assert middle.value == 6.0
+        assert leaf.value == 60.0
