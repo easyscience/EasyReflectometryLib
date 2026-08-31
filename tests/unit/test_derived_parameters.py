@@ -124,10 +124,27 @@ class TestModelTotalThickness:
         model = _model_with_film()
         assert model.total_thickness.value == 0.0
         assert model.total_thickness.independent is True
+        assert model.total_thickness.fixed is True
         model.add_assemblies(Multilayer(Layer(Material(1.0, 0.0, 'x'), thickness=10.0, roughness=1.0, name='X')))
         # the new assembly became the last layer (subphase); the former Si (0 A) is now film
         assert model.total_thickness.value == 0.0
         assert model.total_thickness.independent is False
+
+    def test_emptied_film_does_not_leak_a_free_fit_parameter(self):
+        """Becoming dependent clears `fixed`; losing the film must put it back.
+
+        Otherwise the parameter returns to the fit as a free variable sitting at
+        zero, and a fitter would happily vary it.
+        """
+        model = _model_with_film(40.0)
+        assert model.total_thickness.independent is False
+
+        model.remove_assembly(1)
+        total = model.total_thickness
+        assert total.value == 0.0
+        assert total.independent is True
+        assert total.fixed is True
+        assert 'total_thickness' not in [parameter.name for parameter in model.get_fit_parameters()]
 
     def test_not_serialized_but_rebuilt_on_load(self):
         project = Project()

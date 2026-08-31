@@ -21,6 +21,7 @@ from easyreflectometry import is_constrained_to_sum
 from easyreflectometry import restore_sum_partners
 from easyreflectometry import unconstrain
 from easyreflectometry.project import Project
+from easyreflectometry.sample import Material
 
 
 @pytest.fixture(autouse=True)
@@ -369,6 +370,23 @@ class TestProjectRoundTrip:
 
         with pytest.raises(ValueError, match='not reachable from'):
             project.as_dict()
+
+    def test_unreachable_target_raises_rather_than_being_dropped(self):
+        """A constraint *on* an off-model parameter is refused, not silently lost.
+
+        The material is saved through `materials_not_in_model`, so without this
+        the file would come back looking complete while the constraint had
+        quietly disappeared.
+        """
+        project = Project()
+        project.default_model()
+        off_model = Material(sld=1.0, isld=0.0, name='OffModel')
+        project.add_material(off_model)
+        constrain(off_model.sld, '2 * s', s=project.models[0].sample[0].layers[0].material.sld)
+
+        assert project.parameter_path(off_model.sld) is None
+        with pytest.raises(ValueError, match='not reachable from'):
+            project.as_dict(include_materials_not_in_model=True)
 
     def test_standalone_derived_parameter_is_session_only(self):
         """A `derived_parameter` belongs to no model: it has no path, and a

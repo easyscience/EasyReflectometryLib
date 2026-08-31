@@ -185,6 +185,10 @@ class Model(BaseCore):
         if not sources:
             if not total.independent:
                 total.make_independent()
+            # `make_dependent_on` clears `fixed`, and `make_independent` does not
+            # put it back; without this the parameter would resurface as a free
+            # fit parameter once the film is emptied.
+            total.fixed = True
             total.value = 0.0
             return
         dependency_map = {f't{index}': source for index, source in enumerate(sources)}

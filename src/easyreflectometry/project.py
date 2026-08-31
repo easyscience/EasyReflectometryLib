@@ -518,6 +518,23 @@ class Project:
         """
         return getattr(parameter, USER_CONSTRAINT_FLAG, False) and not parameter.independent
 
+    def _constraint_candidates(self) -> List[Parameter]:
+        """Every parameter the project owns, model-reachable or not.
+
+        Deliberately wider than :attr:`parameters`: a constraint on a material
+        that no model uses cannot be addressed by a structural path, and has to
+        be seen here so that :meth:`_constraint_record` can refuse it out loud
+        rather than let it disappear at save time.
+        """
+        candidates = list(self.parameters)
+        seen = {id(parameter) for parameter in candidates}
+        if self._materials is not None:
+            for parameter in self._materials.get_all_parameters():
+                if id(parameter) not in seen:
+                    seen.add(id(parameter))
+                    candidates.append(parameter)
+        return candidates
+
     def _user_constraints(self) -> List[dict]:
         """Records describing the constraints created via :mod:`easyreflectometry.constraints`.
 
@@ -538,14 +555,14 @@ class Project:
             If a constrained parameter, or a live parameter it depends on, is
             not reachable from the models, so no path can address it.
         """
-        # Which parameters are constrained is decided from `parameters`, which
-        # enumerates them without walking properties. The structural walk has to
-        # walk properties and leaves reference cycles behind (delaying collection
+        # Which parameters are constrained is decided from `_constraint_candidates`,
+        # which enumerates them without walking properties. The structural walk has
+        # to walk properties and leaves reference cycles behind (delaying collection
         # of the project and its unique names), so it runs only when there is
         # something to record, and only to supply the paths. Driving both from
         # one list keeps a constraint from being dropped because the two
         # enumerations disagree.
-        constrained = [parameter for parameter in self.parameters if self._is_user_constrained(parameter)]
+        constrained = [parameter for parameter in self._constraint_candidates() if self._is_user_constrained(parameter)]
         if not constrained:
             return []
         paths = {id(parameter): path for path, parameter in self._walk_parameters()}
@@ -560,8 +577,8 @@ class Project:
             if path is None:
                 raise ValueError(
                     f"Cannot save the constraint on '{parameter.name}': {described_as} is not "
-                    "reachable from the project's models. Constrain against a parameter that "
-                    'belongs to a model.'
+                    "reachable from the project's models. Only parameters that belong to a "
+                    'model can take part in a saved constraint.'
                 )
             return path
 
