@@ -1484,17 +1484,6 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#easyreflectometry.fitting._NATIVE_CONSTRAINTS" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        _NATIVE_CONSTRAINTS
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#easyreflectometry.fitting.NON_BUMPS_ERROR" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3046,17 +3035,6 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#easyreflectometry.fitting._NATIVE_CONSTRAINTS" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        _NATIVE_CONSTRAINTS
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#easyreflectometry.fitting.NON_BUMPS_ERROR" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3803,26 +3781,6 @@
 
 
 
-
-<div class="doc doc-object doc-attribute">
-
-
-
-<h2 id="easyreflectometry.fitting._NATIVE_CONSTRAINTS" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">_NATIVE_CONSTRAINTS</span> <span class="o">=</span> <span class="s1">&#39;constraints_factory&#39;</span> <span class="ow">in</span> <span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">minimizer_bumps</span><span class="o">.</span><span class="n">Bumps</span><span class="o">.</span><span class="n">fit</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span></code>
-
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
-  </span>
-
-</h2>
-
-
-    <div class="doc doc-contents ">
-
-    </div>
-
-</div>
 
 <div class="doc doc-object doc-attribute">
 
@@ -6800,10 +6758,11 @@ through <em>any</em> path (<code>Model.add_assemblies</code>, <code>assembly.lay
         <p>EasyScience <code>MultiFitter</code> whose raw <code>fit</code> honours inequality constraints.</p>
 <p><code>fit</code> is a read-only property on the base class (it builds a fresh
 callable per access), so the interception lives in an override rather
-than a monkey-patch. Calls that already carry an explicit
-<code>constraints_factory</code> keyword, or run inside an active shim block (an
-outer :meth:<code>MultiFitter._constraints</code> — possibly with an explicit
-factory that must win), pass through untouched.</p>
+than a monkey-patch. An explicit <code>constraints_factory</code> keyword is
+consumed here and enforced by this library — the core takes no such
+argument and would swallow it through <code>**kwargs</code>. Without one, a call
+running inside an active :meth:<code>MultiFitter._constraints</code> block passes
+through untouched, leaving the outer factory in force.</p>
 <!-- prettier-ignore-start -->
 
 <!-- prettier-ignore-end -->
@@ -6817,7 +6776,8 @@ factory that must win), pass through untouched.</p>
 
               <details class="mkdocstrings-source">
                 <summary>Source code in <code>src/easyreflectometry/fitting.py</code></summary>
-                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">31</span>
+                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">30</span>
+<span class="normal">31</span>
 <span class="normal">32</span>
 <span class="normal">33</span>
 <span class="normal">34</span>
@@ -6846,15 +6806,19 @@ factory that must win), pass through untouched.</p>
 <span class="normal">57</span>
 <span class="normal">58</span>
 <span class="normal">59</span>
-<span class="normal">60</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">_ConstrainedEasyScienceMultiFitter</span><span class="p">(</span><span class="n">EasyScienceMultiFitter</span><span class="p">):</span>
+<span class="normal">60</span>
+<span class="normal">61</span>
+<span class="normal">62</span>
+<span class="normal">63</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">_ConstrainedEasyScienceMultiFitter</span><span class="p">(</span><span class="n">EasyScienceMultiFitter</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;EasyScience ``MultiFitter`` whose raw ``fit`` honours inequality constraints.</span>
 
 <span class="sd">    ``fit`` is a read-only property on the base class (it builds a fresh</span>
 <span class="sd">    callable per access), so the interception lives in an override rather</span>
-<span class="sd">    than a monkey-patch. Calls that already carry an explicit</span>
-<span class="sd">    ``constraints_factory`` keyword, or run inside an active shim block (an</span>
-<span class="sd">    outer :meth:`MultiFitter._constraints` — possibly with an explicit</span>
-<span class="sd">    factory that must win), pass through untouched.</span>
+<span class="sd">    than a monkey-patch. An explicit ``constraints_factory`` keyword is</span>
+<span class="sd">    consumed here and enforced by this library — the core takes no such</span>
+<span class="sd">    argument and would swallow it through ``**kwargs``. Without one, a call</span>
+<span class="sd">    running inside an active :meth:`MultiFitter._constraints` block passes</span>
+<span class="sd">    through untouched, leaving the outer factory in force.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="c1">#: Weak reference to the owning :class:`MultiFitter` (weak to avoid a</span>
@@ -6870,10 +6834,13 @@ factory that must win), pass through untouched.</p>
 
         <span class="nd">@functools</span><span class="o">.</span><span class="n">wraps</span><span class="p">(</span><span class="n">original</span><span class="p">)</span>
         <span class="k">def</span><span class="w"> </span><span class="nf">fit_with_constraints</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-            <span class="k">if</span> <span class="s1">&#39;constraints_factory&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="ow">or</span> <span class="n">_constraints_active</span><span class="p">():</span>
+            <span class="n">explicit</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;constraints_factory&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="c1"># An explicit factory wins over an outer block; without one, an</span>
+            <span class="c1"># outer block has already attached what it resolved.</span>
+            <span class="k">if</span> <span class="n">explicit</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">_constraints_active</span><span class="p">():</span>
                 <span class="k">return</span> <span class="n">original</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-            <span class="k">with</span> <span class="n">owner</span><span class="o">.</span><span class="n">_constraints</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">fitter</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span> <span class="k">as</span> <span class="n">constraints_kwargs</span><span class="p">:</span>
-                <span class="k">return</span> <span class="n">original</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span> <span class="o">**</span><span class="n">constraints_kwargs</span><span class="p">)</span>
+            <span class="k">with</span> <span class="n">owner</span><span class="o">.</span><span class="n">_constraints</span><span class="p">(</span><span class="n">explicit</span><span class="p">,</span> <span class="n">fitter</span><span class="o">=</span><span class="bp">self</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">original</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">fit_with_constraints</span>
 </code></pre></div></td></tr></table></div>
@@ -6924,10 +6891,7 @@ factory that must win), pass through untouched.</p>
 
               <details class="mkdocstrings-source">
                 <summary>Source code in <code>src/easyreflectometry/fitting.py</code></summary>
-                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">291</span>
-<span class="normal">292</span>
-<span class="normal">293</span>
-<span class="normal">294</span>
+                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">294</span>
 <span class="normal">295</span>
 <span class="normal">296</span>
 <span class="normal">297</span>
@@ -7565,8 +7529,7 @@ factory that must win), pass through untouched.</p>
 <span class="normal">929</span>
 <span class="normal">930</span>
 <span class="normal">931</span>
-<span class="normal">932</span>
-<span class="normal">933</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">MultiFitter</span><span class="p">:</span>
+<span class="normal">932</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">MultiFitter</span><span class="p">:</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Model</span><span class="p">,</span> <span class="n">objective</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;hybrid&#39;</span><span class="p">):</span>
 <span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;A convenience class for the :py:class:`easyscience.Fitting.Fitting`</span>
 <span class="sd">        which will populate the :py:class:`sc.DataGroup` appropriately</span>
@@ -7627,12 +7590,12 @@ factory that must win), pass through untouched.</p>
 
     <span class="nd">@contextlib</span><span class="o">.</span><span class="n">contextmanager</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_constraints</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">explicit</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">fitter</span><span class="p">:</span> <span class="n">EasyScienceMultiFitter</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Yield the fit kwargs, with any inequality constraints active for the block.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Make any inequality constraints active for the duration of the block.</span>
 
-<span class="sd">        A core that takes ``constraints_factory`` itself gets it as a keyword;</span>
-<span class="sd">        otherwise the shim attaches the penalties to the BUMPS problem as it is</span>
-<span class="sd">        built and the kwargs stay empty. Either way inequality constraints are</span>
-<span class="sd">        rejected for engines that cannot enforce them, rather than dropped.</span>
+<span class="sd">        The penalties are attached to the BUMPS problem as it is built (see</span>
+<span class="sd">        :mod:`easyreflectometry._bumps_constraints`); nothing is handed to the</span>
+<span class="sd">        core as a keyword. Engines that cannot enforce the constraints are</span>
+<span class="sd">        rejected rather than left to fit an unconstrained problem.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -7649,21 +7612,18 @@ factory that must win), pass through untouched.</p>
             <span class="n">package</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">minimizer</span><span class="p">,</span> <span class="s1">&#39;package&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">package</span> <span class="o">!=</span> <span class="s1">&#39;bumps&#39;</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">NON_BUMPS_ERROR</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">package</span><span class="o">=</span><span class="n">package</span><span class="p">))</span>
-        <span class="k">if</span> <span class="n">_NATIVE_CONSTRAINTS</span><span class="p">:</span>
-            <span class="k">yield</span> <span class="p">{</span><span class="s1">&#39;constraints_factory&#39;</span><span class="p">:</span> <span class="n">factory</span><span class="p">}</span> <span class="k">if</span> <span class="n">factory</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">{}</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">with</span> <span class="n">_constraints_applied</span><span class="p">(</span><span class="n">factory</span><span class="p">):</span>
-                <span class="k">yield</span> <span class="p">{}</span>
+        <span class="k">with</span> <span class="n">_constraints_applied</span><span class="p">(</span><span class="n">factory</span><span class="p">):</span>
+            <span class="k">yield</span>
 
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_keep_constraints_on_extend</span><span class="p">(</span><span class="n">sampler</span><span class="p">:</span> <span class="n">Sampler</span><span class="p">,</span> <span class="n">factory</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Re-enter the constraints context around ``sampler.extend()``.</span>
 
-<span class="sd">        Only needed when the shim is in use: a native core binds the factory in</span>
-<span class="sd">        ``Sampler.__init__`` and reuses it on extend. Without this a continued</span>
-<span class="sd">        chain would silently sample an unpenalised posterior.</span>
+<span class="sd">        The factory is current only for the duration of the sampling call that</span>
+<span class="sd">        built the problem; without this a continued chain would silently sample</span>
+<span class="sd">        an unpenalised posterior.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">factory</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">_NATIVE_CONSTRAINTS</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">factory</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span>
         <span class="n">original</span> <span class="o">=</span> <span class="n">sampler</span><span class="o">.</span><span class="n">extend</span>
 
@@ -7819,8 +7779,8 @@ factory that must win), pass through untouched.</p>
             <span class="n">dy</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
             <span class="n">original_arrays</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="n">x_vals</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">:</span> <span class="n">y_vals</span><span class="p">,</span> <span class="s1">&#39;variances&#39;</span><span class="p">:</span> <span class="n">variances</span><span class="p">})</span>
 
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constraints</span><span class="p">(</span><span class="n">constraints_factory</span><span class="p">)</span> <span class="k">as</span> <span class="n">constraints_kwargs</span><span class="p">:</span>
-            <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">easy_science_multi_fitter</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">dy</span><span class="p">,</span> <span class="o">**</span><span class="n">constraints_kwargs</span><span class="p">)</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constraints</span><span class="p">(</span><span class="n">constraints_factory</span><span class="p">):</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">easy_science_multi_fitter</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">dy</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_fit_results</span> <span class="o">=</span> <span class="n">result</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_classical_fit_metrics</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">new_data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
@@ -7885,8 +7845,8 @@ factory that must win), pass through untouched.</p>
         <span class="k">if</span> <span class="n">obj</span> <span class="o">==</span> <span class="s1">&#39;legacy_mask&#39;</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">x_out</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Cannot fit single dataset: all points have zero variance.&#39;</span><span class="p">)</span>
 
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constraints</span><span class="p">(</span><span class="n">constraints_factory</span><span class="p">)</span> <span class="k">as</span> <span class="n">constraints_kwargs</span><span class="p">:</span>
-            <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">easy_science_multi_fitter</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="p">[</span><span class="n">x_out</span><span class="p">],</span> <span class="n">y</span><span class="o">=</span><span class="p">[</span><span class="n">y_eff</span><span class="p">],</span> <span class="n">weights</span><span class="o">=</span><span class="p">[</span><span class="n">weights</span><span class="p">],</span> <span class="o">**</span><span class="n">constraints_kwargs</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constraints</span><span class="p">(</span><span class="n">constraints_factory</span><span class="p">):</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">easy_science_multi_fitter</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="p">[</span><span class="n">x_out</span><span class="p">],</span> <span class="n">y</span><span class="o">=</span><span class="p">[</span><span class="n">y_eff</span><span class="p">],</span> <span class="n">weights</span><span class="o">=</span><span class="p">[</span><span class="n">weights</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_fit_results</span> <span class="o">=</span> <span class="p">[</span><span class="n">result</span><span class="p">]</span>
         <span class="n">model_curve</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fit_func</span><span class="p">[</span><span class="mi">0</span><span class="p">](</span><span class="n">x_vals</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_classical_fit_metrics</span> <span class="o">=</span> <span class="p">[</span>
@@ -7981,8 +7941,8 @@ factory that must win), pass through untouched.</p>
             <span class="n">dy</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
             <span class="n">original_arrays</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="n">x_vals</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">:</span> <span class="n">y_vals</span><span class="p">,</span> <span class="s1">&#39;variances&#39;</span><span class="p">:</span> <span class="n">variances</span><span class="p">})</span>
 
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constraints</span><span class="p">(</span><span class="n">constraints_factory</span><span class="p">,</span> <span class="n">fitter</span><span class="o">=</span><span class="n">polarized_fitter</span><span class="p">)</span> <span class="k">as</span> <span class="n">constraints_kwargs</span><span class="p">:</span>
-            <span class="n">results</span> <span class="o">=</span> <span class="n">polarized_fitter</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">dy</span><span class="p">,</span> <span class="o">**</span><span class="n">constraints_kwargs</span><span class="p">)</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constraints</span><span class="p">(</span><span class="n">constraints_factory</span><span class="p">,</span> <span class="n">fitter</span><span class="o">=</span><span class="n">polarized_fitter</span><span class="p">):</span>
+            <span class="n">results</span> <span class="o">=</span> <span class="n">polarized_fitter</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">dy</span><span class="p">)</span>
         <span class="c1"># All channels are fitted against one parameter vector (the shared model),</span>
         <span class="c1"># so `result.n_pars` is identical across `results`; `reduced_chi` and</span>
         <span class="c1"># `classical_reduced_chi` below rely on that invariant.</span>
@@ -8096,11 +8056,10 @@ factory that must win), pass through untouched.</p>
         <span class="c1"># Resolved once and passed on as the explicit factory, so building it</span>
         <span class="c1"># (which resolves every constraint&#39;s parameter paths) happens once.</span>
         <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resolve_constraints_factory</span><span class="p">(</span><span class="n">constraints_factory</span><span class="p">)</span>
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constraints</span><span class="p">(</span><span class="n">factory</span><span class="p">)</span> <span class="k">as</span> <span class="n">constraints_kwargs</span><span class="p">:</span>
-            <span class="c1"># On a native core the factory is bound to the sampler, so ``extend()``</span>
-            <span class="c1"># keeps the same penalised posterior; otherwise the shim supplies it</span>
-            <span class="c1"># per run and `_keep_constraints_on_extend` covers the continuation.</span>
-            <span class="n">sampler</span> <span class="o">=</span> <span class="n">Sampler</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">easy_science_multi_fitter</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">dy</span><span class="p">,</span> <span class="o">**</span><span class="n">constraints_kwargs</span><span class="p">)</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constraints</span><span class="p">(</span><span class="n">factory</span><span class="p">):</span>
+            <span class="c1"># The factory is current only while the problem is being built, so</span>
+            <span class="c1"># `_keep_constraints_on_extend` covers a later continuation.</span>
+            <span class="n">sampler</span> <span class="o">=</span> <span class="n">Sampler</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">easy_science_multi_fitter</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">dy</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_keep_constraints_on_extend</span><span class="p">(</span><span class="n">sampler</span><span class="p">,</span> <span class="n">factory</span><span class="p">)</span>
             <span class="c1"># Retained so the chain can be continued afterwards via ``self.sampler.extend()``.</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span> <span class="o">=</span> <span class="n">sampler</span>
@@ -8481,10 +8440,7 @@ after the fitting is performed.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/easyreflectometry/fitting.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">292</span>
-<span class="normal">293</span>
-<span class="normal">294</span>
-<span class="normal">295</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">295</span>
 <span class="normal">296</span>
 <span class="normal">297</span>
 <span class="normal">298</span>
@@ -8514,7 +8470,10 @@ after the fitting is performed.</p>
 <span class="normal">322</span>
 <span class="normal">323</span>
 <span class="normal">324</span>
-<span class="normal">325</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Model</span><span class="p">,</span> <span class="n">objective</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;hybrid&#39;</span><span class="p">):</span>
+<span class="normal">325</span>
+<span class="normal">326</span>
+<span class="normal">327</span>
+<span class="normal">328</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Model</span><span class="p">,</span> <span class="n">objective</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;hybrid&#39;</span><span class="p">):</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;A convenience class for the :py:class:`easyscience.Fitting.Fitting`</span>
 <span class="sd">    which will populate the :py:class:`sc.DataGroup` appropriately</span>
 <span class="sd">    after the fitting is performed.</span>
@@ -9173,8 +9132,8 @@ If <code>None</code>, uses the instance default set at construction. By default,
         <span class="n">dy</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
         <span class="n">original_arrays</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="n">x_vals</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">:</span> <span class="n">y_vals</span><span class="p">,</span> <span class="s1">&#39;variances&#39;</span><span class="p">:</span> <span class="n">variances</span><span class="p">})</span>
 
-    <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constraints</span><span class="p">(</span><span class="n">constraints_factory</span><span class="p">)</span> <span class="k">as</span> <span class="n">constraints_kwargs</span><span class="p">:</span>
-        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">easy_science_multi_fitter</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">dy</span><span class="p">,</span> <span class="o">**</span><span class="n">constraints_kwargs</span><span class="p">)</span>
+    <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constraints</span><span class="p">(</span><span class="n">constraints_factory</span><span class="p">):</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">easy_science_multi_fitter</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">dy</span><span class="p">)</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_fit_results</span> <span class="o">=</span> <span class="n">result</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_classical_fit_metrics</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">new_data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
@@ -9408,8 +9367,8 @@ to what :attr:<code>constraints_factory_provider</code> returns. By default, Non
     <span class="k">if</span> <span class="n">obj</span> <span class="o">==</span> <span class="s1">&#39;legacy_mask&#39;</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">x_out</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Cannot fit single dataset: all points have zero variance.&#39;</span><span class="p">)</span>
 
-    <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constraints</span><span class="p">(</span><span class="n">constraints_factory</span><span class="p">)</span> <span class="k">as</span> <span class="n">constraints_kwargs</span><span class="p">:</span>
-        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">easy_science_multi_fitter</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="p">[</span><span class="n">x_out</span><span class="p">],</span> <span class="n">y</span><span class="o">=</span><span class="p">[</span><span class="n">y_eff</span><span class="p">],</span> <span class="n">weights</span><span class="o">=</span><span class="p">[</span><span class="n">weights</span><span class="p">],</span> <span class="o">**</span><span class="n">constraints_kwargs</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constraints</span><span class="p">(</span><span class="n">constraints_factory</span><span class="p">):</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">easy_science_multi_fitter</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="p">[</span><span class="n">x_out</span><span class="p">],</span> <span class="n">y</span><span class="o">=</span><span class="p">[</span><span class="n">y_eff</span><span class="p">],</span> <span class="n">weights</span><span class="o">=</span><span class="p">[</span><span class="n">weights</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_fit_results</span> <span class="o">=</span> <span class="p">[</span><span class="n">result</span><span class="p">]</span>
     <span class="n">model_curve</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fit_func</span><span class="p">[</span><span class="mi">0</span><span class="p">](</span><span class="n">x_vals</span><span class="p">)</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_classical_fit_metrics</span> <span class="o">=</span> <span class="p">[</span>
@@ -9753,8 +9712,8 @@ caller-driven, <code>for_experiments</code>-built flow.</p>
         <span class="n">dy</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
         <span class="n">original_arrays</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="n">x_vals</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">:</span> <span class="n">y_vals</span><span class="p">,</span> <span class="s1">&#39;variances&#39;</span><span class="p">:</span> <span class="n">variances</span><span class="p">})</span>
 
-    <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constraints</span><span class="p">(</span><span class="n">constraints_factory</span><span class="p">,</span> <span class="n">fitter</span><span class="o">=</span><span class="n">polarized_fitter</span><span class="p">)</span> <span class="k">as</span> <span class="n">constraints_kwargs</span><span class="p">:</span>
-        <span class="n">results</span> <span class="o">=</span> <span class="n">polarized_fitter</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">dy</span><span class="p">,</span> <span class="o">**</span><span class="n">constraints_kwargs</span><span class="p">)</span>
+    <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constraints</span><span class="p">(</span><span class="n">constraints_factory</span><span class="p">,</span> <span class="n">fitter</span><span class="o">=</span><span class="n">polarized_fitter</span><span class="p">):</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="n">polarized_fitter</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">dy</span><span class="p">)</span>
     <span class="c1"># All channels are fitted against one parameter vector (the shared model),</span>
     <span class="c1"># so `result.n_pars` is identical across `results`; `reduced_chi` and</span>
     <span class="c1"># `classical_reduced_chi` below rely on that invariant.</span>
@@ -9940,8 +9899,7 @@ extended = fitter.sampler.extend(additional_samples=8000, thin=10)
 <span class="normal">839</span>
 <span class="normal">840</span>
 <span class="normal">841</span>
-<span class="normal">842</span>
-<span class="normal">843</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">mcmc_sample</span><span class="p">(</span>
+<span class="normal">842</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">mcmc_sample</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">data</span><span class="p">:</span> <span class="n">sc</span><span class="o">.</span><span class="n">DataGroup</span><span class="p">,</span>
     <span class="n">samples</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10000</span><span class="p">,</span>
@@ -10041,11 +9999,10 @@ extended = fitter.sampler.extend(additional_samples=8000, thin=10)
     <span class="c1"># Resolved once and passed on as the explicit factory, so building it</span>
     <span class="c1"># (which resolves every constraint&#39;s parameter paths) happens once.</span>
     <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resolve_constraints_factory</span><span class="p">(</span><span class="n">constraints_factory</span><span class="p">)</span>
-    <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constraints</span><span class="p">(</span><span class="n">factory</span><span class="p">)</span> <span class="k">as</span> <span class="n">constraints_kwargs</span><span class="p">:</span>
-        <span class="c1"># On a native core the factory is bound to the sampler, so ``extend()``</span>
-        <span class="c1"># keeps the same penalised posterior; otherwise the shim supplies it</span>
-        <span class="c1"># per run and `_keep_constraints_on_extend` covers the continuation.</span>
-        <span class="n">sampler</span> <span class="o">=</span> <span class="n">Sampler</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">easy_science_multi_fitter</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">dy</span><span class="p">,</span> <span class="o">**</span><span class="n">constraints_kwargs</span><span class="p">)</span>
+    <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constraints</span><span class="p">(</span><span class="n">factory</span><span class="p">):</span>
+        <span class="c1"># The factory is current only while the problem is being built, so</span>
+        <span class="c1"># `_keep_constraints_on_extend` covers a later continuation.</span>
+        <span class="n">sampler</span> <span class="o">=</span> <span class="n">Sampler</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">easy_science_multi_fitter</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">dy</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_keep_constraints_on_extend</span><span class="p">(</span><span class="n">sampler</span><span class="p">,</span> <span class="n">factory</span><span class="p">)</span>
         <span class="c1"># Retained so the chain can be continued afterwards via ``self.sampler.extend()``.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span> <span class="o">=</span> <span class="n">sampler</span>
@@ -10131,7 +10088,8 @@ need the original data arrays, which are not part of <code>FitResults</code>, so
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/easyreflectometry/fitting.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">904</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">903</span>
+<span class="normal">904</span>
 <span class="normal">905</span>
 <span class="normal">906</span>
 <span class="normal">907</span>
@@ -10149,8 +10107,7 @@ need the original data arrays, which are not part of <code>FitResults</code>, so
 <span class="normal">919</span>
 <span class="normal">920</span>
 <span class="normal">921</span>
-<span class="normal">922</span>
-<span class="normal">923</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">record_fit_results</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">results</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">FitResults</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="normal">922</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">record_fit_results</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">results</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">FitResults</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Adopt fit results produced elsewhere, so this fitter reports on them.</span>
 
 <span class="sd">    An application that drives ``easy_science_multi_fitter.fit(...)`` itself</span>
@@ -10229,15 +10186,15 @@ need the original data arrays, which are not part of <code>FitResults</code>, so
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/easyreflectometry/fitting.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">925</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">924</span>
+<span class="normal">925</span>
 <span class="normal">926</span>
 <span class="normal">927</span>
 <span class="normal">928</span>
 <span class="normal">929</span>
 <span class="normal">930</span>
 <span class="normal">931</span>
-<span class="normal">932</span>
-<span class="normal">933</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">switch_minimizer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">minimizer</span><span class="p">:</span> <span class="n">AvailableMinimizers</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="normal">932</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">switch_minimizer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">minimizer</span><span class="p">:</span> <span class="n">AvailableMinimizers</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Switch the minimizer for the fitting.</span>
 
 <span class="sd">    Parameters</span>
@@ -10273,8 +10230,7 @@ need the original data arrays, which are not part of <code>FitResults</code>, so
     <div class="doc doc-contents ">
 
         <p>Attach <code>factory</code>'s constraints to problems built inside the block.</p>
-<p>A no-op when <code>factory</code> is <code>None</code> or the core is native (the keyword is
-threaded through instead).</p>
+<p>A no-op when <code>factory</code> is <code>None</code>.</p>
 <!-- prettier-ignore-start -->
 
 <!-- prettier-ignore-end -->
@@ -10317,7 +10273,15 @@ built problem and returns the constraints to attach.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/easyreflectometry/_bumps_constraints.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">107</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 99</span>
+<span class="normal">100</span>
+<span class="normal">101</span>
+<span class="normal">102</span>
+<span class="normal">103</span>
+<span class="normal">104</span>
+<span class="normal">105</span>
+<span class="normal">106</span>
+<span class="normal">107</span>
 <span class="normal">108</span>
 <span class="normal">109</span>
 <span class="normal">110</span>
@@ -10329,21 +10293,11 @@ built problem and returns the constraints to attach.</p>
 <span class="normal">116</span>
 <span class="normal">117</span>
 <span class="normal">118</span>
-<span class="normal">119</span>
-<span class="normal">120</span>
-<span class="normal">121</span>
-<span class="normal">122</span>
-<span class="normal">123</span>
-<span class="normal">124</span>
-<span class="normal">125</span>
-<span class="normal">126</span>
-<span class="normal">127</span>
-<span class="normal">128</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@contextlib</span><span class="o">.</span><span class="n">contextmanager</span>
+<span class="normal">119</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@contextlib</span><span class="o">.</span><span class="n">contextmanager</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">applied</span><span class="p">(</span><span class="n">factory</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="kc">None</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Attach `factory`&#39;s constraints to problems built inside the block.</span>
 
-<span class="sd">    A no-op when `factory` is ``None`` or the core is native (the keyword is</span>
-<span class="sd">    threaded through instead).</span>
+<span class="sd">    A no-op when `factory` is ``None``.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -10351,7 +10305,7 @@ built problem and returns the constraints to attach.</p>
 <span class="sd">        Receives the ``{prefixed name: BumpsParameter}`` mapping of a freshly</span>
 <span class="sd">        built problem and returns the constraints to attach.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="n">factory</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">NATIVE</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">factory</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">yield</span>
         <span class="k">return</span>
     <span class="n">install</span><span class="p">()</span>
@@ -10389,15 +10343,15 @@ explicit one that must not be overridden by re-resolving the provider.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/easyreflectometry/_bumps_constraints.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 96</span>
-<span class="normal"> 97</span>
-<span class="normal"> 98</span>
-<span class="normal"> 99</span>
-<span class="normal">100</span>
-<span class="normal">101</span>
-<span class="normal">102</span>
-<span class="normal">103</span>
-<span class="normal">104</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">is_applied</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">88</span>
+<span class="normal">89</span>
+<span class="normal">90</span>
+<span class="normal">91</span>
+<span class="normal">92</span>
+<span class="normal">93</span>
+<span class="normal">94</span>
+<span class="normal">95</span>
+<span class="normal">96</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">is_applied</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Whether an :func:`applied` block is active in the current context.</span>
 
 <span class="sd">    Lets an inner wrapper (``MultiFitter`` routes the raw</span>
@@ -10517,10 +10471,7 @@ explicit one that must not be overridden by re-resolving the provider.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/easyreflectometry/fitting.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">63</span>
-<span class="normal">64</span>
-<span class="normal">65</span>
-<span class="normal">66</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">66</span>
 <span class="normal">67</span>
 <span class="normal">68</span>
 <span class="normal">69</span>
@@ -10539,7 +10490,10 @@ explicit one that must not be overridden by re-resolving the provider.</p>
 <span class="normal">82</span>
 <span class="normal">83</span>
 <span class="normal">84</span>
-<span class="normal">85</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_validate_objective</span><span class="p">(</span><span class="n">objective</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="normal">85</span>
+<span class="normal">86</span>
+<span class="normal">87</span>
+<span class="normal">88</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_validate_objective</span><span class="p">(</span><span class="n">objective</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Validate and resolve the objective string.</span>
 
 <span class="sd">    Parameters</span>
@@ -10710,10 +10664,7 @@ with keys 'valid', 'mighell_substituted', 'masked'.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/easyreflectometry/fitting.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 88</span>
-<span class="normal"> 89</span>
-<span class="normal"> 90</span>
-<span class="normal"> 91</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 91</span>
 <span class="normal"> 92</span>
 <span class="normal"> 93</span>
 <span class="normal"> 94</span>
@@ -10793,7 +10744,10 @@ with keys 'valid', 'mighell_substituted', 'masked'.</p>
 <span class="normal">168</span>
 <span class="normal">169</span>
 <span class="normal">170</span>
-<span class="normal">171</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_prepare_fit_arrays</span><span class="p">(</span>
+<span class="normal">171</span>
+<span class="normal">172</span>
+<span class="normal">173</span>
+<span class="normal">174</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_prepare_fit_arrays</span><span class="p">(</span>
     <span class="n">x_vals</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
     <span class="n">y_vals</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
     <span class="n">variances</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
@@ -10902,13 +10856,13 @@ with keys 'valid', 'mighell_substituted', 'masked'.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/easyreflectometry/fitting.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">174</span>
-<span class="normal">175</span>
-<span class="normal">176</span>
-<span class="normal">177</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">177</span>
 <span class="normal">178</span>
 <span class="normal">179</span>
-<span class="normal">180</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_compute_weighted_chi2</span><span class="p">(</span><span class="n">y_obs</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">y_calc</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">sigma</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="normal">180</span>
+<span class="normal">181</span>
+<span class="normal">182</span>
+<span class="normal">183</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_compute_weighted_chi2</span><span class="p">(</span><span class="n">y_obs</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">y_calc</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">sigma</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Return weighted chi-square for finite, strictly positive uncertainties.&quot;&quot;&quot;</span>
     <span class="n">valid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">y_obs</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">y_calc</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">sigma</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">sigma</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">valid</span><span class="p">):</span>
@@ -10940,12 +10894,12 @@ with keys 'valid', 'mighell_substituted', 'masked'.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/easyreflectometry/fitting.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">183</span>
-<span class="normal">184</span>
-<span class="normal">185</span>
-<span class="normal">186</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">186</span>
 <span class="normal">187</span>
-<span class="normal">188</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_compute_reduced_chi2</span><span class="p">(</span><span class="n">chi2</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">n_points</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">n_params</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="normal">188</span>
+<span class="normal">189</span>
+<span class="normal">190</span>
+<span class="normal">191</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_compute_reduced_chi2</span><span class="p">(</span><span class="n">chi2</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">n_points</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">n_params</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Return reduced chi-square or None when degrees of freedom are not positive.&quot;&quot;&quot;</span>
     <span class="n">dof</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">n_points</span><span class="p">)</span> <span class="o">-</span> <span class="nb">int</span><span class="p">(</span><span class="n">n_params</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">dof</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
@@ -10976,17 +10930,17 @@ with keys 'valid', 'mighell_substituted', 'masked'.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/easyreflectometry/fitting.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">191</span>
-<span class="normal">192</span>
-<span class="normal">193</span>
-<span class="normal">194</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">194</span>
 <span class="normal">195</span>
 <span class="normal">196</span>
 <span class="normal">197</span>
 <span class="normal">198</span>
 <span class="normal">199</span>
 <span class="normal">200</span>
-<span class="normal">201</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_fit_result_reduced_chi</span><span class="p">(</span><span class="n">result</span><span class="p">:</span> <span class="n">FitResults</span><span class="p">,</span> <span class="n">n_points</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="normal">201</span>
+<span class="normal">202</span>
+<span class="normal">203</span>
+<span class="normal">204</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_fit_result_reduced_chi</span><span class="p">(</span><span class="n">result</span><span class="p">:</span> <span class="n">FitResults</span><span class="p">,</span> <span class="n">n_points</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Return reduced chi-square from either supported FitResults attribute name.&quot;&quot;&quot;</span>
     <span class="k">for</span> <span class="n">attribute</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;reduced_chi&#39;</span><span class="p">,</span> <span class="s1">&#39;reduced_chi2&#39;</span><span class="p">):</span>
         <span class="n">value</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">attribute</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
@@ -11026,10 +10980,7 @@ over here rather than passed through the fitter's call signature.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/easyreflectometry/fitting.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">204</span>
-<span class="normal">205</span>
-<span class="normal">206</span>
-<span class="normal">207</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">207</span>
 <span class="normal">208</span>
 <span class="normal">209</span>
 <span class="normal">210</span>
@@ -11038,7 +10989,10 @@ over here rather than passed through the fitter's call signature.</p>
 <span class="normal">213</span>
 <span class="normal">214</span>
 <span class="normal">215</span>
-<span class="normal">216</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_bind_fit_func</span><span class="p">(</span><span class="n">func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">unique_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">:</span>
+<span class="normal">216</span>
+<span class="normal">217</span>
+<span class="normal">218</span>
+<span class="normal">219</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_bind_fit_func</span><span class="p">(</span><span class="n">func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">unique_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Bind a model&#39;s fit function to its ``unique_name`` for ``EasyScienceMultiFitter``.</span>
 
 <span class="sd">    ``EasyScienceMultiFitter`` calls each fit function positionally as</span>
@@ -11188,10 +11142,7 @@ likelihood-validity caveat for MCMC). By default, ''.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/easyreflectometry/fitting.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">219</span>
-<span class="normal">220</span>
-<span class="normal">221</span>
-<span class="normal">222</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">222</span>
 <span class="normal">223</span>
 <span class="normal">224</span>
 <span class="normal">225</span>
@@ -11221,7 +11172,10 @@ likelihood-validity caveat for MCMC). By default, ''.</p>
 <span class="normal">249</span>
 <span class="normal">250</span>
 <span class="normal">251</span>
-<span class="normal">252</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_emit_array_prep_warnings</span><span class="p">(</span><span class="n">stats</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">y_vals</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">label</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">action</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;fitting&#39;</span><span class="p">,</span> <span class="n">extra</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="normal">252</span>
+<span class="normal">253</span>
+<span class="normal">254</span>
+<span class="normal">255</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_emit_array_prep_warnings</span><span class="p">(</span><span class="n">stats</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">y_vals</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">label</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">action</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;fitting&#39;</span><span class="p">,</span> <span class="n">extra</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Warn about zero-variance handling applied by :func:`_prepare_fit_arrays`.</span>
 
 <span class="sd">    Parameters</span>
@@ -11400,10 +11354,7 @@ fallback's point count. If <code>None</code>, derived from <code>result.x</code>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/easyreflectometry/fitting.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">255</span>
-<span class="normal">256</span>
-<span class="normal">257</span>
-<span class="normal">258</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">258</span>
 <span class="normal">259</span>
 <span class="normal">260</span>
 <span class="normal">261</span>
@@ -11433,7 +11384,10 @@ fallback's point count. If <code>None</code>, derived from <code>result.x</code>
 <span class="normal">285</span>
 <span class="normal">286</span>
 <span class="normal">287</span>
-<span class="normal">288</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_classical_metrics_for</span><span class="p">(</span><span class="n">original</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">model_curve</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">result</span><span class="p">:</span> <span class="n">FitResults</span><span class="p">,</span> <span class="n">n_points</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="normal">288</span>
+<span class="normal">289</span>
+<span class="normal">290</span>
+<span class="normal">291</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_classical_metrics_for</span><span class="p">(</span><span class="n">original</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">model_curve</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">result</span><span class="p">:</span> <span class="n">FitResults</span><span class="p">,</span> <span class="n">n_points</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Assemble the classical (positive-variance-only) and objective-space fit metrics.</span>
 
 <span class="sd">    Parameters</span>
@@ -11552,7 +11506,8 @@ fallback's point count. If <code>None</code>, derived from <code>result.x</code>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/easyreflectometry/fitting.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">936</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">935</span>
+<span class="normal">936</span>
 <span class="normal">937</span>
 <span class="normal">938</span>
 <span class="normal">939</span>
@@ -11564,8 +11519,7 @@ fallback's point count. If <code>None</code>, derived from <code>result.x</code>
 <span class="normal">945</span>
 <span class="normal">946</span>
 <span class="normal">947</span>
-<span class="normal">948</span>
-<span class="normal">949</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_flatten_list</span><span class="p">(</span><span class="n">this_list</span><span class="p">:</span> <span class="nb">list</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+<span class="normal">948</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_flatten_list</span><span class="p">(</span><span class="n">this_list</span><span class="p">:</span> <span class="nb">list</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Flatten nested lists.</span>
 
 <span class="sd">    Parameters</span>
