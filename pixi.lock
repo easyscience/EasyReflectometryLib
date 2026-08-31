@@ -8313,6 +8313,7 @@ packages:
 - pypi: ./
   name: easyreflectometry
   requires_dist:
+  - asteval
   - bumps
   - easyscience @ git+https://github.com/easyscience/easyscience.git@sampler-engine-structure-280
   - orsopy

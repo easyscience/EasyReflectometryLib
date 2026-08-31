@@ -94,5 +94,15 @@ def count_fixed_parameters(project) -> int:
 
 
 def count_parameter_user_constraints(project) -> int:
-    """Count parameter user constraints."""
-    return sum(1 for parameter in project.parameters if not parameter.independent)
+    """Count the constraints created via :mod:`easyreflectometry.constraints`.
+
+    Counts only parameters that are both marked as user-constrained and still
+    dependent — the same test ``Project`` uses to decide what to persist.
+    Internal dependencies (``Model.total_thickness``, conformal assembly ties,
+    material mixtures) are not user constraints and are not counted.
+    """
+    from easyreflectometry.constraints import USER_CONSTRAINT_FLAG
+
+    return sum(
+        1 for parameter in project.parameters if getattr(parameter, USER_CONSTRAINT_FLAG, False) and not parameter.independent
+    )

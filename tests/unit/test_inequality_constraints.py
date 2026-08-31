@@ -15,6 +15,7 @@ from easyreflectometry import Project
 from easyreflectometry.constraints import constrain
 from easyreflectometry.constraints import derived_parameter
 from easyreflectometry.data import DataSet1D
+from easyreflectometry.fitting import MultiFitter
 from easyreflectometry.inequality_constraints import InequalitySpec
 from easyreflectometry.inequality_constraints import build_constraints_factory
 from easyreflectometry.inequality_constraints import check_units
@@ -71,6 +72,14 @@ class TestInequalitySpec:
         restored = InequalitySpec.from_dict(json.loads(json.dumps(spec.to_dict())))
         assert restored == spec
         assert str(restored) == 'a + b <= c'
+
+    def test_rejects_alias_mapped_to_different_paths_on_the_two_sides(self):
+        # `paths` merges both sides; without the check the right side would silently win.
+        with pytest.raises(ValueError, match='different parameters'):
+            InequalitySpec('a', '<', 'a + b', {'a': 'p/x'}, {'a': 'p/y', 'b': 'p/z'})
+        # The same alias for the same parameter on both sides is fine.
+        spec = InequalitySpec('a', '<', 'a + b', {'a': 'p/x'}, {'a': 'p/x', 'b': 'p/z'})
+        assert spec.paths == {'a': 'p/x', 'b': 'p/z'}
 
 
 # --------------------------------------------------------------------------- translation
@@ -271,3 +280,38 @@ class TestInequalityFit:
         project.minimizer = AvailableMinimizers.LMFit
         with pytest.raises(ValueError, match='require the BUMPS engine'):
             project.fitter.fit_single_data_set_1d(dataset)
+
+    def test_for_experiments_raw_fit_applies_project_inequalities(self):
+        """The documented GUI path — `for_experiments` then driving the raw
+        `easy_science_multi_fitter.fit(...)` — must apply the project's
+        inequality constraints (and refuse non-BUMPS engines) instead of
+        silently fitting an unconstrained problem."""
+        project, model = _two_layer_project()
+        layers = [layer for assembly in model.sample for layer in assembly.layers]
+        t_a, t_b = layers[1].thickness, layers[2].thickness
+        q = np.linspace(0.01, 0.3, 150)
+        t_a.value, t_b.value = 45.0, 55.0  # truth sums to 100
+        r_true = model.interface.fit_func(q, model.unique_name)
+        t_a.value, t_b.value = 30.0, 50.0  # feasible start
+        for layer in layers:
+            for par in (layer.thickness, layer.roughness, layer.material.sld, layer.material.isld):
+                par.fixed = True
+        t_a.fixed = False
+        t_b.fixed = False
+        model.scale.fixed = True
+        model.background.fixed = True
+        pa, pb = project.parameter_path(t_a), project.parameter_path(t_b)
+        project.add_inequality_constraint(InequalitySpec('a + b', '<', '90', {'a': pa, 'b': pb}, {}, name='budget'))
+        dataset = DataSet1D(name='sim', x=q, y=r_true, ye=(0.05 * r_true) ** 2, model=model, auto_background=False)
+
+        fitter = MultiFitter.for_experiments([dataset], constraints_factory_provider=project.build_constraints_factory)
+        fitter.easy_science_multi_fitter.switch_minimizer(AvailableMinimizers.Bumps)
+        weights = 1.0 / np.sqrt(np.asarray(dataset.ye))
+        results = fitter.easy_science_multi_fitter.fit([np.asarray(dataset.x)], [np.asarray(dataset.y)], weights=[weights])
+
+        assert results[0].success
+        assert t_a.value + t_b.value <= 90.0 + 1e-3  # unconstrained optimum (100) is refused
+
+        fitter.easy_science_multi_fitter.switch_minimizer(AvailableMinimizers.LMFit)
+        with pytest.raises(ValueError, match='require the BUMPS engine'):
+            fitter.easy_science_multi_fitter.fit([np.asarray(dataset.x)], [np.asarray(dataset.y)], weights=[weights])

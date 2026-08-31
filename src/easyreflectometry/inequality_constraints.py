@@ -45,6 +45,7 @@ from __future__ import annotations
 import keyword
 import numbers
 import re
+import warnings
 from dataclasses import dataclass
 from dataclasses import field
 from typing import Any
@@ -178,6 +179,16 @@ class InequalitySpec:
                 _evaluate(interpreter, expression, {alias: 1.0 for alias in paths})
             except Exception as error:  # asteval raises its own hierarchy
                 raise SyntaxError(f"Cannot evaluate the {side}-hand side '{expression}': {error}") from None
+        # `paths` merges both sides, so one alias cannot mean two different
+        # parameters — the right side would silently win.
+        conflicting = sorted(
+            alias for alias, path in self.lhs_paths.items() if alias in self.rhs_paths and self.rhs_paths[alias] != path
+        )
+        if conflicting:
+            raise ValueError(
+                f'Alias(es) {", ".join(repr(a) for a in conflicting)} map to different parameters on the '
+                'two sides of the inequality. Use distinct alias names per side.'
+            )
 
     @property
     def paths(self) -> Dict[str, str]:
@@ -315,6 +326,14 @@ def _source_for(parameter: DescriptorNumber, bumps_pars: Dict[str, Any], trail: 
         expression = getattr(parameter, '_clean_dependency_string', None)
         dependency_map = getattr(parameter, '_dependency_map', None) or {}
         if expression is None:
+            # A dependent parameter always carries its dependency expression in
+            # EasyScience; this is a defensive fallback for a foreign Parameter
+            # subclass. Freezing silently would hide a bug, so say so.
+            warnings.warn(
+                f"Dependent parameter '{parameter.name}' has no dependency expression; "
+                'its current value is frozen as a constant in the inequality constraint.',
+                stacklevel=2,
+            )
             return _Constant(parameter.value)
         sources = {alias: _source_for(dep, bumps_pars, trail + (id(parameter),)) for alias, dep in dependency_map.items()}
         return _Expression(expression, sources)

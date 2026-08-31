@@ -93,6 +93,17 @@ def install() -> None:
     _patch(sampler_dream)
 
 
+def is_applied() -> bool:
+    """Whether an :func:`applied` block is active in the current context.
+
+    Lets an inner wrapper (``MultiFitter`` routes the raw
+    ``easy_science_multi_fitter.fit`` through the constraints machinery)
+    detect that an outer block already attached a factory — possibly an
+    explicit one that must not be overridden by re-resolving the provider.
+    """
+    return _active.get() is not None
+
+
 @contextlib.contextmanager
 def applied(factory: Optional[Callable]) -> Iterator[None]:
     """Attach `factory`'s constraints to problems built inside the block.

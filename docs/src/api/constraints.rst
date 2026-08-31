@@ -24,8 +24,8 @@ Derived (read-only) parameters
 ------------------------------
 
 A *derived parameter* is a dependent parameter that belongs to no layer: a
-live calculation that can be shown, referenced from other constraints and used
-in inequalities — the counterpart of a bumps ``Calculation`` slot::
+live calculation that can be shown or referenced from an equality
+constraint::
 
     from easyreflectometry import derived_parameter, constrain_to_sum
 
@@ -33,8 +33,17 @@ in inequalities — the counterpart of a bumps ``Calculation`` slot::
     # keep the film thickness fixed at 120 Å while the split is fitted
     constrain_to_sum(layer_b.thickness, [layer_a.thickness, layer_b.thickness], total=120.0)
 
-Every :class:`~easyreflectometry.model.Model` exposes
-:attr:`~easyreflectometry.model.Model.total_thickness`: the summed thickness of
+.. warning::
+
+    A standalone derived parameter is **session-only**: it has no structural
+    path, so it cannot be named in an inequality constraint, and a project
+    whose equality constraints depend on one cannot be saved
+    (``Project.as_dict`` raises). Numeric totals (as above) are fine — they
+    are embedded by value.
+
+For a derived value that persists and can be used in inequalities, use one
+owned by the model: every :class:`~easyreflectometry.model.Model` exposes
+:attr:`~easyreflectometry.model.Model.total_thickness`, the summed thickness of
 the layers between the superphase and the subphase, re-derived whenever the
 layer structure changes.
 

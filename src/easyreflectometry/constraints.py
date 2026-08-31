@@ -124,15 +124,24 @@ def derived_parameter(
 
     The returned parameter is *dependent*: it never enters a fit, it
     follows `expression` whenever any of `parameters` changes, and its
-    value cannot be set directly. It can be used anywhere a parameter
-    can — for example on either side of an inequality constraint or inside
-    another :func:`constrain` expression — which makes it the
-    EasyReflectometry counterpart of a bumps ``Calculation`` slot.
+    value cannot be set directly — a live calculation to display or reuse
+    inside another :func:`constrain` expression.
 
     .. code-block:: python
 
         total = derived_parameter('total', 't1 + t2', t1=layer_1.thickness, t2=layer_2.thickness)
         constrain(layer_3.thickness, 'T - t', T=total, t=layer_4.thickness)
+
+    .. warning::
+
+        A standalone derived parameter belongs to no model, so it has no
+        structural path (:meth:`~easyreflectometry.Project.parameter_path`
+        returns ``None``): it cannot be referenced from an inequality
+        constraint, and a project holding a :func:`constrain` that depends
+        on one cannot be saved (``Project.as_dict`` raises). It is a
+        session-only convenience. For a derived value that must survive
+        save/load or appear in inequalities, use a parameter owned by the
+        model, such as :attr:`~easyreflectometry.model.Model.total_thickness`.
 
     Parameters
     ----------

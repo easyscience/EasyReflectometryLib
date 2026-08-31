@@ -15,6 +15,7 @@ from easyscience.variable import Parameter
 from easyreflectometry import constrain
 from easyreflectometry import constrain_equal
 from easyreflectometry import constrain_to_sum
+from easyreflectometry import derived_parameter
 from easyreflectometry import unconstrain
 from easyreflectometry.project import Project
 
@@ -247,6 +248,19 @@ class TestProjectRoundTrip:
         detached = Parameter('detached', 5.0, unit='angstrom')
         constrain(project.models[0].sample[1].layers[0].roughness, 'a', a=detached)
 
+        with pytest.raises(ValueError, match='not reachable from'):
+            project.as_dict()
+
+    def test_standalone_derived_parameter_is_session_only(self):
+        """A `derived_parameter` belongs to no model: it has no path, and a
+        constraint depending on it cannot be saved (documented limitation)."""
+        project = Project()
+        project.default_model()
+        sample = project.models[0].sample
+        total = derived_parameter('total', 'a + b', a=sample[1].layers[0].thickness, b=sample[2].layers[0].thickness)
+
+        assert project.parameter_path(total) is None
+        constrain(sample[2].layers[0].roughness, 'T / 10', T=total)
         with pytest.raises(ValueError, match='not reachable from'):
             project.as_dict()
 

@@ -465,7 +465,11 @@ class Project:
         return spec
 
     def remove_inequality_constraint(self, which: Union[int, str, InequalitySpec]) -> None:
-        """Remove a constraint by index, by name or by identity."""
+        """Remove a constraint by index, by name or by identity.
+
+        A name removes **every** spec carrying that name; use the index or
+        the spec object to remove a single one when names are shared.
+        """
         if isinstance(which, InequalitySpec):
             self._inequality_constraints = [s for s in self._inequality_constraints if s is not which]
             return

@@ -5,6 +5,7 @@
 import contextlib
 import functools
 import warnings
+import weakref
 from typing import Any
 from typing import Callable
 
@@ -18,12 +19,45 @@ from easyscience.fitting.multi_fitter import MultiFitter as EasyScienceMultiFitt
 from easyreflectometry._bumps_constraints import NATIVE as _NATIVE_CONSTRAINTS
 from easyreflectometry._bumps_constraints import NON_BUMPS_ERROR
 from easyreflectometry._bumps_constraints import applied as _constraints_applied
+from easyreflectometry._bumps_constraints import is_applied as _constraints_active
 from easyreflectometry.data import DataSet1D
 from easyreflectometry.data import PolarizedDataSet
 from easyreflectometry.model import Model
 
 _VALID_OBJECTIVES = ('legacy_mask', 'mighell', 'hybrid', 'auto')
 _EPS = 1e-30
+
+
+class _ConstrainedEasyScienceMultiFitter(EasyScienceMultiFitter):
+    """EasyScience ``MultiFitter`` whose raw ``fit`` honours inequality constraints.
+
+    ``fit`` is a read-only property on the base class (it builds a fresh
+    callable per access), so the interception lives in an override rather
+    than a monkey-patch. Calls that already carry an explicit
+    ``constraints_factory`` keyword, or run inside an active shim block (an
+    outer :meth:`MultiFitter._constraints` — possibly with an explicit
+    factory that must win), pass through untouched.
+    """
+
+    #: Weak reference to the owning :class:`MultiFitter` (weak to avoid a
+    #: reference cycle); ``None`` disables the interception.
+    _constraints_owner = None
+
+    @property
+    def fit(self) -> Callable:
+        original = EasyScienceMultiFitter.fit.fget(self)
+        owner = self._constraints_owner() if self._constraints_owner is not None else None
+        if owner is None:
+            return original
+
+        @functools.wraps(original)
+        def fit_with_constraints(*args, **kwargs):
+            if 'constraints_factory' in kwargs or _constraints_active():
+                return original(*args, **kwargs)
+            with owner._constraints(None, fitter=self) as constraints_kwargs:
+                return original(*args, **kwargs, **constraints_kwargs)
+
+        return fit_with_constraints
 
 
 def _validate_objective(objective: str) -> str:
@@ -274,7 +308,7 @@ class MultiFitter:
 
         self._fit_func = [_bind_fit_func(m.interface.fit_func, m.unique_name) for m in args]
         self._models = args
-        self.easy_science_multi_fitter = EasyScienceMultiFitter(args, self._fit_func)
+        self.easy_science_multi_fitter = self._build_easy_science_fitter(args, self._fit_func)
         self._fit_results: list[FitResults] | None = None
         self._classical_fit_metrics: list[dict] | None = None
         self._objective = _validate_objective(objective)
@@ -289,6 +323,22 @@ class MultiFitter:
         # registered on the project are applied without passing them
         # explicitly; an explicit ``constraints_factory=`` argument wins.
         self.constraints_factory_provider: Callable[[], Callable | None] | None = None
+
+    def _build_easy_science_fitter(self, models, fit_funcs) -> EasyScienceMultiFitter:
+        """Build the EasyScience fitter, with its raw ``fit`` honouring constraints.
+
+        :meth:`for_experiments` documents that the caller drives
+        ``easy_science_multi_fitter.fit(...)`` directly (e.g. a GUI worker
+        thread), which would bypass :meth:`_constraints` and silently fit an
+        unconstrained problem. The returned fitter routes that path through
+        the constraints machinery: :attr:`constraints_factory_provider` is
+        resolved at call time (and in the calling thread — the shim's context
+        variable is thread-local), and non-BUMPS engines are rejected rather
+        than silently dropping the constraints.
+        """
+        fitter = _ConstrainedEasyScienceMultiFitter(models, fit_funcs)
+        fitter._constraints_owner = weakref.ref(self)
+        return fitter
 
     def _resolve_constraints_factory(self, explicit: Callable | None) -> Callable | None:
         if explicit is not None:
@@ -351,6 +401,7 @@ class MultiFitter:
         cls,
         experiments: list[DataSet1D | PolarizedDataSet],
         objective: str = 'hybrid',
+        constraints_factory_provider: Callable[[], Callable | None] | None = None,
     ) -> 'MultiFitter':
         """Build a fitter for a mixed list of unpolarized and polarized experiments.
 
@@ -366,6 +417,11 @@ class MultiFitter:
         The resulting fitter is *not* run: the caller supplies the data arrays
         to ``easy_science_multi_fitter.fit(...)`` in the order given by
         :attr:`fit_datasets`, which lets a GUI drive it from a worker thread.
+        That call resolves :attr:`constraints_factory_provider` at call time,
+        so inequality constraints are applied on this path too — pass
+        ``constraints_factory_provider`` (e.g.
+        ``project.build_constraints_factory``) or set the attribute before
+        fitting; with none set, no inequality constraints are enforced.
 
         Note
         ----
@@ -384,6 +440,11 @@ class MultiFitter:
             The loaded experiments, in the order they should be fitted.
         objective : str, optional
             Zero-variance handling strategy, see :meth:`__init__`. By default, 'hybrid'.
+        constraints_factory_provider : Callable[[], Callable | None] | None, optional
+            Zero-argument callable returning the ``constraints_factory`` for
+            the next fit, typically ``project.build_constraints_factory``;
+            stored as :attr:`constraints_factory_provider`. By default, None
+            (no inequality constraints are applied).
 
         Returns
         -------
@@ -424,9 +485,10 @@ class MultiFitter:
             fit_funcs.append(_bind_fit_func(func, model.unique_name))
 
         fitter._fit_func = fit_funcs
-        fitter.easy_science_multi_fitter = EasyScienceMultiFitter(models, fit_funcs)
+        fitter.easy_science_multi_fitter = fitter._build_easy_science_fitter(models, fit_funcs)
         fitter.fit_datasets = datasets
         fitter.fit_channels = channels
+        fitter.constraints_factory_provider = constraints_factory_provider
         return fitter
 
     def fit(
@@ -580,6 +642,10 @@ class MultiFitter:
         objective : str | None, optional
             Per-call override for the zero-variance objective.
             If ``None``, uses the instance default set at construction. By default, None.
+        constraints_factory : Callable | None, optional
+            Inequality constraints to enforce (BUMPS engines only); see
+            :mod:`easyreflectometry.inequality_constraints`. Defaults to what
+            :attr:`constraints_factory_provider` returns. By default, None.
 
         Returns
         -------
