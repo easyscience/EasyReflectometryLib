@@ -16,7 +16,6 @@ from easyscience.fitting import FitResults
 from easyscience.fitting import Sampler
 from easyscience.fitting.multi_fitter import MultiFitter as EasyScienceMultiFitter
 
-from easyreflectometry._bumps_constraints import NATIVE as _NATIVE_CONSTRAINTS
 from easyreflectometry._bumps_constraints import NON_BUMPS_ERROR
 from easyreflectometry._bumps_constraints import applied as _constraints_applied
 from easyreflectometry._bumps_constraints import is_applied as _constraints_active
@@ -33,10 +32,11 @@ class _ConstrainedEasyScienceMultiFitter(EasyScienceMultiFitter):
 
     ``fit`` is a read-only property on the base class (it builds a fresh
     callable per access), so the interception lives in an override rather
-    than a monkey-patch. Calls that already carry an explicit
-    ``constraints_factory`` keyword, or run inside an active shim block (an
-    outer :meth:`MultiFitter._constraints` — possibly with an explicit
-    factory that must win), pass through untouched.
+    than a monkey-patch. An explicit ``constraints_factory`` keyword is
+    consumed here and enforced by this library — the core takes no such
+    argument and would swallow it through ``**kwargs``. Without one, a call
+    running inside an active :meth:`MultiFitter._constraints` block passes
+    through untouched, leaving the outer factory in force.
     """
 
     #: Weak reference to the owning :class:`MultiFitter` (weak to avoid a
@@ -52,10 +52,13 @@ class _ConstrainedEasyScienceMultiFitter(EasyScienceMultiFitter):
 
         @functools.wraps(original)
         def fit_with_constraints(*args, **kwargs):
-            if 'constraints_factory' in kwargs or _constraints_active():
+            explicit = kwargs.pop('constraints_factory', None)
+            # An explicit factory wins over an outer block; without one, an
+            # outer block has already attached what it resolved.
+            if explicit is None and _constraints_active():
                 return original(*args, **kwargs)
-            with owner._constraints(None, fitter=self) as constraints_kwargs:
-                return original(*args, **kwargs, **constraints_kwargs)
+            with owner._constraints(explicit, fitter=self):
+                return original(*args, **kwargs)
 
         return fit_with_constraints
 
@@ -349,12 +352,12 @@ class MultiFitter:
 
     @contextlib.contextmanager
     def _constraints(self, explicit: Callable | None, fitter: EasyScienceMultiFitter | None = None):
-        """Yield the fit kwargs, with any inequality constraints active for the block.
+        """Make any inequality constraints active for the duration of the block.
 
-        A core that takes ``constraints_factory`` itself gets it as a keyword;
-        otherwise the shim attaches the penalties to the BUMPS problem as it is
-        built and the kwargs stay empty. Either way inequality constraints are
-        rejected for engines that cannot enforce them, rather than dropped.
+        The penalties are attached to the BUMPS problem as it is built (see
+        :mod:`easyreflectometry._bumps_constraints`); nothing is handed to the
+        core as a keyword. Engines that cannot enforce the constraints are
+        rejected rather than left to fit an unconstrained problem.
 
         Parameters
         ----------
@@ -371,21 +374,18 @@ class MultiFitter:
             package = getattr(minimizer, 'package', None)
             if package != 'bumps':
                 raise ValueError(NON_BUMPS_ERROR.format(package=package))
-        if _NATIVE_CONSTRAINTS:
-            yield {'constraints_factory': factory} if factory is not None else {}
-        else:
-            with _constraints_applied(factory):
-                yield {}
+        with _constraints_applied(factory):
+            yield
 
     @staticmethod
     def _keep_constraints_on_extend(sampler: Sampler, factory: Callable | None) -> None:
         """Re-enter the constraints context around ``sampler.extend()``.
 
-        Only needed when the shim is in use: a native core binds the factory in
-        ``Sampler.__init__`` and reuses it on extend. Without this a continued
-        chain would silently sample an unpenalised posterior.
+        The factory is current only for the duration of the sampling call that
+        built the problem; without this a continued chain would silently sample
+        an unpenalised posterior.
         """
-        if factory is None or _NATIVE_CONSTRAINTS:
+        if factory is None:
             return
         original = sampler.extend
 
@@ -541,8 +541,8 @@ class MultiFitter:
             dy.append(weights)
             original_arrays.append({'x': x_vals, 'y': y_vals, 'variances': variances})
 
-        with self._constraints(constraints_factory) as constraints_kwargs:
-            result = self.easy_science_multi_fitter.fit(x, y, weights=dy, **constraints_kwargs)
+        with self._constraints(constraints_factory):
+            result = self.easy_science_multi_fitter.fit(x, y, weights=dy)
         self._fit_results = result
         self._classical_fit_metrics = []
         new_data = data.copy()
@@ -607,8 +607,8 @@ class MultiFitter:
         if obj == 'legacy_mask' and len(x_out) == 0:
             raise ValueError('Cannot fit single dataset: all points have zero variance.')
 
-        with self._constraints(constraints_factory) as constraints_kwargs:
-            result = self.easy_science_multi_fitter.fit(x=[x_out], y=[y_eff], weights=[weights], **constraints_kwargs)[0]
+        with self._constraints(constraints_factory):
+            result = self.easy_science_multi_fitter.fit(x=[x_out], y=[y_eff], weights=[weights])[0]
         self._fit_results = [result]
         model_curve = self._fit_func[0](x_vals)
         self._classical_fit_metrics = [
@@ -703,8 +703,8 @@ class MultiFitter:
             dy.append(weights)
             original_arrays.append({'x': x_vals, 'y': y_vals, 'variances': variances})
 
-        with self._constraints(constraints_factory, fitter=polarized_fitter) as constraints_kwargs:
-            results = polarized_fitter.fit(x, y, weights=dy, **constraints_kwargs)
+        with self._constraints(constraints_factory, fitter=polarized_fitter):
+            results = polarized_fitter.fit(x, y, weights=dy)
         # All channels are fitted against one parameter vector (the shared model),
         # so `result.n_pars` is identical across `results`; `reduced_chi` and
         # `classical_reduced_chi` below rely on that invariant.
@@ -818,11 +818,10 @@ class MultiFitter:
         # Resolved once and passed on as the explicit factory, so building it
         # (which resolves every constraint's parameter paths) happens once.
         factory = self._resolve_constraints_factory(constraints_factory)
-        with self._constraints(factory) as constraints_kwargs:
-            # On a native core the factory is bound to the sampler, so ``extend()``
-            # keeps the same penalised posterior; otherwise the shim supplies it
-            # per run and `_keep_constraints_on_extend` covers the continuation.
-            sampler = Sampler(self.easy_science_multi_fitter, x=x, y=y, weights=dy, **constraints_kwargs)
+        with self._constraints(factory):
+            # The factory is current only while the problem is being built, so
+            # `_keep_constraints_on_extend` covers a later continuation.
+            sampler = Sampler(self.easy_science_multi_fitter, x=x, y=y, weights=dy)
             self._keep_constraints_on_extend(sampler, factory)
             # Retained so the chain can be continued afterwards via ``self.sampler.extend()``.
             self._sampler = sampler

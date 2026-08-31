@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 """
-Tests for the BUMPS inequality-constraints back-port
+Tests for the BUMPS inequality-constraints enforcement
 """
 
 import numpy as np
@@ -69,16 +69,8 @@ def unpatched_modules():
 
 @pytest.mark.usefixtures('unpatched_modules')
 class TestInstall:
-    def test_no_op_on_a_native_core(self, monkeypatch):
-        """A core that takes the keyword itself must not be patched."""
-        monkeypatch.setattr(_bumps_constraints, 'NATIVE', True)
-        original = minimizer_bumps.build_curve_problem
-        _bumps_constraints.install()
-        assert minimizer_bumps.build_curve_problem is original
-
     def test_patches_both_consumer_namespaces_and_is_idempotent(self, monkeypatch):
         """Both consumers bind the name at import, so each has to be patched."""
-        monkeypatch.setattr(_bumps_constraints, 'NATIVE', False)
         monkeypatch.setattr(minimizer_bumps, 'build_curve_problem', minimizer_bumps.build_curve_problem)
         monkeypatch.setattr(sampler_dream, 'build_curve_problem', sampler_dream.build_curve_problem)
 
@@ -90,7 +82,6 @@ class TestInstall:
         assert (minimizer_bumps.build_curve_problem, sampler_dream.build_curve_problem) == patched
 
 
-@pytest.mark.skipif(_bumps_constraints.NATIVE, reason='the core enforces the constraints itself')
 class TestShimAgainstARealFit:
     def test_the_patched_entry_point_is_the_one_a_fit_calls(self):
         """A signature check would not catch patching the wrong namespace."""
@@ -160,7 +151,6 @@ class TestShimAgainstARealFit:
         assert not isinstance(error.value, AttributeError)
 
 
-@pytest.mark.skipif(_bumps_constraints.NATIVE, reason='the core binds the factory to the Sampler')
 class TestExtendKeepsThePenalty:
     def test_extend_re_enters_the_constraints_context(self):
         """Without the wrapper a continued chain samples an unpenalised posterior."""
@@ -197,7 +187,7 @@ class TestExtendKeepsThePenalty:
 
 
 class TestEngineRejection:
-    def test_non_bumps_engine_is_rejected_with_the_core_message(self):
+    def test_non_bumps_engine_is_rejected(self):
         """The message is also printed in the constraints tutorial; keep it verbatim."""
         project, model = _two_layer_project()
         project.minimizer = AvailableMinimizers.LMFit
@@ -213,3 +203,94 @@ class TestEngineRejection:
         assert str(error.value) == (
             "Inequality constraints (constraints_factory) require the BUMPS engine; the selected minimizer uses 'lmfit'."
         )
+
+
+class TestTheCoreIsNeverHandedTheKeyword:
+    """``constraints_factory`` is this library's own; the core knows nothing of it.
+
+    ``Bumps.fit`` takes ``**kwargs`` and would accept — and drop — an
+    unrecognised keyword without a word, so passing one through would fit an
+    unconstrained problem silently. These pin the enforcement to this library.
+    """
+
+    def test_the_core_does_not_accept_it(self):
+        import inspect
+
+        assert 'constraints_factory' not in inspect.signature(minimizer_bumps.Bumps.fit).parameters
+
+    def test_a_constrained_fit_does_not_pass_it_down(self, monkeypatch):
+        project, model = _two_layer_project()
+        project.minimizer = AvailableMinimizers.Bumps
+        layers = [layer for assembly in model.sample for layer in assembly.layers]
+        thickness = layers[1].thickness
+        q = np.linspace(0.01, 0.3, 50)
+        reflectivity = model.interface.fit_func(q, model.unique_name)
+        for layer in layers:
+            for parameter in (layer.thickness, layer.roughness, layer.material.sld, layer.material.isld):
+                parameter.fixed = True
+        thickness.fixed = False
+        model.scale.fixed = model.background.fixed = True
+        dataset = DataSet1D(name='sim', x=q, y=reflectivity, ye=(0.05 * reflectivity) ** 2)
+        project.add_inequality_constraint(InequalitySpec('a', '<', '90', {'a': project.parameter_path(thickness)}, {}))
+
+        seen = []
+        original = minimizer_bumps.Bumps.fit
+
+        def recording_fit(self, *args, **kwargs):
+            seen.append(kwargs)
+            return original(self, *args, **kwargs)
+
+        monkeypatch.setattr(minimizer_bumps.Bumps, 'fit', recording_fit)
+        project.fitter.fit_single_data_set_1d(dataset)
+
+        assert seen, 'the minimizer was never reached'
+        assert all('constraints_factory' not in kwargs for kwargs in seen)
+
+
+class TestExplicitFactoryOnTheRawFitter:
+    """The GUI drives ``easy_science_multi_fitter.fit`` directly (see `for_experiments`).
+
+    An explicit ``constraints_factory`` on that call used to be handed to the
+    core, which drops unrecognised keywords through ``**kwargs`` — so the
+    penalties were silently lost on exactly the path that asked for them.
+    """
+
+    def _fitter_and_arrays(self):
+        from easyreflectometry.fitting import MultiFitter
+
+        project, model = _two_layer_project()
+        layers = [layer for assembly in model.sample for layer in assembly.layers]
+        q = np.linspace(0.01, 0.3, 50)
+        reflectivity = model.interface.fit_func(q, model.unique_name)
+        for layer in layers:
+            for parameter in (layer.thickness, layer.roughness, layer.material.sld, layer.material.isld):
+                parameter.fixed = True
+        layers[1].thickness.fixed = False
+        model.scale.fixed = model.background.fixed = True
+        dataset = DataSet1D(name='sim', x=q, y=reflectivity, ye=(0.05 * reflectivity) ** 2, model=model, auto_background=False)
+        fitter = MultiFitter.for_experiments([dataset])
+        fitter.easy_science_multi_fitter.switch_minimizer(AvailableMinimizers.Bumps)
+        weights = 1.0 / np.sqrt(np.asarray(dataset.ye))
+        return fitter, ([np.asarray(dataset.x)], [np.asarray(dataset.y)], [weights])
+
+    def test_explicit_factory_is_enforced_not_swallowed(self):
+        fitter, (x, y, weights) = self._fitter_and_arrays()
+        calls = []
+
+        fitter.easy_science_multi_fitter.fit(
+            x, y, weights=weights, constraints_factory=lambda pars: calls.append(dict(pars)) or []
+        )
+
+        assert len(calls) == 1
+        assert any(name.startswith('p') for name in calls[0])
+
+    def test_explicit_factory_wins_over_the_provider(self):
+        fitter, (x, y, weights) = self._fitter_and_arrays()
+        provider_calls, explicit_calls = [], []
+        fitter.constraints_factory_provider = lambda: lambda pars: provider_calls.append(1) or []
+
+        fitter.easy_science_multi_fitter.fit(
+            x, y, weights=weights, constraints_factory=lambda pars: explicit_calls.append(1) or []
+        )
+
+        assert explicit_calls and not provider_calls
