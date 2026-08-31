@@ -6,6 +6,12 @@
 from importlib import metadata
 
 from .analysis.bayesian import PosteriorResults
+from .constraints import constrain
+from .constraints import constrain_equal
+from .constraints import constrain_to_sum
+from .constraints import derived_parameter
+from .constraints import unconstrain
+from .inequality_constraints import InequalitySpec
 from .project import Project
 
 try:
@@ -14,7 +20,13 @@ except metadata.PackageNotFoundError:
     __version__ = '0.0.0'
 
 __all__ = [
+    'InequalitySpec',
     'Project',
     'PosteriorResults',
     '__version__',
+    'constrain',
+    'constrain_equal',
+    'constrain_to_sum',
+    'derived_parameter',
+    'unconstrain',
 ]

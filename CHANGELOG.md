@@ -1,5 +1,40 @@
 # Unreleased
 
+## Parameter constraints
+
+- New equality-constraint helpers `constrain`, `constrain_equal`,
+  `unconstrain`, `constrain_to_sum` and `derived_parameter`
+  (`easyreflectometry.constraints`), thin wrappers over the EasyScience
+  parameter-dependency mechanism. Constraints created through these
+  helpers survive project save/load; raw `make_dependent_on` calls do
+  not. A standalone `derived_parameter` is session-only: it has no
+  structural path and a saved project cannot reference it.
+- New inequality constraints
+  (`easyreflectometry.inequality_constraints`): declarative
+  `InequalitySpec` objects (`t_head < t_tail`, `t1 + t2 <= 90`)
+  registered on the project (`Project.add_inequality_constraint` and
+  friends) and enforced as penalties on the BUMPS fit problem, including
+  via `MultiFitter.for_experiments`-built fitters driven through the raw
+  `easy_science_multi_fitter.fit(...)`. Engines that cannot enforce them
+  (LMFit, DFO-LS) raise instead of silently dropping physics. Older
+  project files without the new keys load unchanged; files saved with
+  constraints keep the file format at 2 (old readers ignore the additive
+  keys and lose the constraints).
+- New `Model.total_thickness`: a read-only derived parameter equal to
+  the summed thickness of the layers between superphase and subphase,
+  rebuilt whenever the layer structure changes. New
+  `conformal_thickness` / `conformal_roughness` toggles on assemblies.
+- Structural parameter paths (`Project.parameter_path` /
+  `Project.resolve_parameter_path`) address parameters stably across
+  save/load.
+- `Parameter.bounds = (lo, hi)` assignments in tutorials, notebooks and
+  integration tests migrated to `.min` / `.max`.
+- ORSO model loading now uses the parsed `SampleModel` as-is, so named
+  materials, sub-stacks and composits are no longer dropped (named
+  materials previously read back with SLD 0).
+
+## Polarization
+
 All four polarization channels (pp, pm, mp, mm) are now available from
 the refl1d calculator. Previously only the non-spin-flip pp channel was
 returned.

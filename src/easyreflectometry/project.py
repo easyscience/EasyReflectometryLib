@@ -5,6 +5,8 @@ import datetime
 import json
 import logging
 import os
+import warnings
+import weakref
 from pathlib import Path
 from typing import Dict
 from typing import List
@@ -14,6 +16,7 @@ from typing import Union
 import numpy as np
 from easyscience import global_object
 from easyscience.fitting import AvailableMinimizers
+from easyscience.variable import DescriptorNumber as DescriptorNumberType
 from easyscience.variable import Parameter
 from easyscience.variable.parameter_dependency_resolver import resolve_all_parameter_dependencies
 from scipp import DataGroup
@@ -21,6 +24,8 @@ from scipp import DataGroup
 from easyreflectometry.calculators import CalculatorFactory
 from easyreflectometry.calculators import PolarizationChannel
 from easyreflectometry.calculators.calculator_base import CalculatorBase
+from easyreflectometry.constraints import USER_CONSTRAINT_FLAG
+from easyreflectometry.constraints import constrain
 from easyreflectometry.data import DataSet1D
 from easyreflectometry.data import PolarizedDataSet
 from easyreflectometry.data import detect_polarization_channel
@@ -28,6 +33,11 @@ from easyreflectometry.data import load_as_dataset
 from easyreflectometry.data.measurement import extract_orso_title
 from easyreflectometry.data.measurement import load_data_from_orso_file
 from easyreflectometry.fitting import MultiFitter
+from easyreflectometry.inequality_constraints import InequalityEvaluation
+from easyreflectometry.inequality_constraints import InequalitySpec
+from easyreflectometry.inequality_constraints import build_constraints_factory
+from easyreflectometry.inequality_constraints import check_units
+from easyreflectometry.inequality_constraints import evaluate_spec
 from easyreflectometry.limits import apply_default_limits
 from easyreflectometry.model import Model
 from easyreflectometry.model import ModelCollection
@@ -75,6 +85,22 @@ MAGNETIC_MOMENT_FLOOR_FRACTION = 0.01
 
 DEFAULT_MINIMIZER = AvailableMinimizers.LMFit_leastsq
 
+#: Properties not descended into when *generating* structural parameter
+#: paths: non-structural objects and convenience aliases of ``layers[i]``
+#: (so a layer parameter is always addressed as ``.../layers/<i>/...``).
+#: ``resolve_parameter_path`` still accepts them.
+_PATH_SKIPPED_PROPERTIES = frozenset({'interface', 'parent', 'front_layer', 'back_layer', 'head_layer', 'tail_layer'})
+
+
+def _weak_constraints_provider(project: 'Project'):
+    project_ref = weakref.ref(project)
+
+    def provider():
+        target = project_ref()
+        return None if target is None else target.build_constraints_factory()
+
+    return provider
+
 
 class Project:
     def __init__(self):
@@ -98,6 +124,7 @@ class Project:
         self._current_layer_index = 0
         self._fitter_model_index = None
         self._current_experiment_index = 0
+        self._inequality_constraints: List[InequalitySpec] = []
 
         # Project flags
         self._created = False
@@ -329,7 +356,257 @@ class Project:
                 self._fitter = MultiFitter(self._models[self._current_model_index])
                 self._fitter.easy_science_multi_fitter.switch_minimizer(self._minimizer_selection)
                 self._fitter_model_index = self._current_model_index
+                # Fits run through this fitter pick up the project's inequality
+                # constraints automatically (resolved at fit time). A weak
+                # reference avoids a project -> fitter -> project cycle that
+                # would keep a discarded project (and its unique names) alive.
+                self._fitter.constraints_factory_provider = _weak_constraints_provider(self)
         return self._fitter
+
+    # ----- structural parameter paths -----
+
+    @staticmethod
+    def _child_candidates(obj) -> list:
+        """``(token, child)`` pairs to descend into from `obj`."""
+        from collections.abc import Sequence
+
+        from easyreflectometry.sample.base_core import BaseCore
+        from easyreflectometry.sample.collections.base_collection import BaseCollection
+
+        if isinstance(obj, (BaseCollection, list, tuple)) or (isinstance(obj, Sequence) and not isinstance(obj, str)):
+            return [(str(index), item) for index, item in enumerate(obj)]
+        if isinstance(obj, BaseCore) or hasattr(obj, 'get_all_parameters'):
+            candidates = []
+            for attr_name in dir(type(obj)):
+                if attr_name.startswith('_') or attr_name in _PATH_SKIPPED_PROPERTIES:
+                    continue
+                class_attr = getattr(type(obj), attr_name, None)
+                if not isinstance(class_attr, property):
+                    continue
+                try:
+                    value = getattr(obj, attr_name)
+                except Exception as exception:
+                    logger.debug("Skipping property '%s' on %r: %s", attr_name, obj, exception)
+                    continue
+                if isinstance(value, (DescriptorNumberType, BaseCore, BaseCollection, list, tuple)):
+                    candidates.append((attr_name, value))
+            return candidates
+        return []
+
+    def _walk_parameters(self):
+        """Yield ``(structural path, parameter)`` for every parameter under the models.
+
+        Each object is descended into once, so parent back-references cannot
+        recurse forever.
+        """
+        visited: set[int] = set()
+
+        def _walk(obj, tokens: List[str]):
+            if isinstance(obj, DescriptorNumberType):
+                yield '/'.join(tokens), obj
+                return
+            if id(obj) in visited:
+                return
+            visited.add(id(obj))
+            for token, child in self._child_candidates(obj):
+                yield from _walk(child, tokens + [token])
+
+        yield from _walk(self._models, ['models'])
+
+    def parameter_path(self, parameter) -> Optional[str]:
+        """Structural path of `parameter` within this project, e.g.
+        ``models/0/sample/1/layers/0/thickness``.
+
+        Paths are stable across save/load (unlike unique names, which are
+        regenerated) and are the way inequality constraints reference
+        parameters. Returns ``None`` when the parameter is not reachable
+        from the project's models.
+        """
+        return next((path for path, candidate in self._walk_parameters() if candidate is parameter), None)
+
+    def resolve_parameter_path(self, path: str):
+        """Return the parameter at a structural `path` (see :meth:`parameter_path`)."""
+        tokens = [t for t in str(path).split('/') if t != '']
+        if not tokens or tokens[0] != 'models':
+            raise KeyError(f"Parameter path must start with 'models': '{path}'.")
+        obj = self._models
+        for token in tokens[1:]:
+            if token.lstrip('-').isdigit():
+                try:
+                    obj = obj[int(token)]
+                except (IndexError, KeyError, TypeError):
+                    raise KeyError(f"Parameter path '{path}': index {token} is out of range.") from None
+            else:
+                if token.startswith('_') or not hasattr(obj, token):
+                    raise KeyError(f"Parameter path '{path}': unknown attribute '{token}'.")
+                obj = getattr(obj, token)
+        if not isinstance(obj, DescriptorNumberType):
+            raise KeyError(f"Parameter path '{path}' does not point to a parameter.")
+        return obj
+
+    # ----- inequality constraints -----
+
+    @property
+    def inequality_constraints(self) -> List[InequalitySpec]:
+        """The project's inequality constraints (a copy of the list)."""
+        return list(self._inequality_constraints)
+
+    def add_inequality_constraint(self, spec: InequalitySpec, validate: bool = True) -> InequalitySpec:
+        """Register an inequality constraint; returns it.
+
+        With ``validate`` the paths are resolved and the units of both sides
+        compared, raising ``KeyError``/``ValueError`` on problems.
+        """
+        if not isinstance(spec, InequalitySpec):
+            raise TypeError('spec must be an InequalitySpec')
+        if validate:
+            check_units(spec, self.resolve_parameter_path)
+        self._inequality_constraints.append(spec)
+        return spec
+
+    def remove_inequality_constraint(self, which: Union[int, str, InequalitySpec]) -> None:
+        """Remove a constraint by index, by name or by identity.
+
+        A name removes **every** spec carrying that name; use the index or
+        the spec object to remove a single one when names are shared.
+        """
+        if isinstance(which, InequalitySpec):
+            self._inequality_constraints = [s for s in self._inequality_constraints if s is not which]
+            return
+        if isinstance(which, str):
+            matches = [s for s in self._inequality_constraints if s.name == which]
+            if not matches:
+                raise KeyError(f"No inequality constraint named '{which}'.")
+            for spec in matches:
+                self._inequality_constraints.remove(spec)
+            return
+        del self._inequality_constraints[int(which)]
+
+    def clear_inequality_constraints(self) -> None:
+        self._inequality_constraints = []
+
+    def evaluate_inequality_constraints(self) -> List[InequalityEvaluation]:
+        """Evaluate every constraint (enabled or not) at the current values."""
+        return [evaluate_spec(spec, self.resolve_parameter_path) for spec in self._inequality_constraints]
+
+    def violated_inequality_constraints(self) -> List[InequalitySpec]:
+        """Enabled constraints that the *current* parameter values violate.
+
+        A fit started from an infeasible point begins on the BUMPS penalty
+        plateau; callers should refuse or warn before launching.
+        """
+        violated = []
+        for spec in self._inequality_constraints:
+            if spec.enabled and not evaluate_spec(spec, self.resolve_parameter_path).satisfied:
+                violated.append(spec)
+        return violated
+
+    def build_constraints_factory(self):
+        """``constraints_factory`` hook for the enabled inequality constraints, or ``None``."""
+        return build_constraints_factory(self._inequality_constraints, self.resolve_parameter_path)
+
+    # ----- equality constraints (parameter dependencies) -----
+
+    @staticmethod
+    def _is_user_constrained(parameter) -> bool:
+        """Whether `parameter` carries a constraint this project should persist.
+
+        Both halves are needed: a constraint removed with the raw
+        ``make_independent()`` leaves the marker behind, and re-applying it on
+        load would resurrect what the user removed.
+        """
+        return getattr(parameter, USER_CONSTRAINT_FLAG, False) and not parameter.independent
+
+    def _user_constraints(self) -> List[dict]:
+        """Records describing the constraints created via :mod:`easyreflectometry.constraints`.
+
+        Parameters are addressed by structural path rather than by EasyScience
+        serializer id: an id is minted lazily when a parameter first gains an
+        observer and deleted again when it loses its last one, so it is not a
+        durable handle.
+
+        A parameter is recorded only when it is both marked *and* still
+        dependent. A constraint removed with the raw ``make_independent()``
+        leaves the marker behind, and re-applying that on load would resurrect
+        something the user removed. Internal constraints carry no marker at all
+        — their owning class rebuilds them in its own ``from_dict``.
+
+        Raises
+        ------
+        ValueError
+            If a constrained parameter, or a live parameter it depends on, is
+            not reachable from the models, so no path can address it.
+        """
+        # Which parameters are constrained is decided from `parameters`, which
+        # enumerates them without walking properties. The structural walk has to
+        # walk properties and leaves reference cycles behind (delaying collection
+        # of the project and its unique names), so it runs only when there is
+        # something to record, and only to supply the paths. Driving both from
+        # one list keeps a constraint from being dropped because the two
+        # enumerations disagree.
+        constrained = [parameter for parameter in self.parameters if self._is_user_constrained(parameter)]
+        if not constrained:
+            return []
+        paths = {id(parameter): path for path, parameter in self._walk_parameters()}
+        return [self._constraint_record(parameter, paths) for parameter in constrained]
+
+    @staticmethod
+    def _constraint_record(parameter, paths: dict) -> dict:
+        """One save record for `parameter`, addressing everything through `paths`."""
+
+        def _addressable(target, described_as: str) -> str:
+            path = paths.get(id(target))
+            if path is None:
+                raise ValueError(
+                    f"Cannot save the constraint on '{parameter.name}': {described_as} is not "
+                    "reachable from the project's models. Constrain against a parameter that "
+                    'belongs to a model.'
+                )
+            return path
+
+        dependencies = {}
+        for alias, dependency in parameter._dependency_map.items():
+            if isinstance(dependency, Parameter):
+                # Embedding a live parameter by value would silently turn a
+                # dependency into a frozen constant on load.
+                dependencies[alias] = {'path': _addressable(dependency, f"its dependency '{dependency.name}'")}
+            else:
+                # An object-less constant built for the expression (the explicit
+                # total of `constrain_to_sum`); nothing else serializes it, so it
+                # is embedded here.
+                dependencies[alias] = {
+                    'name': dependency.name,
+                    'value': float(dependency.value),
+                    'unit': str(dependency.unit),
+                }
+        return {
+            'target': _addressable(parameter, 'the parameter itself'),
+            'expression': parameter._clean_dependency_string,
+            'dependencies': dependencies,
+        }
+
+    def _restore_user_constraints(self, records: List[dict]) -> None:
+        """Re-apply the constraint records written by :meth:`_user_constraints`.
+
+        Records are applied in the order they were written. A chain
+        (``a`` follows ``b`` follows ``c``) resolves whichever order it is
+        restored in, because re-constraining a parameter propagates the new
+        value to anything already following it.
+        """
+        for record in records:
+            dependencies = {}
+            for alias, reference in record['dependencies'].items():
+                if 'path' not in reference:
+                    dependencies[alias] = DescriptorNumberType(**reference)
+                    continue
+                try:
+                    dependencies[alias] = self.resolve_parameter_path(reference['path'])
+                except KeyError as error:
+                    raise KeyError(
+                        f'Cannot restore the constraint on {record["target"]!r}: its dependency '
+                        f'{reference["path"]!r} does not exist in this project.'
+                    ) from error
+            constrain(self.resolve_parameter_path(record['target']), record['expression'], **dependencies)
 
     @property
     def calculator(self) -> str:
@@ -508,7 +785,10 @@ class Project:
         """
         if sample is None:
             raise ValueError('The ORSO file does not contain a valid sample model definition.')
-        model = Model(sample=sample)
+        # Take the collection's next colour: a supplied model keeps its own
+        # colour, and the Model default would give every loaded sample the
+        # same first palette colour.
+        model = Model(sample=sample, color=self._models.next_color())
         self.models.add_model(model)
         # Set interface after adding to collection
         model.interface = self._calculator
@@ -1372,6 +1652,11 @@ class Project:
             project_dict['calculator'] = self._calculator.current_interface_name
         if self._colors is not None:
             project_dict['colors'] = self._colors
+        if self._inequality_constraints:
+            project_dict['inequality_constraints'] = [spec.to_dict() for spec in self._inequality_constraints]
+        parameter_constraints = self._user_constraints()
+        if parameter_constraints:
+            project_dict['parameter_constraints'] = parameter_constraints
         return project_dict
 
     def _as_dict_add_materials_not_in_model_dict(self, project_dict: dict):
@@ -1468,8 +1753,48 @@ class Project:
         else:
             self._experiments = {}
 
-        # Resolve any pending parameter dependencies (constraints) after all objects are loaded
+        # Resolve any pending parameter dependencies parked by the core
+        # deserializer. Only cores that serialize nested dependencies produce
+        # them; on the others this is a no-op safety net and `parameter_constraints`
+        # below carries the user constraints instead.
         resolve_all_parameter_dependencies(self)
+        self._restore_user_constraints(project_dict.get('parameter_constraints', []))
+        self._warn_on_unreadable_dependencies(project_dict.get('models'))
+        # Inequality constraints are declarative (paths), nothing to resolve yet:
+        # they are bound to parameters when a fit starts.
+        self._inequality_constraints = [InequalitySpec.from_dict(raw) for raw in project_dict.get('inequality_constraints', [])]
+
+    @staticmethod
+    def _warn_on_unreadable_dependencies(models_dict) -> None:
+        """Warn about embedded dependencies this build cannot restore.
+
+        A core that serializes dependencies inside each nested parameter writes
+        ``_dependency_string`` there. Cores without that feature drop the field
+        silently on load, so such a file would lose its equality constraints
+        with no signal at all. Detect it and say so; the constraints have to be
+        re-applied by hand.
+
+        The field is written for internal dependencies too (material mixtures,
+        conformal roughness, ``Model.total_thickness``), and those are rebuilt
+        by their owning class regardless — so its presence does not prove
+        anything was actually lost. The wording is hedged accordingly.
+        """
+
+        def _contains_dependency(node) -> bool:
+            if isinstance(node, dict):
+                return '_dependency_string' in node or any(_contains_dependency(v) for v in node.values())
+            if isinstance(node, (list, tuple)):
+                return any(_contains_dependency(item) for item in node)
+            return False
+
+        if _contains_dependency(models_dict):
+            warnings.warn(
+                'This project was saved by a build that stores parameter dependencies inside '
+                'each parameter, which this build cannot restore. Internal constraints are '
+                'rebuilt automatically, but any custom equality constraints have been dropped '
+                'and must be re-applied.',
+                stacklevel=2,
+            )
 
     def _from_dict_extract_experiments(self, project_dict: dict) -> Dict[int, Union[DataSet1D, PolarizedDataSet]]:
         """From dict extract experiments."""

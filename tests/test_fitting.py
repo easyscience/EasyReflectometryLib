@@ -51,25 +51,33 @@ def test_fitting(minimizer):
     model = Model(sample, 1, 1e-6, resolution_function, 'Film Model')
     # Thicknesses
     sio2_layer.thickness.fixed = False
-    sio2_layer.thickness.bounds = (15, 50)
+    sio2_layer.thickness.min = 15
+    sio2_layer.thickness.max = 50
     film_layer.thickness.fixed = False
-    film_layer.thickness.bounds = (200, 300)
+    film_layer.thickness.min = 200
+    film_layer.thickness.max = 300
     # Roughnesses
     si_layer.roughness.fixed = True
-    sio2_layer.roughness.bounds = (1, 15)
+    sio2_layer.roughness.min = 1
+    sio2_layer.roughness.max = 15
     film_layer.roughness.fixed = False
-    film_layer.roughness.bounds = (1, 15)
+    film_layer.roughness.min = 1
+    film_layer.roughness.max = 15
     superphase.roughness.fixed = True
-    superphase.roughness.bounds = (1, 15)
+    superphase.roughness.min = 1
+    superphase.roughness.max = 15
     # Scattering length density
     film.sld.fixed = False
-    film.sld.bounds = (0.1, 3)
+    film.sld.min = 0.1
+    film.sld.max = 3
     # Background
     model.background.fixed = False
-    model.background.bounds = (1e-7, 1e-5)
+    model.background.min = 1e-7
+    model.background.max = 1e-5
     # Scale
     model.scale.fixed = False
-    model.scale.bounds = (0.5, 1.5)
+    model.scale.min = 0.5
+    model.scale.max = 1.5
     interface = CalculatorFactory()
     model.interface = interface
     fitter = MultiFitter(model)
@@ -121,15 +129,20 @@ def test_fitting_with_zero_variance():
 
     # Set some parameters as fittable
     sio2_layer.thickness.fixed = False
-    sio2_layer.thickness.bounds = (15, 50)
+    sio2_layer.thickness.min = 15
+    sio2_layer.thickness.max = 50
     film_layer.thickness.fixed = False
-    film_layer.thickness.bounds = (200, 300)
+    film_layer.thickness.min = 200
+    film_layer.thickness.max = 300
     film.sld.fixed = False
-    film.sld.bounds = (0.1, 3)
+    film.sld.min = 0.1
+    film.sld.max = 3
     model.background.fixed = False
-    model.background.bounds = (1e-7, 1e-5)
+    model.background.min = 1e-7
+    model.background.max = 1e-5
     model.scale.fixed = False
-    model.scale.bounds = (0.5, 1.5)
+    model.scale.min = 0.5
+    model.scale.max = 1.5
 
     interface = CalculatorFactory()
     model.interface = interface
@@ -204,11 +217,14 @@ def test_fitting_with_manual_zero_variance():
 
     # Set some parameters as fittable
     sio2_layer.thickness.fixed = False
-    sio2_layer.thickness.bounds = (15, 50)
+    sio2_layer.thickness.min = 15
+    sio2_layer.thickness.max = 50
     film_layer.thickness.fixed = False
-    film_layer.thickness.bounds = (200, 300)
+    film_layer.thickness.min = 200
+    film_layer.thickness.max = 300
     film.sld.fixed = False
-    film.sld.bounds = (0.1, 3)
+    film.sld.min = 0.1
+    film.sld.max = 3
 
     interface = CalculatorFactory()
     model.interface = interface
@@ -1238,10 +1254,12 @@ def test_fit_weight_convention_matches_analytic_wls(minimizer):
     assert scale_margin > 10 * scale_tolerance, 'test data cannot discriminate weight conventions'
 
     model.scale.fixed = False
-    model.scale.bounds = (0.5, 3.0)
+    model.scale.min = 0.5
+    model.scale.max = 3.0
     model.scale.value = 1.0
     model.background.fixed = False
-    model.background.bounds = (1e-9, 1e-4)
+    model.background.min = 1e-9
+    model.background.max = 1e-4
     model.background.value = 1e-6
 
     data = DataSet1D(
