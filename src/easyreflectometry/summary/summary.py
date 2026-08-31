@@ -58,7 +58,6 @@ _TOOLTIP_SCHEME = 'nametooltip'
 _ENGINE_URLS: dict[str, str] = {
     'refnx': 'https://refnx.readthedocs.io',
     'refl1d': 'https://refl1d.readthedocs.io',
-    'bornagain': 'https://www.bornagainproject.org',
     'lm': 'https://lmfit.github.io/lmfit-py/',
     'bumps': 'https://bumps.readthedocs.io',
     'dfo': 'https://github.com/fitbenchmarking/dfo-ls',
@@ -291,7 +290,9 @@ class Summary:
             html_parameter = html_parameter.replace('parameter_name', f'{name}')
             html_parameter = html_parameter.replace('parameter_value', _format_value(value, 3))
             html_parameter = html_parameter.replace('parameter_unit', f'{unit}')
-            error_str = _format_value(error, 2)
+            # An unfitted parameter has no uncertainty; a literal '0.0' would
+            # read as a perfectly determined value, so leave the cell empty.
+            error_str = _format_value(error, 2) if error else ''
             html_parameter = html_parameter.replace('parameter_error', error_str)
             html_parameters.append(html_parameter)
 
