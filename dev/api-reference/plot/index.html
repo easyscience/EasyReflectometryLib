@@ -8,31 +8,29 @@
       
       
       
-        <link rel="canonical" href="https://easyscience.github.io/reflectometry-lib/dev/tutorials/basic/model/">
+        <link rel="canonical" href="https://easyscience.github.io/reflectometry-lib/dev/api-reference/plot/">
       
       
-        <link rel="prev" href="../../">
+        <link rel="prev" href="../summary/">
       
-      
-        <link rel="next" href="../material_library/">
       
       
         
       
       
-      <link rel="icon" href="../../../assets/images/favicon.png">
+      <link rel="icon" href="../../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
     
     
       
-        <title>Creating a Model - EasyReflectometry Library</title>
+        <title>Plotting - EasyReflectometry Library</title>
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
       
         
-        <link rel="stylesheet" href="../../../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
       
       
 
@@ -51,11 +49,11 @@
       
     
     
-      <link rel="stylesheet" href="../../../assets/_mkdocstrings.css">
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/extra.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/extra.css">
     
-    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -80,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#creating-a-model" class="md-skip">
+        <a href="#easyreflectometry.plot" class="md-skip">
           Skip to content
         </a>
       
@@ -100,16 +98,16 @@
 
 <header class="md-header md-header--shadow" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="../../.." title="EasyReflectometry Library" class="md-header__button md-logo" aria-label="EasyReflectometry Library" data-md-component="logo">
+    <a href="../.." title="EasyReflectometry Library" class="md-header__button md-logo" aria-label="EasyReflectometry Library" data-md-component="logo">
       
 <img
   id="logo_light_mode"
-  src="../../../assets/images/logo_light.svg"
+  src="../../assets/images/logo_light.svg"
   alt="logo"
 />
 <img
   id="logo_dark_mode"
-  src="../../../assets/images/logo_dark.svg"
+  src="../../assets/images/logo_dark.svg"
   alt="logo"
 />
 
@@ -128,7 +126,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Creating a Model
+              Plotting
             
           </span>
         </div>
@@ -251,16 +249,16 @@
 
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../../.." title="EasyReflectometry Library" class="md-nav__button md-logo" aria-label="EasyReflectometry Library" data-md-component="logo">
+    <a href="../.." title="EasyReflectometry Library" class="md-nav__button md-logo" aria-label="EasyReflectometry Library" data-md-component="logo">
       
 <img
   id="logo_light_mode"
-  src="../../../assets/images/logo_light.svg"
+  src="../../assets/images/logo_light.svg"
   alt="logo"
 />
 <img
   id="logo_dark_mode"
-  src="../../../assets/images/logo_dark.svg"
+  src="../../assets/images/logo_dark.svg"
   alt="logo"
 />
 
@@ -307,7 +305,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../../introduction/" class="md-nav__link ">
+            <a href="../../introduction/" class="md-nav__link ">
               
   
   
@@ -373,7 +371,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../../installation-and-setup/" class="md-nav__link ">
+            <a href="../../installation-and-setup/" class="md-nav__link ">
               
   
   
@@ -439,7 +437,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../../user-guide/" class="md-nav__link ">
+            <a href="../../user-guide/" class="md-nav__link ">
               
   
   
@@ -484,8 +482,6 @@
       
   
   
-    
-  
   
   
     
@@ -507,15 +503,15 @@
     
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../" class="md-nav__link ">
+            <a href="../../tutorials/" class="md-nav__link ">
               
   
   
@@ -541,7 +537,7 @@
             
           </div>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_4">
             <span class="md-nav__icon md-icon"></span>
             
@@ -558,10 +554,8 @@
                 
   
   
-    
   
   
-  
     
     
       
@@ -577,11 +571,11 @@
     
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_2" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_2" >
         
           
           <label class="md-nav__link" for="__nav_4_2" id="__nav_4_2_label" tabindex="0">
@@ -602,7 +596,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_2_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_2_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_4_2">
             <span class="md-nav__icon md-icon"></span>
             
@@ -617,37 +611,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Creating a Model
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../tutorials/basic/model/" class="md-nav__link">
         
   
   
@@ -663,137 +630,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#model" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Model
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#resolution-functions" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Resolution Functions
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Resolution Functions">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#percentagefwhm" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        PercentageFwhm
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#linearspline" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        LinearSpline
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#constraining-parameters" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Constraining Parameters
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Constraining Parameters">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#tying-two-parameters-together" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Tying two parameters together
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#functional-constraints" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Functional constraints
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#removing-a-constraint" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Removing a constraint
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#things-to-be-aware-of" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Things to be aware of
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -806,7 +642,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../material_library/" class="md-nav__link">
+      <a href="../../tutorials/basic/material_library/" class="md-nav__link">
         
   
   
@@ -834,7 +670,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../layer_library/" class="md-nav__link">
+      <a href="../../tutorials/basic/layer_library/" class="md-nav__link">
         
   
   
@@ -862,7 +698,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../assemblies_library/" class="md-nav__link">
+      <a href="../../tutorials/basic/assemblies_library/" class="md-nav__link">
         
   
   
@@ -953,7 +789,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../simulation/bilayer/" class="md-nav__link">
+      <a href="../../tutorials/simulation/bilayer/" class="md-nav__link">
         
   
   
@@ -981,7 +817,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../simulation/magnetism/" class="md-nav__link">
+      <a href="../../tutorials/simulation/magnetism/" class="md-nav__link">
         
   
   
@@ -1009,7 +845,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../simulation/resolution_functions/" class="md-nav__link">
+      <a href="../../tutorials/simulation/resolution_functions/" class="md-nav__link">
         
   
   
@@ -1102,7 +938,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../fitting/simple_fitting/" class="md-nav__link">
+      <a href="../../tutorials/fitting/simple_fitting/" class="md-nav__link">
         
   
   
@@ -1130,7 +966,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../fitting/repeating/" class="md-nav__link">
+      <a href="../../tutorials/fitting/repeating/" class="md-nav__link">
         
   
   
@@ -1158,7 +994,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../fitting/monolayer/" class="md-nav__link">
+      <a href="../../tutorials/fitting/monolayer/" class="md-nav__link">
         
   
   
@@ -1186,7 +1022,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../fitting/material_solvated/" class="md-nav__link">
+      <a href="../../tutorials/fitting/material_solvated/" class="md-nav__link">
         
   
   
@@ -1279,7 +1115,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../advancedfitting/multi_contrast/" class="md-nav__link">
+      <a href="../../tutorials/advancedfitting/multi_contrast/" class="md-nav__link">
         
   
   
@@ -1307,7 +1143,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../advancedfitting/polarized_fitting/" class="md-nav__link">
+      <a href="../../tutorials/advancedfitting/polarized_fitting/" class="md-nav__link">
         
   
   
@@ -1335,7 +1171,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../advancedfitting/constraints/" class="md-nav__link">
+      <a href="../../tutorials/advancedfitting/constraints/" class="md-nav__link">
         
   
   
@@ -1363,7 +1199,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../advancedfitting/bayesian_bumps/" class="md-nav__link">
+      <a href="../../tutorials/advancedfitting/bayesian_bumps/" class="md-nav__link">
         
   
   
@@ -1403,6 +1239,8 @@
       
   
   
+    
+  
   
   
     
@@ -1446,15 +1284,15 @@
     
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../../api-reference/" class="md-nav__link ">
+            <a href="../" class="md-nav__link ">
               
   
   
@@ -1480,7 +1318,7 @@
             
           </div>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
             
@@ -1500,7 +1338,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api-reference/model/" class="md-nav__link">
+      <a href="../model/" class="md-nav__link">
         
   
   
@@ -1528,7 +1366,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api-reference/sample/" class="md-nav__link">
+      <a href="../sample/" class="md-nav__link">
         
   
   
@@ -1556,7 +1394,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api-reference/project/" class="md-nav__link">
+      <a href="../project/" class="md-nav__link">
         
   
   
@@ -1584,7 +1422,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api-reference/fitting/" class="md-nav__link">
+      <a href="../fitting/" class="md-nav__link">
         
   
   
@@ -1612,7 +1450,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api-reference/constraints/" class="md-nav__link">
+      <a href="../constraints/" class="md-nav__link">
         
   
   
@@ -1640,7 +1478,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api-reference/inequality_constraints/" class="md-nav__link">
+      <a href="../inequality_constraints/" class="md-nav__link">
         
   
   
@@ -1668,7 +1506,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api-reference/bayesian/" class="md-nav__link">
+      <a href="../bayesian/" class="md-nav__link">
         
   
   
@@ -1696,7 +1534,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api-reference/calculators/" class="md-nav__link">
+      <a href="../calculators/" class="md-nav__link">
         
   
   
@@ -1724,7 +1562,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api-reference/limits/" class="md-nav__link">
+      <a href="../limits/" class="md-nav__link">
         
   
   
@@ -1809,7 +1647,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api-reference/assemblies/multilayer/" class="md-nav__link">
+      <a href="../assemblies/multilayer/" class="md-nav__link">
         
   
   
@@ -1837,7 +1675,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api-reference/assemblies/repeating_multilayer/" class="md-nav__link">
+      <a href="../assemblies/repeating_multilayer/" class="md-nav__link">
         
   
   
@@ -1865,7 +1703,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api-reference/assemblies/surfactant_layer/" class="md-nav__link">
+      <a href="../assemblies/surfactant_layer/" class="md-nav__link">
         
   
   
@@ -1893,7 +1731,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api-reference/assemblies/gradient_layer/" class="md-nav__link">
+      <a href="../assemblies/gradient_layer/" class="md-nav__link">
         
   
   
@@ -2037,7 +1875,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api-reference/elements/layer/" class="md-nav__link">
+      <a href="../elements/layer/" class="md-nav__link">
         
   
   
@@ -2065,7 +1903,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api-reference/elements/layer_area_per_molecule/" class="md-nav__link">
+      <a href="../elements/layer_area_per_molecule/" class="md-nav__link">
         
   
   
@@ -2093,7 +1931,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api-reference/elements/layer_magnetism/" class="md-nav__link">
+      <a href="../elements/layer_magnetism/" class="md-nav__link">
         
   
   
@@ -2186,7 +2024,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api-reference/elements/material/" class="md-nav__link">
+      <a href="../elements/material/" class="md-nav__link">
         
   
   
@@ -2214,7 +2052,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api-reference/elements/material_density/" class="md-nav__link">
+      <a href="../elements/material_density/" class="md-nav__link">
         
   
   
@@ -2242,7 +2080,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api-reference/elements/material_mixture/" class="md-nav__link">
+      <a href="../elements/material_mixture/" class="md-nav__link">
         
   
   
@@ -2270,7 +2108,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api-reference/elements/material_solvated/" class="md-nav__link">
+      <a href="../elements/material_solvated/" class="md-nav__link">
         
   
   
@@ -2314,7 +2152,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api-reference/data/" class="md-nav__link">
+      <a href="../data/" class="md-nav__link">
         
   
   
@@ -2342,7 +2180,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api-reference/orso/" class="md-nav__link">
+      <a href="../orso/" class="md-nav__link">
         
   
   
@@ -2370,7 +2208,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api-reference/summary/" class="md-nav__link">
+      <a href="../summary/" class="md-nav__link">
         
   
   
@@ -2395,10 +2233,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../../api-reference/plot/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Plotting
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -2414,6 +2279,48 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#easyreflectometry.plot.color_cycle" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        color_cycle
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#easyreflectometry.plot.plot" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        plot
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -2453,10 +2360,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#model" class="md-nav__link">
+  <a href="#easyreflectometry.plot.color_cycle" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Model
+        color_cycle
       
     </span>
   </a>
@@ -2464,102 +2371,13 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#resolution-functions" class="md-nav__link">
+  <a href="#easyreflectometry.plot.plot" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Resolution Functions
+        plot
       
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="Resolution Functions">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#percentagefwhm" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        PercentageFwhm
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#linearspline" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        LinearSpline
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#constraining-parameters" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Constraining Parameters
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Constraining Parameters">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#tying-two-parameters-together" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Tying two parameters together
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#functional-constraints" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Functional constraints
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#removing-a-constraint" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Removing a constraint
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#things-to-be-aware-of" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Things to be aware of
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -2587,152 +2405,245 @@
   
 
 
-<h1 id="creating-a-model">Creating a Model</h1>
-<p>The main component of an experiment in EasyReflectometry is the <code>Model</code>.
-This is a description of the <code>Sample</code> and the environment in which the
-experiment is performed. The <code>Model</code> is used to calculate the
-reflectivity of the <code>Sample</code> at a given set of angles (Q-points). The
-resolution functions are used to quantify the experimental uncertainties
-in wavelength and angle, allowing the <code>Model</code> to accurately describe the
-data.</p>
-<h2 id="model">Model</h2>
-<p>A <code>Model</code> instance contains a <code>Sample</code> and variables describing
-experimental settings. To be able to compute reflectivities it is also
-necessary to have a <code>Calculator</code> (interface).</p>
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">easyreflectometry.calculators</span><span class="w"> </span><span class="kn">import</span> <span class="n">CalculatorFactory</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">easyreflectometry.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">Model</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">easyreflectometry.sample</span><span class="w"> </span><span class="kn">import</span> <span class="n">Sample</span>
+<div class="doc doc-object doc-module">
 
-<span class="n">default_sample</span> <span class="o">=</span> <span class="n">Sample</span><span class="p">()</span>
-<span class="n">model</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">sample</span><span class="o">=</span><span class="n">default_sample</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">background</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">)</span>
 
-<span class="n">interface</span> <span class="o">=</span> <span class="n">CalculatorFactory</span><span class="p">()</span>
-<span class="n">model</span><span class="o">.</span><span class="n">interface</span> <span class="o">=</span> <span class="n">interface</span>
-</code></pre></div>
-<p>This will create a <code>Model</code> instance with the <code>default_sample</code> and the
-environment variables <code>scale</code> factor set to 1.0 and a <code>background</code> of
-1e-6. Following the <code>interface</code> is set to the default calculator that is
-<code>Refnx</code>.</p>
-<h2 id="resolution-functions">Resolution Functions</h2>
-<p>A resolution function enables the EasyReflectometry model to incorporate
-the experimental uncertainties in wavelength and incident angle into the
-model. In its essence the resolution function controls the smearing to
-apply when determining the reflectivity at a given Q-point. For a given
-Q-point the smearing to apply is given as a weighted average of the
-neighboring Q-point, which weights are by a normal distribution. This
-normal distribution is then defined by a Q-point dependent Full Width at
-the Half Maximum (FWHM) that is given by the resolution function.</p>
-<h3 id="percentagefwhm">PercentageFwhm</h3>
-<p>Often we rely on a resolution function that has a simple functional
-dependency of the Q-point. By this is understood that the applied
-smearing in a Q-point has a FWHM that is simply a percentage of the
-value of the Q-point.</p>
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">easyreflectometry.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">Model</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">easyreflectometry.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">PercentageFwhm</span>
 
-<span class="n">resolution_function</span> <span class="o">=</span> <span class="n">PercentageFwhm</span><span class="p">(</span><span class="mf">1.1</span><span class="p">)</span>
+<h1 id="easyreflectometry.plot" class="doc doc-heading">
+            <code>plot</code>
 
-<span class="n">m</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">resolution_function</span><span class="o">=</span><span class="n">resolution_function</span><span class="p">)</span>
-</code></pre></div>
-<p>This will create a <code>Model</code> instance where the resolution function is
-defined as 1.1% of the Q-point value, which again is the FWHM for the
-smearing.</p>
-<h3 id="linearspline">LinearSpline</h3>
-<p>Alternatively the FWHM value might be determined and declared directly
-for each measured Q-point. When this is the case the provided Q-points
-and the corresponding FWHM values can be used to declare a linear spline
-function and thereby enable a determination of the reflectivity at an
-arbitrary point within the provided range of discrete Q-points.</p>
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">easyreflectometry.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">Model</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">easyreflectometry.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">LinearSpline</span>
 
-<span class="n">m</span> <span class="o">=</span> <span class="n">Model</span><span class="p">()</span>
+</h1>
 
-<span class="n">resolution_function</span> <span class="o">=</span> <span class="n">LinearSpline</span><span class="p">(</span><span class="n">q_data_points</span><span class="o">=</span><span class="p">[</span><span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.31</span><span class="p">],</span> <span class="n">fwhm_values</span><span class="o">=</span><span class="p">[</span><span class="mf">0.001</span><span class="p">,</span> <span class="mf">0.043</span><span class="p">,</span> <span class="mf">0.026</span><span class="p">])</span>
+    <div class="doc doc-contents first">
 
-<span class="n">m</span><span class="o">.</span><span class="n">resolution_function</span> <span class="o">=</span> <span class="n">resolution_function</span>
-</code></pre></div>
-<p>This will create a <code>Model</code> instance where the resolution function
-defining the FWHM is determined from a linear interpolation. In the
-present case the provided data Q-points are (<code>[0.01, 0.2, 0.31]</code>) and
-the corresponding FWHM function values are (<code>[0.001, 0.043, 0.026]</code>).</p>
-<h2 id="constraining-parameters">Constraining Parameters</h2>
-<p>It is often physically motivated to reduce the number of free parameters
-in a model by tying parameters together. For example, two layers that
-were deposited in the same process step can be expected to have the same
-thickness, or the roughness of every interface in a stack can be assumed
-to be conformal. Assemblies such as <code>SurfactantLayer</code> and <code>Bilayer</code>
-provide ready-made constraints for their specific chemistry
-(<code>constrain_area_per_molecule</code>, <code>conformal_roughness</code>,
-<code>constrain_multiple_contrast</code>), but any parameter in a model can be
-constrained directly.</p>
-<h3 id="tying-two-parameters-together">Tying two parameters together</h3>
-<p>The most common constraint is a simple equality. Here the thickness of
-<code>layer_2</code> is tied to the thickness of <code>layer_1</code>.</p>
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">easyreflectometry</span><span class="w"> </span><span class="kn">import</span> <span class="n">constrain_equal</span>
 
-<span class="n">constrain_equal</span><span class="p">(</span><span class="n">layer_2</span><span class="o">.</span><span class="n">thickness</span><span class="p">,</span> <span class="n">to</span><span class="o">=</span><span class="n">layer_1</span><span class="o">.</span><span class="n">thickness</span><span class="p">)</span>
-</code></pre></div>
-<p>After this call <code>layer_2.thickness</code> is no longer an independent
-parameter: it immediately takes the value of <code>layer_1.thickness</code>,
-follows it whenever it changes (including during fitting), and is
-removed from the free fit parameters. Only <code>layer_1.thickness</code> is varied
-by the minimizer.</p>
-<h3 id="functional-constraints">Functional constraints</h3>
-<p>Constraints are not limited to equality. An arbitrary mathematical
-expression of one or more parameters can be used, where each placeholder
-in the expression is supplied as a keyword argument.</p>
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">easyreflectometry</span><span class="w"> </span><span class="kn">import</span> <span class="n">constrain</span>
 
-<span class="c1"># layer_2 is always twice as thick as layer_1</span>
-<span class="n">constrain</span><span class="p">(</span><span class="n">layer_2</span><span class="o">.</span><span class="n">thickness</span><span class="p">,</span> <span class="s1">&#39;2 * t&#39;</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="n">layer_1</span><span class="o">.</span><span class="n">thickness</span><span class="p">)</span>
 
-<span class="c1"># an SLD that is a fraction-weighted average of two materials</span>
-<span class="n">constrain</span><span class="p">(</span>
-    <span class="n">mixed</span><span class="o">.</span><span class="n">sld</span><span class="p">,</span>
-    <span class="s1">&#39;frac * a + (1 - frac) * b&#39;</span><span class="p">,</span>
-    <span class="n">frac</span><span class="o">=</span><span class="n">fraction</span><span class="p">,</span>
-    <span class="n">a</span><span class="o">=</span><span class="n">solvent</span><span class="o">.</span><span class="n">sld</span><span class="p">,</span>
-    <span class="n">b</span><span class="o">=</span><span class="n">film</span><span class="o">.</span><span class="n">sld</span><span class="p">,</span>
-<span class="p">)</span>
-</code></pre></div>
-<p>Note that constraining a parameter <strong>overwrites its current value, unit
-and bounds</strong> with the evaluated expression, and clears its <code>fixed</code> flag.
-While constrained, the parameter's value and bounds cannot be set
-directly.</p>
-<h3 id="removing-a-constraint">Removing a constraint</h3>
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">easyreflectometry</span><span class="w"> </span><span class="kn">import</span> <span class="n">unconstrain</span>
 
-<span class="n">unconstrain</span><span class="p">(</span><span class="n">layer_2</span><span class="o">.</span><span class="n">thickness</span><span class="p">)</span>
-</code></pre></div>
-<p>The parameter keeps its last evaluated value and becomes an independent,
-fittable parameter again. Calling <code>unconstrain</code> on a parameter that is
-not constrained does nothing. The parameter's original bounds and
-<code>fixed</code> state are <strong>not</strong> restored. They remain whatever the constraint
-left behind, so review and reset the bounds before fitting.</p>
-<h3 id="things-to-be-aware-of">Things to be aware of</h3>
-<ul>
-<li>Constraints are directional: the dependent parameter follows the
-  independent one, never the other way around. When chaining constraints
-  across several objects (as in the multiple-contrast tutorials), make
-  sure the chain has a single independent parameter at its root.</li>
-<li>Placeholder names in expressions must be valid Python identifiers and
-  not Python keywords. An unmapped name that happens to match a
-  mathematical builtin (<code>e</code>, <code>pi</code>, <code>sin</code>, ...) evaluates silently
-  instead of raising an error.</li>
-<li>If the model is already attached to a calculator, regenerate the
-  bindings after changing constraints so the calculator picks up the new
-  dependency graph:</li>
-</ul>
-<div class="language-python highlight"><pre><span></span><code><span class="n">model</span><span class="o">.</span><span class="n">generate_bindings</span><span class="p">()</span>
-</code></pre></div>
-<ul>
-<li>Constraints applied with <code>constrain</code>, <code>constrain_equal</code> and
-  <code>constrain_to_sum</code> are preserved when a project is saved and reloaded.
-  Dependencies created by calling <code>make_dependent_on</code> directly are not,
-  and must be re-applied after loading.</li>
-</ul>
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h2 id="easyreflectometry.plot.color_cycle" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">color_cycle</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s1">&#39;axes.prop_cycle&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">by_key</span><span class="p">()[</span><span class="s1">&#39;color&#39;</span><span class="p">]</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
+  </span>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="easyreflectometry.plot.plot" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">plot</span><span class="p">(</span><span class="n">data</span><span class="p">)</span></code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>A general plotting function for easyreflectometry.</p>
 <!-- prettier-ignore-start -->
+
+<!-- prettier-ignore-end -->
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>data</code>
+            </td>
+            <td>
+                  <code><span title="scipp">sc</span>.<span title="scipp.DataGroup">DataGroup</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The DataGroup to be plotted.</p>
+<!-- prettier-ignore-start -->
+
+<!-- prettier-ignore-end -->
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>src/easyreflectometry/plot.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span>
+<span class="normal">17</span>
+<span class="normal">18</span>
+<span class="normal">19</span>
+<span class="normal">20</span>
+<span class="normal">21</span>
+<span class="normal">22</span>
+<span class="normal">23</span>
+<span class="normal">24</span>
+<span class="normal">25</span>
+<span class="normal">26</span>
+<span class="normal">27</span>
+<span class="normal">28</span>
+<span class="normal">29</span>
+<span class="normal">30</span>
+<span class="normal">31</span>
+<span class="normal">32</span>
+<span class="normal">33</span>
+<span class="normal">34</span>
+<span class="normal">35</span>
+<span class="normal">36</span>
+<span class="normal">37</span>
+<span class="normal">38</span>
+<span class="normal">39</span>
+<span class="normal">40</span>
+<span class="normal">41</span>
+<span class="normal">42</span>
+<span class="normal">43</span>
+<span class="normal">44</span>
+<span class="normal">45</span>
+<span class="normal">46</span>
+<span class="normal">47</span>
+<span class="normal">48</span>
+<span class="normal">49</span>
+<span class="normal">50</span>
+<span class="normal">51</span>
+<span class="normal">52</span>
+<span class="normal">53</span>
+<span class="normal">54</span>
+<span class="normal">55</span>
+<span class="normal">56</span>
+<span class="normal">57</span>
+<span class="normal">58</span>
+<span class="normal">59</span>
+<span class="normal">60</span>
+<span class="normal">61</span>
+<span class="normal">62</span>
+<span class="normal">63</span>
+<span class="normal">64</span>
+<span class="normal">65</span>
+<span class="normal">66</span>
+<span class="normal">67</span>
+<span class="normal">68</span>
+<span class="normal">69</span>
+<span class="normal">70</span>
+<span class="normal">71</span>
+<span class="normal">72</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">plot</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="n">sc</span><span class="o">.</span><span class="n">DataGroup</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A general plotting function for easyreflectometry.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data : sc.DataGroup</span>
+<span class="sd">        The DataGroup to be plotted.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">([</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="k">if</span> <span class="s1">&#39;SLD&#39;</span> <span class="ow">in</span> <span class="n">i</span><span class="p">])</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">plot_sld</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+        <span class="n">gs</span> <span class="o">=</span> <span class="n">GridSpec</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">figure</span><span class="o">=</span><span class="n">fig</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">plot_sld</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+        <span class="n">gs</span> <span class="o">=</span> <span class="n">GridSpec</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">figure</span><span class="o">=</span><span class="n">fig</span><span class="p">)</span>
+        <span class="n">ax2</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="n">gs</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+    <span class="n">ax1</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="n">gs</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+    <span class="n">refl_nums</span> <span class="o">=</span> <span class="p">[</span><span class="n">k</span><span class="p">[</span><span class="mi">3</span><span class="p">:]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;coords&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="k">if</span> <span class="s1">&#39;Qz&#39;</span> <span class="o">==</span> <span class="n">k</span><span class="p">[:</span><span class="mi">2</span><span class="p">]]</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">refl_num</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">refl_nums</span><span class="p">):</span>
+        <span class="n">plot_data</span> <span class="o">=</span> <span class="n">sc</span><span class="o">.</span><span class="n">DataArray</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;R_</span><span class="si">{</span><span class="n">refl_num</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
+            <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;data&#39;</span><span class="p">][</span><span class="sa">f</span><span class="s1">&#39;R_</span><span class="si">{</span><span class="n">refl_num</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
+            <span class="n">coords</span><span class="o">=</span><span class="p">{</span><span class="sa">f</span><span class="s1">&#39;Qz_</span><span class="si">{</span><span class="n">refl_num</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">:</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;coords&#39;</span><span class="p">][</span><span class="sa">f</span><span class="s1">&#39;Qz_</span><span class="si">{</span><span class="n">refl_num</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()},</span>
+        <span class="p">)</span>
+        <span class="n">plot_data</span><span class="o">.</span><span class="n">data</span> <span class="o">*=</span> <span class="n">sc</span><span class="o">.</span><span class="n">scalar</span><span class="p">(</span><span class="mf">10.0</span><span class="o">**</span><span class="n">i</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">plot_data</span><span class="o">.</span><span class="n">unit</span><span class="p">)</span>
+        <span class="n">plot_data</span><span class="o">.</span><span class="n">coords</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;Qz_</span><span class="si">{</span><span class="n">refl_num</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">variances</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">sc</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">plot_data</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax1</span><span class="p">,</span> <span class="n">norm</span><span class="o">=</span><span class="s1">&#39;log&#39;</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color_cycle</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">plot_model_data</span> <span class="o">=</span> <span class="n">sc</span><span class="o">.</span><span class="n">DataArray</span><span class="p">(</span>
+                <span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;R_</span><span class="si">{</span><span class="n">refl_num</span><span class="si">}</span><span class="s1">_model&#39;</span><span class="p">,</span>
+                <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;R_</span><span class="si">{</span><span class="n">refl_num</span><span class="si">}</span><span class="s1">_model&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
+                <span class="n">coords</span><span class="o">=</span><span class="p">{</span><span class="sa">f</span><span class="s1">&#39;Qz_</span><span class="si">{</span><span class="n">refl_num</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">:</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;coords&#39;</span><span class="p">][</span><span class="sa">f</span><span class="s1">&#39;Qz_</span><span class="si">{</span><span class="n">refl_num</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()},</span>
+            <span class="p">)</span>
+            <span class="n">plot_model_data</span><span class="o">.</span><span class="n">data</span> <span class="o">*=</span> <span class="n">sc</span><span class="o">.</span><span class="n">scalar</span><span class="p">(</span><span class="mf">10.0</span><span class="o">**</span><span class="n">i</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">plot_model_data</span><span class="o">.</span><span class="n">unit</span><span class="p">)</span>
+            <span class="n">plot_model_data</span><span class="o">.</span><span class="n">coords</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;Qz_</span><span class="si">{</span><span class="n">refl_num</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">variances</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">sc</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+                <span class="n">plot_model_data</span><span class="p">,</span>
+                <span class="n">ax</span><span class="o">=</span><span class="n">ax1</span><span class="p">,</span>
+                <span class="n">norm</span><span class="o">=</span><span class="s1">&#39;log&#39;</span><span class="p">,</span>
+                <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;--&#39;</span><span class="p">,</span>
+                <span class="n">color</span><span class="o">=</span><span class="n">color_cycle</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+                <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">pass</span>
+    <span class="n">ax1</span><span class="o">.</span><span class="n">autoscale</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">ax1</span><span class="o">.</span><span class="n">relim</span><span class="p">()</span>
+    <span class="n">ax1</span><span class="o">.</span><span class="n">autoscale_view</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">plot_sld</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">refl_num</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">refl_nums</span><span class="p">):</span>
+            <span class="n">plot_sld_data</span> <span class="o">=</span> <span class="n">sc</span><span class="o">.</span><span class="n">DataArray</span><span class="p">(</span>
+                <span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;SLD_</span><span class="si">{</span><span class="n">refl_num</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
+                <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;SLD_</span><span class="si">{</span><span class="n">refl_num</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
+                <span class="n">coords</span><span class="o">=</span><span class="p">{</span><span class="sa">f</span><span class="s1">&#39;z_</span><span class="si">{</span><span class="n">refl_num</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">:</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;coords&#39;</span><span class="p">][</span><span class="sa">f</span><span class="s1">&#39;z_</span><span class="si">{</span><span class="n">refl_num</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()},</span>
+            <span class="p">)</span>
+            <span class="n">sc</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">plot_sld_data</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax2</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color_cycle</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+        <span class="n">ax2</span><span class="o">.</span><span class="n">autoscale</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">ax2</span><span class="o">.</span><span class="n">relim</span><span class="p">()</span>
+        <span class="n">ax2</span><span class="o">.</span><span class="n">autoscale_view</span><span class="p">()</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div><!-- prettier-ignore-start -->
 
 <!-- prettier-ignore-end -->
 
@@ -2771,7 +2682,7 @@ left behind, so review and reset the bounds before fitting.</p>
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../../" class="md-footer__link md-footer__link--prev" aria-label="Previous: Tutorials">
+          <a href="../summary/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Summary">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -2781,27 +2692,11 @@ left behind, so review and reset the bounds before fitting.</p>
                 Previous
               </span>
               <div class="md-ellipsis">
-                Tutorials
+                Summary
               </div>
             </div>
           </a>
         
-        
-          
-          <a href="../material_library/" class="md-footer__link md-footer__link--next" aria-label="Next: Defining Materials">
-            <div class="md-footer__title">
-              <span class="md-footer__direction">
-                Next
-              </span>
-              <div class="md-ellipsis">
-                Defining Materials
-              </div>
-            </div>
-            <div class="md-footer__button md-icon">
-              
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
-            </div>
-          </a>
         
       </nav>
     
@@ -2893,14 +2788,14 @@ left behind, so review and reset the bounds before fitting.</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.code.annotate", "content.code.copy", "content.tooltips", "navigation.footer", "navigation.indexes", "navigation.top", "navigation.tracking", "search.highlight", "search.share", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["content.code.annotate", "content.code.copy", "content.tooltips", "navigation.footer", "navigation.indexes", "navigation.top", "navigation.tracking", "search.highlight", "search.share", "search.suggest", "toc.follow"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
       
-        <script src="../../../assets/javascripts/extra.js"></script>
+        <script src="../../assets/javascripts/extra.js"></script>
       
-        <script src="../../../assets/javascripts/mathjax.js"></script>
+        <script src="../../assets/javascripts/mathjax.js"></script>
       
         <script src="https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js"></script>
       
