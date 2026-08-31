@@ -64,10 +64,22 @@ __all__ = [
     'RELATIONS',
     'InequalityEvaluation',
     'InequalitySpec',
+    'UnitError',
     'build_constraints_factory',
     'check_units',
     'evaluate_spec',
 ]
+
+
+class UnitError(ValueError):
+    """A unit problem in an inequality constraint.
+
+    Raised by :func:`check_units` when a side cannot be evaluated with its
+    units or the two sides of a spec carry incompatible units. Subclasses
+    ``ValueError`` so existing ``except ValueError`` callers keep working;
+    new callers can catch this type instead of matching message substrings.
+    """
+
 
 RELATIONS = ('<', '<=', '>', '>=')
 _RELATION_ALIASES = {'≤': '<=', '≥': '>=', '=<': '<=', '=>': '>='}
@@ -414,7 +426,7 @@ def evaluate_spec(spec: InequalitySpec, resolve: PathResolver) -> InequalityEval
 
 
 def check_units(spec: InequalitySpec, resolve: PathResolver) -> None:
-    """Raise ``ValueError`` when the two sides of `spec` have incompatible units.
+    """Raise :class:`UnitError` when the two sides of `spec` have incompatible units.
 
     Each side is evaluated with the unit-carrying ``DescriptorNumber``
     objects themselves (the same arithmetic the equality constraints use),
@@ -438,7 +450,7 @@ def check_units(spec: InequalitySpec, resolve: PathResolver) -> None:
             try:
                 numeric = _evaluate(_new_interpreter(), expression, {alias: float(parameters[alias].value) for alias in paths})
             except Exception:
-                raise ValueError(f"Cannot evaluate '{expression}' with units: {unit_error}") from None
+                raise UnitError(f"Cannot evaluate '{expression}' with units: {unit_error}") from None
             if not isinstance(numeric, numbers.Number):
                 raise ValueError(f"'{expression}' does not evaluate to a number.") from None
             units.append(None)
@@ -451,4 +463,4 @@ def check_units(spec: InequalitySpec, resolve: PathResolver) -> None:
             raise ValueError(f"'{expression}' does not evaluate to a number.")
     lhs_unit, rhs_unit = units
     if lhs_unit is not None and rhs_unit is not None and lhs_unit != rhs_unit:
-        raise ValueError(f"Incompatible units in '{spec}': left side is in '{lhs_unit}', right side in '{rhs_unit}'.")
+        raise UnitError(f"Incompatible units in '{spec}': left side is in '{lhs_unit}', right side in '{rhs_unit}'.")

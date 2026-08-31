@@ -17,6 +17,7 @@ from easyreflectometry.constraints import derived_parameter
 from easyreflectometry.data import DataSet1D
 from easyreflectometry.fitting import MultiFitter
 from easyreflectometry.inequality_constraints import InequalitySpec
+from easyreflectometry.inequality_constraints import UnitError
 from easyreflectometry.inequality_constraints import build_constraints_factory
 from easyreflectometry.inequality_constraints import check_units
 from easyreflectometry.inequality_constraints import evaluate_spec
@@ -155,6 +156,14 @@ class TestTranslation:
         )
         check_units(InequalitySpec('a', '<', '90', {'a': 'pa'}, {}), _resolver({'pa': a}))
         with pytest.raises(ValueError, match='Incompatible units'):
+            check_units(InequalitySpec('a', '<', 's', {'a': 'pa'}, {'s': 'ps'}), _resolver({'pa': a, 'ps': sld}))
+
+    def test_check_units_raises_typed_unit_error(self):
+        # A typed exception so callers do not have to match message substrings;
+        # it subclasses ValueError, so the assertions above stay valid too.
+        a, _, _ = self._params()
+        sld = Parameter('sld_t', 2.0, unit='1/angstrom**2', min=-10, max=10)
+        with pytest.raises(UnitError):
             check_units(InequalitySpec('a', '<', 's', {'a': 'pa'}, {'s': 'ps'}), _resolver({'pa': a, 'ps': sld}))
 
     def test_check_units_mixed_literals_fall_back_to_numeric(self):

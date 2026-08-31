@@ -12,10 +12,13 @@ from easyscience import global_object
 from easyscience.variable import DescriptorNumber
 from easyscience.variable import Parameter
 
+from easyreflectometry import clamp_sum_partners
 from easyreflectometry import constrain
 from easyreflectometry import constrain_equal
 from easyreflectometry import constrain_to_sum
 from easyreflectometry import derived_parameter
+from easyreflectometry import is_constrained_to_sum
+from easyreflectometry import restore_sum_partners
 from easyreflectometry import unconstrain
 from easyreflectometry.project import Project
 
@@ -150,6 +153,122 @@ class TestUnconstrain:
         unconstrain(parameter)
         unconstrain(parameter)
         assert parameter.independent is True
+
+
+class TestIsConstrainedToSum:
+    def _sum(self):
+        a = Parameter('a', 30.0, unit='angstrom', min=0.0, max=100.0)
+        b = Parameter('b', 30.0, unit='angstrom', min=0.0, max=100.0)
+        constrain_to_sum(b, [a, b])
+        return a, b
+
+    def test_detects_the_sum_dependency(self):
+        a, b = self._sum()
+        assert is_constrained_to_sum(b) is True
+        assert is_constrained_to_sum(b, [a, b]) is True
+        assert is_constrained_to_sum(b, [a]) is True  # `parameter` itself may be omitted
+
+    def test_independent_parameter_is_not(self):
+        parameter = Parameter('p', 1.0)
+        assert is_constrained_to_sum(parameter) is False
+
+    def test_other_dependencies_are_not(self):
+        leader = Parameter('leader', 5.0)
+        follower = Parameter('follower', 1.0)
+        constrain_equal(follower, to=leader)
+        assert is_constrained_to_sum(follower) is False
+
+    def test_foreign_partner_requirement_fails(self):
+        a, b = self._sum()
+        stranger = Parameter('stranger', 1.0)
+        assert is_constrained_to_sum(b, [a, stranger]) is False
+
+    def test_survives_project_reload(self):
+        source = Project()
+        source.default_model()
+        sample = source.models[0].sample
+        first = sample[1].layers[0].thickness
+        second = sample[2].layers[0].thickness
+        constrain_to_sum(second, [first, second])
+        assert is_constrained_to_sum(second, [first, second])
+
+        project_dict = json.loads(json.dumps(source.as_dict()))
+        global_object.map._clear()
+        project = Project()
+        project.from_dict(project_dict)
+        sample = project.models[0].sample
+        assert is_constrained_to_sum(sample[2].layers[0].thickness, [sample[1].layers[0].thickness])
+
+
+class TestSumPartnerClamp:
+    def test_clamp_narrows_and_restore_widens(self):
+        a = Parameter('a', 30.0, unit='angstrom', min=0.0, max=1000.0)
+        b = Parameter('b', 30.0, unit='angstrom', min=0.0, max=1000.0)
+        constrain_to_sum(b, [a, b])
+
+        clamp_sum_partners([a], float(b.value))
+        # a's headroom is the whole budget: value * (1 + remainder/occupied)
+        assert float(a.max) == pytest.approx(60.0)
+        a.value = 1e6
+        assert float(a.value) == pytest.approx(60.0)
+        assert float(b.value) == pytest.approx(0.0)
+
+        unconstrain(b)
+        restore_sum_partners([a])
+        assert float(a.max) == pytest.approx(1000.0)
+
+    def test_restore_is_idempotent_and_never_narrows(self):
+        a = Parameter('a', 30.0, unit='angstrom', min=0.0, max=1000.0)
+        b = Parameter('b', 30.0, unit='angstrom', min=0.0, max=1000.0)
+        constrain_to_sum(b, [a, b])
+        clamp_sum_partners([a], float(b.value))
+        unconstrain(b)
+        a.max = 2000.0  # user widened beyond the original in the meantime
+        restore_sum_partners([a])
+        restore_sum_partners([a])
+        assert float(a.max) == pytest.approx(2000.0)
+
+    def test_already_tight_bound_is_left_alone(self):
+        a = Parameter('a', 30.0, unit='angstrom', min=0.0, max=40.0)
+        b = Parameter('b', 30.0, unit='angstrom', min=0.0, max=1000.0)
+        constrain_to_sum(b, [a, b])
+        clamp_sum_partners([a], float(b.value))
+        assert float(a.max) == pytest.approx(40.0)
+        restore_sum_partners([a])
+        assert float(a.max) == pytest.approx(40.0)
+
+    def test_backups_survive_project_reload(self):
+        source = Project()
+        source.default_model()
+        sample = source.models[0].sample
+        first = sample[1].layers[0].thickness
+        second = sample[2].layers[0].thickness
+        original_max = float(first.max)
+        constrain_to_sum(second, [first, second])
+        clamp_sum_partners([first], float(second.value))
+        clamped_max = float(first.max)
+        assert clamped_max < original_max
+
+        project_dict = json.loads(json.dumps(source.as_dict()))
+        assert 'sum_partner_max_backups' in project_dict
+        global_object.map._clear()
+        project = Project()
+        project.from_dict(project_dict)
+        sample = project.models[0].sample
+        first = sample[1].layers[0].thickness
+        second = sample[2].layers[0].thickness
+
+        # The clamp survives the round trip, and removing the constraint
+        # afterwards still hands back the original bound.
+        assert float(first.max) == pytest.approx(clamped_max)
+        unconstrain(second)
+        restore_sum_partners([first])
+        assert float(first.max) == pytest.approx(original_max)
+
+    def test_no_backups_key_when_nothing_is_clamped(self):
+        project = Project()
+        project.default_model()
+        assert 'sum_partner_max_backups' not in project.as_dict()
 
 
 class TestProjectRoundTrip:

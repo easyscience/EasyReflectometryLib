@@ -20,10 +20,27 @@
   project files without the new keys load unchanged; files saved with
   constraints keep the file format at 2 (old readers ignore the additive
   keys and lose the constraints).
+- New `clamp_sum_partners` / `restore_sum_partners`: a
+  `constrain_to_sum` remainder can be driven negative by a fit that
+  pushes the partners past the total (a layer of negative thickness).
+  `clamp_sum_partners` caps each partner's `max` at the headroom it
+  leaves, sharing the slack in proportion to the current values;
+  `restore_sum_partners` hands the original maxima back and is
+  idempotent. The stashed maxima are persisted by structural path, so
+  the round trip survives project save/load. New `is_constrained_to_sum`
+  reports whether a parameter carries a `constrain_to_sum` dependency,
+  including after a reload.
+- New `easyreflectometry.UnitError`, raised by `check_units` for a unit
+  problem in an inequality constraint. It subclasses `ValueError`, so
+  existing `except ValueError` handlers keep working, but callers no
+  longer have to match message substrings.
 - New `Model.total_thickness`: a read-only derived parameter equal to
   the summed thickness of the layers between superphase and subphase,
   rebuilt whenever the layer structure changes. New
-  `conformal_thickness` / `conformal_roughness` toggles on assemblies.
+  `conformal_thickness` / `conformal_roughness` toggles on assemblies,
+  also accepted as `Multilayer` / `RepeatingMultilayer` constructor
+  arguments and serialized from the current graph state, so the ties are
+  rebuilt on `from_dict`.
 - Structural parameter paths (`Project.parameter_path` /
   `Project.resolve_parameter_path`) address parameters stably across
   save/load.
@@ -205,6 +222,18 @@ returned.
   per-layer store inside the wrapper, so they survive a
   disable/re-enable cycle and are re-attached when magnetism is enabled
   again. `update_layer` also accepts the magnetism keys one at a time.
+
+## Documentation
+
+- The documentation is now MkDocs (Material) only. The legacy Sphinx
+  tree (`docs/src`, `docs/Makefile`, `docs/make.bat`) and the
+  tag-triggered `documentation-build.yml` workflow have been removed;
+  the site is built and deployed by `docs.yml` from `docs/mkdocs.yml`.
+- New tutorials wired into the navigation: _Constraints & Inequalities_
+  and _Bayesian Fitting_.
+- New API reference pages for constraints, inequality constraints,
+  Bayesian analysis, calculators, parameter limits, `LayerMagnetism`,
+  ORSO, summary and plotting.
 
 # Version 1.7.0 (1 Aug 2026)
 

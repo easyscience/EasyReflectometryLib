@@ -22,7 +22,9 @@ but fit penalties; see :mod:`easyreflectometry.inequality_constraints`.
 
 from __future__ import annotations
 
+import math
 import numbers
+import re
 from typing import Iterable
 from typing import Optional
 from typing import Union
@@ -31,10 +33,13 @@ from easyscience.variable import DescriptorNumber
 from easyscience.variable import Parameter
 
 __all__ = [
+    'clamp_sum_partners',
     'constrain',
     'constrain_equal',
     'constrain_to_sum',
     'derived_parameter',
+    'is_constrained_to_sum',
+    'restore_sum_partners',
     'unconstrain',
 ]
 
@@ -218,3 +223,107 @@ def constrain_to_sum(
         terms.append(alias)
     expression = 'total' if not terms else f'total - ({" + ".join(terms)})'
     constrain(parameter, expression, **dependency_map)
+
+
+#: Aliases :func:`constrain_to_sum` builds: the frozen sum plus one ``p<i>``
+#: per partner. :func:`is_constrained_to_sum` recognizes exactly this shape.
+_SUM_TOTAL_ALIAS = 'total'
+_SUM_PARTNER_ALIAS = re.compile(r'p\d+')
+
+
+def is_constrained_to_sum(
+    parameter: Parameter,
+    of_parameters: Optional[Iterable[DescriptorNumber]] = None,
+) -> bool:
+    """Whether `parameter` currently carries a :func:`constrain_to_sum` dependency.
+
+    Purely introspective — nothing is changed. Detection reads the public
+    dependency map and recognizes the alias shape :func:`constrain_to_sum`
+    builds (``'total'`` plus ``'p0'``, ``'p1'``, ...), so it also holds for a
+    constraint restored from a project file.
+
+    Parameters
+    ----------
+    parameter : Parameter
+        The parameter that would absorb the remainder.
+    of_parameters : Optional[Iterable[DescriptorNumber]], optional
+        When given, every entry (except `parameter` itself) must additionally
+        be among the partners of the sum. By default only the dependency shape
+        is checked.
+    """
+    if getattr(parameter, 'independent', True):
+        return False
+    dependency_map = parameter.dependency_map or {}
+    if _SUM_TOTAL_ALIAS not in dependency_map:
+        return False
+    partner_aliases = set(dependency_map) - {_SUM_TOTAL_ALIAS}
+    if any(not _SUM_PARTNER_ALIAS.fullmatch(alias) for alias in partner_aliases):
+        return False
+    if of_parameters is not None:
+        partners = {id(dependency_map[alias]) for alias in partner_aliases}
+        required = {id(p) for p in of_parameters if p is not parameter}
+        if not required <= partners:
+            return False
+    return True
+
+
+# The parameter tied by `constrain_to_sum` takes whatever the partners leave
+# over, so on its own the constraint lets a fit push the partners past the
+# total and drive the remainder negative (e.g. a layer of negative thickness).
+# `clamp_sum_partners` caps each partner at the headroom it actually leaves,
+# sharing the slack in proportion to the current values. The original maxima
+# are stashed on the parameters under this attribute so
+# `restore_sum_partners` can give them back; `Project.as_dict`/`from_dict`
+# persist the stash by structural path so the round trip survives save/load.
+SUM_PARTNER_MAX_BACKUP = '_sum_partner_previous_max'
+
+
+def clamp_sum_partners(partners: Iterable[Parameter], remainder: float) -> None:
+    """Narrow the partners' maxima so a :func:`constrain_to_sum` remainder cannot go below zero.
+
+    Each partner's ``max`` is capped at ``value * (1 + remainder / occupied)``
+    — its share of the remaining budget, distributed in proportion to the
+    current values. A partner whose ``max`` is already tighter is left alone,
+    and so is one whose cap would collapse onto its ``min`` (a degenerate
+    ``min == max`` bound is rejected by EasyScience). The original maxima are
+    stashed on the parameters for :func:`restore_sum_partners`.
+
+    Parameters
+    ----------
+    partners : Iterable[Parameter]
+        The free parameters of the sum (everything except the tied remainder).
+    remainder : float
+        Current value of the tied remainder parameter.
+    """
+    partners = list(partners)
+    occupied = sum(float(parameter.value) for parameter in partners)
+    if occupied <= 0.0 or remainder < 0.0:
+        # Nothing to share out, or the budget is already exhausted; leave the
+        # bounds alone rather than pin every partner at its current value.
+        return
+    for parameter in partners:
+        headroom = float(parameter.value) * (1.0 + remainder / occupied)
+        if headroom >= float(parameter.max):
+            continue
+        if math.isclose(headroom, float(parameter.min), rel_tol=1e-9, abs_tol=0.0):
+            continue
+        if not hasattr(parameter, SUM_PARTNER_MAX_BACKUP):
+            setattr(parameter, SUM_PARTNER_MAX_BACKUP, float(parameter.max))
+        parameter.max = headroom
+
+
+def restore_sum_partners(partners: Iterable[Parameter]) -> None:
+    """Give back the maxima :func:`clamp_sum_partners` narrowed.
+
+    Idempotent: a partner without a stashed backup (never clamped, or already
+    restored) is left alone. A backup is only applied when it widens the
+    current bound — restoring never narrows a maximum that was widened in the
+    meantime.
+    """
+    for parameter in partners:
+        previous = getattr(parameter, SUM_PARTNER_MAX_BACKUP, None)
+        if previous is None:
+            continue
+        delattr(parameter, SUM_PARTNER_MAX_BACKUP)
+        if float(previous) > float(parameter.max):
+            parameter.max = float(previous)

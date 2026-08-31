@@ -24,6 +24,7 @@ from scipp import DataGroup
 from easyreflectometry.calculators import CalculatorFactory
 from easyreflectometry.calculators import PolarizationChannel
 from easyreflectometry.calculators.calculator_base import CalculatorBase
+from easyreflectometry.constraints import SUM_PARTNER_MAX_BACKUP
 from easyreflectometry.constraints import USER_CONSTRAINT_FLAG
 from easyreflectometry.constraints import constrain
 from easyreflectometry.data import DataSet1D
@@ -584,6 +585,35 @@ class Project:
             'expression': parameter._clean_dependency_string,
             'dependencies': dependencies,
         }
+
+    def _sum_partner_max_backups(self) -> Dict[str, float]:
+        """``{structural path: original max}`` for every parameter whose maximum
+        :func:`easyreflectometry.constraints.clamp_sum_partners` narrowed.
+
+        The backups live as an attribute on the parameters, which no other
+        serialization records; without this, removing a sum constraint after a
+        save/load could never widen the bounds back.
+        """
+        flagged = [parameter for parameter in self.parameters if hasattr(parameter, SUM_PARTNER_MAX_BACKUP)]
+        if not flagged:
+            return {}
+        paths = {id(parameter): path for path, parameter in self._walk_parameters()}
+        backups: Dict[str, float] = {}
+        for parameter in flagged:
+            path = paths.get(id(parameter))
+            if path is not None:
+                backups[path] = float(getattr(parameter, SUM_PARTNER_MAX_BACKUP))
+        return backups
+
+    def _restore_sum_partner_max_backups(self, backups: Dict[str, float]) -> None:
+        """Re-attach the backups written by :meth:`_sum_partner_max_backups`."""
+        for path, previous in (backups or {}).items():
+            try:
+                parameter = self.resolve_parameter_path(path)
+            except KeyError:
+                logger.warning('Cannot restore the bound backup for %r: the parameter no longer exists.', path)
+                continue
+            setattr(parameter, SUM_PARTNER_MAX_BACKUP, float(previous))
 
     def _restore_user_constraints(self, records: List[dict]) -> None:
         """Re-apply the constraint records written by :meth:`_user_constraints`.
@@ -1657,6 +1687,9 @@ class Project:
         parameter_constraints = self._user_constraints()
         if parameter_constraints:
             project_dict['parameter_constraints'] = parameter_constraints
+        sum_partner_max_backups = self._sum_partner_max_backups()
+        if sum_partner_max_backups:
+            project_dict['sum_partner_max_backups'] = sum_partner_max_backups
         return project_dict
 
     def _as_dict_add_materials_not_in_model_dict(self, project_dict: dict):
@@ -1759,6 +1792,7 @@ class Project:
         # below carries the user constraints instead.
         resolve_all_parameter_dependencies(self)
         self._restore_user_constraints(project_dict.get('parameter_constraints', []))
+        self._restore_sum_partner_max_backups(project_dict.get('sum_partner_max_backups', {}))
         self._warn_on_unreadable_dependencies(project_dict.get('models'))
         # Inequality constraints are declarative (paths), nothing to resolve yet:
         # they are bound to parameters when a fit starts.
