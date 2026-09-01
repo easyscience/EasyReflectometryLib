@@ -2919,7 +2919,22 @@ uppercase strings are rejected.</p>
 <span class="normal">366</span>
 <span class="normal">367</span>
 <span class="normal">368</span>
-<span class="normal">369</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseCore</span><span class="p">):</span>
+<span class="normal">369</span>
+<span class="normal">370</span>
+<span class="normal">371</span>
+<span class="normal">372</span>
+<span class="normal">373</span>
+<span class="normal">374</span>
+<span class="normal">375</span>
+<span class="normal">376</span>
+<span class="normal">377</span>
+<span class="normal">378</span>
+<span class="normal">379</span>
+<span class="normal">380</span>
+<span class="normal">381</span>
+<span class="normal">382</span>
+<span class="normal">383</span>
+<span class="normal">384</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseCore</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Model is the class that represents the experiment.</span>
 
 <span class="sd">    It is used to store the information about the experiment and to perform the calculations.</span>
@@ -3206,8 +3221,23 @@ uppercase strings are rejected.</p>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(</span><span class="n">skip</span><span class="o">=</span><span class="n">skip</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">as_orso</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert the model to a dictionary suitable for ORSO.&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">as_dict</span><span class="p">()</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The sample as an ORSO simple-model (``sample.model``) dictionary.</span>
+
+<span class="sd">        Slab representation: lengths in angstrom, SLDs in 1/angstrom^2,</span>
+<span class="sd">        repeating multilayers via the inline ``N ( ... )`` stack syntax.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict</span>
+<span class="sd">            The ORSO model-language dictionary (the content of an .ort file&#39;s</span>
+<span class="sd">            ``data_source.sample.model`` section).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Circular import if hoisted to module-top.</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">orsopy.fileio</span><span class="w"> </span><span class="kn">import</span> <span class="n">Header</span>
+
+        <span class="kn">from</span><span class="w"> </span><span class="nn">easyreflectometry.orso_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">sample_to_orso_model</span>
+
+        <span class="k">return</span> <span class="n">Header</span><span class="o">.</span><span class="n">asdict</span><span class="p">(</span><span class="n">sample_to_orso_model</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sample</span><span class="p">))</span>
 
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">from_dict</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">passed_dict</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Model</span><span class="p">:</span>
@@ -4203,19 +4233,78 @@ through <em>any</em> path (<code>Model.add_assemblies</code>, <code>assembly.lay
 
     <div class="doc doc-contents ">
 
-        <p>Convert the model to a dictionary suitable for ORSO.</p>
+        <p>The sample as an ORSO simple-model (<code>sample.model</code>) dictionary.</p>
+<p>Slab representation: lengths in angstrom, SLDs in 1/angstrom^2,
+repeating multilayers via the inline <code>N ( ... )</code> stack syntax.</p>
 <!-- prettier-ignore-start -->
 
 <!-- prettier-ignore-end -->
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="dict">dict</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The ORSO model-language dictionary (the content of an .ort file's
+<code>data_source.sample.model</code> section).</p>
+<!-- prettier-ignore-start -->
+
+<!-- prettier-ignore-end -->
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/easyreflectometry/model/model.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">346</span>
 <span class="normal">347</span>
-<span class="normal">348</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">as_orso</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert the model to a dictionary suitable for ORSO.&quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">as_dict</span><span class="p">()</span>
+<span class="normal">348</span>
+<span class="normal">349</span>
+<span class="normal">350</span>
+<span class="normal">351</span>
+<span class="normal">352</span>
+<span class="normal">353</span>
+<span class="normal">354</span>
+<span class="normal">355</span>
+<span class="normal">356</span>
+<span class="normal">357</span>
+<span class="normal">358</span>
+<span class="normal">359</span>
+<span class="normal">360</span>
+<span class="normal">361</span>
+<span class="normal">362</span>
+<span class="normal">363</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">as_orso</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The sample as an ORSO simple-model (``sample.model``) dictionary.</span>
+
+<span class="sd">    Slab representation: lengths in angstrom, SLDs in 1/angstrom^2,</span>
+<span class="sd">    repeating multilayers via the inline ``N ( ... )`` stack syntax.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict</span>
+<span class="sd">        The ORSO model-language dictionary (the content of an .ort file&#39;s</span>
+<span class="sd">        ``data_source.sample.model`` section).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Circular import if hoisted to module-top.</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">orsopy.fileio</span><span class="w"> </span><span class="kn">import</span> <span class="n">Header</span>
+
+    <span class="kn">from</span><span class="w"> </span><span class="nn">easyreflectometry.orso_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">sample_to_orso_model</span>
+
+    <span class="k">return</span> <span class="n">Header</span><span class="o">.</span><span class="n">asdict</span><span class="p">(</span><span class="n">sample_to_orso_model</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sample</span><span class="p">))</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -4245,26 +4334,26 @@ through <em>any</em> path (<code>Model.add_assemblies</code>, <code>assembly.lay
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/easyreflectometry/model/model.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">350</span>
-<span class="normal">351</span>
-<span class="normal">352</span>
-<span class="normal">353</span>
-<span class="normal">354</span>
-<span class="normal">355</span>
-<span class="normal">356</span>
-<span class="normal">357</span>
-<span class="normal">358</span>
-<span class="normal">359</span>
-<span class="normal">360</span>
-<span class="normal">361</span>
-<span class="normal">362</span>
-<span class="normal">363</span>
-<span class="normal">364</span>
-<span class="normal">365</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">365</span>
 <span class="normal">366</span>
 <span class="normal">367</span>
 <span class="normal">368</span>
-<span class="normal">369</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="normal">369</span>
+<span class="normal">370</span>
+<span class="normal">371</span>
+<span class="normal">372</span>
+<span class="normal">373</span>
+<span class="normal">374</span>
+<span class="normal">375</span>
+<span class="normal">376</span>
+<span class="normal">377</span>
+<span class="normal">378</span>
+<span class="normal">379</span>
+<span class="normal">380</span>
+<span class="normal">381</span>
+<span class="normal">382</span>
+<span class="normal">383</span>
+<span class="normal">384</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">from_dict</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">passed_dict</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Model</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Create a Model from a dictionary.&quot;&quot;&quot;</span>
     <span class="c1"># Circular import if hoisted to module-top.</span>
