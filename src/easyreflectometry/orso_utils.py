@@ -87,9 +87,23 @@ def load_orso_model(orso_data) -> Sample:
             stacklevel=2,
         )
         return None
-    stack_str = sample_model.stack
-    layers_dict = sample_model.layers if hasattr(sample_model, 'layers') else None
-    orso_sample = model_language.SampleModel(stack=stack_str, layers=layers_dict)
+    if isinstance(sample_model, model_language.SampleModel):
+        # Use the file's model as parsed: rebuilding it from `stack` and
+        # `layers` alone (as done previously) silently dropped the
+        # `materials` / `sub_stacks` / `composits` definitions, so named
+        # materials could not be resolved and their SLDs read as 0.
+        orso_sample = sample_model
+    else:
+        stack_str = sample_model.stack
+        layers_dict = sample_model.layers if hasattr(sample_model, 'layers') else None
+        orso_sample = model_language.SampleModel(
+            stack=stack_str,
+            layers=layers_dict,
+            materials=getattr(sample_model, 'materials', None),
+            sub_stacks=getattr(sample_model, 'sub_stacks', None),
+            composits=getattr(sample_model, 'composits', None),
+            globals=getattr(sample_model, 'globals', None),
+        )
 
     # Try to resolve layers using different methods
     try:
@@ -147,8 +161,11 @@ def load_orso_model(orso_data) -> Sample:
 def _convert_orso_layer_to_erl(layer):
     r"""Helper function to convert an ORSO layer to an EasyReflectometry laye."""
     material = layer.material
-    # Prefer original_name for material name, fall back to formula if available
+    # Prefer original_name for the material name, fall back to the formula; a
+    # material defined only by its SLD has neither, so never leave it None.
     m_name = layer.original_name if layer.original_name is not None else material.formula
+    if m_name is None:
+        m_name = 'material'
 
     # Get SLD values (use formula for density calculation if available)
     formula_for_calc = material.formula if material.formula is not None else m_name
@@ -187,9 +204,10 @@ def _get_sld_values(material, material_name):
         if isinstance(material.sld, ComplexValue):
             raw_sld = material.sld.real
             m_sld = raw_sld * 1e6
-            m_isld = material.sld.imag * 1e6
+            m_isld = (material.sld.imag or 0.0) * 1e6
         else:
-            raw_sld = material.sld
+            # A plain number, or an orsopy ``Value`` (unwrap its magnitude).
+            raw_sld = getattr(material.sld, 'magnitude', material.sld)
             m_sld = raw_sld * 1e6
             m_isld = 0.0
         if raw_sld != 0.0 and abs(raw_sld) > 1e-2:
