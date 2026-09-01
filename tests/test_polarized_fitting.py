@@ -431,7 +431,8 @@ class TestFitPolarized:
         model.interface = _refl1d_interface()
         rho_m = model.sample[1].layers[0].magnetism.rho_m
         rho_m.fixed = False
-        rho_m.bounds = (0.0, 5.0)
+        rho_m.min = 0.0
+        rho_m.max = 5.0
 
         data = _polarized_data({'pp': reference['pp'], 'mm': reference['mm']}, model=model)
         fitter = MultiFitter(model)
@@ -450,9 +451,11 @@ class TestFitPolarized:
         model.interface = _refl1d_interface()
         magnetism = model.sample[1].layers[0].magnetism
         magnetism.rho_m.fixed = False
-        magnetism.rho_m.bounds = (0.0, 5.0)
+        magnetism.rho_m.min = 0.0
+        magnetism.rho_m.max = 5.0
         magnetism.theta_m.fixed = False
-        magnetism.theta_m.bounds = (0.0, 90.0)
+        magnetism.theta_m.min = 0.0
+        magnetism.theta_m.max = 90.0
 
         data = _polarized_data(dict(reference), model=model)
         fitter = MultiFitter(model)
@@ -473,7 +476,8 @@ class TestFitPolarized:
         thickness = model.sample[1].layers[0].thickness
         thickness.value = 90.0
         thickness.fixed = False
-        thickness.bounds = (50.0, 150.0)
+        thickness.min = 50.0
+        thickness.max = 150.0
 
         data = _polarized_data({'pp': reference['pp'], 'mm': reference['mm']}, model=model)
         fitter = MultiFitter(model)
@@ -612,7 +616,8 @@ class TestMultiFitterForExperiments:
         model.interface = _refl1d_interface()
         rho_m = model.sample[1].layers[0].magnetism.rho_m
         rho_m.fixed = False
-        rho_m.bounds = (0.0, 5.0)
+        rho_m.min = 0.0
+        rho_m.max = 5.0
         data = _polarized_data({'pp': reference['pp'], 'mm': reference['mm']}, model=model)
 
         fitter = MultiFitter.for_experiments([data])

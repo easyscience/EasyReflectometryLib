@@ -1,5 +1,57 @@
 # Unreleased
 
+## Parameter constraints
+
+- New equality-constraint helpers `constrain`, `constrain_equal`,
+  `unconstrain`, `constrain_to_sum` and `derived_parameter`
+  (`easyreflectometry.constraints`), thin wrappers over the EasyScience
+  parameter-dependency mechanism. Constraints created through these
+  helpers survive project save/load; raw `make_dependent_on` calls do
+  not. A standalone `derived_parameter` is session-only: it has no
+  structural path and a saved project cannot reference it.
+- New inequality constraints
+  (`easyreflectometry.inequality_constraints`): declarative
+  `InequalitySpec` objects (`t_head < t_tail`, `t1 + t2 <= 90`)
+  registered on the project (`Project.add_inequality_constraint` and
+  friends) and enforced as penalties on the BUMPS fit problem, including
+  via `MultiFitter.for_experiments`-built fitters driven through the raw
+  `easy_science_multi_fitter.fit(...)`. Engines that cannot enforce them
+  (LMFit, DFO-LS) raise instead of silently dropping physics. Older
+  project files without the new keys load unchanged; files saved with
+  constraints keep the file format at 2 (old readers ignore the additive
+  keys and lose the constraints).
+- New `clamp_sum_partners` / `restore_sum_partners`: a
+  `constrain_to_sum` remainder can be driven negative by a fit that
+  pushes the partners past the total (a layer of negative thickness).
+  `clamp_sum_partners` caps each partner's `max` at the headroom it
+  leaves, sharing the slack in proportion to the current values;
+  `restore_sum_partners` hands the original maxima back and is
+  idempotent. The stashed maxima are persisted by structural path, so
+  the round trip survives project save/load. New `is_constrained_to_sum`
+  reports whether a parameter carries a `constrain_to_sum` dependency,
+  including after a reload.
+- New `easyreflectometry.UnitError`, raised by `check_units` for a unit
+  problem in an inequality constraint. It subclasses `ValueError`, so
+  existing `except ValueError` handlers keep working, but callers no
+  longer have to match message substrings.
+- New `Model.total_thickness`: a read-only derived parameter equal to
+  the summed thickness of the layers between superphase and subphase,
+  rebuilt whenever the layer structure changes. New
+  `conformal_thickness` / `conformal_roughness` toggles on assemblies,
+  also accepted as `Multilayer` / `RepeatingMultilayer` constructor
+  arguments and serialized from the current graph state, so the ties are
+  rebuilt on `from_dict`.
+- Structural parameter paths (`Project.parameter_path` /
+  `Project.resolve_parameter_path`) address parameters stably across
+  save/load.
+- `Parameter.bounds = (lo, hi)` assignments in tutorials, notebooks and
+  integration tests migrated to `.min` / `.max`.
+- ORSO model loading now uses the parsed `SampleModel` as-is, so named
+  materials, sub-stacks and composits are no longer dropped (named
+  materials previously read back with SLD 0).
+
+## Polarization
+
 All four polarization channels (pp, pm, mp, mm) are now available from
 the refl1d calculator. Previously only the non-spin-flip pp channel was
 returned.
@@ -170,6 +222,63 @@ returned.
   per-layer store inside the wrapper, so they survive a
   disable/re-enable cycle and are re-attached when magnetism is enabled
   again. `update_layer` also accepts the magnetism keys one at a time.
+
+## ORSO file handling
+
+- Binary ORSO (`.orb`, NeXus/HDF5) files are read and written alongside
+  `.ort` text files. The format is detected from the ORSO banner line or
+  the HDF5 magic bytes, not the file extension, so a file that carries
+  the banner but fails to parse now raises instead of being silently
+  re-read as plain text (which dropped the whole header, polarization
+  included). `.orb` support needs `h5py`, available as the new `orb`
+  extra; `orsopy` is pinned to `>=1.2`.
+- New ORSO export. `Project.save_experiment_as_orso(path, index=None)`
+  writes an experiment (`.ort` or `.orb`), with the model, when set,
+  serialized as `data_source.sample.model`. Backed by the new
+  `save_orso_experiment`, `orso_datasets_from_experiment` and
+  `sample_to_orso_model` in `easyreflectometry.orso_utils`. A polarized
+  experiment becomes one file with one `data_set:` block per spin
+  channel. `Model.as_orso` now returns the ORSO model-language
+  dictionary (slab representation) rather than the internal `as_dict`.
+- Repeating multilayers survive a round trip. Loading resolves the ORSO
+  stack with `resolve_stack()` instead of flattening it, so a sub-stack
+  keeps its repetition count and comes back as a `RepeatingMultilayer`;
+  export writes it with the inline `N ( ... )` stack syntax.
+- Units declared in the file are honoured: `Qz` in `1/nm`, lengths in
+  `nm` (the ORSO default) and SLDs in `1/nm^2` are converted on load,
+  instead of being read as angstrom-based numbers.
+- Resolution and error columns are read more carefully. A column
+  declared `value_is: FWHM` is converted to sigma on load, `nan` entries
+  in `sQz` are filled by interpolating over the valid points, and
+  partially missing error columns warn rather than propagating `nan`
+  into a fit. Stored `Pointwise` resolutions remain variances, so saved
+  projects round-trip without migration.
+- `Project.load_polarized_experiment_from_file(path)` loads a polarized
+  experiment from a single multi-dataset ORSO file, classifying each
+  `data_set:` block by its own `instrument_settings.polarization`
+  header. Only `pp/pm/mp/mm` are mapped; a file with an unmappable or
+  duplicated channel raises rather than guessing. Supported by the new
+  `channel_from_orso_polarization` and
+  `detect_polarization_channels_per_dataset` in
+  `easyreflectometry.data`.
+- New `easyreflectometry.data.dataset_from_datagroup` builds a
+  `DataSet1D` from one dataset of an already-loaded `DataGroup`, and
+  keeps the parsed ORSO header on the dataset as `orso_header` so
+  exporters can reuse the original provenance. `load_as_dataset` and the
+  project loaders accept a pre-loaded `DataGroup`, so importing a file
+  no longer parses it three or four times.
+
+## Documentation
+
+- The documentation is now MkDocs (Material) only. The legacy Sphinx
+  tree (`docs/src`, `docs/Makefile`, `docs/make.bat`) and the
+  tag-triggered `documentation-build.yml` workflow have been removed;
+  the site is built and deployed by `docs.yml` from `docs/mkdocs.yml`.
+- New tutorials wired into the navigation: _Constraints & Inequalities_
+  and _Bayesian Fitting_.
+- New API reference pages for constraints, inequality constraints,
+  Bayesian analysis, calculators, parameter limits, `LayerMagnetism`,
+  ORSO, summary and plotting.
 
 # Version 1.7.0 (1 Aug 2026)
 

@@ -808,9 +808,10 @@ class TestProject:
         # Then
         parameters = project.parameters
 
-        # Expect
-        assert len(parameters) == 14
+        # Expect: 14 layer/material/model parameters + the model's derived total thickness
+        assert len(parameters) == 15
         assert isinstance(parameters[0], Parameter)
+        assert any(parameter is project.models[0].total_thickness for parameter in parameters)
 
     def test_parameters_enabled_flags(self):
         global_object.map._clear()
@@ -973,6 +974,10 @@ class TestProject:
         assert material_1 in project._materials
         assert material_2 in project._materials
         assert project.current_model_index == 1
+        # Each loaded sample gets its own colour from the collection's cycle;
+        # without this, every ORSO-loaded model rendered in the first palette
+        # colour and their curves were indistinguishable.
+        assert project._models[0].color != project._models[1].color
 
     def test_add_sample_from_orso_with_shared_materials(self):
         # When

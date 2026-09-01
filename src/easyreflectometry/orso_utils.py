@@ -442,11 +442,28 @@ def load_orso_model(orso_data) -> Sample:
             stacklevel=2,
         )
         return None
+    if isinstance(sample_model, model_language.SampleModel):
+        # Use the file's model as parsed: rebuilding it from `stack` and
+        # `layers` alone (as done previously) silently dropped the
+        # `materials` / `sub_stacks` / `composits` definitions, so named
+        # materials could not be resolved and their SLDs read as 0.
+        orso_sample = sample_model
+    else:
+        stack_str = sample_model.stack
+        layers_dict = sample_model.layers if hasattr(sample_model, 'layers') else None
+        orso_sample = model_language.SampleModel(
+            stack=stack_str,
+            layers=layers_dict,
+            materials=getattr(sample_model, 'materials', None),
+            sub_stacks=getattr(sample_model, 'sub_stacks', None),
+            composits=getattr(sample_model, 'composits', None),
+            globals=getattr(sample_model, 'globals', None),
+        )
 
     # Resolve the original model (globals/materials/sub_stacks intact) at the
     # stack level: resolve_stack() keeps SubStack objects (and with them the
     # repetition counts) that resolve_to_layers()/resolve_to_blocks() flatten.
-    orso_blocks = sample_model.resolve_stack()
+    orso_blocks = orso_sample.resolve_stack()
 
     # Handle case where layers are not resolved correctly
     if not orso_blocks:
@@ -568,9 +585,12 @@ def _convert_orso_substack_to_erl(block) -> Multilayer:
 def _convert_orso_layer_to_erl(layer):
     r"""Helper function to convert an ORSO layer to an EasyReflectometry layer."""
     material = layer.material
-    # Prefer original_name for material name, fall back to formula if available
+    # Prefer original_name for the material name, fall back to the formula; a
+    # material defined only by its SLD has neither, so never leave it None.
     formula = getattr(material, 'formula', None)
     m_name = layer.original_name if layer.original_name is not None else formula
+    if m_name is None:
+        m_name = 'material'
 
     erl_material = _convert_orso_material_to_erl(material, m_name)
 

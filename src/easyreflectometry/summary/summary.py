@@ -58,7 +58,6 @@ _TOOLTIP_SCHEME = 'nametooltip'
 _ENGINE_URLS: dict[str, str] = {
     'refnx': 'https://refnx.readthedocs.io',
     'refl1d': 'https://refl1d.readthedocs.io',
-    'bornagain': 'https://www.bornagainproject.org',
     'lm': 'https://lmfit.github.io/lmfit-py/',
     'bumps': 'https://bumps.readthedocs.io',
     'dfo': 'https://github.com/fitbenchmarking/dfo-ls',
@@ -291,7 +290,9 @@ class Summary:
             html_parameter = html_parameter.replace('parameter_name', f'{name}')
             html_parameter = html_parameter.replace('parameter_value', _format_value(value, 3))
             html_parameter = html_parameter.replace('parameter_unit', f'{unit}')
-            error_str = _format_value(error, 2)
+            # An unfitted parameter has no uncertainty; a literal '0.0' would
+            # read as a perfectly determined value, so leave the cell empty.
+            error_str = _format_value(error, 2) if error else ''
             html_parameter = html_parameter.replace('parameter_error', error_str)
             html_parameters.append(html_parameter)
 
@@ -345,10 +346,12 @@ class Summary:
         model = self._project._models[self._project.current_model_index]
         parameters = model.get_all_parameters()
 
-        num_free_params = sum(1 for parameter in parameters if parameter.free)
-        num_fixed_params = sum(1 for parameter in parameters if not parameter.free)
-        num_params = num_free_params + num_fixed_params
+        # Dependent parameters (user constraints, derived values such as the
+        # total thickness) are neither free nor fixed: they never enter a fit.
+        num_free_params = sum(1 for parameter in parameters if parameter.independent and parameter.free)
+        num_fixed_params = sum(1 for parameter in parameters if parameter.independent and not parameter.free)
         num_constraints = sum(1 for parameter in parameters if not parameter.independent)
+        num_params = num_free_params + num_fixed_params + num_constraints
 
         goodness_of_fit = self._compute_goodness_of_fit()
 

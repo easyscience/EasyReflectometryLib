@@ -217,7 +217,8 @@ class TestMagnetismThroughCalculator:
         model.interface = self._interface('refl1d')
         rho_m = model.sample[1].layers[0].magnetism.rho_m
         rho_m.fixed = False
-        rho_m.bounds = (0.0, 5.0)
+        rho_m.min = 0.0
+        rho_m.max = 5.0
 
         fitter = MultiFitter(model)
         result = fitter.fit_single_data_set_1d(data)
