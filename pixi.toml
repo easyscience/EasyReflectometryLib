@@ -115,7 +115,11 @@ integration-tests-all = 'pixi run integration-tests -m "slow or not slow"'
 slow-tests = 'python -m pytest tests/ -m slow --color=yes -v'
 
 test = { depends-on = ['unit-tests'] }
-test-all = { depends-on = ['unit-tests-all', 'functional-tests', 'integration-tests-all'] }
+test-all = { depends-on = [
+  'unit-tests-all',
+  'functional-tests',
+  'integration-tests-all',
+] }
 
 ###########
 # ✔️ Checks
