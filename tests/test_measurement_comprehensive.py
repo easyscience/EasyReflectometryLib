@@ -21,6 +21,7 @@ from easyreflectometry.data.data_store import DataSet1D
 from easyreflectometry.data.data_store import DataStore
 from easyreflectometry.data.data_store import ProjectData
 from easyreflectometry.data.measurement import _load_txt
+from easyreflectometry.data.measurement import dataset_from_datagroup
 from easyreflectometry.data.measurement import load
 from easyreflectometry.data.measurement import load_as_dataset
 from easyreflectometry.data.measurement import merge_datagroups
@@ -408,3 +409,45 @@ class TestIntegrationScenarios:
 if __name__ == '__main__':
     # Run all tests if script is executed directly
     pytest.main([__file__, '-v'])
+
+
+class TestDatasetFromDatagroup:
+    """The DataGroup -> DataSet1D step shared by the loaders that parse once."""
+
+    def test_defaults_to_the_first_dataset(self):
+        """Without a data_key the first entry is taken (the documented default)."""
+        fpath = os.path.join(PATH_STATIC, 'test_example1.txt')
+        data_group = load(fpath)
+
+        dataset = dataset_from_datagroup(data_group)
+
+        first_data_key = list(data_group['data'].keys())[0]
+        first_coords_key = list(data_group['coords'].keys())[0]
+        assert_array_equal(dataset.y, data_group['data'][first_data_key].values)
+        assert_array_equal(dataset.x, data_group['coords'][first_coords_key].values)
+
+    def test_explicit_data_key_selects_that_dataset(self):
+        """A multi-dataset ORSO file is addressed one dataset at a time."""
+        fpath = os.path.join(PATH_STATIC, 'polarized_2ch.ort')
+        data_group = load(fpath)
+        keys = list(data_group['data'].keys())
+        assert len(keys) > 1
+
+        second = dataset_from_datagroup(data_group, data_key=keys[1])
+
+        assert_array_equal(second.y, data_group['data'][keys[1]].values)
+
+    def test_orso_header_is_attached_for_orso_files(self):
+        """The parsed header rides along so the exporter can reuse provenance."""
+        fpath = os.path.join(PATH_STATIC, 'test_example1.ort')
+        dataset = dataset_from_datagroup(load(fpath))
+
+        assert dataset.orso_header is not None
+        assert 'data_source' in dataset.orso_header
+
+    def test_orso_header_is_none_for_plain_text(self):
+        """A text file carries no header; the attribute is still set, to None."""
+        fpath = os.path.join(PATH_STATIC, 'test_example1.txt')
+        dataset = dataset_from_datagroup(load(fpath))
+
+        assert dataset.orso_header is None
