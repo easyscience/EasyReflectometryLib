@@ -28,6 +28,7 @@ from easyreflectometry.sample import Sample
 PATH_STATIC = os.path.join(os.path.dirname(easyreflectometry.__file__), '..', '..', 'tests', '_static')
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize('minimizer', [AvailableMinimizers.Bumps, AvailableMinimizers.LMFit])
 def test_fitting(minimizer):
     fpath = os.path.join(PATH_STATIC, 'example.ort')
@@ -89,6 +90,7 @@ def test_fitting(minimizer):
     assert analysed['success']
 
 
+@pytest.mark.slow
 def test_fitting_with_zero_variance():
     """Test that zero variance points are handled via Mighell substitution (hybrid default)."""
     import warnings
@@ -173,6 +175,7 @@ def test_fitting_with_zero_variance():
     assert 'success' in analysed.keys()
 
 
+@pytest.mark.slow
 def test_fitting_with_manual_zero_variance():
     """Test the fit method with manually created zero variance points using hybrid (default)."""
     import warnings
@@ -1201,6 +1204,7 @@ def _analytic_wls(design, y, point_weights):
     return beta, covariance
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize('minimizer', [AvailableMinimizers.LMFit, AvailableMinimizers.Bumps])
 def test_fit_weight_convention_matches_analytic_wls(minimizer):
     """Pin the weights = 1/sigma convention end-to-end against analytic WLS.

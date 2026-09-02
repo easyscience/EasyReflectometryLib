@@ -3,6 +3,7 @@
 
 
 import os
+from typing import Optional
 from typing import TextIO
 from typing import Union
 
@@ -10,38 +11,95 @@ import numpy as np
 import scipp as sc
 
 from easyreflectometry.data import DataSet1D
+from easyreflectometry.orso_utils import is_orso_file
 from easyreflectometry.orso_utils import load_data_from_orso_file
 
 
 def load(fname: Union[TextIO, str]) -> sc.DataGroup:
-    """Load data from an ORSO .ort file.
+    """Load data from an ORSO file (.ort/.orb) or a plain text file.
+
+    The discriminator is the ORSO banner line (or the HDF5 magic for binary
+    files), **not** the file extension: a file carrying the banner that fails
+    to parse raises instead of being silently re-read as plain text (which
+    would drop the entire header, including polarization).
 
     Parameters
     ----------
     fname : Union[TextIO, str]
         The file to be read.
+
+    Returns
+    -------
+    sc.DataGroup
+        The loaded data.
     """
-    try:
+    if is_orso_file(str(fname)):
         return load_data_from_orso_file(fname)
-    except (IndexError, ValueError):
-        return _load_txt(fname)
+    return _load_txt(fname)
 
 
-def load_as_dataset(fname: Union[TextIO, str]) -> DataSet1D:
-    """Load data from an ORSO .ort file as a DataSet1D."""
-    data_group = load(fname)
+def dataset_from_datagroup(data_group: sc.DataGroup, data_key: Optional[str] = None) -> DataSet1D:
+    """Build a DataSet1D from one dataset of a loaded DataGroup.
+
+    The ORSO header (when present) is attached to the returned dataset as the
+    ``orso_header`` attribute (a plain dict), so exporters can reuse the
+    original ``data_source``/``reduction`` provenance.
+
+    Parameters
+    ----------
+    data_group : sc.DataGroup
+        A DataGroup as returned by :func:`load`.
+    data_key : Optional[str], optional
+        The data entry to use (e.g. ``'R_0'``). By default, the first entry.
+
+    Returns
+    -------
+    DataSet1D
+        The dataset.
+    """
+    if data_key is None:
+        data_key = list(data_group['data'].keys())[0]
+    coords_key = 'Qz_' + data_key[len('R_') :]
+    if coords_key not in data_group['coords']:
+        coords_key = list(data_group['coords'].keys())[0]
+    dataset = DataSet1D(
+        x=data_group['coords'][coords_key].values,
+        y=data_group['data'][data_key].values,
+        ye=data_group['data'][data_key].variances,
+        xe=data_group['coords'][coords_key].variances,
+    )
+    header = None
+    if 'attrs' in data_group and data_key in data_group['attrs']:
+        try:
+            header = data_group['attrs'][data_key]['orso_header'].values
+        except (KeyError, AttributeError):
+            header = None
+    dataset.orso_header = header
+    return dataset
+
+
+def load_as_dataset(fname: Union[TextIO, str], data_group: Optional[sc.DataGroup] = None) -> DataSet1D:
+    """Load data from an ORSO .ort file as a DataSet1D.
+
+    Parameters
+    ----------
+    fname : Union[TextIO, str]
+        The file to be read.
+    data_group : Optional[sc.DataGroup], optional
+        Pre-loaded DataGroup for *fname* (avoids re-parsing the file).
+        By default, None.
+
+    Returns
+    -------
+    DataSet1D
+        The (first) dataset in the file.
+    """
+    if data_group is None:
+        data_group = load(fname)
     basename = os.path.splitext(os.path.basename(fname))[0]
     data_name = 'R_' + basename
-    coords_name = 'Qz_' + basename
-    coords_name = list(data_group['coords'].keys())[0] if coords_name not in data_group['coords'] else coords_name
     data_name = list(data_group['data'].keys())[0] if data_name not in data_group['data'] else data_name
-    dataset = DataSet1D(
-        x=data_group['coords'][coords_name].values,
-        y=data_group['data'][data_name].values,
-        ye=data_group['data'][data_name].variances,
-        xe=data_group['coords'][coords_name].variances,
-    )
-    return dataset
+    return dataset_from_datagroup(data_group, data_key=data_name)
 
 
 def extract_orso_title(data_group: sc.DataGroup, data_name: str) -> str | None:

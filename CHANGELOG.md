@@ -223,6 +223,51 @@ returned.
   disable/re-enable cycle and are re-attached when magnetism is enabled
   again. `update_layer` also accepts the magnetism keys one at a time.
 
+## ORSO file handling
+
+- Binary ORSO (`.orb`, NeXus/HDF5) files are read and written alongside
+  `.ort` text files. The format is detected from the ORSO banner line or
+  the HDF5 magic bytes, not the file extension, so a file that carries
+  the banner but fails to parse now raises instead of being silently
+  re-read as plain text (which dropped the whole header, polarization
+  included). `.orb` support needs `h5py`, available as the new `orb`
+  extra; `orsopy` is pinned to `>=1.2`.
+- New ORSO export. `Project.save_experiment_as_orso(path, index=None)`
+  writes an experiment (`.ort` or `.orb`), with the model, when set,
+  serialized as `data_source.sample.model`. Backed by the new
+  `save_orso_experiment`, `orso_datasets_from_experiment` and
+  `sample_to_orso_model` in `easyreflectometry.orso_utils`. A polarized
+  experiment becomes one file with one `data_set:` block per spin
+  channel. `Model.as_orso` now returns the ORSO model-language
+  dictionary (slab representation) rather than the internal `as_dict`.
+- Repeating multilayers survive a round trip. Loading resolves the ORSO
+  stack with `resolve_stack()` instead of flattening it, so a sub-stack
+  keeps its repetition count and comes back as a `RepeatingMultilayer`;
+  export writes it with the inline `N ( ... )` stack syntax.
+- Units declared in the file are honoured: `Qz` in `1/nm`, lengths in
+  `nm` (the ORSO default) and SLDs in `1/nm^2` are converted on load,
+  instead of being read as angstrom-based numbers.
+- Resolution and error columns are read more carefully. A column
+  declared `value_is: FWHM` is converted to sigma on load, `nan` entries
+  in `sQz` are filled by interpolating over the valid points, and
+  partially missing error columns warn rather than propagating `nan`
+  into a fit. Stored `Pointwise` resolutions remain variances, so saved
+  projects round-trip without migration.
+- `Project.load_polarized_experiment_from_file(path)` loads a polarized
+  experiment from a single multi-dataset ORSO file, classifying each
+  `data_set:` block by its own `instrument_settings.polarization`
+  header. Only `pp/pm/mp/mm` are mapped; a file with an unmappable or
+  duplicated channel raises rather than guessing. Supported by the new
+  `channel_from_orso_polarization` and
+  `detect_polarization_channels_per_dataset` in
+  `easyreflectometry.data`.
+- New `easyreflectometry.data.dataset_from_datagroup` builds a
+  `DataSet1D` from one dataset of an already-loaded `DataGroup`, and
+  keeps the parsed ORSO header on the dataset as `orso_header` so
+  exporters can reuse the original provenance. `load_as_dataset` and the
+  project loaders accept a pre-loaded `DataGroup`, so importing a file
+  no longer parses it three or four times.
+
 ## Documentation
 
 - The documentation is now MkDocs (Material) only. The legacy Sphinx

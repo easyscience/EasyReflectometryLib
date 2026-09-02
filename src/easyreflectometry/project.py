@@ -30,8 +30,11 @@ from easyreflectometry.constraints import constrain
 from easyreflectometry.data import DataSet1D
 from easyreflectometry.data import PolarizedDataSet
 from easyreflectometry.data import detect_polarization_channel
+from easyreflectometry.data import detect_polarization_channels_per_dataset
 from easyreflectometry.data import load_as_dataset
+from easyreflectometry.data.measurement import dataset_from_datagroup
 from easyreflectometry.data.measurement import extract_orso_title
+from easyreflectometry.data.measurement import load as load_measurement_file
 from easyreflectometry.data.measurement import load_data_from_orso_file
 from easyreflectometry.fitting import MultiFitter
 from easyreflectometry.inequality_constraints import InequalityEvaluation
@@ -44,6 +47,8 @@ from easyreflectometry.model import Model
 from easyreflectometry.model import ModelCollection
 from easyreflectometry.model import PercentageFwhm
 from easyreflectometry.model import Pointwise
+from easyreflectometry.orso_utils import is_orso_file
+from easyreflectometry.orso_utils import save_orso_experiment
 from easyreflectometry.sample import Layer
 from easyreflectometry.sample import Material
 from easyreflectometry.sample import MaterialCollection
@@ -774,22 +779,36 @@ class Project:
         return [material.name for material in self._materials].index('D2O')
 
     def load_orso_file(self, path: Union[Path, str]) -> None:
-        """Load an ORSO file and optionally create a model and a data from it."""
-        from easyreflectometry.orso_utils import LoadOrso
+        """Load an ORSO file, creating a model from its ``sample.model`` (when present) and an experiment.
 
-        model, data = LoadOrso(path)
-        if model is not None:
-            if isinstance(model, Sample):
-                model = Model(sample=model, name=model.name)
-            self.models = ModelCollection([model])
+        .. deprecated::
+            Use :meth:`load_new_experiment` (data) together with
+            :meth:`set_sample_from_orso` /
+            :func:`easyreflectometry.orso_utils.load_orso_model` (model)
+            instead. This wrapper now routes through the same
+            ``DataSet1D`` + title + resolution path as every other importer.
+
+        Parameters
+        ----------
+        path : Union[Path, str]
+            Path to the ORSO file.
+        """
+        warnings.warn(
+            'Project.load_orso_file is deprecated; use load_new_experiment (data) and '
+            'set_sample_from_orso/load_orso_model (model) instead.',
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        from easyreflectometry.orso_utils import _load_orso_any
+        from easyreflectometry.orso_utils import load_orso_model
+
+        orso_data = _load_orso_any(str(path))
+        sample = load_orso_model(orso_data)
+        if sample is not None:
+            self.models = ModelCollection([Model(sample=sample, name=sample.name)])
         else:
             self.default_model()
-        if data is not None:
-            self._experiments[0] = data
-            self._experiments[0].name = 'Experiment from ORSO'
-            self._experiments[0].model = self.models[0]
-            self._with_experiments = True
-        pass
+        self.load_experiment_for_model_at_index(path, 0)
 
     def set_sample_from_orso(self, sample: Sample) -> None:
         """Replace the current project model collection with a single model built from an ORSO-parsed sample.
@@ -938,7 +957,9 @@ class Project:
         model : Model
             The model whose resolution function is set.
         """
-        if experiment.xe is not None and np.any(experiment.xe):
+        # nan-robust gate: nan is truthy for np.any, but a nan-carrying xe must
+        # not build a Pointwise (np.interp would propagate the nan everywhere).
+        if experiment.xe is not None and np.any(np.nan_to_num(experiment.xe) > 0):
             model.resolution_function = Pointwise(q_data_points=[experiment.x, experiment.y, experiment.xe])
         else:
             model.resolution_function = PercentageFwhm(5.0)
@@ -949,16 +970,27 @@ class Project:
         if experiment.model is not None and len(experiment.y) > 0:
             experiment.model.background = max(np.min(experiment.y), 1e-10)
 
-    def load_new_experiment(self, path: Union[Path, str]) -> None:
-        """Load new experiment."""
-        new_experiment = load_as_dataset(str(path))
+    def load_new_experiment(self, path: Union[Path, str], data_group=None) -> None:
+        """Load new experiment.
+
+        Parameters
+        ----------
+        path : Union[Path, str]
+            Path to the experiment data file.
+        data_group :
+            Pre-loaded scipp DataGroup for *path* (avoids re-parsing the
+            file). By default, None.
+        """
+        if data_group is None:
+            data_group = load_measurement_file(str(path))
+        new_experiment = load_as_dataset(str(path), data_group=data_group)
         new_index = len(self._experiments)
 
         model_index = 0
         if new_index < len(self.models):
             model_index = new_index
 
-        self._apply_experiment_metadata(path, new_experiment, f'Experiment {new_index}')
+        self._apply_experiment_metadata(path, new_experiment, f'Experiment {new_index}', data_group=data_group)
         new_experiment.model = self.models[model_index]
         self._auto_set_background(new_experiment)
         self._experiments[new_index] = new_experiment
@@ -976,12 +1008,16 @@ class Project:
         Returns
         -------
         int
-            Number of datasets found; 1 if the file cannot be introspected.
+            Number of datasets found; 1 if a non-ORSO file cannot be
+            introspected. A corrupt ORSO file (banner present but unparsable)
+            raises instead of being silently miscounted.
         """
         try:
-            data_group = load_data_from_orso_file(str(path))
+            data_group = load_measurement_file(str(path))
             return len(data_group['data'])
         except Exception:
+            if is_orso_file(str(path)):
+                raise
             return 1
 
     def load_all_experiments_from_file(self, path: Union[Path, str]) -> int:
@@ -989,8 +1025,9 @@ class Project:
 
         For a multi-dataset ORSO file (e.g. a multi-angle measurement), each dataset is
         registered as an independent experiment.  All experiments share the model that is
-        currently selected.  Falls back to :meth:`load_new_experiment` for single-dataset
-        files or on any loading error.
+        currently selected.  Single-dataset files go through
+        :meth:`load_new_experiment`.  A corrupt ORSO file raises (no silent
+        plain-text fallback).
 
         Parameters
         ----------
@@ -1002,32 +1039,19 @@ class Project:
         int
             Number of experiments that were added.
         """
-        try:
-            data_group = load_data_from_orso_file(str(path))
-        except Exception:
-            self.load_new_experiment(path)
-            return 1
+        data_group = load_measurement_file(str(path))
 
         data_keys = sorted(data_group['data'].keys())
         if len(data_keys) <= 1:
-            self.load_new_experiment(path)
+            self.load_new_experiment(path, data_group=data_group)
             return 1
 
         model_index = self._current_model_index
         for data_key in data_keys:
-            coord_key = data_key.replace('R_', 'Qz_')
             new_index = len(self._experiments)
 
-            d = data_group['data'][data_key]
-            c = data_group['coords'][coord_key]
-
-            new_experiment = DataSet1D(
-                name=f'Experiment {new_index}',
-                x=c.values,
-                y=d.values,
-                ye=d.variances,
-                xe=c.variances if c.variances is not None else None,
-            )
+            new_experiment = dataset_from_datagroup(data_group, data_key=data_key)
+            new_experiment.name = f'Experiment {new_index}'
             self._apply_experiment_metadata(
                 path,
                 new_experiment,
@@ -1091,19 +1115,119 @@ class Project:
         """
         paths = {PolarizationChannel(channel): path for channel, path in paths.items()}
         channels = {}
+        title_data_group = None
         for channel, path in paths.items():
+            # Parse each file once: dataset count, data, and title all come
+            # from the same DataGroup (previously up to 3-4 parses per file).
+            data_group = load_measurement_file(str(path))
             # One file per channel means one dataset per file; a multi-dataset ORSO
             # file has no defined channel-to-dataset assignment here.
-            if self.count_datasets_in_file(path) > 1:
+            if len(data_group['data']) > 1:
                 raise ValueError(
-                    f"File '{path}' contains multiple datasets; polarized loading requires one dataset "
-                    f'per channel file. Export the {channel.value} channel to its own file.'
+                    f"File '{path}' contains multiple datasets; use load_polarized_experiment_from_file "
+                    f'for a single multi-dataset file, or export the {channel.value} channel to its own file.'
                 )
-            dataset = load_as_dataset(str(path))
+            dataset = load_as_dataset(str(path), data_group=data_group)
             # Keep the source file visible per channel (file → channel provenance).
             dataset.name = f'{channel.value}: {Path(path).name}'
             channels[channel] = dataset
+            if title_data_group is None:
+                title_data_group = data_group
 
+        first_path = next(iter(paths.values()))
+        return self._register_polarized_experiment(channels, model_index, str(first_path), title_data_group)
+
+    def load_polarized_experiment_from_file(
+        self,
+        path: Union[Path, str],
+        model_index: Optional[int] = None,
+    ) -> int:
+        """Load a polarized experiment from a single multi-dataset ORSO file.
+
+        Multi-dataset packing is the ORSO format's intended way to store spin
+        states: each ``data_set:`` block is classified by its **own** header
+        (``instrument_settings.polarization``), so per-dataset overrides are
+        honoured. Only the fully-analysed cross-sections ``pp/pm/mp/mm`` are
+        mapped; ``po/mo/op/om/unpolarized/vector`` are not coerced.
+
+        Parameters
+        ----------
+        path : Union[Path, str]
+            Path to the multi-dataset ORSO file.
+        model_index : Optional[int], optional
+            Index of the model the experiment belongs to. By default, the
+            current model.
+
+        Returns
+        -------
+        int
+            Index of the newly loaded experiment.
+
+        Raises
+        ------
+        ValueError :
+            If any dataset lacks a mappable polarization header, or two
+            datasets declare the same channel. Such files cannot be classified
+            unambiguously; use :meth:`load_all_experiments_from_file` (e.g. for
+            multi-angle files) or per-channel files instead.
+        """
+        from easyreflectometry.orso_utils import _load_orso_any
+        from easyreflectometry.orso_utils import _orso_dataset_key
+        from easyreflectometry.orso_utils import load_orso_data
+
+        orso_data = _load_orso_any(str(path))
+        classified = detect_polarization_channels_per_dataset(orso_data)
+
+        channels = {}
+        for i, (declared, channel) in enumerate(classified):
+            label = _orso_dataset_key(orso_data[i], i)
+            if channel is None:
+                reason = 'declares no mappable spin channel' if declared else 'declares no polarization'
+                raise ValueError(
+                    f"Dataset '{label}' in '{path}' {reason} "
+                    f'(only pp/pm/mp/mm are mapped; po/mo/op/om/unpolarized are not coerced). '
+                    f'Use load_all_experiments_from_file for non-polarized multi-dataset files, '
+                    f'or assign channels explicitly via load_polarized_experiment.'
+                )
+            if channel in channels:
+                raise ValueError(
+                    f"Duplicate spin channel '{channel.value}' in '{path}': more than one dataset "
+                    f'declares it. Assign channels explicitly via load_polarized_experiment.'
+                )
+            channels[channel] = label
+
+        data_group = load_orso_data(orso_data)
+        channel_datasets = {}
+        for channel, label in channels.items():
+            dataset = dataset_from_datagroup(data_group, data_key=f'R_{label}')
+            dataset.name = f'{channel.value}: {label}'
+            channel_datasets[channel] = dataset
+
+        return self._register_polarized_experiment(channel_datasets, model_index, str(path), data_group)
+
+    def _register_polarized_experiment(self, channels, model_index, title_path, title_data_group) -> int:
+        """Shared tail of the polarized loaders: build, name, and register the experiment.
+
+        Background and resolution follow the first (in canonical order)
+        channel; per-channel resolution functions are not supported (one per
+        experiment).
+
+        Parameters
+        ----------
+        channels :
+            Channel → DataSet1D mapping.
+        model_index :
+            Index of the model, or None for the current one.
+        title_path :
+            Path used for the fallback experiment title lookup.
+        title_data_group :
+            Pre-loaded DataGroup for the title lookup (avoids re-parsing).
+
+        Returns
+        -------
+        int
+            Index of the newly loaded experiment.
+        """
         new_index = len(self._experiments)
         if model_index is None:
             model_index = self._current_model_index
@@ -1115,13 +1239,11 @@ class Project:
             model=model,
         )
         # Name from the ORSO title of the first file, when available.
-        first_channel = experiment.available_channels[0]
-        first_path = paths[first_channel]
-        self._apply_experiment_metadata(first_path, experiment, f'Polarized experiment {new_index}')
+        self._apply_experiment_metadata(
+            title_path, experiment, f'Polarized experiment {new_index}', data_group=title_data_group
+        )
 
-        # Background and resolution follow the first (in canonical order) channel;
-        # per-channel resolution functions are not supported (one per experiment).
-        first_dataset = experiment[first_channel]
+        first_dataset = experiment[experiment.available_channels[0]]
         self._auto_set_background(first_dataset)
         self._apply_resolution_function(first_dataset, model)
 
@@ -1129,11 +1251,32 @@ class Project:
         self._with_experiments = True
         return new_index
 
+    def save_experiment_as_orso(self, path: Union[Path, str], index: Optional[int] = None) -> None:
+        """Write an experiment to an ORSO file (`.ort` text, or `.orb` binary).
+
+        The experiment's model (when set) is exported as the ORSO
+        ``sample.model`` (slab representation); data columns are written as
+        sigma. A polarized experiment becomes one file with one ``data_set:``
+        block per spin channel.
+
+        Parameters
+        ----------
+        path : Union[Path, str]
+            Destination path; a ``.orb`` extension selects the binary format.
+        index : Optional[int], optional
+            Index of the experiment to save. By default, the current one.
+        """
+        if index is None:
+            index = self._current_experiment_index
+        experiment = self._experiments[index]
+        save_orso_experiment(experiment, str(path), model=experiment.model)
+
     def load_experiment_for_model_at_index(self, path: Union[Path, str], index: Optional[int] = 0) -> None:
         """Load experiment for model at index."""
-        experiment = load_as_dataset(str(path))
+        data_group = load_measurement_file(str(path))
+        experiment = load_as_dataset(str(path), data_group=data_group)
 
-        self._apply_experiment_metadata(path, experiment, f'Experiment {index}')
+        self._apply_experiment_metadata(path, experiment, f'Experiment {index}', data_group=data_group)
         experiment.model = self.models[index]
         self._auto_set_background(experiment)
         self._experiments[index] = experiment

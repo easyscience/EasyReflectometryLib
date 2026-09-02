@@ -8316,7 +8316,7 @@ packages:
   - asteval
   - bumps
   - easyscience @ git+https://github.com/easyscience/easyscience.git@sampler-engine-structure-280
-  - orsopy
+  - orsopy>=1.2
   - plotly
   - pooch
   - refl1d>=1.0.0
@@ -8358,6 +8358,7 @@ packages:
   - spdx-headers ; extra == 'dev'
   - validate-pyproject[all] ; extra == 'dev'
   - versioningit ; extra == 'dev'
+  - h5py ; extra == 'orb'
   requires_python: '>=3.11'
 - pypi: git+https://github.com/easyscience/easyscience.git?rev=sampler-engine-structure-280#3e598107beb2de6820e0e4c0a68da8e3c9af4ae4
   name: easyscience

@@ -344,8 +344,23 @@ class Model(BaseCore):
         return self.to_dict(skip=skip)
 
     def as_orso(self) -> dict:
-        """Convert the model to a dictionary suitable for ORSO."""
-        return self.as_dict()
+        """The sample as an ORSO simple-model (``sample.model``) dictionary.
+
+        Slab representation: lengths in angstrom, SLDs in 1/angstrom^2,
+        repeating multilayers via the inline ``N ( ... )`` stack syntax.
+
+        Returns
+        -------
+        dict
+            The ORSO model-language dictionary (the content of an .ort file's
+            ``data_source.sample.model`` section).
+        """
+        # Circular import if hoisted to module-top.
+        from orsopy.fileio import Header
+
+        from easyreflectometry.orso_utils import sample_to_orso_model
+
+        return Header.asdict(sample_to_orso_model(self.sample))
 
     @classmethod
     def from_dict(cls, passed_dict: dict) -> Model:

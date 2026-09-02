@@ -422,6 +422,7 @@ class TestChannelAwareExperimentAccessors:
 
 
 class TestFitPolarized:
+    @pytest.mark.slow
     def test_two_channel_nsf_fit_recovers_rho_m(self):
         truth = _magnetic_model(LayerMagnetism(rho_m=2.5, theta_m=270.0))
         truth.interface = _refl1d_interface()
@@ -442,6 +443,7 @@ class TestFitPolarized:
         assert all(result.success for result in results.values())
         assert_allclose(rho_m.value, 2.5, atol=0.01)
 
+    @pytest.mark.slow
     def test_four_channel_fit_recovers_rho_m_and_theta_m(self):
         truth = _magnetic_model(LayerMagnetism(rho_m=2.5, theta_m=45.0))
         truth.interface = _refl1d_interface()
@@ -466,6 +468,7 @@ class TestFitPolarized:
         assert_allclose(magnetism.rho_m.value, 2.5, atol=0.02)
         assert_allclose(magnetism.theta_m.value, 45.0, atol=0.5)
 
+    @pytest.mark.slow
     def test_shared_structural_parameter_fitted_across_channels(self):
         truth = _magnetic_model(LayerMagnetism(rho_m=2.0, theta_m=270.0))
         truth.interface = _refl1d_interface()
@@ -606,6 +609,7 @@ class TestMultiFitterForExperiments:
         with pytest.raises(ValueError, match='At least one experiment'):
             MultiFitter.for_experiments([])
 
+    @pytest.mark.slow
     def test_prepared_fitter_recovers_rho_m_when_run(self):
         """The fitter is usable exactly like `fit_polarized`, but caller-driven."""
         truth = _magnetic_model(LayerMagnetism(rho_m=2.5, theta_m=270.0))
