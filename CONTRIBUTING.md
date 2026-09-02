@@ -42,7 +42,8 @@ Please make sure you follow the EasyScience organization-wide
 If you are not planning to contribute code, you may want to:
 
 - 🐞 Report a bug — see [Reporting Issues](#11-reporting-issues)
-- 🛡 Report a security issue — see [Security Issues](#12-security-issues)
+- 🛡 Report a security issue — see
+  [Security Issues](#12-security-issues)
 - 💬 Ask a question or start a discussion at
   [Project Discussions](https://github.com/easyscience/reflectometry-lib/discussions)
 
@@ -244,11 +245,12 @@ pixi run unit-tests
 
 ### Slow tests
 
-A handful of tests run a real minimiser, a sampler or a long fit. They are
-marked `slow` and are **deselected by default**, so `pixi run unit-tests` (and
-a bare `pytest`) gives you the fast feedback loop. CI runs the full set on
-pull requests, on `master`/`develop`, and on manual dispatch, so nothing is
-skipped before a change is merged or released.
+A handful of tests run a real minimiser, a sampler or a long fit. They
+are marked `slow` and are **deselected by default**, so
+`pixi run unit-tests` (and a bare `pytest`) gives you the fast feedback
+loop. CI runs the full set on pull requests, on `master`/`develop`, and
+on manual dispatch, so nothing is skipped before a change is merged or
+released.
 
 To include them locally:
 
@@ -258,10 +260,10 @@ pixi run slow-tests       # only the slow ones, whole tree
 pixi run test-all         # unit + functional + integration, everything
 ```
 
-Mark a new test with `@pytest.mark.slow` (it works on a test function or a
-whole class) when it costs roughly a second or more of actual work. Note that
-`-m` on the command line overrides the default, so running a slow test by node
-id needs `-m 'slow or not slow'`.
+Mark a new test with `@pytest.mark.slow` (it works on a test function or
+a whole class) when it costs roughly a second or more of actual work.
+Note that `-m` on the command line overrides the default, so running a
+slow test by node id needs `-m 'slow or not slow'`.
 
 or to run only Python linting checks:
 
