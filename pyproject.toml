@@ -169,8 +169,16 @@ fail_under = 0       # Minimum coverage percentage to pass
 # https://docs.pytest.org/en/stable/
 
 [tool.pytest.ini_options]
-addopts = '--import-mode=importlib'
-markers = ['fast: mark test as fast (should be run on every push)']
+# `-m 'not slow'` makes the expensive tests opt-in: a plain `pytest` (and the
+# `unit-tests` pixi task) runs the fast suite, while `-m` on the command line
+# overrides this -- `pixi run slow-tests` for only the expensive ones,
+# `pixi run unit-tests-all` for everything. CI runs the full set on pull
+# requests, on master/develop, and on manual dispatch.
+addopts = '--import-mode=importlib -m "not slow"'
+markers = [
+  'fast: mark test as fast (should be run on every push)',
+  'slow: expensive test (real minimizer run, sampler, long fit); deselected by default',
+]
 testpaths = ['tests']
 
 ########################

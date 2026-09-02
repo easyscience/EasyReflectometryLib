@@ -120,6 +120,7 @@ def fit_model(load_data):
     return analysed
 
 
+@pytest.mark.slow
 def test_analyze_reduced_data__fit_model_success(fit_model):
     assert fit_model['success'] is True
 

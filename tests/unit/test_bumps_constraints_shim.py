@@ -82,6 +82,7 @@ class TestInstall:
         assert (minimizer_bumps.build_curve_problem, sampler_dream.build_curve_problem) == patched
 
 
+@pytest.mark.slow
 class TestShimAgainstARealFit:
     def test_the_patched_entry_point_is_the_one_a_fit_calls(self):
         """A signature check would not catch patching the wrong namespace."""

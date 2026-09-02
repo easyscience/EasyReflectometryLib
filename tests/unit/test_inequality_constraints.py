@@ -257,6 +257,7 @@ class TestProjectInequalities:
         assert reloaded.inequality_constraints == []
 
 
+@pytest.mark.slow
 class TestInequalityFit:
     def test_bumps_fit_respects_inequality_and_lmfit_is_rejected(self):
         project, model = _two_layer_project()
