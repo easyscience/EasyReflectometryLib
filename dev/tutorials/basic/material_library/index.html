@@ -2470,6 +2470,26 @@ follows.</p>
 </code></pre></div>
 <p>The density should be in units of grams per cubic centimeter and the
 scattering length is calculated from <code>'SiO2'</code>.</p>
+<p>By default the <code>sld</code> and <code>isld</code> of a <code>MaterialDensity</code> are <em>dependent</em>
+parameters, recomputed from the density, the formula's scattering length
+and its molecular weight whenever any of those change - so <code>density</code> is
+the parameter to vary in a fit, and assigning to <code>sld</code> directly is not
+possible. This coupling can be switched off per material with the
+<code>sld_coupled</code> property:</p>
+<div class="language-python highlight"><pre><span></span><code><span class="n">si</span><span class="o">.</span><span class="n">sld_coupled</span> <span class="o">=</span> <span class="kc">False</span>  <span class="c1"># sld/isld become independent, keep their values</span>
+<span class="n">si</span><span class="o">.</span><span class="n">sld</span><span class="o">.</span><span class="n">fixed</span> <span class="o">=</span> <span class="kc">False</span>  <span class="c1"># ...and can now be fitted directly</span>
+</code></pre></div>
+<p>While decoupled, changes to <code>density</code> (or the formula) no longer
+propagate to the SLD, and the density, molecular weight and scattering
+length no longer affect the reflectivity. Setting <code>sld_coupled = True</code>
+restores the dependency and <strong>recalculates</strong> <code>sld</code>/<code>isld</code> from the
+current formula and density, discarding any manually set or fitted
+values. The coupling state - and, when decoupled, the manual SLD
+values - survive serialization (<code>as_dict</code>/<code>from_dict</code>); dictionaries
+from before this feature restore as coupled.</p>
+<p>Assigning a new <code>chemical_structure</code> updates both the scattering length
+and the molecular weight; a formula that does not parse to at least one
+known atom raises <code>ValueError</code> and leaves the material unchanged.</p>
 <h2 id="materialsolvated">MaterialSolvated</h2>
 <p>Sometimes it is desirable to have a layer that consists of a material
 and a solvent in some ratio. An example of this is shown in the
