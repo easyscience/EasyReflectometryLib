@@ -157,6 +157,41 @@ class MaterialDensity(Material):
             },
         )
 
+    @property
+    def sld_coupled(self) -> bool:
+        """Whether ``sld``/``isld`` are derived from formula & density (True,
+        the default) or independent, directly editable/fittable parameters
+        (False). The dependency state itself is the source of truth."""
+        return not self._sld.independent
+
+    @sld_coupled.setter
+    def sld_coupled(self, couple: bool) -> None:
+        if couple == self.sld_coupled:
+            return
+        if couple:
+            # Recomputes sld/isld from the current density/scattering
+            # length/molecular weight — manually set values are discarded.
+            self._setup_sld_constraints()
+        else:
+            # make_independent raises on an already-independent parameter,
+            # so guard each individually. Values are kept.
+            for parameter in (self._sld, self._isld):
+                if not parameter.independent:
+                    parameter.make_independent()
+
+    def _convert_to_dict(self, d: dict, serializer, skip: Optional[list] = None, **kwargs) -> dict:
+        """Serializer hook (see ``SerializerBase._convert_to_dict``).
+
+        ``sld``/``isld`` are not constructor arguments, so the argspec-driven
+        encoder never persists them; in the decoupled state their manually
+        entered or fitted values would be lost on save/load without this.
+        """
+        d['sld_coupled'] = self.sld_coupled
+        if not self.sld_coupled:
+            d['sld'] = self._sld.value
+            d['isld'] = self._isld.value
+        return d
+
     @classmethod
     def from_dict(cls, obj_dict: dict) -> 'MaterialDensity':
         """Re-attach sld/isld dependencies after deserialization.
@@ -166,9 +201,28 @@ class MaterialDensity(Material):
         the constraint graph built in `__init__` still references the
         temporary Parameter created from the float kwarg. Rebuild here so
         `q.density = X` propagates to the derived SLDs.
+
+        The keys written by ``_convert_to_dict`` are not constructor
+        arguments and must be removed before the parent's ``cls(**data)``
+        call; they are then used to restore the coupling state. A dict
+        without them (pre-feature project files) restores as coupled.
         """
+        obj_dict = dict(obj_dict)
+        sld_coupled = obj_dict.pop('sld_coupled', True)
+        manual_sld = obj_dict.pop('sld', None)
+        manual_isld = obj_dict.pop('isld', None)
+
         instance = super().from_dict(obj_dict)
-        instance._setup_sld_constraints()
+        if sld_coupled:
+            instance._setup_sld_constraints()
+        else:
+            # __init__ wired the dependencies; undo them and restore the
+            # saved manual values.
+            instance.sld_coupled = False
+            if manual_sld is not None:
+                instance._sld.value = manual_sld
+            if manual_isld is not None:
+                instance._isld.value = manual_isld
         return instance
 
     @property
@@ -189,6 +243,10 @@ class MaterialDensity(Material):
         scattering_length = neutron_scattering_length(structure_string)
         self._scattering_length_real.value = scattering_length.real
         self._scattering_length_imag.value = scattering_length.imag
+        # The molecular weight enters the sld dependency alongside the
+        # scattering length; leaving it at the old formula's value would make
+        # the derived sld a mix of two formulas.
+        self._molecular_weight.value = molecular_weight(structure_string)
 
     @property
     def density(self) -> Parameter:
