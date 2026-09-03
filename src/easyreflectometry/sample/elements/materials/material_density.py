@@ -41,6 +41,33 @@ DEFAULTS.update(MATERIAL_DEFAULTS)
 
 
 class MaterialDensity(Material):
+    """A material defined by chemical formula and mass density.
+
+    The scattering length density is derived rather than set: from the
+    formula, the coherent neutron scattering length ``b`` (real and
+    imaginary parts, tabulated per isotope) and the molecular weight ``M``
+    are computed, and ``sld``/``isld`` are wired as *dependent* parameters
+
+        sld = N_A * density * b / M
+
+    so ``density`` is the natural fit parameter and edits to the density or
+    the formula propagate to the SLD automatically.
+
+    The coupling can be switched off per material via :attr:`sld_coupled`:
+    when ``False``, ``sld``/``isld`` are independent parameters that can be
+    set and fitted directly, while ``density``, ``molecular_weight`` and the
+    scattering lengths stop affecting anything until the coupling is
+    restored. Restoring it (``sld_coupled = True``) recomputes the SLDs from
+    the current formula and density, discarding manually set values. The
+    state round-trips through ``as_dict``/``from_dict``, including the
+    manual SLD values of a decoupled material; dictionaries from before
+    this feature deserialize as coupled.
+
+    Assigning :attr:`chemical_structure` updates the scattering lengths and
+    the molecular weight together; an invalid formula raises ``ValueError``
+    and leaves the material unchanged.
+    """
+
     def __init__(
         self,
         chemical_structure: Union[str, None] = None,
