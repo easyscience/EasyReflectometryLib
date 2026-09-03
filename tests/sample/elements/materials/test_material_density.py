@@ -68,6 +68,16 @@ class TestMaterialDensity(unittest.TestCase):
 
         assert sorted(p.as_dict()) == sorted(q.as_dict())
 
+    def test_chemical_structure_invalid_formula_leaves_material_unchanged(self):
+        p = MaterialDensity('Co', 8.9, 'Cobalt')
+        mw = p.molecular_weight.value
+        sld = p.sld.value
+        with self.assertRaises(ValueError):
+            p.chemical_structure = '###'
+        assert p.chemical_structure == 'Co'
+        assert_almost_equal(p.molecular_weight.value, mw)
+        assert_almost_equal(p.sld.value, sld)
+
     def test_sld_coupled_default_true(self):
         p = MaterialDensity()
         assert p.sld_coupled is True

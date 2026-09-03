@@ -239,14 +239,21 @@ class MaterialDensity(Material):
         structure_string : str
             String that defines the chemical structure.
         """
-        self._chemical_structure = structure_string
+        # Derive everything before mutating any state: an invalid formula
+        # must leave the material fully unchanged. periodictable parses
+        # garbage to an *empty* formula (b=0, mw=0) instead of raising, and
+        # mw=0 would put a division by zero into the sld dependency.
         scattering_length = neutron_scattering_length(structure_string)
-        self._scattering_length_real.value = scattering_length.real
-        self._scattering_length_imag.value = scattering_length.imag
         # The molecular weight enters the sld dependency alongside the
         # scattering length; leaving it at the old formula's value would make
         # the derived sld a mix of two formulas.
-        self._molecular_weight.value = molecular_weight(structure_string)
+        mw = molecular_weight(structure_string)
+        if not mw:
+            raise ValueError(f'Invalid chemical formula: {structure_string!r}')
+        self._chemical_structure = structure_string
+        self._scattering_length_real.value = scattering_length.real
+        self._scattering_length_imag.value = scattering_length.imag
+        self._molecular_weight.value = mw
 
     @property
     def density(self) -> Parameter:
