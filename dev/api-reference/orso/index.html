@@ -8751,7 +8751,14 @@ enables magnetism on the calculator (raising if it does not support it).</p>
 <span class="normal">274</span>
 <span class="normal">275</span>
 <span class="normal">276</span>
-<span class="normal">277</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">MaterialDensity</span><span class="p">(</span><span class="n">Material</span><span class="p">):</span>
+<span class="normal">277</span>
+<span class="normal">278</span>
+<span class="normal">279</span>
+<span class="normal">280</span>
+<span class="normal">281</span>
+<span class="normal">282</span>
+<span class="normal">283</span>
+<span class="normal">284</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">MaterialDensity</span><span class="p">(</span><span class="n">Material</span><span class="p">):</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">chemical_structure</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -8950,14 +8957,21 @@ enables magnetism on the calculator (raising if it does not support it).</p>
 <span class="sd">        structure_string : str</span>
 <span class="sd">            String that defines the chemical structure.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_chemical_structure</span> <span class="o">=</span> <span class="n">structure_string</span>
+        <span class="c1"># Derive everything before mutating any state: an invalid formula</span>
+        <span class="c1"># must leave the material fully unchanged. periodictable parses</span>
+        <span class="c1"># garbage to an *empty* formula (b=0, mw=0) instead of raising, and</span>
+        <span class="c1"># mw=0 would put a division by zero into the sld dependency.</span>
         <span class="n">scattering_length</span> <span class="o">=</span> <span class="n">neutron_scattering_length</span><span class="p">(</span><span class="n">structure_string</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_scattering_length_real</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">scattering_length</span><span class="o">.</span><span class="n">real</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_scattering_length_imag</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">scattering_length</span><span class="o">.</span><span class="n">imag</span>
         <span class="c1"># The molecular weight enters the sld dependency alongside the</span>
         <span class="c1"># scattering length; leaving it at the old formula&#39;s value would make</span>
         <span class="c1"># the derived sld a mix of two formulas.</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_molecular_weight</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">molecular_weight</span><span class="p">(</span><span class="n">structure_string</span><span class="p">)</span>
+        <span class="n">mw</span> <span class="o">=</span> <span class="n">molecular_weight</span><span class="p">(</span><span class="n">structure_string</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">mw</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Invalid chemical formula: </span><span class="si">{</span><span class="n">structure_string</span><span class="si">!r}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_chemical_structure</span> <span class="o">=</span> <span class="n">structure_string</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_scattering_length_real</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">scattering_length</span><span class="o">.</span><span class="n">real</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_scattering_length_imag</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">scattering_length</span><span class="o">.</span><span class="n">imag</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_molecular_weight</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">mw</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">density</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Parameter</span><span class="p">:</span>
