@@ -74,6 +74,9 @@ Assigning a new `chemical_structure` updates both the scattering length
 and the molecular weight; a formula that does not parse to at least one
 known atom raises `ValueError` and leaves the material unchanged.
 
+Note that `molecular_weight` is a read-only descriptor, not a fit
+parameter: it is fully determined by the formula.
+
 ## MaterialSolvated
 
 Sometimes it is desirable to have a layer that consists of a material

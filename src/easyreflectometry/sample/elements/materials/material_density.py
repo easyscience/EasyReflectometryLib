@@ -6,6 +6,7 @@ from typing import Union
 
 import numpy as np
 from easyscience import global_object
+from easyscience.variable import DescriptorNumber
 from easyscience.variable import Parameter
 
 from easyreflectometry.special.calculations import density_to_sld
@@ -27,14 +28,15 @@ DEFAULTS = {
         'max': np.inf,
         'fixed': True,
     },
+    # A DescriptorNumber, not a Parameter: the molecular weight is a constant
+    # of the chemical formula (recomputed whenever the formula changes) and
+    # must never enter a fit — it is fully degenerate with density in the
+    # derived SLD (only the ratio density/molecular_weight is observable).
     'molecular_weight': {
         'description': 'The molecular weight of a material.',
         'url': 'https://en.wikipedia.org/wiki/Molecular_mass',
         'value': 28.02,
         'unit': 'g / mole',
-        'min': -np.inf,
-        'max': np.inf,
-        'fixed': True,
     },
 }
 DEFAULTS.update(MATERIAL_DEFAULTS)
@@ -66,6 +68,11 @@ class MaterialDensity(Material):
     Assigning :attr:`chemical_structure` updates the scattering lengths and
     the molecular weight together; an invalid formula raises ``ValueError``
     and leaves the material unchanged.
+
+    :attr:`molecular_weight` is a read-only ``DescriptorNumber``, never a fit
+    parameter: it is fully determined by the formula, and freeing it alongside
+    density would make the fit degenerate (only ``density / molecular_weight``
+    enters the derived SLD).
     """
 
     def __init__(
@@ -106,11 +113,13 @@ class MaterialDensity(Material):
 
         scattering_length = neutron_scattering_length(chemical_structure)
 
-        mw = get_as_parameter(
+        mw = DescriptorNumber(
             name='molecular_weight',
             value=molecular_weight(chemical_structure),
-            default_dict=DEFAULTS,
-            unique_name_prefix=f'{unique_name}_Mw',
+            unit=DEFAULTS['molecular_weight']['unit'],
+            description=DEFAULTS['molecular_weight']['description'],
+            url=DEFAULTS['molecular_weight']['url'],
+            unique_name=global_object.generate_unique_name(f'{unique_name}_Mw'),
         )
         scattering_length_real = get_as_parameter(
             name='scattering_length_real',
@@ -291,7 +300,10 @@ class MaterialDensity(Material):
         self._density.value = value
 
     @property
-    def molecular_weight(self) -> Parameter:
+    def molecular_weight(self) -> DescriptorNumber:
+        """The molecular weight of the formula. A read-only descriptor, not a
+        fittable parameter: it is a constant of the chemical formula and is
+        recomputed whenever :attr:`chemical_structure` is assigned."""
         return self._molecular_weight
 
     @property
