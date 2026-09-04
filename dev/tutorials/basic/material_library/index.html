@@ -2490,6 +2490,8 @@ from before this feature restore as coupled.</p>
 <p>Assigning a new <code>chemical_structure</code> updates both the scattering length
 and the molecular weight; a formula that does not parse to at least one
 known atom raises <code>ValueError</code> and leaves the material unchanged.</p>
+<p>Note that <code>molecular_weight</code> is a read-only descriptor, not a fit
+parameter: it is fully determined by the formula.</p>
 <h2 id="materialsolvated">MaterialSolvated</h2>
 <p>Sometimes it is desirable to have a layer that consists of a material
 and a solvent in some ratio. An example of this is shown in the
