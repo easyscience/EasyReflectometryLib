@@ -49,7 +49,7 @@ si = MaterialDensity(chemical_structure=chemical_structure, density=2.65, name='
 The density should be in units of grams per cubic centimeter and the
 scattering length is calculated from `'SiO2'`.
 
-By default the `sld` and `isld` of a `MaterialDensity` are *dependent*
+By default the `sld` and `isld` of a `MaterialDensity` are _dependent_
 parameters, recomputed from the density, the formula's scattering length
 and its molecular weight whenever any of those change - so `density` is
 the parameter to vary in a fit, and assigning to `sld` directly is not
