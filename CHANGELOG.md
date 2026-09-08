@@ -1,5 +1,23 @@
 # Unreleased
 
+## Project persistence
+
+- `Project.save_as_json` now writes atomically: the file is serialized
+  first, written to a temporary file in the project directory, synced
+  and moved into place, so a failure while serializing or writing leaves
+  a previously saved `project.json` untouched. An existing file keeps
+  its permissions; a new one gets the ordinary umask-derived mode
+  instead of the owner-only mode of a temporary file.
+- Behaviour change: `save_as_json`, `create` and `load_from_json` raise
+  instead of printing to stdout. `save_as_json` raises `FileExistsError`
+  when the file exists and `overwrite` is False, `ValueError` when the
+  project cannot be serialized (a `TypeError` from the encoder is
+  reported as `ValueError` too) and `OSError` when the file cannot be
+  written. `create` raises `FileExistsError` when the project directory
+  already exists and `load_from_json` raises `FileNotFoundError` when
+  there is no file at the path. Scripts that relied on these calls
+  silently continuing must catch the exceptions.
+
 ## Parameter constraints
 
 - New equality-constraint helpers `constrain`, `constrain_equal`,

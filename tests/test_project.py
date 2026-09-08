@@ -3,6 +3,7 @@
 
 import datetime
 import os
+import sys
 from pathlib import Path
 from unittest.mock import MagicMock
 from unittest.mock import patch
@@ -631,6 +632,54 @@ class TestProject:
         assert project.path_json.read_text() == previous_content
         assert list(project.path_json.parent.glob('*.tmp')) == []
 
+    def test_save_as_json_reports_unserializable_content_as_value_error(self, tmp_path):
+        # When
+        global_object.map._clear()
+        project = Project()
+        project.set_path_project_parent(tmp_path)
+        project.save_as_json()
+        previous_content = project.path_json.read_text()
+
+        # Then: json.dumps raises TypeError for a value it cannot encode
+        project.as_dict = MagicMock(return_value={'info': object()})
+        with pytest.raises(ValueError, match='cannot be serialized'):
+            project.save_as_json(overwrite=True)
+
+        # Expect
+        assert project.path_json.read_text() == previous_content
+        assert list(project.path_json.parent.glob('*.tmp')) == []
+
+    @pytest.mark.skipif(sys.platform == 'win32', reason='POSIX file modes')
+    def test_save_as_json_keeps_the_file_mode_of_an_existing_project_file(self, tmp_path):
+        # When
+        global_object.map._clear()
+        project = Project()
+        project.set_path_project_parent(tmp_path)
+        project.save_as_json()
+        os.chmod(project.path_json, 0o664)
+
+        # Then
+        project._info['short_description'] = 'short_description'
+        project.save_as_json(overwrite=True)
+
+        # Expect: the temporary file's 0600 must not leak onto the project file
+        assert project.path_json.stat().st_mode & 0o777 == 0o664
+
+    @pytest.mark.skipif(sys.platform == 'win32', reason='POSIX file modes')
+    def test_save_as_json_new_file_is_not_owner_only(self, tmp_path):
+        # When
+        global_object.map._clear()
+        project = Project()
+        project.set_path_project_parent(tmp_path)
+        previous_umask = os.umask(0o022)
+        try:
+            project.save_as_json()
+        finally:
+            os.umask(previous_umask)
+
+        # Expect
+        assert project.path_json.stat().st_mode & 0o777 == 0o644
+
     def test_save_as_json_overwrite_replaces_content(self, tmp_path):
         # When
         global_object.map._clear()
@@ -679,6 +728,22 @@ class TestProject:
         assert new_project._path_project_parent == tmp_path
         assert new_project.created is True
 
+    def test_load_from_json_missing_file_raises_and_keeps_the_project(self, tmp_path):
+        # When
+        global_object.map._clear()
+        project = Project()
+        project.default_model()
+        project._info['name'] = 'untouched'
+
+        # Then
+        with pytest.raises(FileNotFoundError):
+            project.load_from_json(tmp_path / 'nowhere' / 'project.json')
+
+        # Expect
+        assert project._info['name'] == 'untouched'
+        assert len(project._models) == 1
+        assert project.created is False
+
     def test_create(self, tmp_path):
         # When
         project = Project()
@@ -699,6 +764,23 @@ class TestProject:
             'short_description': 'Reflectometry, 1D',
             'modified': datetime.datetime.now().strftime('%d.%m.%Y %H:%M'),
         }
+
+    def test_create_existing_directory_raises(self, tmp_path):
+        # When
+        project = Project()
+        project.set_path_project_parent(tmp_path)
+        project._info['name'] = 'TestProject'
+        project._info['modified'] = 'modified'
+        (tmp_path / 'TestProject').mkdir()
+
+        # Then
+        with pytest.raises(FileExistsError):
+            project.create()
+
+        # Expect: nothing was made and the project does not claim to exist on disk
+        assert project.created is False
+        assert not (project.path / 'experiments').exists()
+        assert project._info['modified'] == 'modified'
 
     def test_load_experiment(self):
         # When
