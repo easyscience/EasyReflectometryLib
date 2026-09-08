@@ -656,7 +656,8 @@ class TestProject:
         project = Project()
         project.set_path_project_parent(tmp_path)
         project.save_as_json()
-        os.chmod(project.path_json, 0o664)
+        # Group-writable on purpose: distinguishable from the umask default a new file would get.
+        os.chmod(project.path_json, 0o664)  # noqa: S103
 
         # Then
         project._info['short_description'] = 'short_description'
