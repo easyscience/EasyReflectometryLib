@@ -5,6 +5,7 @@ import datetime
 import json
 import logging
 import os
+import tempfile
 import warnings
 import weakref
 from pathlib import Path
@@ -1786,17 +1787,41 @@ class Project:
             print(f'ERROR: Directory {self.path} already exists')
 
     def save_as_json(self, overwrite=False):
-        """Save as json."""
-        if self.path_json.exists() and overwrite:
-            print(f'File already exists {self.path_json}. Overwriting...')
-            self.path_json.unlink()
+        """Save the project as json.
+
+        The write is atomic: the serialized project is written to a temporary file in the
+        destination directory and then moved into place with `os.replace`. Any failure while
+        serializing or writing therefore leaves a previously saved project file untouched.
+
+        Failures are raised rather than reported on stdout, so that callers (notably the GUI)
+        can tell a successful save from a failed one.
+
+        :param overwrite: whether an existing project file may be replaced.
+        :raises FileExistsError: if the project file exists and `overwrite` is False.
+        :raises ValueError: if the project cannot be serialized, e.g. when a constraint depends
+            on a parameter that is not reachable from the models.
+        :raises OSError: if the file cannot be written or moved into place.
+        """
+        if self.path_json.exists() and not overwrite:
+            raise FileExistsError(f'File already exists {self.path_json}. Pass overwrite=True to replace it.')
+        # Serialize before touching the file system, so that a serialization failure
+        # leaves no temporary file behind and no doubt about the existing file.
+        project_json = json.dumps(self.as_dict(include_materials_not_in_model=True), indent=4)
+        self.path_json.parent.mkdir(exist_ok=True, parents=True)
+        # The temporary file must share a directory with the destination, otherwise the
+        # replace below is not guaranteed to be atomic (and fails across volumes on Windows).
+        file_descriptor, temporary_name = tempfile.mkstemp(
+            dir=self.path_json.parent, prefix=f'.{self.path_json.name}.', suffix='.tmp'
+        )
+        temporary_path = Path(temporary_name)
         try:
-            project_json = json.dumps(self.as_dict(include_materials_not_in_model=True), indent=4)
-            self.path_json.parent.mkdir(exist_ok=True, parents=True)
-            with open(self.path_json, mode='x') as file:
+            with os.fdopen(file_descriptor, mode='w') as file:
                 file.write(project_json)
-        except Exception as exception:
-            print(exception)
+            os.replace(temporary_path, self.path_json)
+        except Exception:
+            temporary_path.unlink(missing_ok=True)
+            raise
+        logger.debug(f'Saved project to {self.path_json}')
 
     def load_from_json(self, path: Optional[Union[Path, str]] = None):
         """Load from json."""

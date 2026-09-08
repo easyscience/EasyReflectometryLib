@@ -5,6 +5,7 @@ import datetime
 import os
 from pathlib import Path
 from unittest.mock import MagicMock
+from unittest.mock import patch
 
 import numpy as np
 import pytest
@@ -589,10 +590,61 @@ class TestProject:
         # Then
         project._info['short_description'] = 'short_description'
         project.default_model()
-        project.save_as_json()
+        with pytest.raises(FileExistsError):
+            project.save_as_json()
 
         # Expect
         assert str(file_info) == str(project.path_json.stat())
+
+    def test_save_as_json_serialization_failure_keeps_previous_file(self, tmp_path):
+        # When
+        global_object.map._clear()
+        project = Project()
+        project.set_path_project_parent(tmp_path)
+        project.save_as_json()
+        previous_content = project.path_json.read_text()
+
+        # Then
+        project.as_dict = MagicMock(side_effect=ValueError('unreachable constraint parameter'))
+        with pytest.raises(ValueError):
+            project.save_as_json(overwrite=True)
+
+        # Expect: the previous save survives and no temporary file is left behind
+        assert project.path_json.exists()
+        assert project.path_json.read_text() == previous_content
+        assert list(project.path_json.parent.glob('*.tmp')) == []
+
+    def test_save_as_json_write_failure_keeps_previous_file(self, tmp_path):
+        # When
+        global_object.map._clear()
+        project = Project()
+        project.set_path_project_parent(tmp_path)
+        project.save_as_json()
+        previous_content = project.path_json.read_text()
+
+        # Then: the destination cannot be replaced, e.g. a locked file on Windows
+        with patch('easyreflectometry.project.os.replace', side_effect=PermissionError('locked')):
+            with pytest.raises(PermissionError):
+                project.save_as_json(overwrite=True)
+
+        # Expect
+        assert project.path_json.read_text() == previous_content
+        assert list(project.path_json.parent.glob('*.tmp')) == []
+
+    def test_save_as_json_overwrite_replaces_content(self, tmp_path):
+        # When
+        global_object.map._clear()
+        project = Project()
+        project.set_path_project_parent(tmp_path)
+        project.save_as_json()
+
+        # Then
+        project._info['short_description'] = 'short_description'
+        project.save_as_json(overwrite=True)
+
+        # Expect
+        assert 'short_description' in project.path_json.read_text()
+        assert list(project.path_json.parent.glob('*.tmp')) == []
 
     def test_load_from_json(self, tmp_path):
         # When
