@@ -5,6 +5,8 @@ import datetime
 import json
 import logging
 import os
+import stat
+import tempfile
 import warnings
 import weakref
 from pathlib import Path
@@ -1776,42 +1778,106 @@ class Project:
         )
 
     def create(self):
-        """Create function."""
-        if not os.path.exists(self.path):
-            os.makedirs(self.path)
-            os.makedirs(self.path / 'experiments')
-            self._created = True
-            self._timestamp_modification()
-        else:
-            print(f'ERROR: Directory {self.path} already exists')
+        """Create the project directory tree on disk.
+
+        :raises FileExistsError: if the project directory already exists. Nothing is written in
+            that case and `created` stays False, so a caller cannot mistake a collision for a new
+            project.
+        """
+        if os.path.exists(self.path):
+            raise FileExistsError(f'Directory {self.path} already exists. Choose a different name or location.')
+        os.makedirs(self.path)
+        os.makedirs(self.path / 'experiments')
+        self._created = True
+        self._timestamp_modification()
 
     def save_as_json(self, overwrite=False):
-        """Save as json."""
-        if self.path_json.exists() and overwrite:
-            print(f'File already exists {self.path_json}. Overwriting...')
-            self.path_json.unlink()
+        """Save the project as json.
+
+        The write is atomic: the serialized project is written to a temporary file in the
+        destination directory and then moved into place with `os.replace`. Any failure while
+        serializing or writing therefore leaves a previously saved project file untouched.
+
+        Failures are raised rather than reported on stdout, so that callers (notably the GUI)
+        can tell a successful save from a failed one.
+
+        :param overwrite: whether an existing project file may be replaced.
+        :raises FileExistsError: if the project file exists and `overwrite` is False.
+        :raises ValueError: if the project cannot be serialized, e.g. when a constraint depends
+            on a parameter that is not reachable from the models.
+        :raises OSError: if the file cannot be written or moved into place.
+        """
+        if self.path_json.exists() and not overwrite:
+            raise FileExistsError(f'File already exists {self.path_json}. Pass overwrite=True to replace it.')
+        # Serialize before touching the file system, so that a serialization failure
+        # leaves no temporary file behind and no doubt about the existing file.
         try:
             project_json = json.dumps(self.as_dict(include_materials_not_in_model=True), indent=4)
-            self.path_json.parent.mkdir(exist_ok=True, parents=True)
-            with open(self.path_json, mode='x') as file:
+        except TypeError as error:
+            # json.dumps reports a value it cannot encode (a stray numpy scalar, say) as a
+            # TypeError; to the caller that is the same "cannot be serialized" failure.
+            raise ValueError(f'The project cannot be serialized: {error}') from error
+        self.path_json.parent.mkdir(exist_ok=True, parents=True)
+        # The temporary file must share a directory with the destination, otherwise the
+        # replace below is not guaranteed to be atomic (and fails across volumes on Windows).
+        # The name is not a dot-file so that a leftover is visible while debugging.
+        file_descriptor, temporary_name = tempfile.mkstemp(
+            dir=self.path_json.parent, prefix=f'{self.path_json.name}.', suffix='.tmp'
+        )
+        temporary_path = Path(temporary_name)
+        try:
+            with os.fdopen(file_descriptor, mode='w') as file:
                 file.write(project_json)
-        except Exception as exception:
-            print(exception)
+                file.flush()
+                # Rename without fsync can leave an empty file behind after a power loss.
+                os.fsync(file.fileno())
+            self._apply_project_file_mode(temporary_path)
+            os.replace(temporary_path, self.path_json)
+        except Exception:
+            temporary_path.unlink(missing_ok=True)
+            raise
+        logger.debug(f'Saved project to {self.path_json}')
+
+    def _apply_project_file_mode(self, temporary_path: Path) -> None:
+        """Give the temporary file the permissions the project file should end up with.
+
+        `tempfile.mkstemp` creates files owner-only (0600) and `os.replace` carries that mode
+        onto the destination. Without this step every save on POSIX would strip group and other
+        read access, and overwriting a shared 0644 project file would silently make it private.
+        An existing file keeps its mode; a new file gets the ordinary umask-derived one.
+        """
+        if self.path_json.exists():
+            mode = stat.S_IMODE(self.path_json.stat().st_mode)
+        else:
+            umask = os.umask(0)
+            os.umask(umask)
+            mode = 0o666 & ~umask
+        try:
+            os.chmod(temporary_path, mode)
+        except OSError:
+            # Some file systems refuse chmod (network shares, some Windows mounts); the write
+            # itself is still fine, so this is not a reason to fail the save.
+            logger.debug(f'Could not set the mode of {temporary_path}')
 
     def load_from_json(self, path: Optional[Union[Path, str]] = None):
-        """Load from json."""
+        """Load a project file, replacing the current project state.
+
+        :param path: the project file; defaults to this project's own `path_json`.
+        :raises FileNotFoundError: if there is no file at `path`. The current project is left
+            untouched.
+        :raises ValueError: if the file is not valid JSON or predates the supported file format.
+        """
         if path is None:
             path = self.path_json
         path = Path(path)
-        if path.exists():
-            with open(path, 'r') as file:
-                project_dict = json.load(file)
-                self.reset()
-                self.from_dict(project_dict)
-            self._path_project_parent = path.parents[1]
-            self._created = True
-        else:
-            print(f'ERROR: File {path} does not exist')
+        if not path.exists():
+            raise FileNotFoundError(f'File {path} does not exist')
+        with open(path, 'r') as file:
+            project_dict = json.load(file)
+            self.reset()
+            self.from_dict(project_dict)
+        self._path_project_parent = path.parents[1]
+        self._created = True
 
     #: Schema version embedded in every serialized project. Bumped from 1 → 2
     #: when the sample/model classes migrated from the legacy

@@ -23,7 +23,7 @@ classifiers = [
 ]
 requires-python = '>=3.11'
 dependencies = [
-  'easyscience @ git+https://github.com/easyscience/easyscience.git@sampler-engine-structure-280',
+  'easyscience @ git+https://github.com/easyscience/easyscience.git@develop',
   'scipp',
   'refnx',
   'refl1d>=1.0.0',

@@ -32,8 +32,9 @@ BUMPS parameters:
   which BUMPS sets for every trial point.
 * Those BUMPS parameters only exist for the *free* EasyScience parameters
   and are rebuilt per fit, which is why a *factory* (``constraints_factory``)
-  is passed down the fitting chain and invoked by easyscience's
-  ``build_curve_problem``. Fixed parameters are frozen as constants;
+  is passed down the fitting chain and invoked as each BUMPS problem is
+  built (see :mod:`easyreflectometry._bumps_constraints`). Fixed parameters
+  are frozen as constants;
   dependent (constrained or derived) parameters are expanded recursively
   into their independent leaves.
 * Each penalty term returns the *linear* violation; BUMPS squares it once,
@@ -85,7 +86,7 @@ RELATIONS = ('<', '<=', '>', '>=')
 _RELATION_ALIASES = {'≤': '<=', '≥': '>=', '=<': '<=', '=>': '>='}
 
 #: BUMPS prefixes every EasyScience parameter name; must match
-#: ``easyscience.fitting.engine_base.PARAMETER_PREFIX``.
+#: ``easyscience.fitting.minimizers.minimizer_base.MINIMIZER_PARAMETER_PREFIX``.
 _BUMPS_PREFIX = 'p'
 
 _SAFE_SYMBOLS = {
