@@ -20583,9 +20583,9 @@ enables magnetism on the calculator (raising if it does not support it).</p>
 <span class="sd">            Assembly to add.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">to_be_duplicated</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
-        <span class="n">duplicate</span> <span class="o">=</span> <span class="n">Material</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">to_be_duplicated</span><span class="o">.</span><span class="n">as_dict</span><span class="p">(</span><span class="n">skip</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;unique_name&#39;</span><span class="p">]))</span>
+        <span class="n">duplicate</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">to_be_duplicated</span><span class="p">)</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">to_be_duplicated</span><span class="o">.</span><span class="n">as_dict</span><span class="p">(</span><span class="n">skip</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;unique_name&#39;</span><span class="p">]))</span>
         <span class="n">duplicate</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">duplicate</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s1">&#39; duplicate&#39;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">duplicate</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_material</span><span class="p">(</span><span class="n">duplicate</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
               </details>
 
@@ -20846,9 +20846,9 @@ enables magnetism on the calculator (raising if it does not support it).</p>
 <span class="sd">        Assembly to add.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">to_be_duplicated</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
-    <span class="n">duplicate</span> <span class="o">=</span> <span class="n">Material</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">to_be_duplicated</span><span class="o">.</span><span class="n">as_dict</span><span class="p">(</span><span class="n">skip</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;unique_name&#39;</span><span class="p">]))</span>
+    <span class="n">duplicate</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">to_be_duplicated</span><span class="p">)</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">to_be_duplicated</span><span class="o">.</span><span class="n">as_dict</span><span class="p">(</span><span class="n">skip</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;unique_name&#39;</span><span class="p">]))</span>
     <span class="n">duplicate</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">duplicate</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s1">&#39; duplicate&#39;</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">duplicate</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">add_material</span><span class="p">(</span><span class="n">duplicate</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
