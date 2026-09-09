@@ -10,7 +10,6 @@ import pytest
 from easyscience import global_object
 from easyscience.fitting import AvailableMinimizers
 from easyscience.fitting.minimizers import minimizer_bumps
-from easyscience.fitting.samplers import sampler_dream
 
 from easyreflectometry import _bumps_constraints
 from easyreflectometry.data import DataSet1D
@@ -53,33 +52,32 @@ def unpatched_modules():
     """`install()` mutates the core modules and has no undo; keep these tests independent.
 
     Unwraps a shim left behind by an earlier test so the assertions start from
-    the core's own builder, and puts that state back afterwards.
+    BUMPS' own driver, and puts that state back afterwards.
     """
     originals = []
-    for module in (minimizer_bumps, sampler_dream):
-        builder = module.build_curve_problem
-        while getattr(builder, '_easyreflectometry_shim', False):
-            builder = builder.__wrapped__
-        originals.append((module, builder))
-        module.build_curve_problem = builder
+    for module in (minimizer_bumps,):
+        driver = module.FitDriver
+        while getattr(driver, '_easyreflectometry_shim', False):
+            driver = driver.__wrapped__
+        originals.append((module, driver))
+        module.FitDriver = driver
     yield
-    for module, builder in originals:
-        module.build_curve_problem = builder
+    for module, driver in originals:
+        module.FitDriver = driver
 
 
 @pytest.mark.usefixtures('unpatched_modules')
 class TestInstall:
-    def test_patches_both_consumer_namespaces_and_is_idempotent(self, monkeypatch):
-        """Both consumers bind the name at import, so each has to be patched."""
-        monkeypatch.setattr(minimizer_bumps, 'build_curve_problem', minimizer_bumps.build_curve_problem)
-        monkeypatch.setattr(sampler_dream, 'build_curve_problem', sampler_dream.build_curve_problem)
+    def test_patches_the_consumer_namespace_and_is_idempotent(self, monkeypatch):
+        """The consumer binds ``FitDriver`` at import, so its namespace is patched."""
+        monkeypatch.setattr(minimizer_bumps, 'FitDriver', minimizer_bumps.FitDriver)
 
         _bumps_constraints.install()
-        patched = (minimizer_bumps.build_curve_problem, sampler_dream.build_curve_problem)
-        assert all(getattr(function, '_easyreflectometry_shim', False) for function in patched)
+        patched = minimizer_bumps.FitDriver
+        assert getattr(patched, '_easyreflectometry_shim', False)
 
         _bumps_constraints.install()
-        assert (minimizer_bumps.build_curve_problem, sampler_dream.build_curve_problem) == patched
+        assert minimizer_bumps.FitDriver is patched
 
 
 @pytest.mark.slow
