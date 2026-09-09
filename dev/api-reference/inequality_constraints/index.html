@@ -2389,8 +2389,9 @@ BUMPS parameters:</p>
   which BUMPS sets for every trial point.</li>
 <li>Those BUMPS parameters only exist for the <em>free</em> EasyScience parameters
   and are rebuilt per fit, which is why a <em>factory</em> (<code>constraints_factory</code>)
-  is passed down the fitting chain and invoked by easyscience's
-  <code>build_curve_problem</code>. Fixed parameters are frozen as constants;
+  is passed down the fitting chain and invoked as each BUMPS problem is
+  built (see :mod:<code>easyreflectometry._bumps_constraints</code>). Fixed parameters
+  are frozen as constants;
   dependent (constrained or derived) parameters are expanded recursively
   into their independent leaves.</li>
 <li>Each penalty term returns the <em>linear</em> violation; BUMPS squares it once,
@@ -2574,14 +2575,14 @@ new callers can catch this type instead of matching message substrings.</p>
 
               <details class="mkdocstrings-source">
                 <summary>Source code in <code>src/easyreflectometry/inequality_constraints.py</code></summary>
-                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">74</span>
-<span class="normal">75</span>
+                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">75</span>
 <span class="normal">76</span>
 <span class="normal">77</span>
 <span class="normal">78</span>
 <span class="normal">79</span>
 <span class="normal">80</span>
-<span class="normal">81</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">UnitError</span><span class="p">(</span><span class="ne">ValueError</span><span class="p">):</span>
+<span class="normal">81</span>
+<span class="normal">82</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">UnitError</span><span class="p">(</span><span class="ne">ValueError</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;A unit problem in an inequality constraint.</span>
 
 <span class="sd">    Raised by :func:`check_units` when a side cannot be evaluated with its</span>
@@ -2729,8 +2730,7 @@ are held so the spec is trivially serializable.</p>
 
               <details class="mkdocstrings-source">
                 <summary>Source code in <code>src/easyreflectometry/inequality_constraints.py</code></summary>
-                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">135</span>
-<span class="normal">136</span>
+                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">136</span>
 <span class="normal">137</span>
 <span class="normal">138</span>
 <span class="normal">139</span>
@@ -2832,7 +2832,8 @@ are held so the spec is trivially serializable.</p>
 <span class="normal">235</span>
 <span class="normal">236</span>
 <span class="normal">237</span>
-<span class="normal">238</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@dataclass</span>
+<span class="normal">238</span>
+<span class="normal">239</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">InequalitySpec</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Declarative cross-parameter inequality, e.g. ``t_head &lt; t_tail``.</span>
 
@@ -2996,8 +2997,7 @@ are held so the spec is trivially serializable.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/easyreflectometry/inequality_constraints.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">175</span>
-<span class="normal">176</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">176</span>
 <span class="normal">177</span>
 <span class="normal">178</span>
 <span class="normal">179</span>
@@ -3024,7 +3024,8 @@ are held so the spec is trivially serializable.</p>
 <span class="normal">200</span>
 <span class="normal">201</span>
 <span class="normal">202</span>
-<span class="normal">203</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">validate_syntax</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="normal">203</span>
+<span class="normal">204</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">validate_syntax</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Check that both sides parse and every identifier has an alias mapping.&quot;&quot;&quot;</span>
     <span class="k">for</span> <span class="n">side</span><span class="p">,</span> <span class="n">expression</span><span class="p">,</span> <span class="n">paths</span> <span class="ow">in</span> <span class="p">(</span>
         <span class="p">(</span><span class="s1">&#39;left&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">lhs_expression</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">lhs_paths</span><span class="p">),</span>
@@ -3100,8 +3101,7 @@ are held so the spec is trivially serializable.</p>
 
               <details class="mkdocstrings-source">
                 <summary>Source code in <code>src/easyreflectometry/inequality_constraints.py</code></summary>
-                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">241</span>
-<span class="normal">242</span>
+                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">242</span>
 <span class="normal">243</span>
 <span class="normal">244</span>
 <span class="normal">245</span>
@@ -3111,7 +3111,8 @@ are held so the spec is trivially serializable.</p>
 <span class="normal">249</span>
 <span class="normal">250</span>
 <span class="normal">251</span>
-<span class="normal">252</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@dataclass</span>
+<span class="normal">252</span>
+<span class="normal">253</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">InequalityEvaluation</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Result of evaluating a spec against the current parameter values.&quot;&quot;&quot;</span>
 
@@ -3171,14 +3172,14 @@ are held so the spec is trivially serializable.</p>
 
               <details class="mkdocstrings-source">
                 <summary>Source code in <code>src/easyreflectometry/inequality_constraints.py</code></summary>
-                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">258</span>
-<span class="normal">259</span>
+                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">259</span>
 <span class="normal">260</span>
 <span class="normal">261</span>
 <span class="normal">262</span>
 <span class="normal">263</span>
 <span class="normal">264</span>
-<span class="normal">265</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">_Constant</span><span class="p">:</span>
+<span class="normal">265</span>
+<span class="normal">266</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">_Constant</span><span class="p">:</span>
     <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;value&#39;</span><span class="p">,)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -3239,8 +3240,7 @@ are held so the spec is trivially serializable.</p>
 
               <details class="mkdocstrings-source">
                 <summary>Source code in <code>src/easyreflectometry/inequality_constraints.py</code></summary>
-                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">268</span>
-<span class="normal">269</span>
+                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">269</span>
 <span class="normal">270</span>
 <span class="normal">271</span>
 <span class="normal">272</span>
@@ -3248,7 +3248,8 @@ are held so the spec is trivially serializable.</p>
 <span class="normal">274</span>
 <span class="normal">275</span>
 <span class="normal">276</span>
-<span class="normal">277</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">_BumpsValue</span><span class="p">:</span>
+<span class="normal">277</span>
+<span class="normal">278</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">_BumpsValue</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Reads a BUMPS parameter — i.e. the optimizer&#39;s current trial value.&quot;&quot;&quot;</span>
 
     <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;parameter&#39;</span><span class="p">,)</span>
@@ -3311,8 +3312,7 @@ are held so the spec is trivially serializable.</p>
 
               <details class="mkdocstrings-source">
                 <summary>Source code in <code>src/easyreflectometry/inequality_constraints.py</code></summary>
-                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">280</span>
-<span class="normal">281</span>
+                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">281</span>
 <span class="normal">282</span>
 <span class="normal">283</span>
 <span class="normal">284</span>
@@ -3325,7 +3325,8 @@ are held so the spec is trivially serializable.</p>
 <span class="normal">291</span>
 <span class="normal">292</span>
 <span class="normal">293</span>
-<span class="normal">294</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">_Expression</span><span class="p">:</span>
+<span class="normal">294</span>
+<span class="normal">295</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">_Expression</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Evaluates an expression whose symbols are value sources.&quot;&quot;&quot;</span>
 
     <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;expression&#39;</span><span class="p">,</span> <span class="s1">&#39;sources&#39;</span><span class="p">,</span> <span class="s1">&#39;_interpreter&#39;</span><span class="p">)</span>
@@ -3393,8 +3394,7 @@ are held so the spec is trivially serializable.</p>
 
               <details class="mkdocstrings-source">
                 <summary>Source code in <code>src/easyreflectometry/inequality_constraints.py</code></summary>
-                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">297</span>
-<span class="normal">298</span>
+                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">298</span>
 <span class="normal">299</span>
 <span class="normal">300</span>
 <span class="normal">301</span>
@@ -3408,7 +3408,8 @@ are held so the spec is trivially serializable.</p>
 <span class="normal">309</span>
 <span class="normal">310</span>
 <span class="normal">311</span>
-<span class="normal">312</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">_Violation</span><span class="p">:</span>
+<span class="normal">312</span>
+<span class="normal">313</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">_Violation</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;The BUMPS constraint object: ``float()`` is ``0`` when satisfied, else the violation.&quot;&quot;&quot;</span>
 
     <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;lhs&#39;</span><span class="p">,</span> <span class="s1">&#39;op&#39;</span><span class="p">,</span> <span class="s1">&#39;rhs&#39;</span><span class="p">,</span> <span class="s1">&#39;label&#39;</span><span class="p">)</span>
@@ -3463,11 +3464,11 @@ are held so the spec is trivially serializable.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/easyreflectometry/inequality_constraints.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">109</span>
-<span class="normal">110</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">110</span>
 <span class="normal">111</span>
 <span class="normal">112</span>
-<span class="normal">113</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_normalize_relation</span><span class="p">(</span><span class="n">op</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="normal">113</span>
+<span class="normal">114</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_normalize_relation</span><span class="p">(</span><span class="n">op</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
     <span class="n">op</span> <span class="o">=</span> <span class="n">_RELATION_ALIASES</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">op</span><span class="o">.</span><span class="n">strip</span><span class="p">(),</span> <span class="n">op</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
     <span class="k">if</span> <span class="n">op</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">RELATIONS</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported relation &#39;</span><span class="si">{</span><span class="n">op</span><span class="si">}</span><span class="s2">&#39;. Use one of </span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">RELATIONS</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
@@ -3492,11 +3493,11 @@ are held so the spec is trivially serializable.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/easyreflectometry/inequality_constraints.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">116</span>
-<span class="normal">117</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">117</span>
 <span class="normal">118</span>
 <span class="normal">119</span>
-<span class="normal">120</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_new_interpreter</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Interpreter</span><span class="p">:</span>
+<span class="normal">120</span>
+<span class="normal">121</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_new_interpreter</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Interpreter</span><span class="p">:</span>
     <span class="n">interpreter</span> <span class="o">=</span> <span class="n">Interpreter</span><span class="p">(</span><span class="n">minimal</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">use_numpy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">_SAFE_SYMBOLS</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
         <span class="n">interpreter</span><span class="o">.</span><span class="n">symtable</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
@@ -3521,10 +3522,10 @@ are held so the spec is trivially serializable.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/easyreflectometry/inequality_constraints.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">123</span>
-<span class="normal">124</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">124</span>
 <span class="normal">125</span>
-<span class="normal">126</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_evaluate</span><span class="p">(</span><span class="n">interpreter</span><span class="p">:</span> <span class="n">Interpreter</span><span class="p">,</span> <span class="n">expression</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">symbols</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="normal">126</span>
+<span class="normal">127</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_evaluate</span><span class="p">(</span><span class="n">interpreter</span><span class="p">:</span> <span class="n">Interpreter</span><span class="p">,</span> <span class="n">expression</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">symbols</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
     <span class="n">interpreter</span><span class="o">.</span><span class="n">symtable</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">symbols</span><span class="p">)</span>
     <span class="n">result</span> <span class="o">=</span> <span class="n">interpreter</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="n">expression</span><span class="p">,</span> <span class="n">raise_errors</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">result</span>
@@ -3553,10 +3554,10 @@ are held so the spec is trivially serializable.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/easyreflectometry/inequality_constraints.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">129</span>
-<span class="normal">130</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">130</span>
 <span class="normal">131</span>
-<span class="normal">132</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_identifiers</span><span class="p">(</span><span class="n">expression</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="normal">132</span>
+<span class="normal">133</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_identifiers</span><span class="p">(</span><span class="n">expression</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Identifiers used in `expression` that are not builtin math symbols.&quot;&quot;&quot;</span>
     <span class="n">names</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;\b[A-Za-z_][A-Za-z0-9_]*\b&#39;</span><span class="p">,</span> <span class="n">expression</span><span class="p">))</span>
     <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">n</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">names</span> <span class="k">if</span> <span class="n">n</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_SAFE_SYMBOLS</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">keyword</span><span class="o">.</span><span class="n">iskeyword</span><span class="p">(</span><span class="n">n</span><span class="p">))</span>
@@ -3587,8 +3588,7 @@ zero at the boundary is the only continuous choice.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/easyreflectometry/inequality_constraints.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">315</span>
-<span class="normal">316</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">316</span>
 <span class="normal">317</span>
 <span class="normal">318</span>
 <span class="normal">319</span>
@@ -3597,7 +3597,8 @@ zero at the boundary is the only continuous choice.</p>
 <span class="normal">322</span>
 <span class="normal">323</span>
 <span class="normal">324</span>
-<span class="normal">325</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_violation</span><span class="p">(</span><span class="n">lhs</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">op</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">rhs</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="normal">325</span>
+<span class="normal">326</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_violation</span><span class="p">(</span><span class="n">lhs</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">op</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">rhs</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Linear violation of ``lhs op rhs`` (``0`` when satisfied).</span>
 
 <span class="sd">    Strict and non-strict relations are treated alike: a penalty of exactly</span>
@@ -3638,8 +3639,7 @@ zero at the boundary is the only continuous choice.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/easyreflectometry/inequality_constraints.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">328</span>
-<span class="normal">329</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">329</span>
 <span class="normal">330</span>
 <span class="normal">331</span>
 <span class="normal">332</span>
@@ -3666,7 +3666,8 @@ zero at the boundary is the only continuous choice.</p>
 <span class="normal">353</span>
 <span class="normal">354</span>
 <span class="normal">355</span>
-<span class="normal">356</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_source_for</span><span class="p">(</span><span class="n">parameter</span><span class="p">:</span> <span class="n">DescriptorNumber</span><span class="p">,</span> <span class="n">bumps_pars</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">trail</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="nb">float</span><span class="p">]:</span>
+<span class="normal">356</span>
+<span class="normal">357</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_source_for</span><span class="p">(</span><span class="n">parameter</span><span class="p">:</span> <span class="n">DescriptorNumber</span><span class="p">,</span> <span class="n">bumps_pars</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">trail</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="nb">float</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Translate an EasyScience parameter into a source reading the BUMPS trial vector.</span>
 
 <span class="sd">    * free parameter → the BUMPS parameter of the problem;</span>
@@ -3715,14 +3716,14 @@ zero at the boundary is the only continuous choice.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/easyreflectometry/inequality_constraints.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">359</span>
-<span class="normal">360</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">360</span>
 <span class="normal">361</span>
 <span class="normal">362</span>
 <span class="normal">363</span>
 <span class="normal">364</span>
 <span class="normal">365</span>
-<span class="normal">366</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_resolve_all</span><span class="p">(</span><span class="n">spec</span><span class="p">:</span> <span class="n">InequalitySpec</span><span class="p">,</span> <span class="n">resolve</span><span class="p">:</span> <span class="n">PathResolver</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">DescriptorNumber</span><span class="p">]:</span>
+<span class="normal">366</span>
+<span class="normal">367</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_resolve_all</span><span class="p">(</span><span class="n">spec</span><span class="p">:</span> <span class="n">InequalitySpec</span><span class="p">,</span> <span class="n">resolve</span><span class="p">:</span> <span class="n">PathResolver</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">DescriptorNumber</span><span class="p">]:</span>
     <span class="n">resolved</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="k">for</span> <span class="n">alias</span><span class="p">,</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">spec</span><span class="o">.</span><span class="n">paths</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
         <span class="n">parameter</span> <span class="o">=</span> <span class="n">resolve</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
@@ -3845,8 +3846,7 @@ it straight through as <code>constraints_factory=...</code>).</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/easyreflectometry/inequality_constraints.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">369</span>
-<span class="normal">370</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">370</span>
 <span class="normal">371</span>
 <span class="normal">372</span>
 <span class="normal">373</span>
@@ -3886,7 +3886,8 @@ it straight through as <code>constraints_factory=...</code>).</p>
 <span class="normal">407</span>
 <span class="normal">408</span>
 <span class="normal">409</span>
-<span class="normal">410</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">build_constraints_factory</span><span class="p">(</span><span class="n">specs</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">InequalitySpec</span><span class="p">],</span> <span class="n">resolve</span><span class="p">:</span> <span class="n">PathResolver</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]:</span>
+<span class="normal">410</span>
+<span class="normal">411</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">build_constraints_factory</span><span class="p">(</span><span class="n">specs</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">InequalitySpec</span><span class="p">],</span> <span class="n">resolve</span><span class="p">:</span> <span class="n">PathResolver</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Build the ``constraints_factory`` hook for the given specs.</span>
 
 <span class="sd">    The returned callable is what ``easyscience``&#39;s BUMPS engine invokes</span>
@@ -3956,8 +3957,7 @@ their current (already propagated) value.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/easyreflectometry/inequality_constraints.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">413</span>
-<span class="normal">414</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">414</span>
 <span class="normal">415</span>
 <span class="normal">416</span>
 <span class="normal">417</span>
@@ -3968,7 +3968,8 @@ their current (already propagated) value.</p>
 <span class="normal">422</span>
 <span class="normal">423</span>
 <span class="normal">424</span>
-<span class="normal">425</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">evaluate_spec</span><span class="p">(</span><span class="n">spec</span><span class="p">:</span> <span class="n">InequalitySpec</span><span class="p">,</span> <span class="n">resolve</span><span class="p">:</span> <span class="n">PathResolver</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">InequalityEvaluation</span><span class="p">:</span>
+<span class="normal">425</span>
+<span class="normal">426</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">evaluate_spec</span><span class="p">(</span><span class="n">spec</span><span class="p">:</span> <span class="n">InequalitySpec</span><span class="p">,</span> <span class="n">resolve</span><span class="p">:</span> <span class="n">PathResolver</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">InequalityEvaluation</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Evaluate a spec against the *current* parameter values.</span>
 
 <span class="sd">    Used for the start-point feasibility check before a fit is launched and</span>
@@ -4013,8 +4014,7 @@ are read in the unit of the other side.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/easyreflectometry/inequality_constraints.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">428</span>
-<span class="normal">429</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">429</span>
 <span class="normal">430</span>
 <span class="normal">431</span>
 <span class="normal">432</span>
@@ -4051,7 +4051,8 @@ are read in the unit of the other side.</p>
 <span class="normal">463</span>
 <span class="normal">464</span>
 <span class="normal">465</span>
-<span class="normal">466</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">check_units</span><span class="p">(</span><span class="n">spec</span><span class="p">:</span> <span class="n">InequalitySpec</span><span class="p">,</span> <span class="n">resolve</span><span class="p">:</span> <span class="n">PathResolver</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="normal">466</span>
+<span class="normal">467</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">check_units</span><span class="p">(</span><span class="n">spec</span><span class="p">:</span> <span class="n">InequalitySpec</span><span class="p">,</span> <span class="n">resolve</span><span class="p">:</span> <span class="n">PathResolver</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Raise :class:`UnitError` when the two sides of `spec` have incompatible units.</span>
 
 <span class="sd">    Each side is evaluated with the unit-carrying ``DescriptorNumber``</span>
